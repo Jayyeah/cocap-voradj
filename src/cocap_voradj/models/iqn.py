@@ -175,8 +175,17 @@ class CoCapIQN(nn.Module):
         return {"q_values": q, "q_coverage": q_cov, "q_encirclement": q_enc, "gate": gate, "tau": tau, "taus": tau}
 
     @torch.no_grad()
-    def act(self, obs: Dict[str, torch.Tensor], mode: str, epsilon: float = 0.0) -> torch.Tensor:
-        q = self.forward(obs, num_tau=32, mode=mode)["q_values"].mean(dim=1)
+    def act(
+        self,
+        obs: Dict[str, torch.Tensor],
+        mode: str,
+        epsilon: float = 0.0,
+        deterministic_quantiles: bool = False,
+    ) -> torch.Tensor:
+        tau = None
+        if deterministic_quantiles:
+            tau = (torch.arange(32, device=obs["self"].device, dtype=torch.float32) + 0.5) / 32.0
+        q = self.forward(obs, num_tau=32, mode=mode, tau=tau)["q_values"].mean(dim=1)
         greedy = q.argmax(dim=-1)
         if epsilon <= 0:
             return greedy

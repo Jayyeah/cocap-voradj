@@ -1,0 +1,49 @@
+extends: stage1_4p1e1obs_scratch2m.yaml
+
+seed: 2026080202
+device: cuda:0
+total_timesteps: 700000
+run_name: crms_supportapproach_ce_curr_stage2_8p2e2obs_700k_20260802_run1
+
+iqn:
+  checkpoint_freq: 100000
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 420000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.00003
+
+reward:
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+  post_capture_coverage_window_steps: 600
+
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 2
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+      evader_spawn_min_sep: 15.0
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+
+pretrained:
+  compatibility_mode: shape_compatible
+
+experiment_metadata:
+  stage: stage2_8p2e2obs
+  training_start: warm_start_from_stage1_selected_checkpoint
+  stage_timesteps: 700000
+  pretrained_injection: The curriculum supervisor writes the selected stage1 checkpoint to pretrained.path before launch.
+  optimizer_semantics: Warm adaptation uses lr=3e-5 and epsilon 0.28 to 0.05 over 420k.

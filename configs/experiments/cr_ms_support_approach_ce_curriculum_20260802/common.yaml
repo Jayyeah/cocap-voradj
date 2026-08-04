@@ -1,0 +1,113 @@
+extends: ../voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml
+
+# Final CR-MS + VCT-LS + CE release configuration. All three feature-line
+# overrides are flattened here; no intermediate experiment directory is needed.
+env:
+  episode_max_length: 3000
+
+reward:
+  # CE coverage objective and strict success criterion.
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_speed_weight_schedule:
+    - step: 0
+      value: 0.0
+    - step: 200000
+      value: 0.0005
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.10
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 4
+  coverage_cv_loose_area_cv_threshold: 0.15
+  min_active_pursuers: 4
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  coverage_success_reward_repeat: false
+  coverage_success_repeat_reward: 0.0
+  post_capture_coverage_success_reward: 0.0
+  post_capture_coverage_grace_steps: 0
+  post_capture_success_reward_repeat: false
+  post_capture_success_repeat_reward: 0.0
+  post_capture_hold_reward: 0.0
+  distribution_converged_grace_steps: 0
+  coverage_geometric_latch_reward: 0.0
+  post_capture_geometric_latch_reward: 0.0
+  coverage_settle_enabled: false
+  coverage_settle_terminate_on_success: false
+  coverage_settle_geometric_repeat_reward: 0.0
+  coverage_settle_motion_repeat_reward: 0.0
+  coverage_settled_terminal_reward: 0.0
+  coverage_settle_repeat_reward: 0.0
+  coverage_settle_deceleration_coeff: 0.0
+  coverage_early_speed_shaping_enabled: false
+  coverage_cell_center_speed_penalty_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+  post_capture_coverage_window_steps: 500
+
+  # CR-MS compact, velocity-aware ring reward for direct detectors.
+  capture_reward_mode: ring_importance_ms_v0
+  capture_timestep_penalty: 0.0
+  omega_ring_ms: 2.0
+  ring_ms_progress_clip: 3.0
+  ring_ms_inner_extra_margin: 0.5
+  ring_ms_preferred_center_radius: 8.0
+  ring_ms_outer_center_radius: 10.5
+  ring_ms_radial_sigma: 2.0
+  ring_ms_cell_size: 1.5
+  ring_ms_angle_alpha: 0.25
+  ring_ms_angle_weight_min: 0.75
+  ring_ms_angle_weight_max: 1.25
+  ring_ms_velocity_static_threshold: 0.30
+  ring_ms_velocity_full_threshold: 1.00
+  ring_ms_occupancy_mode: cartesian_disk
+  ring_ms_occupancy_radius: 4.0
+  omega_approach: 0.0
+  omega_mean_shift: 0.0
+  omega_front: 0.0
+
+voradj:
+  # VCT-LS: friendly-only communication plus local surface-distance sensing.
+  perception_topology_version: friendly_voronoi_comm_v0
+  friendly_comm_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  vct_ls_apply_release_delay: true
+
+  # Latest CE replay/recovery distribution.
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 32
+    recovery_pure: 16
+  recovery:
+    spawn_mode: inner_random_cluster_plus_capture_snapshot_plus_map_random
+    capture_state_pool_capacity: 1000
+    captured_state_ratio: 0.75
+    map_random_ratio_within_non_capture: 0.5
+
+  # One-hop support agents receive balanced approach-only attraction and CE.
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: approach_only
+  support_reward_approach_weight: 1.0
+  support_reward_approach_clip: 3.0
+
+experiment_metadata:
+  series_label: cr_ms_vctls_ce_final_curriculum_20260804
+  release_scope: Final integrated CR-MS + VCT-LS + CE configuration; no intermediate experiment config is required.
+  capture_semantics: Direct detectors use ring_importance_ms_v0. One-hop VCT-LS support agents receive 0.5 approach-only attraction plus 0.5 CE coverage reward.
+  support_visibility_semantics: Attraction targets are limited to evaders directly seen by pursuing one-hop Voronoi communication neighbors; no global enemy coordinate is exposed.
+  coverage_semantics: CE PBRS, delayed light speed cost, strict CE success, CV<0.15 loose diagnostics, and the latest replay/recovery mix.
+  max_step_policy: Training episode max is 3000; post-capture windows are 500/600/700 for 4v1/8v2/12v3.
+  selection_policy: Rank capture/collision first, then mix and pure CE strict before legacy CV diagnostics.

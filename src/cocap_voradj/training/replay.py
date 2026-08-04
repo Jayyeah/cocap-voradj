@@ -26,6 +26,12 @@ def _reward_stats(rewards: Sequence[float], metadata: Sequence[Dict]) -> Dict[st
         "reward_deceleration",
         "reward_settled_terminal",
         "reward_motion_penalty",
+        "reward_ce_center",
+        "reward_ce_control",
+        "reward_ce_pbrs",
+        "reward_ce_terminal_correction",
+        "reward_support_blend_capture",
+        "reward_support_blend_coverage",
     ):
         sources[key] = [float(item.get(key, 0.0)) for item in metadata]
     for key, values in sources.items():

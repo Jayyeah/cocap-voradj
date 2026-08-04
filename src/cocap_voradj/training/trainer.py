@@ -33,6 +33,53 @@ def deep_update(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     return out
 
 
+def parse_scalar_step_schedule(
+    raw_schedule: Any,
+    *,
+    default_value: float,
+    field_name: str,
+) -> List[Tuple[int, float]]:
+    if not raw_schedule:
+        return [(0, float(default_value))]
+    if not isinstance(raw_schedule, list):
+        raise ValueError(f"{field_name}_schedule must be a list")
+    parsed: List[Tuple[int, float]] = []
+    for item in raw_schedule:
+        if not isinstance(item, dict):
+            raise ValueError(f"{field_name}_schedule entries must be mappings")
+        step = int(item.get("step", 0))
+        if step < 0:
+            raise ValueError(f"{field_name}_schedule step must be non-negative")
+        raw_value = item.get("value", item.get(field_name, item.get("weight")))
+        if raw_value is None:
+            raise ValueError(
+                f"{field_name}_schedule entries need value, weight, or {field_name}"
+            )
+        value = float(raw_value)
+        if not np.isfinite(value):
+            raise ValueError(f"{field_name}_schedule values must be finite")
+        parsed.append((step, value))
+    parsed.sort(key=lambda item: item[0])
+    steps = [step for step, _ in parsed]
+    if len(steps) != len(set(steps)):
+        raise ValueError(f"{field_name}_schedule contains duplicate steps")
+    return parsed
+
+
+def scalar_step_schedule_value(
+    schedule: List[Tuple[int, float]],
+    *,
+    global_step: int,
+    default_value: float,
+) -> float:
+    value = float(default_value)
+    for step, candidate in schedule:
+        if int(global_step) < step:
+            break
+        value = float(candidate)
+    return value
+
+
 def set_global_config(config: Dict[str, Any]) -> None:
     manager = ConfigManager.get_instance()
     manager._config = copy.deepcopy(config)
@@ -119,6 +166,16 @@ class CoCapTrainer:
         if not self.learning_rate_schedule:
             self.learning_rate_schedule = [(0, base_learning_rate)]
         self.current_learning_rate = base_learning_rate
+        reward_cfg = self.config.get("reward", {}) or {}
+        self.base_coverage_ce_speed_weight = float(
+            reward_cfg.get("coverage_ce_speed_weight", 0.05)
+        )
+        self.coverage_ce_speed_weight_schedule = parse_scalar_step_schedule(
+            reward_cfg.get("coverage_ce_speed_weight_schedule", []),
+            default_value=self.base_coverage_ce_speed_weight,
+            field_name="coverage_ce_speed_weight",
+        )
+        self.current_coverage_ce_speed_weight = self.base_coverage_ce_speed_weight
         self.update_steps = 0
         self.global_step = 0
         self.episode_idx = 0
@@ -257,6 +314,7 @@ class CoCapTrainer:
         self.update_counts: Dict[str, int] = {task: 0 for task in self.replays}
         self.last_update_task: Optional[str] = None
         self.envs = {task: self._make_env(task) for task in self.task_order}
+        self._set_coverage_ce_control_weights()
         self.apf_agents: Dict[str, List[ApfAgent]] = defaultdict(list)
         recent_tasks = set(self.replays) | set(self.task_order) | {"coverage", "encirclement", "voradj"}
         self.recent_window_size = int(self.config.get("recent_window", 100))
@@ -268,6 +326,7 @@ class CoCapTrainer:
             "collision",
             "coverage_loose",
             "coverage_strict",
+            "coverage_cv015",
             "soft_oob",
             "post_capture_coverage",
             "post_capture_window_expired",
@@ -280,6 +339,7 @@ class CoCapTrainer:
             "post_capture_area_ok",
             "post_capture_center_ok",
             "post_capture_inside_ok",
+            "post_capture_cv015",
         ]
         self.recent_numeric_diagnostic_fields = [
             "length",
@@ -473,6 +533,18 @@ class CoCapTrainer:
         frac = min(1.0, self.global_step / max(self.epsilon_decay_steps, 1))
         return self.epsilon_start + frac * (self.epsilon_final - self.epsilon_start)
 
+    def _set_coverage_ce_control_weights(self) -> float:
+        value = scalar_step_schedule_value(
+            self.coverage_ce_speed_weight_schedule,
+            global_step=self.global_step,
+            default_value=self.base_coverage_ce_speed_weight,
+        )
+        for env in self.envs.values():
+            if isinstance(env, VorAdjEnv):
+                env.reward_cfg["coverage_ce_speed_weight"] = float(value)
+        self.current_coverage_ce_speed_weight = float(value)
+        return self.current_coverage_ce_speed_weight
+
     def _set_learning_rate(self) -> float:
         learning_rate = self.learning_rate_schedule[0][1]
         for step, candidate in self.learning_rate_schedule:
@@ -531,6 +603,8 @@ class CoCapTrainer:
             return []
         set_global_config(env.config)
         observations = env.get_evader_observations_for_apf()
+        if hasattr(env, "configure_evader_apf_agents"):
+            env.configure_evader_apf_agents(self.apf_agents[task])
         actions = []
         for i, obs in enumerate(observations):
             if obs is None:
@@ -720,6 +794,7 @@ class CoCapTrainer:
             "recent_collision_rate": self._deque_mean(diagnostics["collision"]),
             "recent_coverage_loose_rate": self._deque_mean(diagnostics["coverage_loose"]),
             "recent_coverage_strict_rate": self._deque_mean(diagnostics["coverage_strict"]),
+            "recent_coverage_cv015_rate": self._deque_mean(diagnostics["coverage_cv015"]),
             "recent_soft_oob_rate": self._deque_mean(diagnostics["soft_oob"]),
             "recent_post_capture_coverage_rate": self._deque_mean(diagnostics["post_capture_coverage"]),
             "recent_post_capture_window_expired_rate": self._deque_mean(diagnostics["post_capture_window_expired"]),
@@ -732,6 +807,7 @@ class CoCapTrainer:
             "recent_post_capture_area_ok_rate": self._deque_mean(diagnostics["post_capture_area_ok"]),
             "recent_post_capture_center_ok_rate": self._deque_mean(diagnostics["post_capture_center_ok"]),
             "recent_post_capture_inside_ok_rate": self._deque_mean(diagnostics["post_capture_inside_ok"]),
+            "recent_post_capture_cv015_rate": self._deque_mean(diagnostics["post_capture_cv015"]),
             "recent_avg_length": self._deque_mean(diagnostics["length"]),
             "recent_avg_active_pursuers": self._deque_mean(diagnostics["active_pursuers"]),
             "recent_avg_oob_pursuer_steps": self._deque_mean(diagnostics["oob_pursuer_steps"]),
@@ -779,6 +855,7 @@ class CoCapTrainer:
                 "collision": bool(record.get("collision_event", False)),
                 "coverage_loose": bool(record.get("coverage_loose_success", False)),
                 "coverage_strict": bool(record.get("coverage_strict_success", False)),
+                "coverage_cv015": bool(record.get("coverage_cv015_success", record.get("coverage_cv_loose_success", False))),
                 "soft_oob": bool(record.get("soft_boundary_out_of_bounds_event", False)),
                 "post_capture_coverage": bool(voradj_metrics.get("post_capture_coverage_success", False)),
                 "post_capture_window_expired": bool(voradj_metrics.get("post_capture_window_expired", False)),
@@ -791,6 +868,7 @@ class CoCapTrainer:
                 "post_capture_area_ok": bool(post_capture_episode and record.get("coverage_strict_area_ok", False)),
                 "post_capture_center_ok": bool(post_capture_episode and record.get("coverage_strict_center_ok", False)),
                 "post_capture_inside_ok": bool(post_capture_episode and record.get("coverage_strict_inside_ok", False)),
+                "post_capture_cv015": bool(post_capture_episode and record.get("coverage_cv015_success", record.get("coverage_cv_loose_success", False))),
             }
             for key, value in bool_values.items():
                 diagnostics[key].append(1.0 if value else 0.0)
@@ -827,6 +905,13 @@ class CoCapTrainer:
                 "coverage_agent_count": int(voradj_metrics.get("coverage_agent_count", 0)),
                 "enemy_neighbor_ratio": float(voradj_metrics.get("enemy_neighbor_ratio", 0.0)),
                 "support_candidate_count": int(voradj_metrics.get("support_candidate_count", 0)),
+                "support_reward_blend_enabled": bool(voradj_metrics.get("support_reward_blend_enabled", False)),
+                "support_reward_blend_active_count": int(voradj_metrics.get("support_reward_blend_active_count", 0)),
+                "support_reward_blend_active_ratio": float(voradj_metrics.get("support_reward_blend_active_ratio", 0.0)),
+                "support_reward_capture_weight": float(voradj_metrics.get("support_reward_capture_weight", 0.0)),
+                "support_reward_coverage_weight": float(voradj_metrics.get("support_reward_coverage_weight", 0.0)),
+                "reward_support_blend_capture_sum": float(voradj_metrics.get("reward_support_blend_capture_sum", 0.0)),
+                "reward_support_blend_coverage_sum": float(voradj_metrics.get("reward_support_blend_coverage_sum", 0.0)),
             })
         if self.train_mode == "voradj_mixed_coverage":
             payload.update({
@@ -881,9 +966,25 @@ class CoCapTrainer:
 
     def _save_checkpoint(self, name: str) -> Path:
         path = self.ckpt_dir / name
-        self.model.save(str(path), extra={"global_step": self.global_step, "episode": self.episode_idx, "train_mode": self.train_mode})
+        self.model.save(
+            str(path),
+            extra={
+                "global_step": self.global_step,
+                "episode": self.episode_idx,
+                "train_mode": self.train_mode,
+                "coverage_ce_speed_weight": self.current_coverage_ce_speed_weight,
+            },
+        )
         latest = self.ckpt_dir / "latest.pt"
-        self.model.save(str(latest), extra={"global_step": self.global_step, "episode": self.episode_idx, "train_mode": self.train_mode})
+        self.model.save(
+            str(latest),
+            extra={
+                "global_step": self.global_step,
+                "episode": self.episode_idx,
+                "train_mode": self.train_mode,
+                "coverage_ce_speed_weight": self.current_coverage_ce_speed_weight,
+            },
+        )
         return path
 
     def train(self) -> Path:
@@ -902,10 +1003,17 @@ class CoCapTrainer:
             "reward_deceleration": 0.0,
             "reward_settled_terminal": 0.0,
             "reward_motion_penalty": 0.0,
+            "reward_ce_center": 0.0,
+            "reward_ce_control": 0.0,
+            "reward_ce_pbrs": 0.0,
+            "reward_ce_terminal_correction": 0.0,
+            "reward_support_blend_capture": 0.0,
+            "reward_support_blend_coverage": 0.0,
         }
         episode_transition_count = 0
         while self.global_step < self.total_timesteps:
             env = self.envs[task]
+            self._set_coverage_ce_control_weights()
             actions, active = self._select_actions(task, obs_list)
             prev_obs = {i: obs_list[i] for i in active}
             evader_actions = self._evader_actions(task)
@@ -944,7 +1052,17 @@ class CoCapTrainer:
             loss = self._update(update_task)
             if self.global_step % self.log_freq_steps == 0:
                 logged_update_task = self.last_update_task if loss is not None else update_task
-                metric_payload = {"global_step": self.global_step, "task": task, "update_task": logged_update_task, "epsilon": self.epsilon(), "learning_rate": self.current_learning_rate, "loss": loss, "loss_ema": self.loss_ema, "replay_size": self._replay_size_for_task(task)}
+                metric_payload = {
+                    "global_step": self.global_step,
+                    "task": task,
+                    "update_task": logged_update_task,
+                    "epsilon": self.epsilon(),
+                    "learning_rate": self.current_learning_rate,
+                    "coverage_ce_speed_weight": self.current_coverage_ce_speed_weight,
+                    "loss": loss,
+                    "loss_ema": self.loss_ema,
+                    "replay_size": self._replay_size_for_task(task),
+                }
                 metric_payload.update(self._recent_diagnostic_summary(task))
                 if self.train_mode == "m1new":
                     cov_u = self.update_counts.get("coverage", 0)
@@ -1019,9 +1137,24 @@ class CoCapTrainer:
         return final
 
 
-def load_config(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+def load_config(path: str, _stack: Optional[Tuple[Path, ...]] = None) -> Dict[str, Any]:
+    config_path = Path(path).expanduser().resolve()
+    stack = tuple(_stack or ())
+    if config_path in stack:
+        chain = " -> ".join(str(item) for item in (*stack, config_path))
+        raise ValueError(f"Cyclic config extends chain: {chain}")
+    with config_path.open("r", encoding="utf-8") as f:
+        loaded = yaml.safe_load(f) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError(f"Config root must be a mapping: {config_path}")
+    parent = loaded.pop("extends", None)
+    if parent is None:
+        return loaded
+    parent_path = Path(str(parent)).expanduser()
+    if not parent_path.is_absolute():
+        parent_path = config_path.parent / parent_path
+    base = load_config(str(parent_path), _stack=(*stack, config_path))
+    return deep_update(base, loaded)
 
 
 def apply_cli_overrides(config: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:

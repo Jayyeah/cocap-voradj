@@ -66,6 +66,11 @@ class ApfAgent:
 
         # Acceleration selection parameters
         self.acc_threshold = float(apf_cfg.get("acc_threshold", 0.1)) if self.is_v2 else 0.1
+        self.goal_attraction_k = float(apf_cfg.get("goal_attraction_k", 0.0)) if self.is_v2 else 0.0
+        self.dynamic_position_repulsion_requires_closing = bool(apf_cfg.get("dynamic_position_repulsion_requires_closing", True))
+        self.goal_position = None
+        self.goal_weight = None
+        self.boundary_enabled = True
         self.x_min = 0.0
         self.x_max = self.apf_config.get("env.width", default=100)
         self.y_min = 0.0
@@ -76,6 +81,29 @@ class ApfAgent:
         c = np.cos(theta)
         s = np.sin(theta)
         return np.array([c * vector[0] + s * vector[1], -s * vector[0] + c * vector[1]])
+
+    def set_goal(self, position, weight=None):
+        self.goal_position = None if position is None else np.asarray(position, dtype=float)
+        self.goal_weight = None if weight is None else float(weight)
+
+    def clear_goal(self):
+        self.goal_position = None
+        self.goal_weight = None
+
+    def set_boundary_enabled(self, enabled):
+        self.boundary_enabled = bool(enabled)
+
+    def goal_force(self, position_global_frame, theta):
+        if self.goal_position is None or theta is None:
+            return np.zeros(2)
+        direction = np.asarray(self.goal_position, dtype=float) - np.asarray(position_global_frame, dtype=float)
+        norm = float(np.linalg.norm(direction))
+        if norm <= 1e-9:
+            return np.zeros(2)
+        magnitude = self.goal_attraction_k if self.goal_weight is None else float(self.goal_weight)
+        if magnitude <= 0.0:
+            return np.zeros(2)
+        return self._world_to_robot_vector(magnitude * direction / norm, theta)
 
     def position_force(self, position, radius):
         """
@@ -242,22 +270,27 @@ class ApfAgent:
                 e_ao = pos / np.linalg.norm(pos)
                 v_ao = np.dot(velocity - vel, e_ao)
 
-                if v_ao >= 0.0:
+                if (not self.dynamic_position_repulsion_requires_closing) or v_ao >= 0.0:
                     total_force_repulsion += self.position_force(pos, 0.8)
+                if v_ao >= 0.0:
                     total_force_repulsion += self.velocity_force(v_ao, pos, 0.8)
 
         # Add boundary force. Legacy mixes this world-frame force with robot-frame
         # forces for historical compatibility. v2 rotates it into robot frame.
-        boundary_repulsion = self.boundary_force(position_global_frame)
+        if self.boundary_enabled:
+            boundary_repulsion = self.boundary_force(position_global_frame)
+            if self.is_v2 and theta is not None:
+                boundary_repulsion = self._world_to_robot_vector(boundary_repulsion, theta)
+            total_force_repulsion += boundary_repulsion
         if self.is_v2 and theta is not None:
-            boundary_repulsion = self._world_to_robot_vector(boundary_repulsion, theta)
-        total_force_repulsion += boundary_repulsion
+            total_force_repulsion += self.goal_force(position_global_frame, theta)
 
         # Check if out of bounds
         is_out_bounds = (position_global_frame[0] < self.x_min or
                          position_global_frame[0] > self.x_max or
                          position_global_frame[1] < self.y_min or
                          position_global_frame[1] > self.y_max)
+        boundary_guidance_active = bool(self.boundary_enabled)
 
         # Calculate motion direction
         force_total = total_force_repulsion
@@ -271,10 +304,10 @@ class ApfAgent:
         diff_angle = np.mod(diff_angle + np.pi, 2 * np.pi) - np.pi
 
         # Select angular velocity (considering boundary conditions)
-        if is_out_bounds or position_global_frame[0] < self.x_min + self.d0 * 0.5 or \
+        if boundary_guidance_active and (is_out_bounds or position_global_frame[0] < self.x_min + self.d0 * 0.5 or \
                 position_global_frame[0] > self.x_max - self.d0 * 0.5 or \
                 position_global_frame[1] < self.y_min + self.d0 * 0.5 or \
-                position_global_frame[1] > self.y_max - self.d0 * 0.5:
+                position_global_frame[1] > self.y_max - self.d0 * 0.5):
             # Near or beyond boundaries, select non-zero angular velocity
             # 1. Collect indices and values of all non-zero angular velocities
             available_w = [(i, w) for i, w in enumerate(self.w) if np.abs(w) > 0.1]
@@ -299,7 +332,7 @@ class ApfAgent:
         # Select acceleration
         a = copy.deepcopy(self.a)
 
-        if is_out_bounds:
+        if boundary_guidance_active and is_out_bounds:
             # Out-of-bounds case: Forcefully select corrective acceleration
             if np.dot(force_total, velocity) > 0:
                 a_idx = 0  # Need to decelerate

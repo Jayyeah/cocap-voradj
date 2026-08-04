@@ -1,159 +1,86 @@
 # CoCap Voronoi-Adjacency
 
-CoCap Voronoi-Adjacency 是一个多智能体强化学习项目，目标是在二维连续场景中完成多追捕者协同围捕，并在围捕后切换到 Voronoi coverage，使追捕者尽量形成稳定、均匀、低速的覆盖布局。
+这是一个面向多追捕者协同围捕与围捕后覆盖的多智能体强化学习项目。当前正式主线是 **CR-MS + VCT-LS + CE**：从 `4v1` scratch 训练，自动筛选并依次晋级到 `8v2`、`12v3`。
 
-当前整理版聚焦最新主线 A3：CenterSqrtN 归一化、hard coverage motion gate、几何后速度收敛判定，以及从 `4v1` 逐步扩展到大规模场景的课程学习。
+完整发布与复现说明见 [最终三合一发布说明](docs/CRMS_VCTLS_CE_FINAL_RELEASE_20260804_ZH.md)。
 
-## 项目结构
+## 当前正式主线
 
-GitHub 上传与日常同步方案见 [docs/GIT_WORKFLOW.zh-CN.md](docs/GIT_WORKFLOW.zh-CN.md)。
+- **VCT-LS**：友方 Voronoi 一阶通信；敌人和障碍物只按局部表面距离感知。
+- **CR-MS**：直接发现敌人的追捕者使用紧凑、速度加权的环形 mean-shift 围捕奖励。
+- **Support attraction**：未直接看到敌人、但与追捕邻居一跳连通的 agent，接收 `0.5` approach-only 吸引奖励与 `0.5` CE coverage 奖励。
+- **CE coverage**：使用 centroid-energy PBRS、严格中心误差成功条件，并保留 `CV<0.15` 作为宽松诊断。
+- **筛选顺序**：围捕/碰撞优先；之后依次比较 mix CE strict、pure CE strict，再比较 mix/pure CV。
 
+最终配置仅依赖已有 A3 基线和下列四个文件，不依赖 CE、VCT-LS、CR-MS 的过程实验配置：
 
-- `src/cocap_voradj/`：核心代码包。
-- `src/cocap_voradj/envs/`：CoCap 基础环境和 Voronoi-adjacency 环境。
-- `src/cocap_voradj/dynamics/`：pursuer、evader、robot、perception 等运动与感知基础模块。
-- `src/cocap_voradj/control/`：APF evader 控制器。
-- `src/cocap_voradj/models/`：IQN 策略/价值网络。
-- `src/cocap_voradj/training/`：trainer、replay buffer、配置加载和训练主循环。
-- `configs/experiments/`：实验配置文件。
-- `tools/`：训练监督、checkpoint 筛选、rollout、GIF 渲染工具。
-- `artifacts/`：精选实验产物，包括 A3 各阶段 best checkpoint、对应配置、summary 和少量 GIF。
-- `runs/`：本地训练输出目录，默认不纳入 git。
-
-## 当前主线
-
-A3 主线的核心配置：
-
-- `train_mode: voradj_mixed_coverage`：混合围捕与 coverage 训练。
-- `apf.version: v2_fixed`：使用修正后的 APF evader 控制逻辑。
-- `voradj.center_sqrt_n_normalization_enabled: true`：对子区域中心向量做随智能体数量变化的尺度归一化。
-- `coverage_motion_gate_mode: hard`：coverage 几何条件满足后才进入正式速度 settle 阶段。
-- `iqn.update_rule: distributional_iqn`：使用分布式 IQN 更新。
-- `output_root: runs`：训练输出统一写入 `runs/`。
-
-A3 已纳入的精选 artifact 为 stage1-stage6，每个阶段保留：
-
-- 选中的 best checkpoint；
-- checkpoint 对应训练配置；
-- `all_summaries.json` 和各场景 summary；
-- 每阶段 3 个 mix GIF，用于快速查看策略行为。
+```text
+configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/
+  common.yaml
+  stage1_4p1e1obs_scratch2m.yaml
+  stage2_8p2e2obs_700k.yaml
+  stage3_12p3e3obs_700k.yaml
+```
 
 ## 安装
 
-建议使用 Python 3.10+。依赖可按当前 `requirements.txt` 安装：
+要求 Python 3.10+。建议新建虚拟环境：
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -U pip
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e .
 ```
 
-无需安装包也可以直接运行：
+## 从 scratch 跑完整课程
+
+默认使用 `cuda:0` 训练、`cuda:1` screening/正式 20-rollout/10-GIF：
 
 ```bash
-PYTHONPATH=src python3 -c "import cocap_voradj; print(cocap_voradj.__version__)"
+python3 tools/supervise_crms_support_approach_curriculum.py \
+  --train-device cuda:0 \
+  --eval-device cuda:1
 ```
 
-## 训练
+脚本会执行：`4v1 2M scratch → 全程每 100k screening → 自动选优 → 8v2 700k → 自动选优 → 12v3 700k`。每个大阶段选出最佳模型后自动做对应 `20 rollout / 10 GIF`。渲染尾迹默认关闭，只有显式传入 `--draw-trails` 才开启。
 
-查看训练入口参数：
-
-```bash
-python3 train.py --help
-```
-
-启动 A3 `4v1` scratch 训练：
+只启动 stage1 训练：
 
 ```bash
 python3 train.py \
-  --config configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml \
-  --device cuda:1
+  --config configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/stage1_4p1e1obs_scratch2m.yaml \
+  --device cuda:0
 ```
 
-短训练 smoke test：
+## 随仓库提供的模型
 
-```bash
-python3 train.py --config configs/smoke/a3_4v1_cpu_smoke.yaml --device cpu
-```
+`artifacts/2026-08-04_crms_vctls_ce_final/` 只保留三个最优 checkpoint 和校验清单：
 
-训练输出会写入：
+- `stage1_4v1_step_2000000.pt`
+- `stage2_8v2_step_300000.pt`
+- `stage3_12v3_step_700000.pt`
 
-```text
-runs/<run_name>/
-  effective_config.yaml
-  episodes.jsonl
-  metrics.jsonl
-  checkpoints/
-```
+不包含实际 rollout、GIF、screening worker 输出或训练日志。注意：当前 CE-first 重排后 `8v2 300k` 优于 `500k`；现有 `12v3 700k` 的真实历史训练 lineage 使用当时选中的 `8v2 500k` warm start，文档没有把它伪装成从 300k 重训所得。
 
-## 课程训练
+## Zone 泛化分支
 
-A3 课程监督脚本：
+ZoneDemo 代码、测试、评估配置和 B1 adaptation 训练配置随仓库备份，但它目前只用于检查“敌人从外区进入内区”时的泛化性能，**不直接作为正式主线的训练任务场景**。正式三合一配置不启用 `zone_demo`，场景仍只有 `voradj` 与 `voradj_coverage`。
 
-```bash
-python3 tools/supervise_a3_curriculum.py --help
-```
-
-该脚本用于自动推进 A3 课程阶段、周期性筛选 checkpoint、启动正式 rollout，并把阶段 handoff 写入 `artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/`。
-
-## Rollout 与可视化
-
-并行 rollout，适合 CPU 多进程评估：
-
-```bash
-python3 tools/batch_rollouts_parallel.py \
-  --config configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml \
-  --checkpoint artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage1_4p1e1obs_step_2000000/step_2000000.pt \
-  --output-root artifacts/local_rollout_debug/stage1 \
-  --episodes 20 \
-  --gif-count 3 \
-  --scenarios mix coverage \
-  --device cuda:1 \
-  --workers 4
-```
-
-单进程 rollout：
-
-```bash
-python3 tools/batch_rollouts.py \
-  --config configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml \
-  --checkpoint artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage1_4p1e1obs_step_2000000/step_2000000.pt \
-  --output-root artifacts/local_rollout_debug/stage1_single \
-  --episodes 5 \
-  --gif-count 2 \
-  --scenarios mix \
-  --device cpu
-```
-
-输出目录会包含 `batch_summary.json`、episode 记录和 GIF 文件。
-
-## Checkpoint 筛选
-
-对某个训练 run 的 checkpoint 做快速筛选：
-
-```bash
-python3 tools/evaluate_checkpoints.py \
-  --run-dir runs/<run_name> \
-  --checkpoint-step 500000 \
-  --checkpoint-step 600000 \
-  --episodes 12 \
-  --max-steps 500 \
-  --device cuda:1 \
-  --output artifacts/local_screening/<run_name>.jsonl
-```
-
-## 调试命令
-
-检查配置能否加载并 reset 环境：
-
-```bash
-PYTHONPATH=src python3 -c "from cocap_voradj.training.trainer import load_config, set_global_config; from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv; cfg=load_config('configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml'); set_global_config(cfg); env=VorAdjEnv(cfg); obs=env.reset(); print(type(obs).__name__, len(obs), type(obs[0]).__name__)"
-```
-
-加载精选 checkpoint 并做一次 CPU forward：
-
-```bash
-PYTHONPATH=src python3 -c "from cocap_voradj.training.trainer import load_config, set_global_config; from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv; from cocap_voradj.training.replay import stack_obs; from cocap_voradj.models.iqn import CoCapIQN; cfg=load_config('configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml'); set_global_config(cfg); env=VorAdjEnv(cfg); obs=env.reset(); model=CoCapIQN.load('artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage1_4p1e1obs_step_2000000/step_2000000.pt', device='cpu'); out=model(stack_obs(obs, 'cpu'), num_tau=4, mode='voradj'); print(tuple(out['q_values'].shape))"
-```
+- 泛化评估配置：`configs/demos/zonedemo_v0/`
+- Zone B1 训练/对照配置：`configs/experiments/zonedemo_adapt_20260728/`
+- 批量评估：`tools/run_zonedemo_batch.py`
+- 训练监督：`tools/supervise_zonedemo_adapt.py`
+- 契约测试：`tests/test_zone_demo_contract.py`
 
 ## 上传边界
 
-当前整理版不包含核心内部文档，也不包含大规模训练输出。默认不追踪 `runs/`、`logs/`、大规模 `.jsonl/.log`、非精选 checkpoint 和大量 GIF；只保留 A3 当前精选 checkpoint 和少量可视化 GIF。
+本次 GitHub 同步包含核心代码、最终三合一配置、自动训练/筛选工具、必要测试与文档、三个最终 checkpoint，以及 Zone 泛化分支的代码/配置/测试。明确不包含：
+
+- `runs/`、`logs/`、W&B 本地文件；
+- 过程实验的 checkpoint、screening、rollout、GIF；
+- 最终三阶段的实际 rollout 和 GIF；
+- `.orig`、worker 临时文件和本机运行时注入配置。
+
+所有 GIF 工具默认关闭 faded trails；显式 `--draw-trails` 才开启。

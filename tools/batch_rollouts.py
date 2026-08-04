@@ -175,6 +175,28 @@ def trajectory_stats(frames: List[Dict[str, Any]]) -> Dict[str, float]:
     }
 
 
+def coverage_cv_stats(frames: List[Dict[str, Any]], threshold: float = 0.15) -> Dict[str, float]:
+    values: List[float] = []
+    for frame in frames:
+        if str(frame.get("phase", "")) != "coverage":
+            continue
+        try:
+            value = float(frame.get("voronoi_cv", float("nan")))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    final_cv = float(values[-1]) if values else float("nan")
+    best_cv = float(min(values)) if values else float("nan")
+    return {
+        "coverage_cv015_threshold": float(threshold),
+        "final_voronoi_cv": final_cv,
+        "best_voronoi_cv": best_cv,
+        "coverage_cv015_success": float(bool(math.isfinite(final_cv) and final_cv <= threshold)),
+        "coverage_cv015_best_success": float(bool(math.isfinite(best_cv) and best_cv <= threshold)),
+    }
+
+
 def settle_summary_for_scenario(scenario: str, phase_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
     if scenario in {"ab", "ba"}:
         return next((item for item in phase_summaries if str(item.get("phase")) == "coverage"), {})
@@ -207,8 +229,17 @@ def summarize(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "episode_success_rate": rate("episode_success_bool"),
         "collision_rate": rate("collision_event"),
         "soft_oob_rate": rate("soft_oob_event"),
+        "zone_demo_episode_rate": rate("zone_demo_enabled"),
+        "zone_breach_rate": rate("zone_breach_event"),
+        "zone_entered_inner_rate": rate("zone_any_evader_entered_inner"),
+        "zone_exit_after_entry_rate": rate("zone_exit_after_entry_event"),
+        "zone_pursuer_left_inner_rate": rate("zone_pursuer_left_inner_event"),
         "coverage_geometric_rate": rate("coverage_geometric_success"),
         "coverage_settled_rate": rate("coverage_settled_success"),
+        "coverage_cv015_rate": rate("coverage_cv015_success"),
+        "coverage_cv015_best_rate": rate("coverage_cv015_best_success"),
+        "avg_final_voronoi_cv": mean_value("final_voronoi_cv"),
+        "avg_best_voronoi_cv": mean_value("best_voronoi_cv"),
         "coverage_settle_timeout_rate": rate("coverage_settle_timeout"),
         "avg_steps": mean_value("steps"),
         "avg_rollout_wall_seconds": mean_value("rollout_wall_seconds"),
@@ -256,6 +287,8 @@ def main() -> None:
     parser.add_argument("--draw-neighbor-edges", dest="draw_neighbor_edges", action="store_true", default=False)
     parser.add_argument("--no-neighbor-edges", dest="draw_neighbor_edges", action="store_false")
     parser.add_argument("--draw-trails", action="store_true", default=False)
+    parser.add_argument("--draw-sensing-circles", dest="draw_sensing_circles", action="store_true", default=False)
+    parser.add_argument("--no-sensing-circles", dest="draw_sensing_circles", action="store_false")
     args = parser.parse_args()
 
     output_root = Path(args.output_root)
@@ -297,6 +330,14 @@ def main() -> None:
                 rollout_wall_seconds = time.perf_counter() - episode_wall_start
                 final_status = frames[-1].get("display_status", {}) if frames else {}
                 settle_summary = settle_summary_for_scenario(scenario, phase_summaries)
+                zone_summary = next(
+                    (
+                        item.get("zone_metrics", {}) or {}
+                        for item in reversed(phase_summaries)
+                        if (item.get("zone_metrics", {}) or {}).get("zone_demo_enabled", False)
+                    ),
+                    {},
+                )
                 record = {
                     "scenario": scenario,
                     "seed": seed,
@@ -314,7 +355,13 @@ def main() -> None:
                     "coverage_init_source": coverage_init_source,
                     "episode_end_mean_speed": float(settle_summary.get("episode_end_mean_speed", 0.0)),
                     "episode_end_max_speed": float(settle_summary.get("episode_end_max_speed", 0.0)),
+                    "zone_demo_enabled": bool(zone_summary.get("zone_demo_enabled", False)),
+                    "zone_breach_event": bool(zone_summary.get("zone_breach_event", False)),
+                    "zone_any_evader_entered_inner": bool(zone_summary.get("zone_any_evader_entered_inner", False)),
+                    "zone_exit_after_entry_event": bool(zone_summary.get("zone_exit_after_entry_event", False)),
+                    "zone_pursuer_left_inner_event": bool(zone_summary.get("zone_pursuer_left_inner_event", False)),
                     "phase_summaries": phase_summaries,
+                    **coverage_cv_stats(frames),
                     **rotation_stats(frames),
                     **trajectory_stats(frames),
                 }
@@ -330,6 +377,8 @@ def main() -> None:
                         scenario,
                         bool(args.draw_neighbor_edges),
                         bool(args.draw_trails),
+                        bool(args.draw_sensing_circles),
+                        scenario == "coverage",
                     )
                     write_outputs(scenario_dir, scenario, seed, Path(args.config), Path(args.checkpoint), frames, phase_summaries, render_record)
                     if scenario == "coverage" and coverage_init_source:

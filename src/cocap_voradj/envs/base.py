@@ -313,6 +313,13 @@ class CoCapEnv:
     def _clip_and_kill_boundary(self, robot) -> None:
         if not (self.enforce_hard_boundary or self.boundary_collision_death):
             return
+        zone_cfg = self.config.get("zone_demo", {}) or {}
+        if (
+            bool(zone_cfg.get("enabled", False))
+            and bool(zone_cfg.get("evader_ignore_boundary_death", True))
+            and isinstance(robot, Evader)
+        ):
+            return
         if not self._touch_boundary(robot):
             return
         r = float(getattr(robot, "r", 0.0))
@@ -759,6 +766,159 @@ class CoCapEnv:
         before_d = np.linalg.norm(before_p[i] - target)
         after_d = np.linalg.norm(after_p[i] - target)
         return float(np.clip(before_d - after_d, -float(self.reward_cfg.get("mean_shift_progress_clip", 3.0)), float(self.reward_cfg.get("mean_shift_progress_clip", 3.0))))
+
+    def _capture_reward_mode(self) -> str:
+        return str(self.reward_cfg.get("capture_reward_mode", "legacy")).strip().lower()
+
+    def _ring_importance_ms_enabled(self) -> bool:
+        return self._capture_reward_mode() in {"ring_importance_ms_v0", "ring_ms_v0", "cr_ms_v0"}
+
+    def _ring_ms_radii(self, i: int, target_id: int) -> Tuple[float, float, float]:
+        pursuer_radius = float(getattr(self.pursuers[i], "r", 0.0)) if 0 <= i < len(self.pursuers) else 0.0
+        evader_radius = float(getattr(self.evaders[target_id], "r", 0.0)) if 0 <= target_id < len(self.evaders) else pursuer_radius
+        default_inner_surface = float(self.reward_cfg.get("d_safe", 4.0)) + float(self.reward_cfg.get("ring_ms_inner_extra_margin", 0.5))
+        inner_surface = float(self.reward_cfg.get("ring_ms_inner_surface_radius", default_inner_surface))
+        inner_center = float(self.reward_cfg.get("ring_ms_inner_center_radius", inner_surface + pursuer_radius + evader_radius))
+        preferred = float(self.reward_cfg.get("ring_ms_preferred_center_radius", self.reward_cfg.get("r_e", 8.0)))
+        outer = float(self.reward_cfg.get("ring_ms_outer_center_radius", preferred + float(self.reward_cfg.get("ring_ms_outer_margin", 2.5))))
+        if outer <= inner_center:
+            outer = inner_center + max(1.0, float(self.reward_cfg.get("ring_ms_cell_size", 1.5)))
+        preferred = float(np.clip(preferred, inner_center + 1e-6, outer - 1e-6))
+        return inner_center, preferred, outer
+
+    def _ring_ms_angle_weight(self, candidate: np.ndarray, evader_pos: np.ndarray, evader_velocity: np.ndarray) -> float:
+        velocity = np.asarray(evader_velocity, dtype=float)
+        speed = float(np.linalg.norm(velocity))
+        static_threshold = float(self.reward_cfg.get("ring_ms_velocity_static_threshold", 0.30))
+        full_threshold = float(self.reward_cfg.get("ring_ms_velocity_full_threshold", 1.00))
+        if speed <= static_threshold or full_threshold <= static_threshold:
+            return 1.0
+        rel = np.asarray(candidate, dtype=float) - np.asarray(evader_pos, dtype=float)
+        dist = float(np.linalg.norm(rel))
+        if dist <= 1e-9:
+            return 1.0
+        gate = float(np.clip((speed - static_threshold) / max(full_threshold - static_threshold, 1e-9), 0.0, 1.0))
+        cos_theta = float(np.dot(rel / dist, velocity / max(speed, 1e-9)))
+        alpha = float(self.reward_cfg.get("ring_ms_angle_alpha", 0.25))
+        w_min = float(self.reward_cfg.get("ring_ms_angle_weight_min", 0.75))
+        w_max = float(self.reward_cfg.get("ring_ms_angle_weight_max", 1.25))
+        return float(np.clip(1.0 + alpha * gate * cos_theta, w_min, w_max))
+
+    def _ring_ms_point_blocked_by_obstacle(self, point: np.ndarray) -> bool:
+        margin = float(self.reward_cfg.get("ring_ms_obstacle_margin", self.reward_cfg.get("mean_shift_obstacle_margin", 2.0)))
+        return any(np.linalg.norm(point - np.array([o.x, o.y], dtype=float)) <= o.r + margin for o in self.obstacles)
+
+    def _ring_ms_point_in_bounds(self, point: np.ndarray) -> bool:
+        margin = float(self.reward_cfg.get("ring_ms_boundary_margin", self.reward_cfg.get("mean_shift_boundary_margin", 0.5)))
+        return bool(margin <= point[0] <= self.width - margin and margin <= point[1] <= self.height - margin)
+
+    @staticmethod
+    def _angle_delta(a: float, b: float) -> float:
+        return float((a - b + np.pi) % (2.0 * np.pi) - np.pi)
+
+    def _ring_ms_candidate_occupied(
+        self,
+        candidate: np.ndarray,
+        evader_pos: np.ndarray,
+        candidate_radius: float,
+        pursuer_index: int,
+        before_p: np.ndarray,
+        preferred_radius: float,
+    ) -> bool:
+        mode = str(self.reward_cfg.get("ring_ms_occupancy_mode", "cartesian_disk")).strip().lower()
+        if mode in {"phase", "phase_sector", "angular"}:
+            width = float(self.reward_cfg.get("ring_ms_phase_occupancy_width", np.deg2rad(30.0)))
+            if width > np.pi:
+                width = float(np.deg2rad(width))
+            radial_margin = float(self.reward_cfg.get("ring_ms_phase_occupancy_radial_margin", 4.0))
+            candidate_phase = float(np.arctan2(candidate[1] - evader_pos[1], candidate[0] - evader_pos[0]))
+            for j, pursuer in enumerate(self.pursuers):
+                if j == pursuer_index or pursuer.deactivated:
+                    continue
+                rel = before_p[j] - evader_pos
+                radius = float(np.linalg.norm(rel))
+                if abs(radius - preferred_radius) > radial_margin:
+                    continue
+                phase = float(np.arctan2(rel[1], rel[0]))
+                if abs(self._angle_delta(candidate_phase, phase)) <= width:
+                    return True
+            return False
+        occupancy_radius = float(self.reward_cfg.get("ring_ms_occupancy_radius", self.reward_cfg.get("mean_shift_occupancy_radius", 4.0)))
+        for j, pursuer in enumerate(self.pursuers):
+            if j != pursuer_index and not pursuer.deactivated and np.linalg.norm(candidate - before_p[j]) <= occupancy_radius:
+                return True
+        return False
+
+    def _ring_ms_target(
+        self,
+        i: int,
+        target_id: int,
+        before_p: np.ndarray,
+        before_e: np.ndarray,
+        before_evader_velocities: np.ndarray,
+    ) -> Optional[np.ndarray]:
+        epos = np.asarray(before_e[target_id], dtype=float)
+        ppos = np.asarray(before_p[i], dtype=float)
+        inner_radius, preferred_radius, outer_radius = self._ring_ms_radii(i, target_id)
+        cell = float(self.reward_cfg.get("ring_ms_cell_size", self.reward_cfg.get("mean_shift_cell_size", 1.5)))
+        radial_sigma = max(float(self.reward_cfg.get("ring_ms_radial_sigma", 2.0)), 1e-6)
+        xs = np.arange(max(0.5, epos[0] - outer_radius), min(self.width - 0.5, epos[0] + outer_radius) + 0.5 * cell, cell)
+        ys = np.arange(max(0.5, epos[1] - outer_radius), min(self.height - 0.5, epos[1] + outer_radius) + 0.5 * cell, cell)
+        velocity = np.asarray(before_evader_velocities[target_id], dtype=float) if len(before_evader_velocities) > target_id else np.zeros(2, dtype=float)
+        candidates: List[np.ndarray] = []
+        weights: List[float] = []
+        radii: List[float] = []
+        for x in xs:
+            for y in ys:
+                candidate = np.array([x, y], dtype=float)
+                radius = float(np.linalg.norm(candidate - epos))
+                if radius < inner_radius or radius > outer_radius:
+                    continue
+                if not self._ring_ms_point_in_bounds(candidate) or self._ring_ms_point_blocked_by_obstacle(candidate):
+                    continue
+                if self._ring_ms_candidate_occupied(candidate, epos, radius, i, before_p, preferred_radius):
+                    continue
+                radial_w = float(np.exp(-((radius - preferred_radius) ** 2) / (2.0 * radial_sigma ** 2)))
+                angle_w = self._ring_ms_angle_weight(candidate, epos, velocity)
+                weight = radial_w * angle_w
+                if weight <= 0.0:
+                    continue
+                candidates.append(candidate)
+                weights.append(weight)
+                radii.append(radius)
+        if not weights:
+            return None
+        candidate_arr = np.asarray(candidates, dtype=float)
+        weight_arr = np.asarray(weights, dtype=float)
+        raw = np.average(candidate_arr, axis=0, weights=weight_arr)
+        direction = raw - epos
+        norm = float(np.linalg.norm(direction))
+        if norm <= 1e-6:
+            direction = epos - ppos
+            norm = max(float(np.linalg.norm(direction)), 1e-6)
+        target = epos + preferred_radius * direction / norm
+        if self._ring_ms_point_in_bounds(target) and not self._ring_ms_point_blocked_by_obstacle(target):
+            return target.astype(float)
+        beta = float(self.reward_cfg.get("ring_ms_fallback_radial_penalty", 0.10))
+        scores = weight_arr - beta * np.abs(np.asarray(radii, dtype=float) - preferred_radius)
+        return candidate_arr[int(np.argmax(scores))].astype(float)
+
+    def _ring_importance_ms_reward(
+        self,
+        i: int,
+        target_id: int,
+        before_p: np.ndarray,
+        before_e: np.ndarray,
+        before_evader_velocities: np.ndarray,
+        after_p: np.ndarray,
+    ) -> float:
+        target = self._ring_ms_target(i, target_id, before_p, before_e, before_evader_velocities)
+        if target is None:
+            return 0.0
+        before_d = float(np.linalg.norm(before_p[i] - target))
+        after_d = float(np.linalg.norm(after_p[i] - target))
+        clip = float(self.reward_cfg.get("ring_ms_progress_clip", self.reward_cfg.get("mean_shift_progress_clip", 3.0)))
+        return float(np.clip(before_d - after_d, -clip, clip))
 
     def _front_reward(self, i: int, target_id: int, after_p: np.ndarray, after_e: np.ndarray) -> float:
         evader = self.evaders[target_id]

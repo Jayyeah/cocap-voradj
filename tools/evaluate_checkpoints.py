@@ -96,13 +96,20 @@ def evaluate_episode(
         actions: List[Optional[int]] = [None] * len(obs_list)
         if active:
             batch = stack_obs([obs_list[idx] for idx in active], device)
-            selected = model.act(batch, mode="voradj", epsilon=0.0).detach().cpu().tolist()
+            selected = model.act(
+                batch,
+                mode="voradj",
+                epsilon=0.0,
+                deterministic_quantiles=True,
+            ).detach().cpu().tolist()
             for idx, action in zip(active, selected):
                 actions[idx] = int(action)
 
         evader_actions: List[Optional[int]] = []
         if env.evaders:
             set_global_config(cfg)
+            if hasattr(env, "configure_evader_apf_agents"):
+                env.configure_evader_apf_agents(apf_agents)
             for idx, evader_obs in enumerate(env.get_evader_observations_for_apf()):
                 evader_actions.append(None if evader_obs is None else int(apf_agents[idx].act(evader_obs)))
         result = env.step(actions, evader_actions)
@@ -186,6 +193,7 @@ def main() -> None:
                         "checkpoint": str(checkpoint),
                         "scenario": scenario,
                         "max_steps": args.max_steps,
+                        "policy_quantile_mode": "fixed_midpoint_32",
                         "summary": summarize(records),
                         "episodes": records,
                     }

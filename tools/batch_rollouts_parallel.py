@@ -127,6 +127,11 @@ def main() -> int:
     parser.add_argument("--capture-evaders", type=int, default=None, help="Override capture/mix evader count; defaults to env.num_evaders from the config.")
     parser.add_argument("--max-gif-frames", type=int, default=1)
     parser.add_argument("--frame-duration-ms", type=int, default=100)
+    parser.add_argument("--draw-neighbor-edges", dest="draw_neighbor_edges", action="store_true", default=False)
+    parser.add_argument("--no-neighbor-edges", dest="draw_neighbor_edges", action="store_false")
+    parser.add_argument("--draw-trails", action="store_true", default=False)
+    parser.add_argument("--draw-sensing-circles", dest="draw_sensing_circles", action="store_true", default=False)
+    parser.add_argument("--no-sensing-circles", dest="draw_sensing_circles", action="store_false")
     args = parser.parse_args()
     parallel_wall_start = time.perf_counter()
 
@@ -188,6 +193,12 @@ def main() -> int:
         ]
         if args.capture_evaders is not None:
             cmd.extend(["--capture-evaders", str(int(args.capture_evaders))])
+        if bool(args.draw_neighbor_edges):
+            cmd.append("--draw-neighbor-edges")
+        if bool(args.draw_trails):
+            cmd.append("--draw-trails")
+        if bool(args.draw_sensing_circles):
+            cmd.append("--draw-sensing-circles")
         handle = log_path.open("wb")
         proc = subprocess.Popen(cmd, cwd=ROOT, stdout=handle, stderr=subprocess.STDOUT)
         processes.append((worker_idx, worker_root, log_path, handle, proc))

@@ -29,7 +29,7 @@ if str(SRC) not in sys.path:
 
 from cocap_voradj.models.iqn import CoCapIQN
 from cocap_voradj.training.replay import stack_obs
-from cocap_voradj.training.trainer import set_global_config
+from cocap_voradj.training.trainer import load_config as load_training_config, set_global_config
 from cocap_voradj.envs.voronoi_adjacency import SiteKey, VorAdjEnv
 from tools.render_coverage_voronoi_gifs import area_cv, clipped_voronoi_cells
 from cocap_voradj.control.apf import ApfAgent
@@ -43,12 +43,12 @@ PP_EDGE_COLOR = "#6f6f6f"
 PE_EDGE_COLOR = "#d62728"
 OBSTACLE_COLOR = "#555555"
 BOUNDARY_COLOR = "#222222"
+SENSING_CIRCLE_COLOR = "#9467bd"
 
 
 def load_config(path: Path) -> Dict[str, Any]:
     config_path = path / "effective_config.yaml" if path.is_dir() else path
-    with config_path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+    return load_training_config(str(config_path))
 
 
 def frame_ids(max_len: int, max_frames: int) -> List[int]:
@@ -59,8 +59,20 @@ def frame_ids(max_len: int, max_frames: int) -> List[int]:
     return sorted(set(np.linspace(0, max_len - 1, max_frames, dtype=int).tolist()))
 
 
-def scenario_config(base: Dict[str, Any], num_evaders: int, mix_mode: bool = False) -> Dict[str, Any]:
+def deep_update(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    out = copy.deepcopy(base)
+    for key, value in (override or {}).items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = deep_update(out[key], value)
+        else:
+            out[key] = copy.deepcopy(value)
+    return out
+
+
+def scenario_config(base: Dict[str, Any], num_evaders: int, mix_mode: bool = False, task_name: str = "voradj") -> Dict[str, Any]:
     cfg = copy.deepcopy(base)
+    task_override = ((base.get("tasks", {}) or {}).get(task_name, {}) or {})
+    cfg = deep_update(cfg, task_override)
     cfg["device"] = "cpu"
     cfg.setdefault("env", {})["num_evaders"] = int(num_evaders)
     if mix_mode:
@@ -107,6 +119,26 @@ def snapshot_voronoi_cv(keys: List[SiteKey], sites: np.ndarray, bounds: Tuple[fl
     return area_cv(pursuer_cells)
 
 
+def snapshot_sensing_metadata(env: VorAdjEnv) -> Dict[str, Any]:
+    voradj_cfg = getattr(env, "voradj_cfg", {}) or {}
+    per_cfg = getattr(env, "per_cfg", {}) or {}
+    vct_enabled = bool(env._vct_ls_enabled()) if hasattr(env, "_vct_ls_enabled") else False
+    if vct_enabled and hasattr(env, "_vct_ls_sensing_radius"):
+        enemy_radius = float(env._vct_ls_sensing_radius("enemy"))
+        obstacle_radius = float(env._vct_ls_sensing_radius("obstacle"))
+    else:
+        fallback = float(per_cfg.get("range", voradj_cfg.get("enemy_sensing_radius", 0.0)) or 0.0)
+        enemy_radius = float(voradj_cfg.get("enemy_sensing_radius", fallback) or fallback)
+        obstacle_radius = float(voradj_cfg.get("obstacle_sensing_radius", fallback) or fallback)
+    surface_sensing = bool(env._vct_ls_use_surface_distance()) if vct_enabled and hasattr(env, "_vct_ls_use_surface_distance") else False
+    return {
+        "vct_ls_enabled": bool(vct_enabled),
+        "enemy_sensing_radius": enemy_radius,
+        "obstacle_sensing_radius": obstacle_radius,
+        "surface_sensing": bool(surface_sensing),
+    }
+
+
 def snapshot_bounds(snapshot: Dict[str, Any]) -> Tuple[float, float, float, float]:
     width = float(snapshot.get("width", 55.0))
     height = float(snapshot.get("height", width))
@@ -114,13 +146,29 @@ def snapshot_bounds(snapshot: Dict[str, Any]) -> Tuple[float, float, float, floa
     return (float(raw[0]), float(raw[1]), float(raw[2]), float(raw[3]))
 
 
+def snapshot_display_bounds(snapshot: Dict[str, Any]) -> Tuple[float, float, float, float]:
+    zone = snapshot.get("zone", {}) or {}
+    if bool(zone.get("zone_demo_enabled", False)):
+        raw = zone.get("zone_outer_bounds", snapshot.get("bounds", [0.0, snapshot.get("width", 55.0), 0.0, snapshot.get("height", 55.0)]))
+        return (float(raw[0]), float(raw[1]), float(raw[2]), float(raw[3]))
+    return snapshot_bounds(snapshot)
+
+
 def in_snapshot_bounds(snapshot: Dict[str, Any], x: float, y: float, pad: float = 0.0) -> bool:
-    xl, xr, yb, yt = snapshot_bounds(snapshot)
+    xl, xr, yb, yt = snapshot_display_bounds(snapshot)
     return bool((xl - pad) <= float(x) <= (xr + pad) and (yb - pad) <= float(y) <= (yt + pad))
 
 
 def settle_enabled(env: VorAdjEnv) -> bool:
     return bool((getattr(env, "reward_cfg", {}) or {}).get("coverage_settle_enabled", False))
+
+
+def snapshot_voronoi_data(env: VorAdjEnv, phase: str) -> Dict[str, Any]:
+    if phase == "coverage":
+        return env._coverage_voronoi_map()
+    if phase == "capture":
+        return env._capture_voronoi_map()
+    return env._voronoi_map()
 
 
 def coverage_success_from_record(record: Dict[str, Any], env: VorAdjEnv) -> bool:
@@ -148,7 +196,7 @@ def settle_fields_from_record(record: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, local_step: int, global_step: int) -> Dict[str, Any]:
-    data = env._voronoi_map()
+    data = snapshot_voronoi_data(env, phase)
     labels = env._task_labels_from_map(data, update_effective=False)
     bounds = env._bounds()
     keys: List[SiteKey] = list(data.get("keys", []))
@@ -156,6 +204,15 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
     record = env.episode_record(task=scenario)
     voradj_metrics = record.get("voradj_metrics", {}) or {}
     coverage_success = coverage_success_from_record(record, env)
+    sensing = snapshot_sensing_metadata(env)
+    ce_targets = []
+    if phase == "coverage" and str((getattr(env, "reward_cfg", {}) or {}).get("coverage_objective_version", "legacy")) == "centroid_energy_v0":
+        coverage_data = env._coverage_voronoi_map()
+        centroids = coverage_data.get("centroids", {}) or {}
+        for key, point in centroids.items():
+            if key[0] != "pursuer":
+                continue
+            ce_targets.append({"id": int(key[1]), "x": float(point[0]), "y": float(point[1])})
     return {
         "scenario": scenario,
         "phase": phase,
@@ -165,6 +222,7 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
         "width": float(env.width),
         "height": float(env.height),
         "bounds": [float(bounds[0]), float(bounds[1]), float(bounds[2]), float(bounds[3])],
+        "zone": record.get("zone_metrics", {}),
         "obstacles": [
             {"x": float(obstacle.x), "y": float(obstacle.y), "r": float(obstacle.r)}
             for obstacle in env.obstacles
@@ -179,6 +237,9 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
                 "collision": bool(p.collision),
                 "boundary_collision": bool(getattr(p, "boundary_collision", False)),
                 "is_pursuing": bool(getattr(p, "is_pursuing", False)),
+                "sensing_radius": float(sensing["enemy_sensing_radius"]),
+                "enemy_sensing_radius": float(sensing["enemy_sensing_radius"]),
+                "obstacle_sensing_radius": float(sensing["obstacle_sensing_radius"]),
                 "task_label": str(labels[i]) if i < len(labels) else "inactive",
             }
             for i, p in enumerate(env.pursuers)
@@ -200,6 +261,8 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
         ],
         "edges": unique_edges(data),
         "voronoi_cv": float(snapshot_voronoi_cv(keys, sites, bounds)),
+        "sensing": sensing,
+        "ce_targets": ce_targets,
         "capture_success": bool(record.get("captured", False)),
         "coverage_success": coverage_success,
         **settle_fields_from_record(record),
@@ -215,13 +278,20 @@ def act_pursuers(model: CoCapIQN, obs_list: List[Optional[Dict[str, np.ndarray]]
     if not active:
         return actions
     batch = stack_obs([obs_list[idx] for idx in active], device)
-    selected = model.act(batch, mode="voradj", epsilon=0.0).detach().cpu().tolist()
+    selected = model.act(
+        batch,
+        mode="voradj",
+        epsilon=0.0,
+        deterministic_quantiles=True,
+    ).detach().cpu().tolist()
     for idx, action in zip(active, selected):
         actions[idx] = int(action)
     return actions
 
 
 def act_evaders(env: VorAdjEnv, apf_agents: List[ApfAgent]) -> List[Optional[int]]:
+    if hasattr(env, "configure_evader_apf_agents"):
+        env.configure_evader_apf_agents(apf_agents)
     actions: List[Optional[int]] = []
     for idx, evader_obs in enumerate(env.get_evader_observations_for_apf()):
         actions.append(None if evader_obs is None else int(apf_agents[idx].act(evader_obs)))
@@ -266,6 +336,7 @@ def rollout_phase(
     final_positions = [[float(p.x), float(p.y)] for p in env.pursuers]
     final_active = [bool(not p.deactivated) for p in env.pursuers]
     voradj_metrics = record.get("voradj_metrics", {}) or {}
+    zone_metrics = record.get("zone_metrics", {}) or {}
     capture_success = bool(record.get("captured", False))
     coverage_success = coverage_success_from_record(record, env)
     phase_success = bool(capture_success if phase == "capture" else coverage_success)
@@ -286,6 +357,7 @@ def rollout_phase(
         "collision_event": bool(record.get("collision_event", False)),
         "soft_oob_event": bool(record.get("soft_boundary_out_of_bounds_event", False)),
         **settle_fields_from_record(record),
+        "zone_metrics": zone_metrics,
     }
     return frames, summary, final_positions, final_active, global_step_start + len(frames) - 1
 
@@ -324,6 +396,7 @@ def rollout_mix(
             break
     record = env.episode_record(task=scenario)
     voradj_metrics = record.get("voradj_metrics", {}) or {}
+    zone_metrics = record.get("zone_metrics", {}) or {}
     capture_success = bool(record.get("captured", False))
     coverage_success = coverage_success_from_record(record, env)
     capture_timed_out = bool((not capture_success) and env.episode_step >= int(max_steps))
@@ -344,6 +417,7 @@ def rollout_mix(
         "soft_oob_event": bool(record.get("soft_boundary_out_of_bounds_event", False)),
         "post_capture_window_expired": bool(voradj_metrics.get("post_capture_window_expired", False)),
         **settle_fields_from_record(record),
+        "zone_metrics": zone_metrics,
     }]
     return frames, summary
 
@@ -423,19 +497,19 @@ def rollout_scenario(
     capture_evaders: int = 1,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     if scenario == "capture":
-        cfg = scenario_config(base_cfg, capture_evaders)
+        cfg = scenario_config(base_cfg, capture_evaders, task_name="voradj")
         frames, summary, *_ = rollout_phase(model, cfg, scenario, "capture", 0, seed, device, capture_max_steps, 0)
         summaries = [summary]
         apply_display_status(frames, scenario, summaries)
         return frames, summaries
     if scenario == "coverage":
-        cfg = scenario_config(base_cfg, 0)
+        cfg = scenario_config(base_cfg, 0, task_name="voradj_coverage")
         frames, summary, *_ = rollout_phase(model, cfg, scenario, "coverage", 0, seed, device, coverage_max_steps, 0)
         summaries = [summary]
         apply_display_status(frames, scenario, summaries)
         return frames, summaries
     if scenario == "mix":
-        cfg = scenario_config(base_cfg, capture_evaders, mix_mode=True)
+        cfg = scenario_config(base_cfg, capture_evaders, mix_mode=True, task_name="voradj")
         frames, summaries = rollout_mix(model, cfg, scenario, seed, device, max_steps)
         apply_display_status(frames, scenario, summaries)
         return frames, summaries
@@ -449,7 +523,8 @@ def rollout_scenario(
     active: Optional[List[bool]] = None
     global_step = 0
     for phase_index, phase in enumerate(phases):
-        cfg = scenario_config(base_cfg, 0 if phase == "coverage" else capture_evaders)
+        task_name = "voradj_coverage" if phase == "coverage" else "voradj"
+        cfg = scenario_config(base_cfg, 0 if phase == "coverage" else capture_evaders, task_name=task_name)
         limit = coverage_max_steps if phase == "coverage" else capture_max_steps
         frames, summary, positions, active, global_step = rollout_phase(
             model,
@@ -552,6 +627,47 @@ def draw_adjacency_edges(axis, snapshot: Dict[str, Any]) -> None:
             axis.plot(xs, ys, color=PP_EDGE_COLOR, linewidth=1.0, linestyle="--", alpha=0.62, zorder=2.4)
 
 
+def draw_sensing_circle_overlays(axis, snapshot: Dict[str, Any]) -> None:
+    sensing = snapshot.get("sensing", {}) or {}
+    default_enemy_radius = float(sensing.get("enemy_sensing_radius", 0.0) or 0.0)
+    default_obstacle_radius = float(sensing.get("obstacle_sensing_radius", default_enemy_radius) or default_enemy_radius)
+    for pursuer in snapshot.get("pursuers", []):
+        if not bool(pursuer.get("active", False)):
+            continue
+        x = float(pursuer["x"])
+        y = float(pursuer["y"])
+        if not in_snapshot_bounds(snapshot, x, y):
+            continue
+        enemy_radius = float(pursuer.get("sensing_radius", pursuer.get("enemy_sensing_radius", default_enemy_radius)) or default_enemy_radius)
+        obstacle_radius = float(pursuer.get("obstacle_sensing_radius", default_obstacle_radius) or default_obstacle_radius)
+        if enemy_radius > 0.0:
+            axis.add_patch(
+                Circle(
+                    (x, y),
+                    enemy_radius,
+                    fill=False,
+                    edgecolor=SENSING_CIRCLE_COLOR,
+                    linewidth=0.9,
+                    linestyle="-",
+                    alpha=0.26,
+                    zorder=2.7,
+                )
+            )
+        if obstacle_radius > 0.0 and abs(obstacle_radius - enemy_radius) > 1e-6:
+            axis.add_patch(
+                Circle(
+                    (x, y),
+                    obstacle_radius,
+                    fill=False,
+                    edgecolor=OBSTACLE_COLOR,
+                    linewidth=0.8,
+                    linestyle="--",
+                    alpha=0.22,
+                    zorder=2.65,
+                )
+            )
+
+
 
 def render_frame(
     frames: List[Dict[str, Any]],
@@ -560,6 +676,8 @@ def render_frame(
     label: str,
     draw_neighbor_edges: bool,
     draw_trails: bool,
+    draw_sensing_circles: bool,
+    draw_ce_targets: bool = True,
 ) -> np.ndarray:
     snapshot = frames[frame_idx]
     width = float(snapshot.get("width", 55.0))
@@ -573,12 +691,32 @@ def render_frame(
     axis.set_aspect("equal", adjustable="box")
     axis.grid(True, linewidth=0.25, color="#d0d0d0", zorder=0)
     axis.add_patch(Rectangle((xl, yb), xr - xl, yt - yb, fill=False, edgecolor=BOUNDARY_COLOR, linewidth=1.4, zorder=6))
+    zone = snapshot.get("zone", {}) or {}
+    if bool(zone.get("zone_demo_enabled", False)):
+        outer = zone.get("zone_outer_bounds", [xl, xr, yb, yt])
+        inner = zone.get("zone_inner_bounds", [xl, xr, yb, yt])
+        oxl, oxr, oyb, oyt = [float(v) for v in outer]
+        ixl, ixr, iyb, iyt = [float(v) for v in inner]
+        axis.set_xlim(oxl, oxr)
+        axis.set_ylim(oyb, oyt)
+        axis.add_patch(Rectangle((oxl, oyb), oxr - oxl, oyt - oyb, fill=False, edgecolor="#777777", linewidth=1.0, linestyle="--", zorder=5.5))
+        axis.add_patch(Rectangle((ixl, iyb), ixr - ixl, iyt - iyb, fill=False, edgecolor=BOUNDARY_COLOR, linewidth=1.6, zorder=6.2))
     for obstacle in snapshot.get("obstacles", []):
         axis.add_patch(Circle((float(obstacle["x"]), float(obstacle["y"])), float(obstacle["r"]), color=OBSTACLE_COLOR, alpha=0.38, zorder=4))
 
     draw_voronoi(axis, snapshot)
+    for target in (snapshot.get("ce_targets", []) if draw_ce_targets else []):
+        x = float(target["x"])
+        y = float(target["y"])
+        if not in_snapshot_bounds(snapshot, x, y):
+            continue
+        axis.scatter(x, y, s=72, color="#111111", linewidth=1.4, marker="x", zorder=6.5)
+        axis.text(x + 0.8, y - 1.8, f"C{int(target['id'])}", fontsize=7.5, color="#111111", zorder=8)
     if draw_neighbor_edges:
         draw_adjacency_edges(axis, snapshot)
+
+    if draw_sensing_circles:
+        draw_sensing_circle_overlays(axis, snapshot)
 
     if draw_trails:
         for pursuer in snapshot.get("pursuers", []):
@@ -614,10 +752,15 @@ def render_frame(
     capture_status = str(status.get("capture_success", status_text(bool(snapshot.get("capture_success", False)))))
     coverage_status = str(status.get("coverage_success", status_text(bool(snapshot.get("coverage_success", False)))))
     episode_status = str(status.get("episode_success", status_text(bool(snapshot.get("episode_success", False)))))
+    ce_rms = float(snapshot.get("ce_center_rms", float("nan")))
+    ce_max = float(snapshot.get("ce_center_max", float("nan")))
+    ce_text = ""
+    if math.isfinite(ce_rms) and math.isfinite(ce_max):
+        ce_text = f" | E_rms {ce_rms:.4f} | E_max {ce_max:.4f}"
     axis.set_title(
         f"{label} | phase {snapshot.get('phase')} | step {int(snapshot.get('global_step', 0))}/{int(frames[-1].get('global_step', len(frames) - 1))}\n"
         f"capture success {capture_status} | coverage success {coverage_status} | "
-        f"episode success {episode_status} | voronoi cv {cv_text}",
+        f"episode success {episode_status} | voronoi cv {cv_text}{ce_text}",
         fontsize=8.4,
     )
     axis.set_xlabel("x")
@@ -638,9 +781,14 @@ def render_gif(
     label: str,
     draw_neighbor_edges: bool,
     draw_trails: bool,
+    draw_sensing_circles: bool,
+    draw_ce_targets: bool = True,
 ) -> Dict[str, Any]:
     ids = frame_ids(len(frames), int(max_frames))
-    images = [render_frame(frames, idx, trail_window, label, draw_neighbor_edges, draw_trails) for idx in ids]
+    images = [
+        render_frame(frames, idx, trail_window, label, draw_neighbor_edges, draw_trails, draw_sensing_circles, draw_ce_targets)
+        for idx in ids
+    ]
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pil_images = [Image.fromarray(image) for image in images]
     pil_images[0].save(output_path, save_all=True, append_images=pil_images[1:], duration=max(10, int(frame_duration_ms)), loop=0, optimize=False, disposal=2)
@@ -650,6 +798,8 @@ def render_gif(
         "source_frames": len(frames),
         "draw_neighbor_edges": bool(draw_neighbor_edges),
         "draw_trails": bool(draw_trails),
+        "draw_sensing_circles": bool(draw_sensing_circles),
+        "draw_ce_targets": bool(draw_ce_targets),
     }
 
 
@@ -671,6 +821,7 @@ def write_outputs(
         "seed": int(seed),
         "config": str(config_path),
         "checkpoint": str(checkpoint_path),
+        "policy_quantile_mode": "fixed_midpoint_32",
         "phase_summaries": phase_summaries,
         "final": {
             "capture_success": bool(final_status.get("capture_success_bool", any(frame.get("capture_success", False) for frame in frames))),
@@ -682,6 +833,7 @@ def write_outputs(
             "collision_event": bool(any(frame.get("collision_event", False) for frame in frames)),
             "soft_oob_event": bool(any(frame.get("soft_oob_event", False) for frame in frames)),
             "frames": int(len(frames)),
+            "zone_metrics": dict((frames[-1].get("zone", {}) or {}) if frames else {}),
         },
         **render_record,
     }
@@ -707,6 +859,8 @@ def main() -> None:
     parser.add_argument("--draw-neighbor-edges", dest="draw_neighbor_edges", action="store_true", default=False)
     parser.add_argument("--no-neighbor-edges", dest="draw_neighbor_edges", action="store_false")
     parser.add_argument("--draw-trails", action="store_true", default=False)
+    parser.add_argument("--draw-sensing-circles", dest="draw_sensing_circles", action="store_true", default=False)
+    parser.add_argument("--no-sensing-circles", dest="draw_sensing_circles", action="store_false")
     args = parser.parse_args()
 
     config_path = Path(args.config)
@@ -740,6 +894,8 @@ def main() -> None:
         scenario,
         bool(args.draw_neighbor_edges),
         bool(args.draw_trails),
+        bool(args.draw_sensing_circles),
+        scenario == "coverage",
     )
     summary = write_outputs(output_root, scenario, int(args.seed), config_path, checkpoint_path, frames, phase_summaries, render_record)
     print(json.dumps(summary, indent=2, ensure_ascii=False))

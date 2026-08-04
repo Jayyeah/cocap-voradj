@@ -1,0 +1,29 @@
+extends: common.yaml
+
+seed: 2026080201
+device: cuda:0
+total_timesteps: 2000000
+run_name: crms_supportapproach_ce_curr_stage1_4p1e1obs_scratch2m_20260802_run1
+
+iqn:
+  checkpoint_freq: 100000
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+reward:
+  coverage_ce_min_active_pursuers: 4
+  min_active_pursuers: 4
+  post_capture_coverage_window_steps: 500
+
+experiment_metadata:
+  stage: stage1_4p1e1obs
+  training_start: scratch
+  stage_timesteps: 2000000
+  screening: Every 100k checkpoint from 100k through 2M is screened on capture, coverage, and mix; stage1 is not early-stopped.
+  promotion_policy: Select the historical best independently screened checkpoint after the full 2M run, then warm-start stage2 8v2.
