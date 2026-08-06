@@ -32,6 +32,21 @@ from cocap_voradj.training.continuous.local_sac import (
 )
 
 
+def _quantile_summary(tensor: torch.Tensor) -> Dict[str, float]:
+    value = tensor.detach().float().reshape(-1)
+    if value.numel() == 0:
+        return {"min": 0.0, "p5": 0.0, "p50": 0.0, "p95": 0.0, "max": 0.0, "mean": 0.0, "std": 0.0}
+    return {
+        "min": float(value.min()),
+        "p5": float(value.quantile(0.05)),
+        "p50": float(value.quantile(0.50)),
+        "p95": float(value.quantile(0.95)),
+        "max": float(value.max()),
+        "mean": float(value.mean()),
+        "std": float(value.std()),
+    }
+
+
 @dataclass(frozen=True)
 class CentralSACConfig:
     hidden_dim: int = 128
@@ -271,12 +286,20 @@ class CentralSACTrainer:
         critic_loss = F.mse_loss(q1_focal, target) + F.mse_loss(q2_focal, target)
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_loss.backward()
-        critic_grad_norm = grad_norm([*self.critic1.parameters(), *self.critic2.parameters()])
+        critic_pre_clip_grad_norm = grad_norm([*self.critic1.parameters(), *self.critic2.parameters()])
         if self.config.grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(
                 [*self.critic1.parameters(), *self.critic2.parameters()],
                 float(self.config.grad_clip_norm),
             )
+            critic_post_clip_grad_norm = grad_norm([*self.critic1.parameters(), *self.critic2.parameters()])
+        else:
+            critic_post_clip_grad_norm = critic_pre_clip_grad_norm
+        critic_clip_ratio = (
+            min(1.0, float(self.config.grad_clip_norm) / max(critic_pre_clip_grad_norm, 1e-8))
+            if self.config.grad_clip_norm is not None
+            else 1.0
+        )
         self.critic_optimizer.step()
 
         policy_actions, log_prob, latent = self._actor_sample(local_obs)
@@ -293,9 +316,17 @@ class CentralSACTrainer:
                 parameter.requires_grad_(False)
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
-        actor_grad_norm = grad_norm(self.actor.parameters())
+        actor_pre_clip_grad_norm = grad_norm(self.actor.parameters())
         if self.config.grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), float(self.config.grad_clip_norm))
+            actor_post_clip_grad_norm = grad_norm(self.actor.parameters())
+        else:
+            actor_post_clip_grad_norm = actor_pre_clip_grad_norm
+        actor_clip_ratio = (
+            min(1.0, float(self.config.grad_clip_norm) / max(actor_pre_clip_grad_norm, 1e-8))
+            if self.config.grad_clip_norm is not None
+            else 1.0
+        )
         self.actor_optimizer.step()
         for critic in (self.critic1, self.critic2):
             for parameter in critic.parameters():
@@ -304,9 +335,17 @@ class CentralSACTrainer:
         alpha_loss = -(self.log_alpha * (log_prob_focal.detach() + self.config.target_entropy)).mean()
         self.alpha_optimizer.zero_grad(set_to_none=True)
         alpha_loss.backward()
-        alpha_grad_norm = grad_norm([self.log_alpha])
+        alpha_pre_clip_grad_norm = grad_norm([self.log_alpha])
         if self.config.grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_([self.log_alpha], float(self.config.grad_clip_norm))
+            alpha_post_clip_grad_norm = grad_norm([self.log_alpha])
+        else:
+            alpha_post_clip_grad_norm = alpha_pre_clip_grad_norm
+        alpha_clip_ratio = (
+            min(1.0, float(self.config.grad_clip_norm) / max(alpha_pre_clip_grad_norm, 1e-8))
+            if self.config.grad_clip_norm is not None
+            else 1.0
+        )
         self.alpha_optimizer.step()
         self._soft_update(self.critic1, self.target_critic1)
         self._soft_update(self.critic2, self.target_critic2)
@@ -336,15 +375,28 @@ class CentralSACTrainer:
             "twin_q_gap": float((q1_focal.detach() - q2_focal.detach()).abs().mean()),
             "target_q_mean": float(target_q_focal.detach().mean()),
             "td_error_abs_mean": float((q1_focal.detach() - target.detach()).abs().mean()),
+            "q1_summary": _quantile_summary(q1_focal),
+            "q2_summary": _quantile_summary(q2_focal),
+            "target_q_summary": _quantile_summary(target_q_focal),
+            "td_error_summary": _quantile_summary((q1_focal.detach() - target.detach()).abs()),
             "log_prob_mean": float(log_prob_focal.detach().mean()),
             "entropy_proxy_mean": float((-log_prob_focal.detach()).mean()),
             "log_std_mean": float(log_std_focal.detach().mean()),
             "log_std_min": float(log_std_focal.detach().min()),
             "log_std_max": float(log_std_focal.detach().max()),
             "latent_norm_mean": float(torch.linalg.vector_norm(latent_focal.detach(), dim=-1).mean()),
-            "critic_grad_norm": critic_grad_norm,
-            "actor_grad_norm": actor_grad_norm,
-            "alpha_grad_norm": alpha_grad_norm,
+            "critic_grad_norm": critic_pre_clip_grad_norm,
+            "critic_pre_clip_grad_norm": critic_pre_clip_grad_norm,
+            "critic_post_clip_grad_norm": critic_post_clip_grad_norm,
+            "critic_clip_ratio": critic_clip_ratio,
+            "actor_grad_norm": actor_pre_clip_grad_norm,
+            "actor_pre_clip_grad_norm": actor_pre_clip_grad_norm,
+            "actor_post_clip_grad_norm": actor_post_clip_grad_norm,
+            "actor_clip_ratio": actor_clip_ratio,
+            "alpha_grad_norm": alpha_pre_clip_grad_norm,
+            "alpha_pre_clip_grad_norm": alpha_pre_clip_grad_norm,
+            "alpha_post_clip_grad_norm": alpha_post_clip_grad_norm,
+            "alpha_clip_ratio": alpha_clip_ratio,
             "finite": float(finite),
         }
         if not finite:

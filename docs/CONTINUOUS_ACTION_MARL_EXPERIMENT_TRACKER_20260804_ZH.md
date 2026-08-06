@@ -798,3 +798,55 @@ run/step/seed：
 3. 100k gate：要求 capture 或 pure CE 至少一项出现稳定非零成功后再开正式 2M。
 4. 消融顺序保持单变量：`a_max=0.8`、no-drag、update_every=1、grad clip 1/10、sampler、map 55。
 5. 确认分支 `continuous/masac-ctde-contract-20260806` 并推送 GitHub。
+
+---
+
+## 12. 2026-08-06 Phase 1/2：周期存档、诊断与 teacher-transfer 进展
+
+### 12.1 周期 checkpoint bundle（P0）
+
+- formal runner 已支持 `checkpoint_interval_env_steps=25000`、`metrics_flush_interval_env_steps=1000`、`diagnostic_eval_interval_env_steps=25000`。
+- 每次 25k 保存 `checkpoints/step_%09d/`：trainer.pt、replay.pkl、runtime_state.pkl、effective_config.yaml、manifest.json、metrics.jsonl、diagnostic_eval.json。
+- 保存采用临时目录 + atomic rename；`_verify_resume_steps` 拒绝 trainer/replay transition step 不一致的 resume。
+- 新增测试 `tests/test_ctde_periodic_checkpoint_contract.py`：bundle 完整文件、失败不破坏旧 bundle、resume step mismatch、400 cap。
+
+### 12.2 现有 25k 离线诊断
+
+报告：[ctde_25k_offline_diagnosis.md](../artifacts/2026-08-06_ctde_contract/ctde_25k_offline_diagnosis.md)
+
+- collision 140 transitions，reward mean=-40.4，非 collision=-0.69；碰撞有强负奖励长尾。
+- scene 级 Q/TD：pure_ce Q≈-29、TD≈2.28；capture Q≈-11、TD≈0.71；mixed Q≈-11.8、TD≈0.75。pure CE critic 明显更差。
+- capture min-distance（transition 级）：capture median 25.97、mixed 26.02；replay 无 episode id，无法做 episode 级 initial/final/AUC，需下一轮补。
+- discovery event 37 条；discovery 前后 reward 差异小（-0.54 vs -0.84）。
+- Actor 近零动作率≈0，radial saturation≈0.04%；动作分布不是主要失败原因。
+
+### 12.3 Legacy IQN compatibility / encoder transfer
+
+报告：[legacy_iqn_compatibility_report.md](../artifacts/2026-08-06_ctde_contract/legacy_iqn_compatibility_report.md)
+
+- 使用 `stage1_4v1_step_2000000.pt`，SHA256 `2f39ea...`。
+- `encoders.*`/`type_embedding.*`/`transformer.*` 全部 exact-shape 可迁移，loaded ratio=1.0；quantile/action/gate head 未加载。
+- 测试 `tests/test_legacy_iqn_encoder_transfer.py` 覆盖 exact tensor、shape mismatch、policy/critic 隔离。
+- formal runner 已支持 `initialization.actor_encoder.mode=legacy_iqn` + strict load + freeze_env_steps。
+
+### 12.4 Snapshot curriculum
+
+- 工具：[generate_legacy_iqn_curriculum_snapshots.py](../tools/generate_legacy_iqn_curriculum_snapshots.py)、[validate_curriculum_snapshots.py](../tools/validate_curriculum_snapshots.py)。
+- 小规模数据集：`artifacts/2026-08-06_ctde_contract/curriculum_snapshots/`，514 snapshots（capture pre 109、post 191、pure 214）。
+- `geometry_reset` restore 100/100 通过；`full_state` 测试通过；PBRS 首步无陈旧 baseline。
+- runner 支持 `--scenes` + `--snapshot-dataset` 的 snapshot curriculum 模式，5 步 smoke 已通过。
+
+### 12.5 Action translation gate
+
+报告：[action_translation_gate.json](../artifacts/2026-08-06_ctde_contract/action_translation_gate.json)
+
+- 10k 随机状态：rejection=0，radial saturation=98.7%，terminal velocity error mean=2.44、p95=5.14。
+- **Gate 未通过**：按审计合同停止 action translation 与 BC/prefill；保留 encoder transfer + snapshot curriculum 路线。
+
+### 12.6 Warmup 5k 数据链
+
+- `uniform_disk` 5k pure-only 已完成，tag `ctde_warmup_uniform_disk_pure5k`；report 在 `artifacts/2026-08-06_ctde_contract/ctde_warmup_uniform_disk_pure5k/ctde_warmup_uniform_disk_pure5k_report.json`。
+- 5k：collision=10/5000，action norm mean=0.266、p95=0.390、near-zero=0.3%；pure-recovery pool=20000；Q≈-0.1、TD mean≈1.03；critic pre-clip grad 50.9 → post 0.5（clip ratio≈0.0098）。
+- 对比点：uniform disk 5k 的 collision 低于原随机初始化 25k 早期比例，但仍无 coverage 成功；需要与 actor-prior 5k 同 seed 对比后再下结论。
+- `actor_prior` 5k pure-only 已完成，tag `ctde_warmup_actor_prior_pure5k`：collision=66/5000、speed mean=0.844、action norm mean=0.286、TD mean=1.83、critic pre-clip 88.4→0.5。
+- **Warmup 对比结论**：uniform disk 比 actor prior 碰撞低约 6.6 倍、速度低约 2.5 倍，但两者 5k 均无 coverage 成功；先保留 uniform disk 作为低风险 warmup 候选，仍不满足任务 gate。

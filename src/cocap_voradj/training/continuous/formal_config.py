@@ -66,7 +66,15 @@ def validate_formal_config(config: Dict[str, Any], path: str | Path | None = Non
     if int(training.get("max_agents", 0)) != 12:
         raise ValueError(f"{label}: training.max_agents must be 12")
     _require_mapping(config.get("tasks"), "tasks")
-    _require_mapping(config.get("evaluation"), "evaluation")
+    evaluation = _require_mapping(config.get("evaluation"), "evaluation")
+    if int(evaluation.get("diagnostic_rollout_cap", 0)) != 400:
+        raise ValueError(f"{label}: evaluation.diagnostic_rollout_cap must be 400")
+    teacher_snapshot = _require_mapping(config.get("teacher_snapshot_restore"), "teacher_snapshot_restore")
+    if str(teacher_snapshot.get("mode", "geometry_reset")).strip().lower() not in {"geometry_reset", "full_state"}:
+        raise ValueError(f"{label}: teacher_snapshot_restore.mode must be geometry_reset or full_state")
+    warmup_policy = _require_mapping(config.get("warmup_action_policy"), "warmup_action_policy")
+    if str(warmup_policy.get("mode", "actor_prior")).strip().lower() not in {"actor_prior", "uniform_disk"}:
+        raise ValueError(f"{label}: warmup_action_policy.mode must be actor_prior or uniform_disk")
     _require_mapping(config.get("recovery"), "recovery")
     return config
 
