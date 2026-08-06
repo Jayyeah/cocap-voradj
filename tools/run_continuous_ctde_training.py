@@ -25,6 +25,7 @@ import yaml
 
 from cocap_voradj.dynamics.continuous_action import ActionContractError
 from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
+from cocap_voradj.control.apf import ApfAgent
 from cocap_voradj.models.continuous.central_attention_critic import CentralCriticConfig
 from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoderConfig
 from cocap_voradj.models.continuous.radial_actor import RadialActorConfig
@@ -461,6 +462,24 @@ def _derive_roles(
     return roles
 
 
+def _evader_actions_for_env(env: VorAdjEnv, apf_agents: Optional[List[ApfAgent]] = None) -> List[Optional[int]]:
+    """Return APF actions for moving evaders, or None (stationary) by default."""
+    if not env.evaders:
+        return []
+    autonomous = bool(((env.config.get("evader", {}) or {}) or {}).get("autonomous", False))
+    if not autonomous:
+        return [None] * len(env.evaders)
+    if apf_agents is None:
+        apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders]
+    if hasattr(env, "configure_evader_apf_agents"):
+        env.configure_evader_apf_agents(apf_agents)
+    observations = list(env.get_evader_observations_for_apf())
+    return [
+        None if obs is None else int(apf_agents[idx].act(obs))
+        for idx, obs in enumerate(observations)
+    ]
+
+
 def _screen(
     trainer: CentralSACTrainer,
     root_config: Dict[str, Any],
@@ -480,6 +499,7 @@ def _screen(
         for episode in range(int(episodes)):
             env = VorAdjEnv(config, seed=seed + 10000 + scene_index * 100 + episode)
             env.reset()
+            apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders] if bool(((config.get("evader", {}) or {}) or {}).get("autonomous", False)) else None
             adapter = env.action_adapter
             speed_limited_count = 0
             action_count = 0
@@ -524,7 +544,7 @@ def _screen(
                     adapter,
                     deterministic=True,
                 )
-                outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+                outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
                 after_positions = np.asarray([[float(p.x), float(p.y)] for p in env.pursuers if not p.deactivated], dtype=float)
                 after_evader_positions = np.asarray(
                     [[float(e.x), float(e.y)] for e in env.evaders if not e.deactivated],
@@ -830,6 +850,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         initial_active = None
         if snapshot_dataset is not None:
             config, origin, env = _reset_from_snapshot(config, snapshot_dataset, scene, rng)
+            apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders] if bool(((config.get("evader", {}) or {}) or {}).get("autonomous", False)) else None
             adapter = env.action_adapter
             observations = list(env.get_observations())
             while transition_count < total_steps:
@@ -858,7 +879,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 action_norms.extend(float(np.linalg.norm(action)) for action in actions)
                 window_action_norms.extend(float(np.linalg.norm(action)) for action in actions)
                 try:
-                    outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+                    outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
                 except ActionContractError as exc:
                     raise RuntimeError("formal CTDE action contract violated") from exc
                 transition_attempt_count += 1
@@ -1023,6 +1044,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             initial_pursuer_positions=initial_positions,
             initial_pursuer_active=initial_active,
         )
+        apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders] if bool(((config.get("evader", {}) or {}) or {}).get("autonomous", False)) else None
         adapter = env.action_adapter
         observations = list(env.get_observations())
         while transition_count < total_steps:
@@ -1051,7 +1073,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             action_norms.extend(float(np.linalg.norm(action)) for action in actions)
             window_action_norms.extend(float(np.linalg.norm(action)) for action in actions)
             try:
-                outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+                outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
             except ActionContractError as exc:
                 raise RuntimeError("formal CTDE action contract violated") from exc
             transition_attempt_count += 1

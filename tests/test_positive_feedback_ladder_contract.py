@@ -16,6 +16,7 @@ from cocap_voradj.training.trainer import load_config, set_global_config
 ROOT = Path(__file__).resolve().parents[1]
 STAGE2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage2_simple_aw.yaml"
 STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"
+STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
 
 
 def test_stage2_ladder_config_contract() -> None:
@@ -99,3 +100,20 @@ def test_stage1_aw_bridge_single_step_exact_parity() -> None:
             *new_env.pursuers[idx].velocity,
         )
         assert np.allclose(old_state, new_state, atol=1e-9)
+
+
+def test_stage4b_moving_evader_flag() -> None:
+    config = resolve_ladder_config(STAGE4B)
+    assert config["evader"]["autonomous"] is True
+    scene = scene_config(config, "capture")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    before = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
+    from tools.run_continuous_ctde_training import _evader_actions_for_env
+
+    actions = _evader_actions_for_env(env)
+    assert actions and actions[0] is not None
+    env.step([[0.0, 0.0]], actions)
+    after = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
+    assert not np.allclose(before, after, atol=1e-6)
