@@ -860,7 +860,7 @@ run/step/seed：
 
 | 实验 | scene | initialization | snapshot | 状态 |
 |---|---|---|---|---|
-| pure random | pure_ce | random | no | running `ctde_pure_random_25k` |
+| pure random | pure_ce | random | no | ✅ `ctde_pure_random_25k_v2` |
 | pure encoder | pure_ce | legacy_iqn | no | pending |
 | pure snapshot | pure_ce | random | yes | pending |
 | pure encoder+snapshot | pure_ce | legacy_iqn | yes | pending |
@@ -879,3 +879,11 @@ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src:. python3 tools/run_continuous_ctde_traini
 
 snapshot 实验追加 `--snapshot-dataset artifacts/2026-08-06_ctde_contract/curriculum_snapshots/snapshots.jsonl`；
 encoder 实验通过 config 中 `initialization.actor_encoder.mode=legacy_iqn` 或独立 config override 启用。
+
+### 13.1 pure random 25k 结果（`ctde_pure_random_25k_v2`）
+
+- replay=25000、updates=5001、all_finite；training collision=90/25000（0.36%），truncated=6。
+- 400-step diagnostic eval（4 episodes）：collision=0/4、CE strict/CV<0.15=0/4。
+- **CE energy progress 4/4 为正**：初始 0.050--0.164 → final 0.007--0.021；energy AUC 4.76--15.57。
+- Q≈-14、TD mean≈1.17、critic pre-clip grad≈365→post 0.5、actor grad≈1.0；无 NaN。
+- 结论：pure-only random-init 已出现明确 CE energy 下降信号；尚未达到 strict/CV<0.15 成功，但不再是“完全没学”。

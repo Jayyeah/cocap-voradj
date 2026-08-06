@@ -748,8 +748,15 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     if str(loaded.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
         root_config = resolve_ladder_config(args.config)
     else:
-        root_config = resolve_formal_config(args.config)
+    root_config = resolve_formal_config(args.config)
     _set_seed(args.seed)
+    if args.legacy_encoder_checkpoint:
+        root_config.setdefault("initialization", {})["actor_encoder"] = {
+            "mode": "legacy_iqn",
+            "checkpoint": args.legacy_encoder_checkpoint,
+            "strict_shape_match": True,
+            "freeze_env_steps": 0,
+        }
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     trainer = _make_trainer(root_config, device)
     max_agents = int(root_config["training"]["max_agents"])
@@ -1340,6 +1347,7 @@ def main() -> int:
     parser.add_argument("--scenes", default=",".join(SCENES))
     parser.add_argument("--snapshot-dataset", default="")
     parser.add_argument("--warmup-action-mode", choices=("actor_prior", "uniform_disk"), default="")
+    parser.add_argument("--legacy-encoder-checkpoint", default="")
     parser.add_argument("--total-steps", type=int, default=None)
     parser.add_argument("--screen-episodes", type=int, default=2)
     parser.add_argument("--diagnostic-eval-episodes", type=int, default=4)
