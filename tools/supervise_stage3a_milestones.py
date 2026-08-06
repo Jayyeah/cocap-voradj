@@ -1,0 +1,57 @@
+"""Wait for Stage3A 25k reports and auto-run the gate analyzer."""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ROOT = ROOT / "artifacts/2026-08-07_positive_feedback_ladder/stage3a"
+DEFAULT_BASELINES = DEFAULT_ROOT / "stage3a_baselines.json"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", default=str(DEFAULT_ROOT))
+    parser.add_argument("--baselines", default=str(DEFAULT_BASELINES))
+    parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
+    parser.add_argument("--poll-seconds", type=int, default=60)
+    parser.add_argument("--once", action="store_true")
+    args = parser.parse_args()
+    root = Path(args.root)
+    pending = {seed: True for seed in args.seeds}
+    while any(pending.values()):
+        for seed in list(pending):
+            if not pending[seed]:
+                continue
+            run_dir = root / f"stage3a_seed{seed}_25k"
+            report = run_dir / f"stage3a_seed{seed}_25k_report.json"
+            analysis = run_dir / f"stage3a_seed{seed}_25k_analysis.json"
+            if report.is_file() and not analysis.is_file():
+                print(f"[supervisor] analyzing seed{seed}", flush=True)
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools/analyze_stage3a_25k.py"),
+                        "--report",
+                        str(report),
+                        "--baselines",
+                        args.baselines,
+                        "--out",
+                        str(analysis),
+                    ],
+                    check=False,
+                )
+            if analysis.is_file():
+                pending[seed] = False
+        if args.once:
+            break
+        time.sleep(float(args.poll_seconds))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
