@@ -45,7 +45,9 @@ def run_episode(config: Dict[str, Any], seed: int, mode: str) -> Dict[str, Any]:
         else:
             actions = [[0.0, 0.0]] * len(env.pursuers)
         outcome = env.step(actions, [None] * len(env.evaders))
-        energies.append(_ce_energy(env))
+        energy = _ce_energy(env)
+        if np.isfinite(energy):
+            energies.append(energy)
         if all(outcome.dones):
             break
     final_energy = energies[-1] if energies else initial_energy
@@ -70,10 +72,11 @@ def main() -> int:
     parser.add_argument("--out", default=str(ROOT / "artifacts/2026-08-07_positive_feedback_ladder/stage3a/stage3a_baselines.json"))
     parser.add_argument("--episodes", type=int, default=20)
     parser.add_argument("--seed", type=int, default=2026080701)
+    parser.add_argument("--modes", nargs="+", choices=("random", "noop"), default=("random", "noop"))
     args = parser.parse_args()
     config = scene_config(resolve_ladder_config(args.config), "pure_ce")
     records: List[Dict[str, Any]] = []
-    for mode in ("random", "noop"):
+    for mode in args.modes:
         for idx in range(int(args.episodes)):
             records.append(run_episode(config, int(args.seed) + idx, mode))
     summary: Dict[str, Any] = {}
