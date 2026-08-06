@@ -16,8 +16,8 @@
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0 PASS、Stage 1 PASS、Stage 2 PASS（seed1 30% / seed2 100% capture，collision 0）
-- 当前结论：连续 `(a,ω)` MASAC 已在极简单任务上建立可靠成功锚点；Stage 3A seed1 已启动
+- 最近 milestone：Stage 0 PASS、Stage 1 PASS、Stage 2 PASS（seed1 30% / seed2 100% capture，collision 0）；Stage 3A seed1 运行至 ~6k/25k
+- 当前结论：连续 `(a,ω)` MASAC 已在极简单任务上建立可靠成功锚点；Stage 3A 因机器上多个外部训练进程/高负载而较慢，仍在推进
 - 下一步唯一动作：**完成 Stage 3A 3-seed pure coverage 训练与 gate 判定**
 
 ---
@@ -132,7 +132,7 @@ next action: seed3 继续作为第三条证据；Stage 3A seed1 已启动，按 
 ```text
 stage: 3A
 run_id: STAGE3A_PURE_CE_AW_20260807
-status: IN_PROGRESS（seed1 25k 已启动）
+status: IN_PROGRESS（seed1 至 ~6k/25k；机器高负载，进度偏慢）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 commit: 3caefea + 后续
@@ -145,8 +145,8 @@ dynamics contract: continuous_aw_v1
 reward contract: CE centroid energy + PBRS，speed weight=0
 exact command: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml --scenes pure_ce --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage3a_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage3a
 PID/log: PID 823508 / tmux ladder_s3a_s1
-step: 启动中
-key metrics: 待回填
+step: ~6000/25000
+key metrics: CE/reward 数据待回填；baseline random progress=+0.0138/collision=1.0，noop progress=0/collision=0
 decision: 待 25k
 next action: 每 25k 诊断 eval + 台账回填；成功后进入 3B
 ```
