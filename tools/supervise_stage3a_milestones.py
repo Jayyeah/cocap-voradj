@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("--baselines", default=str(DEFAULT_BASELINES))
     parser.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
     parser.add_argument("--poll-seconds", type=int, default=60)
+    parser.add_argument("--eval-device", default="cuda:0")
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     root = Path(args.root)
@@ -30,6 +31,7 @@ def main() -> int:
             run_dir = root / f"stage3a_seed{seed}_25k"
             report = run_dir / f"stage3a_seed{seed}_25k_report.json"
             analysis = run_dir / f"stage3a_seed{seed}_25k_analysis.json"
+            eval20 = run_dir / f"stage3a_seed{seed}_25k_eval20.json"
             if report.is_file() and not analysis.is_file():
                 print(f"[supervisor] analyzing seed{seed}", flush=True)
                 subprocess.run(
@@ -45,6 +47,33 @@ def main() -> int:
                     ],
                     check=False,
                 )
+            if report.is_file() and not eval20.is_file():
+                checkpoint = run_dir / f"stage3a_seed{seed}_25k_step25000.pt"
+                if checkpoint.is_file():
+                    print(f"[supervisor] eval20 seed{seed}", flush=True)
+                    subprocess.run(
+                        [
+                            sys.executable,
+                            str(ROOT / "tools/evaluate_ctde_formal.py"),
+                            "--config",
+                            str(ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"),
+                            "--checkpoint",
+                            str(checkpoint),
+                            "--tag",
+                            str(eval20),
+                            "--episodes",
+                            "20",
+                            "--max-steps",
+                            "400",
+                            "--scenes",
+                            "pure_ce",
+                            "--seed",
+                            str(2026080700 + seed),
+                            "--device",
+                            args.eval_device,
+                        ],
+                        check=False,
+                    )
             if analysis.is_file():
                 pending[seed] = False
         if args.once:
