@@ -198,7 +198,8 @@ decision: 保留 100k checkpoint 与复盘，不作为阶梯线晋级证据
 - [ ] Stage 3B：恢复 1 obstacle
 - [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告
 - [ ] Stage 5A/5B：双任务交替与 mixed capture→coverage
-- [ ] Stage 6/7：body-frame / world-frame `[a_x,a_y]`
+- [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs（待前置 stage 后训练）
+- [ ] Stage 7：world-frame `[a_x,a_y]`
 
 ---
 
