@@ -36,7 +36,9 @@ def main() -> int:
     parser.add_argument("--config", default=str(FORMAL))
     args = parser.parse_args()
     raw = __import__("yaml").safe_load(Path(args.config).read_text(encoding="utf-8"))
-    if str(raw.get("action", {}).get("mode", "")).strip().lower() in {
+    action_mode = str(raw.get("action", {}).get("mode", "")).strip().lower()
+    is_ladder = str((raw.get("experiment_metadata", {}) or {}).get("series_label", "")).startswith("positive_feedback_ladder")
+    if is_ladder or action_mode in {
         AW_ACTION_MODE,
         BODY_ACTION_MODE,
         "aw",
