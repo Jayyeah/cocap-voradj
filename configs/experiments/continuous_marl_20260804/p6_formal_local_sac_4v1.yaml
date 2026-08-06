@@ -1,0 +1,35 @@
+extends: p5_central_critic_contract_4v1.yaml
+
+run_name: continuous_p6_formal_local_sac_4v1
+algorithm: p6_formal_psa_masac
+critic_mode: local
+
+# Frozen formal-entry candidate.  The runner's default smoke profile remains
+# separate; long training must pass --trainer-profile formal_p6 explicitly.
+training_profile: formal_p6
+warmup_steps: 5000
+grad_clip_norm: 10.0
+
+continuous_encoder:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  dropout: 0.0
+
+actor:
+  hidden_dim: 256
+  a_max: 0.8
+  decision_dt: 0.5
+  log_std_min: -5.0
+  log_std_max: 1.0
+  dropout: 0.0
+
+local_sac:
+  hidden_dim: 256
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  alpha_lr: 0.0001
+  alpha_init: 0.2
+  target_entropy: -2.0

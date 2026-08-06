@@ -1382,6 +1382,11 @@ class VorAdjEnv(CoCapEnv):
     def _action_accel_turn(self, idx: int, actions: List[Optional[int]]) -> Tuple[float, float]:
         if idx >= len(actions) or actions[idx] is None:
             return 0.0, 0.0
+        if self.continuous_control:
+            diagnostics = getattr(self.pursuers[idx], "last_action_diagnostics", {}) or {}
+            return float(diagnostics.get("actual_acceleration", 0.0)), float(
+                diagnostics.get("validated_angular_velocity", diagnostics.get("commanded_angular_velocity", 0.0))
+            )
         try:
             action = int(actions[idx])
             accel, turn = self.pursuers[idx].action_list[action]
@@ -2311,6 +2316,10 @@ class VorAdjEnv(CoCapEnv):
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,
             }
+            if self.continuous_control:
+                diagnostics = dict(getattr(self.pursuers[i], "last_action_diagnostics", {}) or {})
+                infos[i]["action_diagnostics"] = diagnostics
+                infos[i]["replay_metadata"]["action_diagnostics"] = dict(diagnostics)
             dones.append(done)
         capture_count = int(sum(1 for x in next_labels if x == "capture"))
         coverage_count = int(sum(1 for x in next_labels if x == "coverage"))
