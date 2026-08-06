@@ -967,6 +967,8 @@ class VorAdjEnv(CoCapEnv):
                     float((center_r[1] / distance_scale) * center_scale),
                     float(is_pursuing),
                 ]
+                if bool(self.per_cfg.get("include_yaw_features", False)):
+                    self_feat += [float(np.cos(pursuer.theta)), float(np.sin(pursuer.theta))]
         else:
             self_feat = [
                 float(abs_vel[0]),

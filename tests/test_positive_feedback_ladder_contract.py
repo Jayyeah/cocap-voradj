@@ -19,6 +19,7 @@ STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_
 STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
 STAGE6A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage6a_pure_ce_body.yaml"
 STAGE7A1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7a1_pure_ce_world.yaml"
+STAGE7B1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7b1_pure_ce_world_robot_obs.yaml"
 
 
 def test_stage2_ladder_config_contract() -> None:
@@ -159,3 +160,19 @@ def test_stage7a1_world_observation_contract() -> None:
     # World-frame tokens must be expressed relative to the pursuer in world axes.
     obs = observations[0]
     assert np.all(np.isfinite(obs["self"]))
+
+
+def test_stage7b1_robot_obs_includes_yaw_features() -> None:
+    config = resolve_ladder_config(STAGE7B1)
+    assert config["action"]["mode"] == "acceleration_2d_world"
+    assert config["perception"]["observation_frame"] == "robot"
+    assert config["perception"]["include_yaw_features"] is True
+    scene = scene_config(config, "pure_ce")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    observations = list(env.get_observations())
+    self_feat = observations[0]["self"]
+    assert self_feat.shape == (11,)
+    pursuer = env.pursuers[0]
+    assert np.allclose(self_feat[-2:], [np.cos(pursuer.theta), np.sin(pursuer.theta)], atol=1e-6)
