@@ -7,7 +7,12 @@ from pathlib import Path
 
 import torch
 
-from cocap_voradj.training.continuous.formal_config import SCENES, resolve_formal_config
+from cocap_voradj.training.continuous.formal_config import (
+    AW_ACTION_MODE,
+    SCENES,
+    resolve_formal_config,
+    resolve_ladder_config,
+)
 from tools.run_continuous_ctde_training import (
     _make_trainer,
     _screen,
@@ -29,7 +34,11 @@ def main() -> int:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--config", default=str(FORMAL))
     args = parser.parse_args()
-    config = resolve_formal_config(args.config)
+    raw = __import__("yaml").safe_load(Path(args.config).read_text(encoding="utf-8"))
+    if str(raw.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
+        config = resolve_ladder_config(args.config)
+    else:
+        config = resolve_formal_config(args.config)
     trainer = _make_trainer(config, args.device)
     payload = torch.load(args.checkpoint, map_location=trainer.device, weights_only=False)
     trainer.load_checkpoint(args.checkpoint, payload.get("contract", {}))
