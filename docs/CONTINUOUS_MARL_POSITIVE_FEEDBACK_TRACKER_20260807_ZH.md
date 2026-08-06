@@ -132,7 +132,7 @@ next action: Stage 3A seed1/seed2 训练中；seed3 如需可作为第三条证�
 ```text
 stage: 3A
 run_id: STAGE3A_PURE_CE_AW_20260807
-status: IN_PROGRESS（seed1 ~11k/25k、seed2 ~6k/25k；机器高负载）
+status: IN_PROGRESS（seed1 ~12k/25k、seed2 ~7k/25k；机器高负载）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 commit: 3caefea + 后续
@@ -145,7 +145,7 @@ dynamics contract: continuous_aw_v1
 reward contract: CE centroid energy + PBRS，speed weight=0
 exact command: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml --scenes pure_ce --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage3a_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage3a
 PID/log: seed1 PID 823508 / tmux ladder_s3a_s1；seed2 PID 1019023 / tmux ladder_s3a_s2；监督 tmux ladder_s3a_sup
-step: seed1 ~11000/25000；seed2 ~7000/25000
+step: seed1 ~12000/25000；seed2 ~7000/25000
 key metrics: CE/reward 数据待回填；baseline random progress=+0.0138/collision=1.0，noop progress=0/collision=0
 decision: 待 25k
 next action: 每 25k 诊断 eval + 台账回填；成功后进入 3B
