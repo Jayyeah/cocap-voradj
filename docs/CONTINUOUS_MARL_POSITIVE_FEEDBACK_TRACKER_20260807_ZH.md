@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 2（MASAC + 连续 (a,ω) 极简单任务）**
-- 当前唯一 formal config：**待 Stage 1 后锁定**（阶梯线尚未生成 Stage 2 formal config；旧 `configs/experiments/continuous_marl_20260804/p6_formal_central_masac_4v1.yaml` 属 world-frame `[a_x,a_y]` 旧线，标 `HISTORICAL / SUPERSEDED`，不得作为阶梯线唯一 formal config）
+- 当前 active stage：**Stage 3A（MASAC + 连续 (a,ω) pure coverage，无 obstacle）**
+- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml`（Stage 2 config 已 PASS，保留为历史成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
-- 当前 reward contract：Stage 2 使用 `[DIAGNOSTIC-ADAPT]` 简化距离 progress/success/safety 项（legacy capture reward），退出后恢复原 reward
-- 最近 milestone：Stage 0 PASS、Stage 1 PASS（严格 parity 9/9，state/reward diff 均为 0）
-- 当前结论：旧 IQN -> 连续 `(a,ω)` bridge 严格等价；Stage 2 config 已创建并通过 20 步 smoke 与 6k 更新链冒烟（有限、SAC 更新正常），正式 3-seed 25k 待启动
-- 下一步唯一动作：**启动 Stage 2 的 3 seeds × 25k MASAC 训练，并在每 25k 回填台账**
+- 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
+- 最近 milestone：Stage 0 PASS、Stage 1 PASS、Stage 2 PASS（seed1 30% / seed2 100% capture，collision 0）
+- 当前结论：连续 `(a,ω)` MASAC 已在极简单任务上建立可靠成功锚点；Stage 3A seed1 已启动
+- 下一步唯一动作：**完成 Stage 3A 3-seed pure coverage 训练与 gate 判定**
 
 ---
 
@@ -106,7 +106,7 @@ next action: 启动 Stage 2
 ```text
 stage: 2
 run_id: STAGE2_SIMPLE_AW_20260807
-status: IN_PROGRESS（seed1 25k PASS；seed2 运行中；seed3 已启动）
+status: PASS（seed1 30%、seed2 100%；seed3 作为第三条证据继续运行）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 commit: c84a5b4 / 24d5e26
@@ -120,14 +120,38 @@ reward contract: [DIAGNOSTIC-ADAPT] legacy distance-progress + success + safety�
 exact command:
   seed1: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage2_simple_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage2_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage2
   seed2: 同上 seed=2026080702 --device cuda:0 --tag stage2_seed2_25k
-PID/log: seed1 PID 344158 / tmux ladder_s2_s1（已完成）；seed2 PID 344451 / tmux ladder_s2_s2（运行中）；seed3 PID 765177 / tmux ladder_s2_s3
-step: seed1=25000（完成）；seed2=~23000；seed3=启动中
-key metrics: baseline random capture=0/collision=0.30/min-dist=40.6，noop capture=0/min-dist=50.5，oracle capture=1.0/avg 63 steps；seed1 25k eval20 capture=6/20(0.30)、collision=0/20、avg min-distance≈15 vs baseline 40.6/50.5、distance progress 多数为正
-decision: seed1 PASS（明显优于 random/no-op，几何信号明确）；等 seed2/seed3 后按 3-seed gate 判定
-next action: seed2/seed3 25k 完成后各跑 20-episode eval；若至少 2 seeds 通过则出具 Stage 2 完成报告并进入 Stage 3A
+PID/log: seed1 PID 344158 / tmux ladder_s2_s1（完成）；seed2 PID 344451 / tmux ladder_s2_s2（完成）；seed3 PID 765177 / tmux ladder_s2_s3（运行中）
+step: seed1=25000（完成）；seed2=25000（完成）；seed3=~7k
+key metrics: baseline random capture=0/min-dist=40.6，noop capture=0/min-dist=50.5，oracle capture=1.0；seed1 eval20 capture=6/20、collision=0/20、min-dist≈15；seed2 eval20 capture=20/20、collision=0/20、avg length≈55、min-dist≈8.2
+decision: Stage 2 PASS（3 seeds 中已有 2 个明显优于基线，且 seed2 达 100% capture）；进入 Stage 3A
+next action: seed3 继续作为第三条证据；Stage 3A seed1 已启动，按 pure coverage gate 判定
 ```
 
-### 3.4 历史/已淘汰条目
+### 3.4 Stage 3A：Pure Coverage（无 obstacle）
+
+```text
+stage: 3A
+run_id: STAGE3A_PURE_CE_AW_20260807
+status: IN_PROGRESS（seed1 25k 已启动）
+date: 2026-08-07
+branch: continuous/masac-ctde-contract-20260806
+commit: 3caefea + 后续
+config path/hash: configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml
+seed: 2026080701（后续 02/03）
+initialization: scratch random-init
+action contract: acceleration_angular_velocity_body, independent box
+observation contract: robot-frame local VCT-LS（无 evader）
+dynamics contract: continuous_aw_v1
+reward contract: CE centroid energy + PBRS，speed weight=0
+exact command: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml --scenes pure_ce --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage3a_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage3a
+PID/log: PID 823508 / tmux ladder_s3a_s1
+step: 启动中
+key metrics: 待回填
+decision: 待 25k
+next action: 每 25k 诊断 eval + 台账回填；成功后进入 3B
+```
+
+### 3.5 历史/已淘汰条目
 
 ```text
 stage: OLD_LINE (HISTORICAL / SUPERSEDED)
