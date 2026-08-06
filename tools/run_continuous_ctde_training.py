@@ -454,10 +454,32 @@ def _screen(
             adapter = env.action_adapter
             speed_limited_count = 0
             action_count = 0
+            initial_positions = np.asarray([[float(p.x), float(p.y)] for p in env.pursuers if not p.deactivated], dtype=float)
+            initial_evader_positions = np.asarray(
+                [[float(e.x), float(e.y)] for e in env.evaders if not e.deactivated],
+                dtype=float,
+            )
+            initial_min_distance = (
+                float(np.min([np.linalg.norm(p - e) for p in initial_positions for e in initial_evader_positions]))
+                if len(initial_evader_positions) and len(initial_positions)
+                else None
+            )
+            active_positions = np.asarray([[float(p.x), float(p.y)] for p in env.pursuers if not p.deactivated], dtype=float)
+            initial_ce_energy = (
+                float(np.mean(env._voradj_coverage_potentials(active_positions, initial_evader_positions)))
+                if len(active_positions) and env._ce_coverage_enabled()
+                else None
+            )
+            min_distances: List[float] = []
+            ce_energies: List[float] = []
+            episode_action_norms: List[float] = []
+            episode_speeds: List[float] = []
+            discovery_seen = False
+            discovery_step: Optional[int] = None
             horizon = int(config["env"]["episode_max_length"])
             if max_steps is not None and int(max_steps) > 0:
                 horizon = min(horizon, int(max_steps))
-            for _ in range(horizon):
+            for step_idx in range(horizon):
                 observations = list(env.get_observations())
                 if any(item is None for item in observations):
                     break
@@ -474,6 +496,23 @@ def _screen(
                     deterministic=True,
                 )
                 outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+                after_positions = np.asarray([[float(p.x), float(p.y)] for p in env.pursuers if not p.deactivated], dtype=float)
+                after_evader_positions = np.asarray(
+                    [[float(e.x), float(e.y)] for e in env.evaders if not e.deactivated],
+                    dtype=float,
+                )
+                if len(after_evader_positions) and len(after_positions):
+                    min_distances.append(float(np.min([np.linalg.norm(p - e) for p in after_positions for e in after_evader_positions])))
+                if len(after_positions) and env._ce_coverage_enabled():
+                    ce_energies.append(float(np.mean(env._voradj_coverage_potentials(after_positions, after_evader_positions))))
+                episode_action_norms.extend(float(np.linalg.norm(a)) for a in actions)
+                episode_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
+                if not discovery_seen and any(
+                    str(info.get("replay_metadata", {}).get("task_label", "")) == "capture"
+                    for info in outcome.infos
+                ):
+                    discovery_seen = True
+                    discovery_step = int(step_idx)
                 for info in outcome.infos:
                     diagnostics = info.get("action_diagnostics", {})
                     speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -496,6 +535,30 @@ def _screen(
                     "coverage_strict_success": bool(record["coverage_strict_success"]),
                     "coverage_cv015_success": bool(record["coverage_cv015_success"]),
                     "speed_limited_rate": float(speed_limited_count / max(action_count, 1)),
+                    "initial_min_distance": initial_min_distance,
+                    "final_min_distance": min_distances[-1] if min_distances else None,
+                    "min_min_distance": float(np.min(min_distances)) if min_distances else None,
+                    "min_distance_auc": float(np.trapz(min_distances)) if len(min_distances) > 1 else 0.0,
+                    "distance_progress": (
+                        float(initial_min_distance - min_distances[-1])
+                        if initial_min_distance is not None and min_distances
+                        else None
+                    ),
+                    "discovery_step": discovery_step,
+                    "detected": bool(discovery_seen),
+                    "initial_ce_energy": initial_ce_energy,
+                    "final_ce_energy": ce_energies[-1] if ce_energies else None,
+                    "min_ce_energy": float(np.min(ce_energies)) if ce_energies else None,
+                    "ce_energy_auc": float(np.trapz(ce_energies)) if len(ce_energies) > 1 else 0.0,
+                    "ce_energy_progress": (
+                        float(initial_ce_energy - ce_energies[-1])
+                        if initial_ce_energy is not None and ce_energies
+                        else None
+                    ),
+                    "action_norm_mean": float(np.mean(episode_action_norms)) if episode_action_norms else 0.0,
+                    "action_norm_max": float(np.max(episode_action_norms)) if episode_action_norms else 0.0,
+                    "speed_mean": float(np.mean(episode_speeds)) if episode_speeds else 0.0,
+                    "speed_max": float(np.max(episode_speeds)) if episode_speeds else 0.0,
                 }
             )
         result[scene] = {

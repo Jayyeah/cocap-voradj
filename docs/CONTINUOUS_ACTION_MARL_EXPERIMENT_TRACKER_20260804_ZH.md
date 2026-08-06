@@ -850,3 +850,31 @@ run/step/seed：
 - 对比点：uniform disk 5k 的 collision 低于原随机初始化 25k 早期比例，但仍无 coverage 成功；需要与 actor-prior 5k 同 seed 对比后再下结论。
 - `actor_prior` 5k pure-only 已完成，tag `ctde_warmup_actor_prior_pure5k`：collision=66/5000、speed mean=0.844、action norm mean=0.286、TD mean=1.83、critic pre-clip 88.4→0.5。
 - **Warmup 对比结论**：uniform disk 比 actor prior 碰撞低约 6.6 倍、速度低约 2.5 倍，但两者 5k 均无 coverage 成功；先保留 uniform disk 作为低风险 warmup 候选，仍不满足任务 gate。
+
+---
+
+## 13. Phase 3 单任务 25k 实验矩阵（进行中）
+
+统一参数：`a_max=0.4`、parity drag、update_every=4、grad_clip=0.5、map 120、400-step diagnostic cap、每 25k bundle。
+
+| 实验 | scene | initialization | snapshot | 状态 |
+|---|---|---|---|---|
+| pure random | pure_ce | random | no | running `ctde_pure_random_25k` |
+| pure encoder | pure_ce | legacy_iqn | no | pending |
+| pure snapshot | pure_ce | random | yes | pending |
+| pure encoder+snapshot | pure_ce | legacy_iqn | yes | pending |
+| capture random | capture | random | no | pending |
+| capture encoder | capture | legacy_iqn | no | pending |
+| capture snapshot | capture | random | yes | pending |
+| capture encoder+snapshot | capture | legacy_iqn | yes | pending |
+
+启动命令模板：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py \
+  --tag <tag> --scenes pure_ce --total-steps 25000 \
+  --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0
+```
+
+snapshot 实验追加 `--snapshot-dataset artifacts/2026-08-06_ctde_contract/curriculum_snapshots/snapshots.jsonl`；
+encoder 实验通过 config 中 `initialization.actor_encoder.mode=legacy_iqn` 或独立 config override 启用。
