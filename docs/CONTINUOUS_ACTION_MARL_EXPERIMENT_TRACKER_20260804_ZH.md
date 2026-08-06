@@ -806,6 +806,7 @@ run/step/seed：
 ### 12.1 周期 checkpoint bundle（P0）
 
 - formal runner 已支持 `checkpoint_interval_env_steps=25000`、`metrics_flush_interval_env_steps=1000`、`diagnostic_eval_interval_env_steps=25000`。
+- 为防 25k 前中断丢进度，训练 step=1 也保存完整 bundle；中断后可从 `checkpoints/step_000000001/` 的 trainer.pt + replay.pkl resume。
 - 每次 25k 保存 `checkpoints/step_%09d/`：trainer.pt、replay.pkl、runtime_state.pkl、effective_config.yaml、manifest.json、metrics.jsonl、diagnostic_eval.json。
 - 保存采用临时目录 + atomic rename；`_verify_resume_steps` 拒绝 trainer/replay transition step 不一致的 resume。
 - 新增测试 `tests/test_ctde_periodic_checkpoint_contract.py`：bundle 完整文件、失败不破坏旧 bundle、resume step mismatch、400 cap。
