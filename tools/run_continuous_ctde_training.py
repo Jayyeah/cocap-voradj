@@ -151,12 +151,13 @@ def _pad_local_obs_tree(
     observations: List[Optional[Mapping[str, np.ndarray]]],
     max_agents: int,
     actor_max_pursuers: int,
+    self_feature_dim: int = 9,
 ) -> Dict[str, np.ndarray]:
     """Pad per-agent local observations to fixed central/replay slots."""
     max_evaders = 8
     max_obstacles = 5
     token_count = 1 + actor_max_pursuers + max_evaders + max_obstacles
-    self_dim = 9
+    self_dim = int(self_feature_dim)
     zero_shape = {
         "self": (self_dim,),
         "pursuers": (actor_max_pursuers, 7),
@@ -220,8 +221,9 @@ def _stack_with_batch(
     observations: List[Optional[Mapping[str, np.ndarray]]],
     max_agents: int,
     actor_max_pursuers: int,
+    self_feature_dim: int = 9,
 ) -> Dict[str, np.ndarray]:
-    tree = _pad_local_obs_tree(observations, max_agents, actor_max_pursuers)
+    tree = _pad_local_obs_tree(observations, max_agents, actor_max_pursuers, self_feature_dim)
     return {key: value[None] for key, value in tree.items()}
 
 
@@ -537,6 +539,7 @@ def _screen(
                     observations,
                     int(config["training"]["max_agents"]),
                     int(config["actor"]["max_pursuers"]),
+                    int(config["actor"]["self_feature_dim"]),
                 )
                 actions, _ = _sample_actions(
                     trainer,
@@ -876,9 +879,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     or getattr(env, "coverage_geometric_success", False)
                 )
                 before_active = _pad_vector([not p.deactivated for p in env.pursuers], max_agents, bool)
-                before_obs_batch = _stack_with_batch(observations, max_agents, actor_max_pursuers)
+                before_obs_batch = _stack_with_batch(observations, max_agents, actor_max_pursuers, int(root_config["actor"]["self_feature_dim"]))
                 before_obs_padded = {key: value[0] for key, value in before_obs_batch.items()}
-                before_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+                before_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=int(root_config["actor"]["self_feature_dim"]))
                 actions, validation_rate = _sample_actions(
                     trainer,
                     before_obs_padded,
@@ -943,9 +946,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     "task_label": str(outcome.infos[0].get("replay_metadata", {}).get("task_label", "")),
                     "recovery_reset_source": origin,
                 }
-                next_obs_batch = _stack_with_batch(next_observations, max_agents, actor_max_pursuers)
+                next_obs_batch = _stack_with_batch(next_observations, max_agents, actor_max_pursuers, int(root_config["actor"]["self_feature_dim"]))
                 next_obs_padded = {key: value[0] for key, value in next_obs_batch.items()}
-                next_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+                next_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=int(root_config["actor"]["self_feature_dim"]))
                 replay.add(
                     local_obs=before_obs_padded,
                     next_local_obs=next_obs_padded,
@@ -1070,9 +1073,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 or getattr(env, "coverage_geometric_success", False)
             )
             before_active = _pad_vector([not p.deactivated for p in env.pursuers], max_agents, bool)
-            before_obs_batch = _stack_with_batch(observations, max_agents, actor_max_pursuers)
+            before_obs_batch = _stack_with_batch(observations, max_agents, actor_max_pursuers, int(root_config["actor"]["self_feature_dim"]))
             before_obs_padded = {key: value[0] for key, value in before_obs_batch.items()}
-            before_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+            before_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=int(root_config["actor"]["self_feature_dim"]))
             actions, validation_rate = _sample_actions(
                 trainer,
                 before_obs_padded,
@@ -1137,9 +1140,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 "task_label": str(outcome.infos[0].get("replay_metadata", {}).get("task_label", "")),
                 "recovery_reset_source": origin,
             }
-            next_obs_batch = _stack_with_batch(next_observations, max_agents, actor_max_pursuers)
+            next_obs_batch = _stack_with_batch(next_observations, max_agents, actor_max_pursuers, int(root_config["actor"]["self_feature_dim"]))
             next_obs_padded = {key: value[0] for key, value in next_obs_batch.items()}
-            next_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+            next_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=int(root_config["actor"]["self_feature_dim"]))
             replay.add(
                 local_obs=before_obs_padded,
                 next_local_obs=next_obs_padded,

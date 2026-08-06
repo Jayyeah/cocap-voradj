@@ -888,13 +888,14 @@ class VorAdjEnv(CoCapEnv):
         max_o = int(self.per_cfg.get("max_obstacle_num", 5))
         data = self._capture_voronoi_map()
         coverage_data = self._coverage_voronoi_map()
+        world_frame = str(self.per_cfg.get("observation_frame", "robot")).strip().lower() in {"world", "world_frame"}
         key = ("pursuer", idx)
         adjacency = data.get("adjacency", {}).get(key, set())
         raw_is_pursuing = self._has_enemy_neighbor(data, key)
         is_pursuing = self._effective_is_pursuing(idx, raw_is_pursuing)
 
         distance_scale = self._distance_scale()
-        abs_vel = self._robot_frame(pursuer, pursuer.velocity, True)
+        abs_vel = np.asarray(pursuer.velocity, dtype=float) if world_frame else self._robot_frame(pursuer, pursuer.velocity, True)
         if self.obstacles:
             if self._vct_ls_enabled():
                 visible_clearances = [
@@ -916,22 +917,56 @@ class VorAdjEnv(CoCapEnv):
         top_d = float(pursuer.y - yt)
         nearest_y = bottom_d if abs(bottom_d) <= abs(top_d) else top_d
         centroid = coverage_data.get("centroids", {}).get(key, self._position(pursuer))
-        center_r = self._robot_frame(pursuer, np.asarray(centroid, dtype=float) - self._position(pursuer), True)
+        center_vec = np.asarray(centroid, dtype=float) - self._position(pursuer)
+        center_r = center_vec if world_frame else self._robot_frame(pursuer, center_vec, True)
         center_scale = self._center_sqrt_n_scale(coverage_data)
         boundary_mode = str(self.per_cfg.get("boundary_feature_mode", "axis_signed"))
         if boundary_mode == "nearest_vector_robot_oob":
-            boundary_r, is_out_of_bounds = self._nearest_boundary_vector(pursuer)
-            self_feat = [
-                float(abs_vel[0]),
-                float(abs_vel[1]),
-                float(min_obs / distance_scale),
-                float(boundary_r[0] / distance_scale),
-                float(boundary_r[1] / distance_scale),
-                float(is_out_of_bounds),
-                float((center_r[0] / distance_scale) * center_scale),
-                float((center_r[1] / distance_scale) * center_scale),
-                float(is_pursuing),
-            ]
+            if world_frame:
+                xl, xr, yb, yt = self._bounds()
+                position = self._position(pursuer)
+                inside = bool(xl <= pursuer.x <= xr and yb <= pursuer.y <= yt)
+                if inside:
+                    boundary_points = [
+                        np.asarray([xl, pursuer.y], dtype=float),
+                        np.asarray([xr, pursuer.y], dtype=float),
+                        np.asarray([pursuer.x, yb], dtype=float),
+                        np.asarray([pursuer.x, yt], dtype=float),
+                    ]
+                    nearest = min(boundary_points, key=lambda point: float(np.linalg.norm(point - position)))
+                else:
+                    nearest = np.asarray(
+                        [np.clip(pursuer.x, xl, xr), np.clip(pursuer.y, yb, yt)],
+                        dtype=float,
+                    )
+                boundary_r = nearest - position
+                is_out_of_bounds = not inside
+                self_feat = [
+                    float(abs_vel[0]),
+                    float(abs_vel[1]),
+                    float(min_obs / distance_scale),
+                    float(boundary_r[0] / distance_scale),
+                    float(boundary_r[1] / distance_scale),
+                    float(is_out_of_bounds),
+                    float((center_r[0] / distance_scale) * center_scale),
+                    float((center_r[1] / distance_scale) * center_scale),
+                    float(is_pursuing),
+                    float(np.cos(pursuer.theta)),
+                    float(np.sin(pursuer.theta)),
+                ]
+            else:
+                boundary_r, is_out_of_bounds = self._nearest_boundary_vector(pursuer)
+                self_feat = [
+                    float(abs_vel[0]),
+                    float(abs_vel[1]),
+                    float(min_obs / distance_scale),
+                    float(boundary_r[0] / distance_scale),
+                    float(boundary_r[1] / distance_scale),
+                    float(is_out_of_bounds),
+                    float((center_r[0] / distance_scale) * center_scale),
+                    float((center_r[1] / distance_scale) * center_scale),
+                    float(is_pursuing),
+                ]
         else:
             self_feat = [
                 float(abs_vel[0]),
@@ -956,8 +991,12 @@ class VorAdjEnv(CoCapEnv):
         pursuer_feats: List[List[float]] = []
         for j in friend_ids[:max_p]:
             other = self.pursuers[j]
-            pos_r = self._robot_frame(pursuer, self._position(other), False)
-            vel_r = self._robot_frame(pursuer, other.velocity, True)
+            if world_frame:
+                pos_r = self._position(other) - self._position(pursuer)
+                vel_r = np.asarray(other.velocity, dtype=float)
+            else:
+                pos_r = self._robot_frame(pursuer, self._position(other), False)
+                vel_r = self._robot_frame(pursuer, other.velocity, True)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             pursuer_feats.append([
@@ -988,8 +1027,12 @@ class VorAdjEnv(CoCapEnv):
         evader_feats: List[List[float]] = []
         for j in enemy_ids[:max_e]:
             evader = self.evaders[j]
-            pos_r = self._robot_frame(pursuer, self._position(evader), False)
-            vel_r = self._robot_frame(pursuer, evader.velocity, True)
+            if world_frame:
+                pos_r = self._position(evader) - self._position(pursuer)
+                vel_r = np.asarray(evader.velocity, dtype=float)
+            else:
+                pos_r = self._robot_frame(pursuer, self._position(evader), False)
+                vel_r = self._robot_frame(pursuer, evader.velocity, True)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             heading = float(np.arctan2(vel_r[1], vel_r[0])) if np.linalg.norm(vel_r) > 1e-9 else 0.0
@@ -1028,7 +1071,10 @@ class VorAdjEnv(CoCapEnv):
         obstacle_feats: List[List[float]] = []
         for oi, _meta in sorted(obstacle_candidates.items(), key=lambda kv: (kv[1][0], kv[1][1]))[:max_o]:
             obs = self.obstacles[oi]
-            pos_r = self._robot_frame(pursuer, np.array([obs.x, obs.y], dtype=float), False)
+            if world_frame:
+                pos_r = np.asarray([obs.x, obs.y], dtype=float) - self._position(pursuer)
+            else:
+                pos_r = self._robot_frame(pursuer, np.array([obs.x, obs.y], dtype=float), False)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             obstacle_feats.append([

@@ -18,6 +18,7 @@ STAGE2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage2_si
 STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"
 STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
 STAGE6A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage6a_pure_ce_body.yaml"
+STAGE7A1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7a1_pure_ce_world.yaml"
 
 
 def test_stage2_ladder_config_contract() -> None:
@@ -142,3 +143,19 @@ def test_stage6a_body_yaw_velocity_heading() -> None:
     heading_before_low_speed = pursuer.theta
     env.step([[0.0, 0.0]] * len(env.pursuers), [])
     assert abs(pursuer.theta - heading_before_low_speed) < 1e-9
+
+
+def test_stage7a1_world_observation_contract() -> None:
+    config = resolve_ladder_config(STAGE7A1)
+    assert config["action"]["mode"] == "acceleration_2d_world"
+    assert config["perception"]["observation_frame"] == "world"
+    assert config["actor"]["self_feature_dim"] == 11
+    scene = scene_config(config, "pure_ce")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    observations = list(env.get_observations())
+    assert observations and all(item["self"].shape == (11,) for item in observations)
+    # World-frame tokens must be expressed relative to the pursuer in world axes.
+    obs = observations[0]
+    assert np.all(np.isfinite(obs["self"]))
