@@ -748,7 +748,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     if str(loaded.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
         root_config = resolve_ladder_config(args.config)
     else:
-    root_config = resolve_formal_config(args.config)
+        root_config = resolve_formal_config(args.config)
     _set_seed(args.seed)
     if args.legacy_encoder_checkpoint:
         root_config.setdefault("initialization", {})["actor_encoder"] = {
