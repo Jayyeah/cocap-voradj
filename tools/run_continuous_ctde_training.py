@@ -931,7 +931,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
-                if transition_count % checkpoint_interval == 0:
+                if transition_count == 1 or transition_count % checkpoint_interval == 0:
                     diagnostic_eval = (
                         _screen(
                             trainer,
@@ -1124,7 +1124,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
-            if transition_count % checkpoint_interval == 0:
+            if transition_count == 1 or transition_count % checkpoint_interval == 0:
                 diagnostic_eval = (
                     _screen(
                         trainer,
