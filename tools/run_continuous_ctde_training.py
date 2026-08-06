@@ -35,6 +35,7 @@ from cocap_voradj.training.continuous.central_schema import build_central_global
 from cocap_voradj.training.continuous.curriculum_snapshots import restore_snapshot
 from cocap_voradj.training.continuous.formal_config import (
     AW_ACTION_MODE,
+    BODY_ACTION_MODE,
     SCENES,
     resolve_formal_config,
     resolve_ladder_config,
@@ -745,7 +746,12 @@ def _reset_from_snapshot(
 
 def run(args: argparse.Namespace) -> Dict[str, Any]:
     loaded = load_config(str(args.config))
-    if str(loaded.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
+    if str(loaded.get("action", {}).get("mode", "")).strip().lower() in {
+        AW_ACTION_MODE,
+        BODY_ACTION_MODE,
+        "aw",
+        "continuous_aw",
+    }:
         root_config = resolve_ladder_config(args.config)
     else:
         root_config = resolve_formal_config(args.config)

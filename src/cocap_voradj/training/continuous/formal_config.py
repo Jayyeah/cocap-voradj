@@ -12,6 +12,7 @@ from cocap_voradj.training.trainer import deep_update, load_config
 
 FORMAL_ALGORITHM = "masac_ctde"
 FORMAL_ACTION_MODE = "acceleration_2d_world"
+BODY_ACTION_MODE = "acceleration_2d_body"
 AW_ACTION_MODE = "acceleration_angular_velocity_body"
 FORMAL_DYNAMICS_PROFILE = "continuous_parity_v1"
 SCENES = ("capture", "pure_ce", "mixed_crms")
@@ -104,7 +105,7 @@ def validate_ladder_config(config: Dict[str, Any], path: str | Path | None = Non
 
     action = _require_mapping(config.get("action"), "action")
     action_mode = str(action.get("mode", "")).strip().lower()
-    if action_mode not in {FORMAL_ACTION_MODE, AW_ACTION_MODE, "aw", "continuous_aw"}:
+    if action_mode not in {FORMAL_ACTION_MODE, BODY_ACTION_MODE, AW_ACTION_MODE, "aw", "continuous_aw"}:
         raise ValueError(f"{label}: unsupported action.mode {action_mode!r}")
     if float(action.get("a_max", 0.0)) > 0.4 + 1e-9:
         raise ValueError(f"{label}: a_max must be <= 0.4")

@@ -9,6 +9,7 @@ import torch
 
 from cocap_voradj.training.continuous.formal_config import (
     AW_ACTION_MODE,
+    BODY_ACTION_MODE,
     SCENES,
     resolve_formal_config,
     resolve_ladder_config,
@@ -35,7 +36,12 @@ def main() -> int:
     parser.add_argument("--config", default=str(FORMAL))
     args = parser.parse_args()
     raw = __import__("yaml").safe_load(Path(args.config).read_text(encoding="utf-8"))
-    if str(raw.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
+    if str(raw.get("action", {}).get("mode", "")).strip().lower() in {
+        AW_ACTION_MODE,
+        BODY_ACTION_MODE,
+        "aw",
+        "continuous_aw",
+    }:
         config = resolve_ladder_config(args.config)
     else:
         config = resolve_formal_config(args.config)

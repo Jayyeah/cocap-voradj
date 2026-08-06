@@ -649,6 +649,13 @@ class CoCapEnv:
                 np.zeros(2, dtype=float),
                 substep_callback=substep_checks,
             )
+            yaw_cfg = self.config.get("yaw", {}) or self.env_cfg.get("yaw", {}) or {}
+            yaw_mode = str(yaw_cfg.get("mode", "hold")).strip().lower()
+            if yaw_mode in {"velocity_heading", "velocity"} and not robot.deactivated:
+                speed = float(robot.speed)
+                epsilon = float(yaw_cfg.get("speed_epsilon", 0.05))
+                if speed > epsilon:
+                    robot.theta = float(np.arctan2(robot.velocity[1], robot.velocity[0])) % TWO_PI
             decision_dt = float(robot.dt * max(int(robot.N), 1))
             execution_interrupted = bool(robot.deactivated)
             if execution_interrupted:

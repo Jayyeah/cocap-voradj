@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STAGE2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage2_simple_aw.yaml"
 STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"
 STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
+STAGE6A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage6a_pure_ce_body.yaml"
 
 
 def test_stage2_ladder_config_contract() -> None:
@@ -117,3 +118,27 @@ def test_stage4b_moving_evader_flag() -> None:
     env.step([[0.0, 0.0]], actions)
     after = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
     assert not np.allclose(before, after, atol=1e-6)
+
+
+def test_stage6a_body_yaw_velocity_heading() -> None:
+    config = resolve_ladder_config(STAGE6A)
+    assert config["action"]["mode"] == "acceleration_2d_body"
+    assert config["yaw"]["mode"] == "velocity_heading"
+    scene = scene_config(config, "pure_ce")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    pursuer = env.pursuers[0]
+    initial_theta = pursuer.theta
+    env.step([[0.0, 0.4]] * len(env.pursuers), [])
+    expected_theta = float(np.arctan2(pursuer.velocity[1], pursuer.velocity[0])) % (2.0 * np.pi)
+    assert abs(pursuer.theta - expected_theta) < 1e-6
+    assert initial_theta != pursuer.theta
+    # Coasting down with zero action must hold the last valid heading once slow.
+    for _ in range(200):
+        env.step([[0.0, 0.0]] * len(env.pursuers), [])
+        if pursuer.speed <= 0.05 + 1e-6:
+            break
+    heading_before_low_speed = pursuer.theta
+    env.step([[0.0, 0.0]] * len(env.pursuers), [])
+    assert abs(pursuer.theta - heading_before_low_speed) < 1e-9
