@@ -106,7 +106,7 @@ next action: 启动 Stage 2
 ```text
 stage: 2
 run_id: STAGE2_SIMPLE_AW_20260807
-status: IN_PROGRESS（seed1/seed2 已启动，seed3 待前两个 25k 后启动）
+status: IN_PROGRESS（seed1 25k PASS；seed2 运行中；seed3 已启动）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 commit: c84a5b4 / 24d5e26
@@ -120,11 +120,11 @@ reward contract: [DIAGNOSTIC-ADAPT] legacy distance-progress + success + safety�
 exact command:
   seed1: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage2_simple_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage2_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage2
   seed2: 同上 seed=2026080702 --device cuda:0 --tag stage2_seed2_25k
-PID/log: seed1 PID 344158 / tmux ladder_s2_s1；seed2 PID 344451 / tmux ladder_s2_s2；stdout 见 stage2_seed{1,2}_25k_stdout.log
-step: 启动中（0/25000）
-key metrics: smoke20/smoke6k all finite；baseline random capture=0/collision=0.30/min-dist=40.6，noop capture=0/min-dist=50.5；正式训练 seed1/seed2 至 6k 附近
-decision: 工程链通过；25k 后按 Stage 2 gate 判定
-next action: 每 10 分钟轮询；25k 后诊断 eval + 20-episode 评估，并启动 seed3
+PID/log: seed1 PID 344158 / tmux ladder_s2_s1（已完成）；seed2 PID 344451 / tmux ladder_s2_s2（运行中）；seed3 PID 765177 / tmux ladder_s2_s3
+step: seed1=25000（完成）；seed2=~23000；seed3=启动中
+key metrics: baseline random capture=0/collision=0.30/min-dist=40.6，noop capture=0/min-dist=50.5，oracle capture=1.0/avg 63 steps；seed1 25k eval20 capture=6/20(0.30)、collision=0/20、avg min-distance≈15 vs baseline 40.6/50.5、distance progress 多数为正
+decision: seed1 PASS（明显优于 random/no-op，几何信号明确）；等 seed2/seed3 后按 3-seed gate 判定
+next action: seed2/seed3 25k 完成后各跑 20-episode eval；若至少 2 seeds 通过则出具 Stage 2 完成报告并进入 Stage 3A
 ```
 
 ### 3.4 历史/已淘汰条目
