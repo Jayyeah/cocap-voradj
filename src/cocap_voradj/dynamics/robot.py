@@ -396,12 +396,19 @@ class Robot:
             nominal_a = float(np.max(np.abs(self.a))) if np.size(self.a) else 0.4
             damping = nominal_a / max(float(self.max_speed or 1.0), np.finfo(float).eps)
         speed_limited = False
+        last_forward_before: np.ndarray = np.zeros(2, dtype=float)
         for _ in range(max(int(self.N), 1)):
             speed_before = float(self.speed)
             heading_before = float(self.theta)
             forward_before = speed_before * np.array(
                 [np.cos(heading_before), np.sin(heading_before)], dtype=float
             )
+            last_forward_before = forward_before
+            # Explicit-Euler position update, matching the legacy IQN
+            # discrete integrator exactly (position is advanced from the
+            # velocity at the beginning of the substep).
+            self.x += forward_before[0] * float(self.dt)
+            self.y += forward_before[1] * float(self.dt)
             next_speed = speed_before + (acceleration - float(damping) * speed_before) * float(self.dt)
             next_speed = max(0.0, next_speed)
             if self.max_speed is not None and next_speed > float(self.max_speed):
@@ -411,17 +418,21 @@ class Robot:
             forward_after = next_speed * np.array(
                 [np.cos(next_theta), np.sin(next_theta)], dtype=float
             )
-            self.x += 0.5 * (forward_before[0] + forward_after[0]) * float(self.dt)
-            self.y += 0.5 * (forward_before[1] + forward_after[1]) * float(self.dt)
             self.speed = float(next_speed)
             self.theta = float(next_theta)
-            self.velocity = forward_after + ocean_current
+            # Legacy IQN quirk: after a substep, ``velocity`` still holds the
+            # pre-substep value; the next substep refreshes it to the updated
+            # heading/speed at its start.
+            self.velocity = forward_before + ocean_current
             if substep_callback is not None:
                 substep_callback()
             if self.deactivated:
                 break
+            self.velocity = forward_after + ocean_current
         if not self.deactivated:
-            self.update_velocity(ocean_current)
+            # After the final substep the legacy path leaves ``velocity`` at
+            # the start-of-substep value, not the final speed/heading.
+            self.velocity = last_forward_before + ocean_current
         return bool(speed_limited)
 
     def check_collision(self, entities_x, entities_y, entities_r):

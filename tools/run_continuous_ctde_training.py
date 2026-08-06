@@ -28,16 +28,23 @@ from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.models.continuous.central_attention_critic import CentralCriticConfig
 from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoderConfig
 from cocap_voradj.models.continuous.radial_actor import RadialActorConfig
+from cocap_voradj.models.continuous.box_actor import BoxActorConfig
 from cocap_voradj.training.continuous.central_sac import CentralSACConfig, CentralSACTrainer
 from cocap_voradj.training.continuous.central_schema import build_central_global_obs
 from cocap_voradj.training.continuous.curriculum_snapshots import restore_snapshot
-from cocap_voradj.training.continuous.formal_config import SCENES, resolve_formal_config, scene_config
+from cocap_voradj.training.continuous.formal_config import (
+    AW_ACTION_MODE,
+    SCENES,
+    resolve_formal_config,
+    resolve_ladder_config,
+    scene_config,
+)
 from cocap_voradj.training.continuous.joint_replay import (
     FOCAL_BUCKETS,
     FocalReplaySampler,
     JointReplayBuffer,
 )
-from cocap_voradj.training.trainer import set_global_config
+from cocap_voradj.training.trainer import load_config, set_global_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +120,7 @@ def _implementation_hash() -> str:
         ROOT / "src/cocap_voradj/training/continuous/formal_config.py",
         ROOT / "src/cocap_voradj/models/continuous/central_attention_critic.py",
         ROOT / "src/cocap_voradj/models/continuous/radial_actor.py",
+        ROOT / "src/cocap_voradj/models/continuous/box_actor.py",
         ROOT / "src/cocap_voradj/dynamics/continuous_action.py",
         ROOT / "src/cocap_voradj/dynamics/robot.py",
         ROOT / "src/cocap_voradj/envs/base.py",
@@ -258,9 +266,14 @@ def _sample_actions(
 ) -> Tuple[np.ndarray, float]:
     if uniform_disk:
         rng = rng or np.random.default_rng(0)
-        radii = float(a_max) * np.sqrt(rng.uniform(0.0, 1.0, size=active_count))
-        angles = rng.uniform(0.0, 2.0 * np.pi, size=active_count)
-        raw = np.stack([radii * np.cos(angles), radii * np.sin(angles)], axis=1).astype(np.float32)
+        if hasattr(adapter, "w_max") and float(getattr(adapter, "w_max", 0.0)) > 0.0:
+            raw_a = rng.uniform(-float(a_max), float(a_max), size=(active_count, 1))
+            raw_w = rng.uniform(-float(adapter.w_max), float(adapter.w_max), size=(active_count, 1))
+            raw = np.concatenate([raw_a, raw_w], axis=1).astype(np.float32)
+        else:
+            radii = float(a_max) * np.sqrt(rng.uniform(0.0, 1.0, size=active_count))
+            angles = rng.uniform(0.0, 2.0 * np.pi, size=active_count)
+            raw = np.stack([radii * np.cos(angles), radii * np.sin(angles)], axis=1).astype(np.float32)
     else:
         with torch.no_grad():
             raw, _, _ = trainer.actor.sample(_tensor_obs(padded_obs, trainer.device), deterministic=deterministic)
@@ -288,14 +301,26 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
         max_obstacles=int(actor_cfg.get("max_obstacles", 5)),
         dropout=float(actor_cfg.get("dropout", 0.0)),
     )
-    actor = RadialActorConfig(
-        hidden_dim=int(actor_cfg["hidden_dim"]),
-        a_max=float(config["action"]["a_max"]),
-        decision_dt=float(config["dynamics"]["decision_dt"]),
-        log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
-        log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
-        dropout=float(actor_cfg.get("dropout", 0.0)),
-    )
+    action_mode = str(config["action"]["mode"]).strip().lower()
+    if action_mode in {AW_ACTION_MODE, "aw", "continuous_aw"}:
+        actor = BoxActorConfig(
+            hidden_dim=int(actor_cfg["hidden_dim"]),
+            a_max=float(config["action"]["a_max"]),
+            w_max=float(config["action"].get("w_max", float(np.pi / 6.0))),
+            decision_dt=float(config["dynamics"]["decision_dt"]),
+            log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
+            log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
+            dropout=float(actor_cfg.get("dropout", 0.0)),
+        )
+    else:
+        actor = RadialActorConfig(
+            hidden_dim=int(actor_cfg["hidden_dim"]),
+            a_max=float(config["action"]["a_max"]),
+            decision_dt=float(config["dynamics"]["decision_dt"]),
+            log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
+            log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
+            dropout=float(actor_cfg.get("dropout", 0.0)),
+        )
     critic = CentralCriticConfig(
         hidden_dim=int(critic_cfg["hidden_dim"]),
         num_heads=int(critic_cfg["num_heads"]),
@@ -323,7 +348,7 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
         critic_config=critic,
         config=trainer_cfg,
         device=device,
-        action_mode=str(config["action"]["mode"]),
+        action_mode=action_mode,
     )
     trainer.warmup_steps = int(config["training"]["warmup_joint_transitions"])
     init_cfg = (config.get("initialization", {}) or {}).get("actor_encoder", {}) or {}
@@ -355,6 +380,7 @@ def _trainer_contract(trainer: CentralSACTrainer) -> Dict[str, Any]:
     return {
         "actor_hidden_dim": int(getattr(actor_cfg, "hidden_dim", -1)),
         "actor_a_max": float(getattr(actor_cfg, "a_max", 0.0)),
+        "actor_w_max": float(getattr(actor_cfg, "w_max", 0.0)),
         "actor_decision_dt": float(getattr(actor_cfg, "decision_dt", 0.0)),
         "actor_log_std_max": float(getattr(actor_cfg, "log_std_max", 0.0)),
         "critic_max_agents": int(getattr(critic_cfg, "max_agents", -1)),
@@ -379,10 +405,12 @@ def _manifest(
     tag: str,
     trainer: CentralSACTrainer,
     scene_hashes: Dict[str, str],
+    config_path: Optional[str] = None,
 ) -> Dict[str, Any]:
+    source = Path(config_path).resolve() if config_path else FORMAL_CONFIG_PATH
     return {
         "manifest_schema_version": 3,
-        "config": str(FORMAL_CONFIG_PATH.relative_to(ROOT)),
+        "config": str(source.relative_to(ROOT)),
         "config_hash": _stable_hash(config),
         "algorithm": str(config["algorithm"]),
         "critic_mode": str(config["critic_mode"]),
@@ -390,6 +418,7 @@ def _manifest(
         "action_mode": str(config["action"]["mode"]),
         "dynamics_profile": str(config["dynamics"]["profile"]),
         "a_max": float(config["action"]["a_max"]),
+        "w_max": float(config["action"].get("w_max", 0.0)),
         "v_max": float(config["dynamics"]["v_max"]),
         "max_agents": int(config["training"]["max_agents"]),
         "batch_size": int(config["training"]["batch_size"]),
@@ -695,7 +724,11 @@ def _reset_from_snapshot(
 
 
 def run(args: argparse.Namespace) -> Dict[str, Any]:
-    root_config = resolve_formal_config(args.config)
+    loaded = load_config(str(args.config))
+    if str(loaded.get("action", {}).get("mode", "")).strip().lower() in {AW_ACTION_MODE, "aw", "continuous_aw"}:
+        root_config = resolve_ladder_config(args.config)
+    else:
+        root_config = resolve_formal_config(args.config)
     _set_seed(args.seed)
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     trainer = _make_trainer(root_config, device)
@@ -706,13 +739,14 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     if unknown_scenes:
         raise ValueError(f"unknown scenes: {sorted(unknown_scenes)}")
     scene_hashes = {scene: _stable_hash(scene_config(root_config, scene)) for scene in scenes}
-    manifest = _manifest(root_config, args.seed, args.tag, trainer, scene_hashes)
+    manifest = _manifest(root_config, args.seed, args.tag, trainer, scene_hashes, config_path=args.config)
     recovery_cfg = root_config.get("recovery", {}) or {}
     recovery_pool: Deque[Dict[str, Any]] = deque(maxlen=int(recovery_cfg.get("capture_state_pool_capacity", 1000)))
     rng = np.random.default_rng(args.seed)
     snapshot_dataset_path = args.snapshot_dataset or (root_config.get("teacher_snapshot_restore", {}) or {}).get("dataset", "")
     snapshot_dataset = _load_snapshot_dataset(snapshot_dataset_path) if snapshot_dataset_path else None
-    artifact_dir = ARTIFACT_ROOT / args.tag
+    artifact_root = Path(args.artifact_root) if args.artifact_root else ARTIFACT_ROOT
+    artifact_dir = artifact_root / args.tag
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
     if bool(args.resume_checkpoint) != bool(args.resume_replay):
@@ -1278,6 +1312,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Formal CTDE MASAC training runner")
     parser.add_argument("--config", default=str(FORMAL_CONFIG_PATH))
+    parser.add_argument("--artifact-root", default="")
     parser.add_argument("--seed", type=int, default=2026080601)
     parser.add_argument("--device", default="")
     parser.add_argument("--scenes", default=",".join(SCENES))

@@ -544,9 +544,11 @@ class CoCapEnv:
             previous_acceleration = float(previous_diagnostics.get("actual_acceleration", 0.0))
 
             def substep_checks() -> None:
+                # Legacy IQN semantics: boundary death is checked per substep,
+                # entity collision is refreshed after all robots move (once per
+                # decision step).  This keeps the bridge exactly aligned with
+                # the old discrete execution path.
                 self._clip_and_kill_boundary(robot)
-                if not robot.deactivated:
-                    self._refresh_collisions()
 
             speed_limited = robot.update_state_acceleration_angular_velocity_body(
                 command,
