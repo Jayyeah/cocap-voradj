@@ -1,0 +1,34 @@
+extends: ../ce_coverage_20260729/ce8_delayed_energy0005_lrdrop_300k.yaml
+run_name: ce10_pure8_scratch_delayed_energy0005_300k_20260730
+seed: 2026071543
+env:
+  num_pursuers: 8
+  num_evaders: 0
+  num_obstacles: 2
+  episode_max_length: 1200
+reward:
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+voradj:
+  capture_adjacency_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+experiment_metadata:
+  ablation: CE10 pure 8-agent scratch scale test using the CE8 delayed-energy schedule.
+  scale_question: Tests whether centroid-energy coverage remains learnable at 8 agents without old CV, settle shaping, or terminal bonuses.
+  map_semantics: Capture and coverage both use obstacle-masked free-space Voronoi. Capture semantics are inactive because this is a pure-coverage run.
+  pbrs_reset_semantics: Reset PBRS at every true terminal; capture phase reset is enabled but inactive in this pure-coverage run.
+

@@ -1,0 +1,23 @@
+extends: p1_acceleration_contract_4v1.yaml
+
+run_name: continuous_p3_actor_contract_4v1
+algorithm: p3_actor_contract
+
+continuous_encoder:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_pursuers: 8
+  max_evaders: 8
+  max_obstacles: 5
+  dropout: 0.0
+
+actor:
+  distribution: radial_squashed_gaussian_acceleration
+  a_max: 0.8
+  decision_dt: 0.5
+  log_std_min: -5.0
+  log_std_max: 1.0
+  dropout: 0.0
+  use_legacy_iqn_encoder_transfer: false

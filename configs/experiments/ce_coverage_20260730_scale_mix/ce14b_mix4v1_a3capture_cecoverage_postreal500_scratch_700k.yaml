@@ -1,0 +1,27 @@
+extends: ce14_mix4v1_a3capture_cecoverage_scratch_500k.yaml
+run_name: ce14b_mix4v1_a3capture_cecoverage_postreal500_scratch_700k_20260730
+device: cuda:0
+total_timesteps: 700000
+
+reward:
+  post_capture_coverage_window_steps: 500
+
+voradj:
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 32
+    recovery_pure: 16
+  recovery:
+    spawn_mode: inner_random_cluster_plus_capture_snapshot_plus_map_random
+    capture_state_pool_capacity: 1000
+    captured_state_ratio: 0.75
+    map_random_ratio_within_non_capture: 0.5
+
+experiment_metadata:
+  series_label: ce14b_a3_old_capture_ce_coverage_mix4v1_postreal500
+  training_start: scratch
+  source_line: ce14_mix4v1_a3capture_cecoverage_scratch_500k_20260730 stopped at 302k without final checkpoint.
+  diagnosis_from_ce14: Pure CE coverage was strong near 300k, but old-mix post-capture transfer was weak; last 100 voradj episodes had capture=0.68, post CE coverage=0.14, post timeout=0.54, collision=0.29.
+  changed_hyperparams: Increase post_capture_real replay from 16 to 32, reduce recovery_pure from 32 to 16, increase recovery captured-snapshot ratio from 0.50 to 0.75, and extend post_capture_coverage_window_steps from 300 to 500.
+  unchanged_semantics: Still scratch; capture remains A3 old mix with legacy capture graph; coverage remains CE centroid-energy free-mask graph; no old speed shaping, no coverage terminal bonus, no VCT-LS.

@@ -1,0 +1,25 @@
+extends: common_8p2e2obs.yaml
+
+seed: 2026080211
+device: cuda:0
+total_timesteps: 700000
+run_name: vctls_ce_support_8v2_warm700k_20260802_run1
+
+iqn:
+  learning_rate: 0.00003
+  checkpoint_freq: 100000
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 420000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.00003
+
+pretrained:
+  path: runs/vctls_ce4v1_support_scratch1m_20260731_run1/checkpoints/final_step_1000000.pt
+  compatibility_mode: shape_compatible
+
+experiment_metadata:
+  training_start: warm_start_from_vctls_ce_4v1_support_scratch1m
+  pretrained_checkpoint: runs/vctls_ce4v1_support_scratch1m_20260731_run1/checkpoints/final_step_1000000.pt
+  optimizer_semantics: Warm adaptation uses lr=3e-5 and epsilon 0.28 to 0.05 over 420k.

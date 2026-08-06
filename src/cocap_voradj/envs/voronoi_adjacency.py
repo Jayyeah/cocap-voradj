@@ -363,7 +363,12 @@ class VorAdjEnv(CoCapEnv):
         if not bool(self.reward_cfg.get("coverage_ce_pbrs_enabled", True)):
             return 0.0
         scale = float(self.reward_cfg.get("coverage_ce_reward_scale", 10.0))
-        gamma = float((self.config.get("iqn", {}) or {}).get("gamma", 0.99))
+        gamma = float(
+            (self.config.get("discount", {}) or {}).get(
+                "gamma",
+                (self.config.get("iqn", {}) or {}).get("gamma", 0.99),
+            )
+        )
         kappa = float(self.reward_cfg.get("coverage_ce_pbrs_kappa", 1.0))
         return scale * gamma * kappa * float(center_cost)
 
@@ -1382,6 +1387,11 @@ class VorAdjEnv(CoCapEnv):
     def _action_accel_turn(self, idx: int, actions: List[Optional[int]]) -> Tuple[float, float]:
         if idx >= len(actions) or actions[idx] is None:
             return 0.0, 0.0
+        if self.continuous_control:
+            diagnostics = getattr(self.pursuers[idx], "last_action_diagnostics", {}) or {}
+            return float(diagnostics.get("actual_acceleration", 0.0)), float(
+                diagnostics.get("validated_angular_velocity", diagnostics.get("commanded_angular_velocity", 0.0))
+            )
         try:
             action = int(actions[idx])
             accel, turn = self.pursuers[idx].action_list[action]
@@ -1799,7 +1809,12 @@ class VorAdjEnv(CoCapEnv):
                     after_center_cost=float(after_cov[index]),
                     control_cost=control_cost,
                     reward_scale=float(self.reward_cfg.get("coverage_ce_reward_scale", 10.0)),
-                    gamma=float((self.config.get("iqn", {}) or {}).get("gamma", 0.99)),
+                    gamma=float(
+                        (self.config.get("discount", {}) or {}).get(
+                            "gamma",
+                            (self.config.get("iqn", {}) or {}).get("gamma", 0.99),
+                        )
+                    ),
                     pbrs_enabled=bool(self.reward_cfg.get("coverage_ce_pbrs_enabled", True)),
                     pbrs_kappa=float(self.reward_cfg.get("coverage_ce_pbrs_kappa", 1.0)),
                     terminal=False,
@@ -2213,6 +2228,12 @@ class VorAdjEnv(CoCapEnv):
         self.episode_step += 1
         self.total_steps += 1
         timeout = self.episode_step >= self.episode_max_length
+        pre_capture_max_length = int(self.env_cfg.get("pre_capture_max_length", 0))
+        pre_capture_timeout = bool(
+            active_evaders
+            and pre_capture_max_length > 0
+            and self.episode_step >= pre_capture_max_length
+        )
         post_window = int(self.reward_cfg.get("post_capture_coverage_window_steps", 300))
         voradj_cfg = (self.config.get("voradj", {}) or {})
         capture_terminal_done = bool(
@@ -2241,6 +2262,7 @@ class VorAdjEnv(CoCapEnv):
             coverage_phase_done
             or capture_terminal_done
             or zone_breach_done
+            or pre_capture_timeout
             or (post_capture_phase and self.post_capture_started and not self.post_capture_coverage_success and self.post_capture_step >= post_window)
         )
         # Replay phase describes the state in which the stored action was
@@ -2255,6 +2277,8 @@ class VorAdjEnv(CoCapEnv):
                 apply_ce_pbrs_reset(i, float(after_cov[i]), "terminal")
             if timeout and infos[i]["state"] == "normal":
                 infos[i]["state"] = "too long episode"
+            elif pre_capture_timeout and infos[i]["state"] == "normal":
+                infos[i]["state"] = "pre-capture timeout"
             elif capture_terminal_done and infos[i]["state"] == "normal":
                 infos[i]["state"] = "capture completed"
             elif zone_breach_done and infos[i]["state"] == "normal":
@@ -2311,6 +2335,10 @@ class VorAdjEnv(CoCapEnv):
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,
             }
+            if self.continuous_control:
+                diagnostics = dict(getattr(self.pursuers[i], "last_action_diagnostics", {}) or {})
+                infos[i]["action_diagnostics"] = diagnostics
+                infos[i]["replay_metadata"]["action_diagnostics"] = dict(diagnostics)
             dones.append(done)
         capture_count = int(sum(1 for x in next_labels if x == "capture"))
         coverage_count = int(sum(1 for x in next_labels if x == "coverage"))

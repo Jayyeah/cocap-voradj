@@ -134,7 +134,12 @@ class CoCapTrainer:
         self.total_timesteps = int(self.config.get("total_timesteps", 20000))
         iqn_cfg = self.config.get("iqn", {})
         self.batch_size = int(iqn_cfg.get("batch_size", 64))
-        self.gamma = float(iqn_cfg.get("gamma", 0.99))
+        self.gamma = float(
+            (self.config.get("discount", {}) or {}).get(
+                "gamma",
+                iqn_cfg.get("gamma", 0.99),
+            )
+        )
         self.min_replay_size = int(iqn_cfg.get("min_replay_size", 1000))
         self.train_freq = int(iqn_cfg.get("train_freq", 4))
         self.target_update_freq = int(iqn_cfg.get("target_update_freq", 10000))

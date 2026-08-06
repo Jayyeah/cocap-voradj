@@ -1,0 +1,27 @@
+extends: ../voradj_a3_apfnew_sqrtn_curriculum_20260723/stage3_8p2e2obs_1200k.yaml
+
+seed: 2026073043
+device: cuda:1
+total_timesteps: 500000
+run_name: vct_ls_a3_stage3_8v2_k10_warm_500k_20260730_run1
+
+pretrained:
+  path: artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage3_8p2e2obs_step_600000/step_600000.pt
+  compatibility_mode: shape_compatible
+
+voradj:
+  perception_topology_version: friendly_voronoi_comm_v0
+  friendly_comm_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  vct_ls_apply_release_delay: true
+
+experiment_metadata:
+  series_label: vct_ls_v0
+  parallel_line: VCT-LS is parallel to ZoneDemo B1 and CE-Coverage; it keeps old mix/A3 rewards and task scenes.
+  training_start: warm_start_from_a3_stage3_best
+  pretrained_checkpoint: artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage3_8p2e2obs_step_600000/step_600000.pt
+  vct_ls_semantics: Pursuer-only Voronoi communication graph; evader/obstacle tokens come only from local sensing radius; K10 release delay is explicitly enabled.
+  compatibility_boundary: Only active when voradj.perception_topology_version=friendly_voronoi_comm_v0; legacy, ZoneDemo, and CE configs remain opt-in separately.

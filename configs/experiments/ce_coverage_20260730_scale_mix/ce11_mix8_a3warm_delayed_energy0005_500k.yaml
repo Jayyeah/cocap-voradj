@@ -1,0 +1,58 @@
+extends: ../voradj_a3_apfnew_sqrtn_curriculum_20260723/stage3_8p2e2obs_1200k.yaml
+run_name: ce11_mix8_a3warm_delayed_energy0005_500k_20260730
+seed: 2026072343
+total_timesteps: 500000
+reward:
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_speed_weight_schedule:
+    - step: 0
+      value: 0.0
+    - step: 200000
+      value: 0.0005
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.10
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  coverage_success_reward_repeat: false
+  coverage_settle_enabled: false
+  coverage_early_speed_shaping_enabled: false
+  coverage_cell_center_speed_penalty_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+  distribution_converged_grace_steps: 0
+iqn:
+  checkpoint_freq: 25000
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 300000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.00003
+voradj:
+  capture_adjacency_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 24
+    recovery_pure: 24
+pretrained:
+  path: artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage3_8p2e2obs_step_600000/step_600000.pt
+experiment_metadata:
+  series_label: ce11_mix8_a3warm_centroid_energy_v0
+  training_start: A3 stage3 8v2 warm start at step 600000
+  baseline_rollout: capture=1.00, pure_coverage_settled=0.90, mix_settled=0.70, collision=0.00 on the archived 20-rollout set.
+  unified_graph_semantics: Capture adjacency, roles, capture reward, CE centroid observation, CE reward, and CE success all use the obstacle-masked free-space Voronoi map.
+  warm_start_scope: A3 supplies initial network weights only. Because A3 was trained with legacy capture-map semantics, a pre-training three-task rollout baseline is required under the new unified map.
+  phase_semantics: Final-capture action is pre_capture; the next action is post_capture step 1. PBRS is reset at that boundary and at every terminal.
+

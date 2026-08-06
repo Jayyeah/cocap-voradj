@@ -9,6 +9,10 @@ import numpy as np
 from cocap_voradj.config import ConfigManager
 from cocap_voradj.dynamics.evader import Evader
 from cocap_voradj.dynamics.pursuer import Pursuer
+from cocap_voradj.dynamics.continuous_action import (
+    AccelerationActionAdapter,
+    AccelerationAngularVelocityActionAdapter,
+)
 
 TWO_PI = 2.0 * np.pi
 
@@ -44,6 +48,77 @@ class CoCapEnv:
         self.rng = np.random.RandomState(seed)
         self.seed = int(seed)
         self.env_cfg = config.get("env", {})
+        pursuer_cfg = config.get("pursuer", {}) or {}
+        raw_action_mode = config.get(
+            "action_mode",
+            self.env_cfg.get("action_mode", pursuer_cfg.get("action_mode", "unicycle_discrete")),
+        )
+        raw_action_mode = str(raw_action_mode).strip().lower()
+        if raw_action_mode in {"unicycle", "unicycle_discrete"}:
+            self.action_mode = "unicycle_discrete"
+        elif raw_action_mode in {
+            "acceleration_2d_world",
+            "continuous_acceleration_2d_world",
+        }:
+            self.action_mode = "acceleration_2d_world"
+        elif raw_action_mode in {
+            "acceleration_2d_body",
+            "continuous_acceleration_2d_body",
+            # Read old isolated configs without preserving their old
+            # velocity-command semantics.
+            "velocity_2d_body",
+            "continuous_velocity_2d_body",
+        }:
+            self.action_mode = "acceleration_2d_body"
+        elif raw_action_mode in {
+            "acceleration_angular_velocity_body",
+            "continuous_acceleration_angular_velocity_body",
+            "continuous_aw",
+            "aw",
+        }:
+            self.action_mode = "acceleration_angular_velocity_body"
+        else:
+            raise ValueError(f"unsupported pursuer action_mode: {raw_action_mode}")
+        self.continuous_world_action = self.action_mode == "acceleration_2d_world"
+        self.continuous_action = self.action_mode == "acceleration_2d_body" or self.continuous_world_action
+        self.continuous_aw_action = self.action_mode == "acceleration_angular_velocity_body"
+        self.continuous_control = self.continuous_action or self.continuous_aw_action
+        self.v_max = float(config.get("v_max", pursuer_cfg.get("max_speed", 3.0)))
+        if not np.isfinite(self.v_max) or self.v_max <= 0.0:
+            raise ValueError("v_max must be finite and positive")
+        self.acceleration_adapter: Optional[AccelerationActionAdapter] = None
+        self.action_adapter = None
+        if self.continuous_action:
+            decision_dt = float(
+                config.get(
+                    "decision_dt",
+                    self.env_cfg.get("decision_dt", float(0.05 * 10)),
+                )
+            )
+            action_cfg = config.get("action", {}) or {}
+            a_max = float(
+                action_cfg.get(
+                    "a_max",
+                    config.get("a_max", pursuer_cfg.get("a_max", 0.8)),
+                )
+            )
+            self.acceleration_adapter = AccelerationActionAdapter(
+                a_max=a_max,
+                decision_dt=decision_dt,
+            )
+            self.action_adapter = self.acceleration_adapter
+        elif self.continuous_aw_action:
+            decision_dt = float(
+                config.get(
+                    "decision_dt",
+                    self.env_cfg.get("decision_dt", float(0.05 * 10)),
+                )
+            )
+            self.action_adapter = AccelerationAngularVelocityActionAdapter(
+                a_max=float(config.get("a_max", pursuer_cfg.get("a_max", 0.4))),
+                w_max=float(config.get("w_max", pursuer_cfg.get("w_max", np.pi / 6))),
+                decision_dt=decision_dt,
+            )
         self.per_cfg = config.get("perception", {})
         self.reward_cfg = config.get("reward", {})
         self.width = float(self.env_cfg.get("width", 55.0))
@@ -92,6 +167,8 @@ class CoCapEnv:
 
     @property
     def action_size(self) -> int:
+        if self.continuous_control:
+            return 2
         if self.pursuers:
             return len(self.pursuers[0].action_list)
         return 9
@@ -147,11 +224,17 @@ class CoCapEnv:
 
     def _reset_robot(self, robot, pos: np.ndarray, theta: Optional[float] = None) -> None:
         robot.start = np.asarray(pos, dtype=float)
+        if theta is None and self.continuous_control and getattr(robot, "robot_type", None) == "pursuer":
+            yaw_cfg = self.config.get("yaw", {}) or self.env_cfg.get("yaw", {}) or {}
+            yaw_init = str(yaw_cfg.get("init", "aligned_world_axis")).strip().lower()
+            if yaw_init in {"aligned_world_axis", "world_axis", "zero"}:
+                theta = 0.0
         robot.init_theta = float(theta if theta is not None else self.rng.uniform(0.0, TWO_PI))
         robot.init_speed = float(self.env_cfg.get("init_speed", 0.0))
         robot.collision = False
         robot.deactivated = False
         robot.boundary_collision = False
+        robot.last_action_diagnostics = {}
         if hasattr(robot, "captured_evaderId_list"):
             robot.captured_evaderId_list.clear()
             robot.is_current_target_captured = False
@@ -181,6 +264,17 @@ class CoCapEnv:
         self._stationary_capture_counters: Dict[str, int] = {}
         self.archived_evader_trajectories.clear()
         self.pursuers = [Pursuer(i) for i in range(self.num_pursuers)]
+        if self.continuous_control:
+            # In the explicit acceleration contract, v_max is an environment
+            # physical limit. Make the root canonical value authoritative over
+            # duplicated legacy pursuer.max_speed config fields.
+            for pursuer in self.pursuers:
+                pursuer.max_speed = self.v_max
+            dynamics_cfg = self.config.get("dynamics", {}) or {}
+            if "linear_drag_coefficient" in dynamics_cfg:
+                drag = float(dynamics_cfg["linear_drag_coefficient"])
+                for pursuer in self.pursuers:
+                    pursuer.coefficient_water_resistance = drag
         self.evaders = [Evader(i) for i in range(self.num_evaders)]
         for robot in [*self.pursuers, *self.evaders]:
             robot.perception.range = float(self.per_cfg.get("range", 20.0))
@@ -438,8 +532,147 @@ class CoCapEnv:
             )
         return penalties
 
-    def _move_robot(self, robot, action: Optional[int]) -> None:
+    def _move_robot(self, robot, action: Any) -> None:
         if robot.deactivated or action is None:
+            return
+        if self.continuous_aw_action and getattr(robot, "robot_type", None) == "pursuer":
+            if self.action_adapter is None:
+                raise RuntimeError("continuous (a,w) adapter is not initialized")
+            command = self.action_adapter.validate(action)
+            speed_before = float(robot.speed)
+            previous_diagnostics = getattr(robot, "last_action_diagnostics", {}) or {}
+            previous_acceleration = float(previous_diagnostics.get("actual_acceleration", 0.0))
+
+            def substep_checks() -> None:
+                self._clip_and_kill_boundary(robot)
+                if not robot.deactivated:
+                    self._refresh_collisions()
+
+            speed_limited = robot.update_state_acceleration_angular_velocity_body(
+                command,
+                np.zeros(2, dtype=float),
+                substep_callback=substep_checks,
+            )
+            decision_dt = float(robot.dt * max(int(robot.N), 1))
+            execution_interrupted = bool(robot.deactivated)
+            if execution_interrupted:
+                actual_acceleration = 0.0
+                jerk = 0.0
+            else:
+                actual_acceleration = float(
+                    abs(float(robot.speed) - speed_before) / max(decision_dt, np.finfo(float).eps)
+                )
+                jerk = float(
+                    abs(actual_acceleration - previous_acceleration)
+                    / max(decision_dt, np.finfo(float).eps)
+                )
+            robot.action_history.append(command.astype(float).tolist())
+            robot.last_action_diagnostics = {
+                "commanded_acceleration": abs(float(command[0])),
+                "validated_acceleration": abs(float(command[0])),
+                "commanded_angular_velocity": float(command[1]),
+                "validated_angular_velocity": float(command[1]),
+                "action_rejected": False,
+                "validation_delta": 0.0,
+                "speed_before": speed_before,
+                "speed_after": float(robot.speed),
+                "speed_limited": bool(speed_limited),
+                "execution_interrupted": execution_interrupted,
+                "actual_acceleration": actual_acceleration,
+                "jerk": jerk,
+                "validation_rate": 0.0,
+            }
+            robot.trajectory.append([robot.x, robot.y, robot.theta, robot.speed, robot.velocity[0], robot.velocity[1]])
+            return
+        if self.continuous_world_action and getattr(robot, "robot_type", None) == "pursuer":
+            if self.acceleration_adapter is None:
+                raise RuntimeError("continuous acceleration adapter is not initialized")
+            acceleration_world = self.acceleration_adapter.validate(action)
+            speed_before = float(robot.speed)
+            previous_world = np.asarray(robot.velocity, dtype=float)
+            previous_diagnostics = getattr(robot, "last_action_diagnostics", {}) or {}
+            previous_acceleration = float(previous_diagnostics.get("actual_acceleration", 0.0))
+
+            def substep_checks() -> None:
+                self._clip_and_kill_boundary(robot)
+                if not robot.deactivated:
+                    self._refresh_collisions()
+
+            speed_limited = robot.update_state_acceleration_world(
+                acceleration_world,
+                np.zeros(2, dtype=float),
+                substep_callback=substep_checks,
+            )
+            decision_dt = float(robot.dt * max(int(robot.N), 1))
+            execution_interrupted = bool(robot.deactivated)
+            if execution_interrupted:
+                actual_acceleration = 0.0
+                jerk = 0.0
+            else:
+                actual_delta = np.asarray(robot.velocity, dtype=float) - previous_world
+                actual_acceleration = float(np.linalg.norm(actual_delta) / max(decision_dt, np.finfo(float).eps))
+                jerk = float(abs(actual_acceleration - previous_acceleration) / max(decision_dt, np.finfo(float).eps))
+            robot.action_history.append(acceleration_world.astype(float).tolist())
+            robot.last_action_diagnostics = {
+                "commanded_acceleration": float(np.linalg.norm(acceleration_world)),
+                "validated_acceleration": float(np.linalg.norm(acceleration_world)),
+                "action_rejected": False,
+                "validation_delta": 0.0,
+                "speed_before": speed_before,
+                "speed_after": float(robot.speed),
+                "speed_limited": bool(speed_limited),
+                "execution_interrupted": execution_interrupted,
+                "actual_acceleration": actual_acceleration,
+                "jerk": jerk,
+                "validation_rate": 0.0,
+            }
+            robot.trajectory.append([robot.x, robot.y, robot.theta, robot.speed, robot.velocity[0], robot.velocity[1]])
+            return
+        elif self.continuous_action and getattr(robot, "robot_type", None) == "pursuer":
+            if self.acceleration_adapter is None:
+                raise RuntimeError("continuous acceleration adapter is not initialized")
+            acceleration_body = self.acceleration_adapter.validate(action)
+            speed_before = float(robot.speed)
+            previous_world = np.asarray(robot.velocity, dtype=float)
+            previous_diagnostics = getattr(robot, "last_action_diagnostics", {}) or {}
+            previous_acceleration = float(previous_diagnostics.get("actual_acceleration", 0.0))
+
+            def substep_checks() -> None:
+                self._clip_and_kill_boundary(robot)
+                if not robot.deactivated:
+                    self._refresh_collisions()
+
+            speed_limited = robot.update_state_acceleration_body(
+                acceleration_body,
+                np.zeros(2, dtype=float),
+                substep_callback=substep_checks,
+            )
+            decision_dt = float(robot.dt * max(int(robot.N), 1))
+            execution_interrupted = bool(robot.deactivated)
+            if execution_interrupted:
+                # Collision/boundary termination may reset velocity to zero. That
+                # terminal state change is not a policy acceleration command.
+                actual_acceleration = 0.0
+                jerk = 0.0
+            else:
+                actual_delta = np.asarray(robot.velocity, dtype=float) - previous_world
+                actual_acceleration = float(np.linalg.norm(actual_delta) / max(decision_dt, np.finfo(float).eps))
+                jerk = float(abs(actual_acceleration - previous_acceleration) / max(decision_dt, np.finfo(float).eps))
+            robot.action_history.append(acceleration_body.astype(float).tolist())
+            robot.last_action_diagnostics = {
+                "commanded_acceleration": float(np.linalg.norm(acceleration_body)),
+                "validated_acceleration": float(np.linalg.norm(acceleration_body)),
+                "action_rejected": False,
+                "validation_delta": 0.0,
+                "speed_before": speed_before,
+                "speed_after": float(robot.speed),
+                "speed_limited": bool(speed_limited),
+                "execution_interrupted": execution_interrupted,
+                "actual_acceleration": actual_acceleration,
+                "jerk": jerk,
+                "validation_rate": 0.0,
+            }
+            robot.trajectory.append([robot.x, robot.y, robot.theta, robot.speed, robot.velocity[0], robot.velocity[1]])
             return
         robot.action_history.append(int(action))
         for _ in range(robot.N):
@@ -1095,6 +1328,9 @@ class CoCapEnv:
             elif evader_lost and infos[i]["state"] == "normal":
                 infos[i] = {"state": "evader collision"}
             dones.append(done)
+        if self.continuous_control:
+            for i, pursuer in enumerate(self.pursuers):
+                infos[i]["action_diagnostics"] = dict(getattr(pursuer, "last_action_diagnostics", {}) or {})
         self.last_reward_terms = {
             "reward_mean": float(np.mean(rewards)),
             "capture_count": float(len(captured_events)),

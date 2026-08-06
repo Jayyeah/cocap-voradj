@@ -1,0 +1,22 @@
+extends: vctls_ce_4v1_common.yaml
+
+seed: 2026073153
+device: cuda:1
+total_timesteps: 1000000
+run_name: vctls_ce4v1_plain_scratch1m_20260731_run1
+
+iqn:
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+experiment_metadata:
+  series_label: vct_ls_plus_ce_plain_scratch1m
+  training_start: scratch
+  support_reward_blend: disabled
+  screening: Every 100k checkpoint is evaluated on capture, mix, and pure coverage with CE success plus cv<0.15 loose stats.

@@ -1,0 +1,24 @@
+extends: ../ce_coverage_20260730_scale_mix/ce14b_mix4v1_a3capture_cecoverage_postreal500_scratch_700k.yaml
+run_name: ce_oldmix_cv015_curr_stage1_4p1e1obs_700k_20260731_run1
+device: cuda:0
+seed: 2026073151
+total_timesteps: 700000
+reward:
+  coverage_cv_loose_area_cv_threshold: 0.15
+  coverage_ce_min_active_pursuers: 4
+  min_active_pursuers: 4
+  post_capture_coverage_window_steps: 500
+experiment_metadata:
+  series_label: ce_oldmix_cv015_curriculum
+  stage: stage1_4p1e1obs
+  training_start: scratch
+  stage_timesteps: 700000
+  curriculum_policy: Quick old-mix plus CE-coverage curriculum; checks from 300k every
+    100k, early promotion allowed from 500k, otherwise select historical best at cap.
+  capture_semantics: Same as A3/CE14B old-mix capture branch with APF-v2_fixed, K10
+    release delay, hard boundary/death, safety penalties, and CenterSqrtN.
+  coverage_semantics: Centroid-energy CE coverage over obstacle-free Voronoi cells;
+    no legacy speed shaping, no legacy coverage terminal bonus, and no old settle
+    reward.
+  loose_selection_metric: coverage_cv015 means final Voronoi area CV <= 0.15. It is
+    diagnostic and selection-oriented, not a reward term.

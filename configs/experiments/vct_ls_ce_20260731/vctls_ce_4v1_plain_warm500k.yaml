@@ -1,0 +1,16 @@
+extends: vctls_ce_4v1_common.yaml
+
+seed: 2026073151
+device: cuda:1
+total_timesteps: 500000
+run_name: vctls_ce4v1_plain_warm500k_from_vctls_plain2m_20260731_run1
+
+pretrained:
+  path: runs/vct_ls_a3_4v1_scratch_mix_2m_capturefocus_20260730_run1/checkpoints/step_2000000.pt
+  compatibility_mode: shape_compatible
+
+experiment_metadata:
+  series_label: vct_ls_plus_ce_plain_warm500k
+  training_start: warm_start_from_vct_ls_plain_4v1_2m
+  pretrained_checkpoint: runs/vct_ls_a3_4v1_scratch_mix_2m_capturefocus_20260730_run1/checkpoints/step_2000000.pt
+  support_reward_blend: disabled

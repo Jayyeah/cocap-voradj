@@ -1,0 +1,22 @@
+extends: cr_ms_vctls_ce_4v1_common.yaml
+
+seed: 2026073162
+device: cuda:0
+total_timesteps: 1000000
+run_name: crms_vctls_ce4v1_scratch1m_20260731_run1
+
+iqn:
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+experiment_metadata:
+  series_label: cr_ms_vctls_ce_scratch1m
+  training_start: scratch
+  purpose: From-scratch learnability check for compact CR-MS capture reward plus CE coverage.
+  screening: 100k-spaced capture/mix/coverage rollout screening with CE strict and CV<0.15 loose metrics.

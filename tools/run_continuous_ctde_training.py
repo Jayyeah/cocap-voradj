@@ -1,0 +1,734 @@
+"""Single-YAML formal CTDE MASAC training runner.
+
+The runner deliberately has no local-critic, smoke, or CLI algorithm override
+path.  It resolves exactly one formal YAML, deep-merges ``tasks.<scene>``,
+stores one joint transition per environment step, and updates on focal-agent
+items produced by ``FocalReplaySampler``.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+import random
+from collections import deque
+from pathlib import Path
+from typing import Any, Deque, Dict, List, Mapping, Optional, Tuple
+
+import numpy as np
+import torch
+import yaml
+
+from cocap_voradj.dynamics.continuous_action import ActionContractError
+from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
+from cocap_voradj.models.continuous.central_attention_critic import CentralCriticConfig
+from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoderConfig
+from cocap_voradj.models.continuous.radial_actor import RadialActorConfig
+from cocap_voradj.training.continuous.central_sac import CentralSACConfig, CentralSACTrainer
+from cocap_voradj.training.continuous.central_schema import build_central_global_obs
+from cocap_voradj.training.continuous.formal_config import SCENES, resolve_formal_config, scene_config
+from cocap_voradj.training.continuous.joint_replay import (
+    FOCAL_BUCKETS,
+    FocalReplaySampler,
+    JointReplayBuffer,
+)
+from cocap_voradj.training.trainer import set_global_config
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FORMAL_CONFIG_PATH = ROOT / "configs/experiments/continuous_marl_20260804/p6_formal_central_masac_4v1.yaml"
+ARTIFACT_ROOT = ROOT / "artifacts/2026-08-06_ctde_contract"
+
+
+def _stable_hash(value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _implementation_hash() -> str:
+    paths = [
+        Path(__file__),
+        ROOT / "src/cocap_voradj/training/continuous/joint_replay.py",
+        ROOT / "src/cocap_voradj/training/continuous/central_sac.py",
+        ROOT / "src/cocap_voradj/training/continuous/central_schema.py",
+        ROOT / "src/cocap_voradj/training/continuous/formal_config.py",
+        ROOT / "src/cocap_voradj/models/continuous/central_attention_critic.py",
+        ROOT / "src/cocap_voradj/models/continuous/radial_actor.py",
+        ROOT / "src/cocap_voradj/dynamics/continuous_action.py",
+        ROOT / "src/cocap_voradj/dynamics/robot.py",
+        ROOT / "src/cocap_voradj/envs/base.py",
+        ROOT / "src/cocap_voradj/envs/voronoi_adjacency.py",
+    ]
+    digest = hashlib.sha256()
+    for path in paths:
+        digest.update(str(path.relative_to(ROOT)).encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _set_seed(seed: int) -> None:
+    random.seed(int(seed))
+    np.random.seed(int(seed) % (2**32 - 1))
+    torch.manual_seed(int(seed))
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(int(seed))
+
+
+def _tensor_obs(obs: Mapping[str, np.ndarray], device: torch.device) -> Dict[str, torch.Tensor]:
+    return {key: torch.as_tensor(value, dtype=torch.float32, device=device) for key, value in obs.items()}
+
+
+def _pad_local_obs_tree(
+    observations: List[Optional[Mapping[str, np.ndarray]]],
+    max_agents: int,
+    actor_max_pursuers: int,
+) -> Dict[str, np.ndarray]:
+    """Pad per-agent local observations to fixed central/replay slots."""
+    max_evaders = 8
+    max_obstacles = 5
+    token_count = 1 + actor_max_pursuers + max_evaders + max_obstacles
+    self_dim = 9
+    zero_shape = {
+        "self": (self_dim,),
+        "pursuers": (actor_max_pursuers, 7),
+        "evaders": (max_evaders, 7),
+        "obstacles": (max_obstacles, 5),
+        "masks": (token_count,),
+        "types": (token_count,),
+    }
+    types_template = np.asarray([0] + [1] * actor_max_pursuers + [2] * max_evaders + [3] * max_obstacles, dtype=np.int64)
+    result: Dict[str, List[np.ndarray]] = {key: [] for key in zero_shape}
+    for slot in range(max_agents):
+        obs = observations[slot] if slot < len(observations) else None
+        if obs is None:
+            values = {
+                "self": np.zeros(self_dim, dtype=np.float32),
+                "pursuers": np.zeros((actor_max_pursuers, 7), dtype=np.float32),
+                "evaders": np.zeros((max_evaders, 7), dtype=np.float32),
+                "obstacles": np.zeros((max_obstacles, 5), dtype=np.float32),
+                "masks": np.zeros(token_count, dtype=bool),
+                "types": types_template.copy(),
+            }
+            values["masks"][0] = True
+        else:
+            old_p = int(np.asarray(obs["pursuers"]).shape[0])
+            if old_p > actor_max_pursuers:
+                raise ValueError("local observation pursuer padding exceeds actor max_pursuers")
+            pursuers = np.zeros((actor_max_pursuers, 7), dtype=np.float32)
+            pursuers[:old_p] = np.asarray(obs["pursuers"], dtype=np.float32)
+            old_masks = np.asarray(obs["masks"], dtype=bool)
+            old_types = np.asarray(obs["types"], dtype=np.int64)
+            new_masks = np.concatenate(
+                [
+                    old_masks[: 1 + old_p],
+                    np.zeros(actor_max_pursuers - old_p, dtype=bool),
+                    old_masks[1 + old_p :],
+                ]
+            )
+            new_types = np.concatenate(
+                [
+                    old_types[: 1 + old_p],
+                    np.full(actor_max_pursuers - old_p, 1, dtype=np.int64),
+                    old_types[1 + old_p :],
+                ]
+            )
+            values = {
+                "self": np.asarray(obs["self"], dtype=np.float32),
+                "pursuers": pursuers,
+                "evaders": np.asarray(obs["evaders"], dtype=np.float32),
+                "obstacles": np.asarray(obs["obstacles"], dtype=np.float32),
+                "masks": new_masks,
+                "types": new_types,
+            }
+        for key in zero_shape:
+            if values[key].shape != zero_shape[key]:
+                raise ValueError(f"padded local observation {key} shape mismatch: {values[key].shape} != {zero_shape[key]}")
+            result[key].append(values[key])
+    return {key: np.stack(result[key], axis=0) for key in zero_shape}
+
+
+def _stack_with_batch(
+    observations: List[Optional[Mapping[str, np.ndarray]]],
+    max_agents: int,
+    actor_max_pursuers: int,
+) -> Dict[str, np.ndarray]:
+    tree = _pad_local_obs_tree(observations, max_agents, actor_max_pursuers)
+    return {key: value[None] for key, value in tree.items()}
+
+
+def _pad_vector(values: Any, max_agents: int, dtype: Any) -> np.ndarray:
+    result = np.zeros(max_agents, dtype=dtype)
+    array = np.asarray(values)
+    result[: len(array)] = array
+    return result
+
+
+def _pad_actions(actions: np.ndarray, max_agents: int) -> np.ndarray:
+    result = np.zeros((max_agents, 2), dtype=np.float32)
+    result[: actions.shape[0]] = np.asarray(actions, dtype=np.float32)
+    return result
+
+
+def _split_termination_flags(
+    dones: List[bool] | np.ndarray,
+    infos: List[Mapping[str, Any]],
+) -> Tuple[np.ndarray, np.ndarray]:
+    done_array = np.asarray(dones, dtype=bool)
+    truncated_states = {"too long episode", "pre-capture timeout"}
+    truncated = np.asarray(
+        [
+            bool(done and info.get("state") in truncated_states)
+            for done, info in zip(done_array, infos)
+        ],
+        dtype=bool,
+    )
+    terminated = done_array & ~truncated
+    return terminated, truncated
+
+
+def _sample_actions(
+    trainer: CentralSACTrainer,
+    padded_obs: Mapping[str, np.ndarray],
+    active_count: int,
+    adapter: Any,
+    deterministic: bool,
+) -> Tuple[np.ndarray, float]:
+    with torch.no_grad():
+        raw, _, _ = trainer.actor.sample(_tensor_obs(padded_obs, trainer.device), deterministic=deterministic)
+    raw = raw.detach().cpu().numpy()
+    commands: List[np.ndarray] = []
+    rejected = 0
+    for action in raw[:active_count]:
+        validated, diagnostics = adapter.validate_with_diagnostics(action)
+        rejected += int(diagnostics.action_rejected)
+        commands.append(validated)
+    return np.asarray(commands, dtype=np.float32), float(rejected / max(active_count, 1))
+
+
+def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
+    actor_cfg = config["actor"]
+    critic_cfg = config["central_critic"]
+    sac_cfg = config["masac"]
+    encoder = LocalEntityTokenEncoderConfig(
+        hidden_dim=int(actor_cfg["hidden_dim"]),
+        num_heads=int(actor_cfg["num_heads"]),
+        num_layers=int(actor_cfg["num_layers"]),
+        self_feature_dim=int(actor_cfg.get("self_feature_dim", 9)),
+        max_pursuers=int(actor_cfg.get("max_pursuers", 12)),
+        max_evaders=int(actor_cfg.get("max_evaders", 8)),
+        max_obstacles=int(actor_cfg.get("max_obstacles", 5)),
+        dropout=float(actor_cfg.get("dropout", 0.0)),
+    )
+    actor = RadialActorConfig(
+        hidden_dim=int(actor_cfg["hidden_dim"]),
+        a_max=float(config["action"]["a_max"]),
+        decision_dt=float(config["dynamics"]["decision_dt"]),
+        log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
+        log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
+        dropout=float(actor_cfg.get("dropout", 0.0)),
+    )
+    critic = CentralCriticConfig(
+        hidden_dim=int(critic_cfg["hidden_dim"]),
+        num_heads=int(critic_cfg["num_heads"]),
+        num_layers=int(critic_cfg["num_layers"]),
+        self_feature_dim=int(critic_cfg.get("self_feature_dim", 9)),
+        max_agents=int(critic_cfg["max_agents"]),
+        max_evaders=int(critic_cfg.get("max_evaders", 8)),
+        max_obstacles=int(critic_cfg.get("max_obstacles", 5)),
+        dropout=float(critic_cfg.get("dropout", 0.0)),
+    )
+    trainer_cfg = CentralSACConfig(
+        hidden_dim=int(critic_cfg["hidden_dim"]),
+        gamma=float(sac_cfg["gamma"]),
+        tau=float(sac_cfg["tau"]),
+        actor_lr=float(sac_cfg["actor_lr"]),
+        critic_lr=float(sac_cfg["critic_lr"]),
+        alpha_lr=float(sac_cfg["alpha_lr"]),
+        alpha_init=float(sac_cfg["alpha_init"]),
+        target_entropy=float(sac_cfg["target_entropy"]),
+        grad_clip_norm=float(config["training"]["grad_clip_norm"]),
+    )
+    trainer = CentralSACTrainer(
+        encoder_config=encoder,
+        actor_config=actor,
+        critic_config=critic,
+        config=trainer_cfg,
+        device=device,
+        action_mode=str(config["action"]["mode"]),
+    )
+    trainer.warmup_steps = int(config["training"]["warmup_joint_transitions"])
+    return trainer
+
+
+def _trainer_contract(trainer: CentralSACTrainer) -> Dict[str, Any]:
+    actor_cfg = getattr(trainer.actor, "config", None)
+    critic_cfg = getattr(trainer.critic1, "config", None)
+    config = trainer.config
+    return {
+        "actor_hidden_dim": int(getattr(actor_cfg, "hidden_dim", -1)),
+        "actor_a_max": float(getattr(actor_cfg, "a_max", 0.0)),
+        "actor_decision_dt": float(getattr(actor_cfg, "decision_dt", 0.0)),
+        "actor_log_std_max": float(getattr(actor_cfg, "log_std_max", 0.0)),
+        "critic_max_agents": int(getattr(critic_cfg, "max_agents", -1)),
+        "critic_hidden_dim": int(getattr(critic_cfg, "hidden_dim", -1)),
+        "critic_num_layers": int(getattr(critic_cfg, "num_layers", -1)),
+        "critic_num_heads": int(getattr(critic_cfg, "num_heads", -1)),
+        "gamma": float(config.gamma),
+        "tau": float(config.tau),
+        "actor_lr": float(config.actor_lr),
+        "critic_lr": float(config.critic_lr),
+        "alpha_lr": float(config.alpha_lr),
+        "alpha_init": float(config.alpha_init),
+        "target_entropy": float(config.target_entropy),
+        "grad_clip_norm": getattr(config, "grad_clip_norm", None),
+        "warmup_steps": int(getattr(trainer, "warmup_steps", 0)),
+    }
+
+
+def _manifest(
+    config: Dict[str, Any],
+    seed: int,
+    tag: str,
+    trainer: CentralSACTrainer,
+    scene_hashes: Dict[str, str],
+) -> Dict[str, Any]:
+    return {
+        "manifest_schema_version": 3,
+        "config": str(FORMAL_CONFIG_PATH.relative_to(ROOT)),
+        "config_hash": _stable_hash(config),
+        "algorithm": str(config["algorithm"]),
+        "critic_mode": str(config["critic_mode"]),
+        "trainer_profile": str(config.get("trainer_profile", "")),
+        "action_mode": str(config["action"]["mode"]),
+        "dynamics_profile": str(config["dynamics"]["profile"]),
+        "a_max": float(config["action"]["a_max"]),
+        "v_max": float(config["dynamics"]["v_max"]),
+        "max_agents": int(config["training"]["max_agents"]),
+        "batch_size": int(config["training"]["batch_size"]),
+        "grad_clip_norm": float(config["training"]["grad_clip_norm"]),
+        "seed": int(seed),
+        "effective_config_hashes": scene_hashes,
+        "implementation_hash": _implementation_hash(),
+        "trainer_contract": _trainer_contract(trainer),
+        "resume_contract": {
+            "rng": ["torch_cpu", "torch_cuda", "python", "numpy", "replay_numpy"],
+            "scene_index": "saved",
+            "exact_env_state": False,
+            "continuation_mode": "seeded_episode_boundary",
+        },
+    }
+
+
+def _derive_roles(
+    infos: List[Mapping[str, Any]],
+    active_mask: np.ndarray,
+    phase: str,
+    max_agents: int,
+) -> np.ndarray:
+    roles = np.zeros(max_agents, dtype=np.uint8)
+    if phase in {"post_capture", "pure_coverage", "pure_recovery"}:
+        roles[active_mask] = 3
+        return roles
+    for idx, info in enumerate(infos):
+        if idx >= max_agents or not bool(active_mask[idx]):
+            continue
+        meta = info.get("replay_metadata", {}) or {}
+        task_label = str(meta.get("task_label", ""))
+        support = bool(meta.get("support_candidate", False))
+        if task_label == "capture":
+            roles[idx] = 1
+        elif support:
+            roles[idx] = 2
+        else:
+            roles[idx] = 3
+    return roles
+
+
+def _screen(
+    trainer: CentralSACTrainer,
+    root_config: Dict[str, Any],
+    seed: int,
+    episodes: int,
+    device: str,
+    scenes: Tuple[str, ...] = SCENES,
+    max_steps: int | None = None,
+) -> Dict[str, Any]:
+    if int(episodes) <= 0:
+        return {}
+    result: Dict[str, Any] = {}
+    for scene_index, scene in enumerate(scenes):
+        config = scene_config(root_config, scene)
+        set_global_config(config)
+        records = []
+        for episode in range(int(episodes)):
+            env = VorAdjEnv(config, seed=seed + 10000 + scene_index * 100 + episode)
+            env.reset()
+            adapter = env.action_adapter
+            speed_limited_count = 0
+            action_count = 0
+            horizon = int(config["env"]["episode_max_length"])
+            if max_steps is not None and int(max_steps) > 0:
+                horizon = min(horizon, int(max_steps))
+            for _ in range(horizon):
+                observations = list(env.get_observations())
+                if any(item is None for item in observations):
+                    break
+                padded = _pad_local_obs_tree(
+                    observations,
+                    int(config["training"]["max_agents"]),
+                    int(config["actor"]["max_pursuers"]),
+                )
+                actions, _ = _sample_actions(
+                    trainer,
+                    padded,
+                    len(env.pursuers),
+                    adapter,
+                    deterministic=True,
+                )
+                outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+                for info in outcome.infos:
+                    diagnostics = info.get("action_diagnostics", {})
+                    speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
+                    action_count += 1
+                if all(outcome.dones):
+                    break
+            record = env.episode_record(task=scene)
+            print(
+                f"[eval] scene={scene} episode={episode + 1}/{int(episodes)} "
+                f"length={int(record['length'])} captured={bool(record['captured'])} "
+                f"collision={bool(record['collision_event'])}",
+                flush=True,
+            )
+            records.append(
+                {
+                    "length": int(record["length"]),
+                    "episode_success": bool(record["episode_success"]),
+                    "captured": bool(record["captured"]),
+                    "collision_event": bool(record["collision_event"]),
+                    "coverage_strict_success": bool(record["coverage_strict_success"]),
+                    "coverage_cv015_success": bool(record["coverage_cv015_success"]),
+                    "speed_limited_rate": float(speed_limited_count / max(action_count, 1)),
+                }
+            )
+        result[scene] = {
+            "episodes": len(records),
+            "success_rate": float(np.mean([bool(item["episode_success"]) for item in records])) if records else 0.0,
+            "capture_rate": float(np.mean([bool(item["captured"]) for item in records])) if records else 0.0,
+            "collision_rate": float(np.mean([bool(item["collision_event"]) for item in records])) if records else 0.0,
+            "speed_limited_rate": float(np.mean([item["speed_limited_rate"] for item in records])) if records else 0.0,
+            "records": records,
+        }
+    return result
+
+
+def _reset_pure_recovery(
+    config: Dict[str, Any],
+    recovery_pool: Deque[Dict[str, Any]],
+    rng: np.random.Generator,
+) -> Tuple[Dict[str, Any], str, Optional[List[List[float]]], Optional[List[bool]]]:
+    recovery_cfg = config.get("recovery", {}) or {}
+    capture_ratio = float(recovery_cfg.get("captured_state_ratio", 0.75))
+    map_random_ratio = float(recovery_cfg.get("map_random_ratio_within_non_capture", 0.5))
+    initial_positions: Optional[List[List[float]]] = None
+    initial_active: Optional[List[bool]] = None
+    origin = "inner_cluster"
+    if recovery_pool and rng.random() < capture_ratio:
+        snapshot = recovery_pool[int(rng.integers(0, len(recovery_pool)))]
+        initial_positions = snapshot.get("positions")
+        initial_active = snapshot.get("active_mask")
+        origin = "capture_snapshot"
+    elif rng.random() < map_random_ratio:
+        config["env"]["pursuer_spawn_mode"] = "map_random"
+        config["env"]["pursuer_spawn_min_sep"] = 15.0
+        origin = "map_random"
+    else:
+        config["env"]["pursuer_spawn_mode"] = "inner_random_cluster"
+        config["env"]["pursuer_spawn_min_sep"] = 7.0
+        origin = "inner_cluster"
+    return config, origin, initial_positions, initial_active
+
+
+def run(args: argparse.Namespace) -> Dict[str, Any]:
+    root_config = resolve_formal_config(args.config)
+    _set_seed(args.seed)
+    device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    trainer = _make_trainer(root_config, device)
+    max_agents = int(root_config["training"]["max_agents"])
+    actor_max_pursuers = int(root_config["actor"]["max_pursuers"])
+    scenes: Tuple[str, ...] = SCENES
+    scene_hashes = {scene: _stable_hash(scene_config(root_config, scene)) for scene in scenes}
+    manifest = _manifest(root_config, args.seed, args.tag, trainer, scene_hashes)
+    recovery_cfg = root_config.get("recovery", {}) or {}
+    recovery_pool: Deque[Dict[str, Any]] = deque(maxlen=int(recovery_cfg.get("capture_state_pool_capacity", 1000)))
+    rng = np.random.default_rng(args.seed)
+
+    if bool(args.resume_checkpoint) != bool(args.resume_replay):
+        raise ValueError("--resume-checkpoint and --resume-replay must be supplied together")
+    resume_info = None
+    if args.resume_checkpoint:
+        trainer.load_checkpoint(args.resume_checkpoint, manifest)
+        replay = JointReplayBuffer.load(args.resume_replay, manifest)
+        runtime_state = dict(getattr(trainer, "resume_runtime_state", {}) or {})
+        runtime_state.update(getattr(replay, "runtime_state", {}) or {})
+        transition_count = int(args.resume_step if args.resume_step >= 0 else runtime_state.get("transition_count", len(replay)))
+        scene_index = int(runtime_state.get("next_scene_index", transition_count))
+        saved_pool = runtime_state.get("recovery_pool", [])
+        for snapshot in saved_pool:
+            recovery_pool.append(snapshot)
+        resume_info = {
+            "checkpoint": str(args.resume_checkpoint),
+            "replay": str(args.resume_replay),
+            "step": transition_count,
+            "next_scene_index": scene_index,
+        }
+    else:
+        replay = JointReplayBuffer(
+            capacity=int(root_config["replay"]["capacity_joint"]),
+            max_agents=max_agents,
+            seed=args.seed,
+        )
+        transition_count = 0
+        scene_index = 0
+
+    quotas = dict(root_config["training"]["focal_quota"])
+    sampler = FocalReplaySampler(
+        quotas,
+        max_focal_items_per_joint_transition=int(root_config["training"]["max_focal_items_per_joint_transition"]),
+        fallback_matrix=root_config["training"].get("fallback_matrix", None),
+        seed=args.seed,
+    )
+    total_steps = int(args.total_steps if args.total_steps is not None else root_config["training"]["total_env_steps"])
+    warmup = int(root_config["training"]["warmup_joint_transitions"])
+    update_every = int(root_config["training"]["update_every_env_steps"])
+    batch_size = int(root_config["training"]["batch_size"])
+
+    action_norms: List[float] = []
+    speeds: List[float] = []
+    speed_limited_count = 0
+    action_sample_count = 0
+    terminated_count = 0
+    truncated_count = 0
+    collision_count = 0
+    transition_attempt_count = 0
+    updates: List[Dict[str, float]] = []
+    sampling_stats_accum: Dict[str, Any] = {}
+    env = None
+    observations: List[Optional[Dict[str, np.ndarray]]] = []
+
+    while transition_count < total_steps:
+        scene = scenes[scene_index % len(scenes)]
+        scene_index += 1
+        config = scene_config(root_config, scene)
+        origin = "map_random"
+        initial_positions = None
+        initial_active = None
+        if scene == "pure_ce":
+            config, origin, initial_positions, initial_active = _reset_pure_recovery(
+                config,
+                recovery_pool,
+                rng,
+            )
+        set_global_config(config)
+        env = VorAdjEnv(config, seed=args.seed + scene_index)
+        env.reset(
+            initial_pursuer_positions=initial_positions,
+            initial_pursuer_active=initial_active,
+        )
+        adapter = env.action_adapter
+        observations = list(env.get_observations())
+        while transition_count < total_steps:
+            if any(item is None for item in observations):
+                break
+            before_labels = list(getattr(env, "last_task_labels", []))
+            before_active_target = bool(any(not e.deactivated for e in env.evaders))
+            before_coverage_success = bool(
+                getattr(env, "post_capture_coverage_success", False)
+                or getattr(env, "coverage_geometric_success", False)
+            )
+            before_active = _pad_vector([not p.deactivated for p in env.pursuers], max_agents, bool)
+            before_obs_batch = _stack_with_batch(observations, max_agents, actor_max_pursuers)
+            before_obs_padded = {key: value[0] for key, value in before_obs_batch.items()}
+            before_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+            actions, validation_rate = _sample_actions(
+                trainer,
+                before_obs_padded,
+                len(env.pursuers),
+                adapter,
+                deterministic=False,
+            )
+            action_norms.extend(float(np.linalg.norm(action)) for action in actions)
+            try:
+                outcome = env.step(actions.tolist(), [None] * len(env.evaders))
+            except ActionContractError as exc:
+                raise RuntimeError("formal CTDE action contract violated") from exc
+            transition_attempt_count += 1
+            next_observations = list(outcome.observations)
+            speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
+            for info in outcome.infos:
+                diagnostics = info.get("action_diagnostics", {})
+                speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
+                action_sample_count += 1
+            terminated, truncated = _split_termination_flags(outcome.dones, outcome.infos)
+            terminated_count += int(any(terminated))
+            truncated_count += int(any(truncated))
+            collision_count += int(any(info.get("state") == "deactivated after collision" for info in outcome.infos))
+            phase = str(outcome.infos[0].get("replay_metadata", {}).get("phase", "pre_capture"))
+            roles = _derive_roles(outcome.infos, before_active, phase, max_agents)
+            event_ids: List[str] = []
+            after_labels = [str(info.get("replay_metadata", {}).get("next_task_label", "")) for info in outcome.infos]
+            if any(
+                before not in {"", "capture", "inactive"} and after == "capture"
+                for before, after in zip(before_labels, after_labels)
+            ):
+                event_ids.append("discovery")
+            if getattr(env, "last_capture_events", []):
+                event_ids.append("capture")
+            collision_states = {"collision", "deactivated after collision", "evader collision", "zone breach"}
+            if any(str(info.get("state", "")) in collision_states for info in outcome.infos):
+                event_ids.append("collision")
+            if (
+                (getattr(env, "post_capture_coverage_success", False)
+                 or getattr(env, "coverage_geometric_success", False))
+                and not before_coverage_success
+            ):
+                event_ids.append("ce_success")
+            metadata = {
+                "phase": phase,
+                "scene": scene,
+                "origin": origin,
+                "regime": "active_target" if phase == "pre_capture" else "coverage_only",
+                "coverage_only": phase != "pre_capture",
+                "active_target": phase == "pre_capture",
+                "event_ids": event_ids,
+                "task_label": str(outcome.infos[0].get("replay_metadata", {}).get("task_label", "")),
+                "recovery_reset_source": origin,
+            }
+            next_obs_batch = _stack_with_batch(next_observations, max_agents, actor_max_pursuers)
+            next_obs_padded = {key: value[0] for key, value in next_obs_batch.items()}
+            next_global = build_central_global_obs(env, max_agents=max_agents, max_evaders=8, max_obstacles=5, self_feature_dim=9)
+            replay.add(
+                local_obs=before_obs_padded,
+                next_local_obs=next_obs_padded,
+                global_state=before_global,
+                next_global_state=next_global,
+                actions=_pad_actions(actions, max_agents),
+                rewards=_pad_vector(outcome.rewards, max_agents, np.float32),
+                active_mask=before_active,
+                terminated=_pad_vector(terminated, max_agents, bool),
+                truncated=_pad_vector(truncated, max_agents, bool),
+                metadata=metadata,
+                agent_role_id=roles,
+            )
+            transition_count += 1
+            observations = next_observations
+            if (
+                len(replay) >= batch_size
+                and transition_count >= warmup
+                and transition_count % update_every == 0
+            ):
+                batch = replay.sample(batch_size, device=device, sampler=sampler)
+                updates.append(trainer.update(batch))
+                sampling_stats_accum = dict(batch.get("sampling_stats", {}))
+            if all(outcome.dones) or any(item is None for item in next_observations):
+                break
+        if env is not None:
+            snapshot = getattr(env, "capture_snapshot", None)
+            if isinstance(snapshot, dict) and scene in {"capture", "mixed_crms"}:
+                recovery_pool.append(
+                    {
+                        "step": int(snapshot.get("step", 0)),
+                        "positions": snapshot.get("positions", []),
+                        "active_mask": snapshot.get("active_mask", []),
+                    }
+                )
+
+    artifact_dir = ARTIFACT_ROOT / args.tag
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    effective_path = artifact_dir / "effective_config.yaml"
+    effective_path.write_text(yaml.safe_dump(root_config, sort_keys=False), encoding="utf-8")
+    scene_config_dir = artifact_dir / "scene_configs"
+    scene_config_dir.mkdir(exist_ok=True)
+    for scene in scenes:
+        (scene_config_dir / f"{scene}.yaml").write_text(
+            yaml.safe_dump(scene_config(root_config, scene), sort_keys=False),
+            encoding="utf-8",
+        )
+    checkpoint = artifact_dir / f"{args.tag}_step{transition_count}.pt"
+    runtime_state = {
+        "transition_count": int(transition_count),
+        "next_scene_index": int(scene_index),
+        "recovery_pool": list(recovery_pool),
+    }
+    trainer.save_checkpoint(checkpoint, manifest, runtime_state=runtime_state)
+    replay_path = artifact_dir / f"{args.tag}_replay.pkl"
+    replay.save(replay_path, manifest, runtime_state=runtime_state)
+
+    screening = (
+        _screen(
+            trainer,
+            root_config,
+            args.seed,
+            episodes=int(args.screen_episodes),
+            device=device,
+            scenes=scenes,
+        )
+        if int(args.screen_episodes) > 0
+        else {}
+    )
+    report = {
+        "schema_version": 1,
+        "kind": "continuous_ctde_formal",
+        "algorithm": root_config["algorithm"],
+        "critic_mode": root_config["critic_mode"],
+        "effective_config_path": str(effective_path),
+        "scene_config_hashes": scene_hashes,
+        "seed": args.seed,
+        "requested_steps": total_steps,
+        "transition_count": transition_count,
+        "replay_size": len(replay),
+        "focal_index_sizes": replay.focal_index_sizes,
+        "recovery_pool_size": len(recovery_pool),
+        "updates": len(updates),
+        "update_metrics_tail": updates[-10:],
+        "all_finite": bool(all(item["finite"] == 1.0 for item in updates)) if updates else True,
+        "action_norm_mean": float(np.mean(action_norms)) if action_norms else 0.0,
+        "action_norm_max": float(np.max(action_norms)) if action_norms else 0.0,
+        "speed_mean": float(np.mean(speeds)) if speeds else 0.0,
+        "speed_max": float(np.max(speeds)) if speeds else 0.0,
+        "speed_limit_rate": float(speed_limited_count / max(action_sample_count, 1)),
+        "terminated_transition_count": terminated_count,
+        "truncated_transition_count": truncated_count,
+        "collision_transition_count": collision_count,
+        "transition_attempt_count": transition_attempt_count,
+        "sampling_stats": sampling_stats_accum,
+        "screening": screening,
+        "manifest": manifest,
+        "resumed_from": resume_info,
+        "replay_path": str(replay_path),
+        "checkpoint": str(checkpoint),
+    }
+    report_path = artifact_dir / f"{args.tag}_report.json"
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return report
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Formal CTDE MASAC training runner")
+    parser.add_argument("--config", default=str(FORMAL_CONFIG_PATH))
+    parser.add_argument("--seed", type=int, default=2026080601)
+    parser.add_argument("--device", default="")
+    parser.add_argument("--total-steps", type=int, default=None)
+    parser.add_argument("--screen-episodes", type=int, default=2)
+    parser.add_argument("--tag", required=True)
+    parser.add_argument("--resume-checkpoint", default="")
+    parser.add_argument("--resume-replay", default="")
+    parser.add_argument("--resume-step", type=int, default=-1)
+    args = parser.parse_args()
+    report = run(args)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0 if report["all_finite"] and report["replay_size"] > 0 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

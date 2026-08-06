@@ -1,0 +1,25 @@
+extends: vct_ls_a3_4v1_scratch_mix_2m_capturefocus.yaml
+
+seed: 2026073045
+device: cuda:1
+total_timesteps: 2000000
+run_name: vct_ls_a3_4v1_scratch_mix_2m_supportblend_20260730_run2
+
+voradj:
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+
+experiment_metadata:
+  series_label: vct_ls_v0_scratch_supportblend_capture_focus
+  control_against: vct_ls_a3_4v1_scratch_mix_2m_capturefocus_20260730_run1
+  training_start: scratch
+  support_reward_blend: When an agent is not directly pursuing but at least one one-hop Voronoi communication neighbor is pursuing, its dense task reward is 0.5 capture + 0.5 coverage. If the agent directly pursues, or no neighbor pursues, it falls back to the original pure capture or pure coverage reward.
+  support_capture_target_mode: neighbor_visible uses the directly sensed evader ids of pursuing one-hop neighbors only for the support capture shaping term; observation and task labels are unchanged.
+  focus_metrics: Capture success, fully captured rate, collision rate, miss_evader_step, support_candidate_ratio, support_reward_blend_active_ratio, and capture steps are primary; coverage settle remains secondary because CE-Coverage is the parallel coverage-reward line.
+
+metadata:
+  series_label: vct_ls_v0_scratch_supportblend_capture_focus
+  training_start: scratch
+  support_reward_blend: 0.5_capture_0.5_coverage_for_one_hop_support_agents
