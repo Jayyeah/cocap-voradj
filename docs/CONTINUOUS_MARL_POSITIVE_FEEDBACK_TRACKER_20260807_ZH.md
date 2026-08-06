@@ -200,6 +200,7 @@ decision: 保留 100k checkpoint 与复盘，不作为阶梯线晋级证据
 - [ ] Stage 5A/5B：双任务交替与 mixed capture→coverage
 - [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs（待前置 stage 后训练）
 - [x] Stage 7 配置/实现预备：world-frame observation + action（7A1/7A2/7A3）与 robot-obs+yaw 的 7B1
+- [x] Stage 7 扩展：7B2/7B3 配置；Stage6A/6B/6C 与 7A1/7A2/7A3 全部通过 20-step 训练链冒烟
 - [ ] Stage 7 训练：world-frame `[a_x,a_y]`（待 Stage6 有信号后启动）
 
 ---
