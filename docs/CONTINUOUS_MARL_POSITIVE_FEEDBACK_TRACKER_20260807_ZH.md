@@ -287,6 +287,7 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 行为探测（1000 步上限重评估 25k checkpoint）：seed1 0/10 capture、0 collision，但 distance_progress 多为负（远离 evader）、speed_mean 0.02–0.09；seed2 0/10 capture、100% collision、60–351 步即撞停 → 排除“400 cap 掩盖慢接近”。
 - 可行性上限（手写 seek 控制器，完美信息）：4B/4C 各 10/10 capture，平均 23–49 步完成，avg min-dist 7.3–8.0 → 任务合同可学，问题在 RL 训练信号。
 - 结论：无潜在乐观信号（无 capture 事件趋势、无接近趋势、Q 单调下降、更长 horizon 也无改善）→ 按备案不走 50k 续训首选；进入机制/超参调整分支，候选需用户确认（warmup / update_every / alpha / reward 侧机制核对）。
+- replay 定量证据（2026-08-08 03:53，加载 25k replay 逐条统计）：真实 capture 事件 4B s1=0、4B s2=2、4C s1=1、4C s2=0；碰撞事件 34/79/39/56；ce_success 全 0。active-agent 奖励：mean -0.29/-0.91/-0.27/-0.57、p50=0、p95 0.25–0.78、max（非 capture）≤1.88；≥50 的 capture 奖励仅 s2 各 1–2 条 → 训练 25k 内 capture 正反馈几乎为零，稀疏奖励假设成立。
 - 下一步：4C seed2 已完成（见 3.8.5），两条线均 FAIL；汇总调整方案供用户选择（warmup / update_every / alpha / reward 侧 / 50k 续训）。
 
 ### 3.9 历史/已淘汰条目
