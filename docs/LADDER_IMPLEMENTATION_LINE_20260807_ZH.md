@@ -82,6 +82,7 @@ Stage 0 旧 IQN 基线复现
 ## 5. 用户确认规则
 
 - Stage4A 启动后，Stage4B（moving evader）与 Stage4C（moving evader + 1 obstacle）可作为两个独立分支并行开启以加速。用户确认 2026-08-07：4C 就是动态敌人分支（原为 4B 之后串行）；4B/4C 不得再叠加其他未授权改动。
+- Stage4D 提前启动（用户确认 2026-08-08）：若 4B seed2 先结束且积极，直接启动 4D 两 seed（4D = moving evader + 1 obstacle + local visibility，相对 4C 唯一改动 global_evader_visibility false）；4C 后结束积极则 4D 正常维护，4C 无积极信号则 4C 与 4D 并行维护。
 - 历史表述（2026-08-07 用户确认修正）：此前把 4C 写成“stationary+obstacle 单变量”，有误；4C 正确合同 = 动态敌人 + 1 obstacle。
 - Stage4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），加速验证。
 - 算法正式切换 MATD3/MADDPG、改 reward/observation/map 等仍需用户确认。

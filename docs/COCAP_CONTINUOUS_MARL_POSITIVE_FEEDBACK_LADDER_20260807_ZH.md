@@ -743,6 +743,8 @@ num_obstacles: 0 → 1
 
 > Seed 数量调整（用户确认 2026-08-07）：Stage 4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），以加速验证；如需更强证据可追加第 3 seed，但不阻塞晋级。
 
+> Stage4D 提前启动规则（用户确认 2026-08-08）：若 Stage4B seed2 先结束且出现积极信号（eval20 capture≥1 或 min-distance 明显优于 baseline 或明确乐观趋势），可直接启动 Stage4D 两 seed 实验，不必等 Stage4C。4C 随后结束若同样积极，则 4D 正常维护；若 4C 无积极信号，则 4C（诊断/维护）与 4D（训练）并行推进。
+
 ### Stage 4A：stationary evader + global visibility + no obstacle
 
 目标：证明多智能体可以接近并形成 capture geometry。

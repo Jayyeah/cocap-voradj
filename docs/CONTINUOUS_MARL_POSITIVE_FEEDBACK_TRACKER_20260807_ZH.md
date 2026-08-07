@@ -266,6 +266,7 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 触发：两 seed 均 25k 完成且 eval20 capture=0/20、min-dist ≥ min(random,noop)、capture 终止率无上升趋势。
 - 顺序：①深层次分析（训练轨迹/400 vs 1000-1500 cap 重评估/oracle seek 上限/合同核对）→ ②有潜在信号则 50k 续训（唯一变量=steps）→ ③无信号且 oracle 可学则提交超参候选等用户确认（warmup/update_every/alpha，单变量单 seed 验证）→ ④oracle 也不可学则回合同层重新定标。
 - 纪律：4B/4C 独立判定；不自动调参；不跳过 gate。完整版见 `docs/LADDER_IMPLEMENTATION_LINE_20260807_ZH.md` §5.2。
+- Stage4D 提前启动（用户确认 2026-08-08）：4B seed2 先结束且积极 ⇒ 直接启动 4D 两 seed；4C 后结束积极 ⇒ 4D 正常维护；4C 无积极信号 ⇒ 4C 诊断与 4D 训练并行。
 
 ### 3.9 历史/已淘汰条目
 
