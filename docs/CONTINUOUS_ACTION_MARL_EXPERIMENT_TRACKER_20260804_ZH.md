@@ -889,7 +889,7 @@ encoder 实验通过 config 中 `initialization.actor_encoder.mode=legacy_iqn` �
 - pure encoder+snapshot 25k：metrics 已达到 25000（5001 updates、collision=3），但进程在最终 report/bundle 落盘前中断，当前只有 step1 bundle 和 metrics.jsonl。
 - capture random 25k：metrics 已达到 25000（5001 updates、collision=1），同样缺最终 report/bundle 与 diagnostic eval。
 
-> 两条“⚠️”线不能算完整 25k 交付；待用户确认后可从 step1 bundle resume 补跑，或按 metrics-only 接受并单独标注。
+> **用户已确认（2026-08-07）**：接受两条“⚠️”线为 metrics-only，不再补 final bundle/diagnostic eval；结果文件为 `ctde_pure_encoder_snapshot_25k_metrics_only_result.json` 与 `ctde_capture_random_25k_metrics_only_result.json`。
 
 ### 13.1 pure random 25k 结果（`ctde_pure_random_25k_v2`）
 
