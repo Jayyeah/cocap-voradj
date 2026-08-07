@@ -24,6 +24,7 @@ def main() -> int:
     parser.add_argument("--prefix", default="stage3a_seed")
     parser.add_argument("--run-name", default="")
     parser.add_argument("--analyzer", default=str(ROOT / "tools/analyze_stage3a_25k.py"))
+    parser.add_argument("--scenes", default="pure_ce")
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     root = Path(args.root)
@@ -71,7 +72,7 @@ def main() -> int:
                             "--max-steps",
                             "400",
                             "--scenes",
-                            "pure_ce",
+                            args.scenes,
                             "--seed",
                             str(2026080700 + seed),
                             "--device",
