@@ -861,10 +861,10 @@ run/step/seed：
 | 实验 | scene | initialization | snapshot | 状态 |
 |---|---|---|---|---|
 | pure random | pure_ce | random | no | ✅ `ctde_pure_random_25k_v2` |
-| pure encoder | pure_ce | legacy_iqn | no | pending |
-| pure snapshot | pure_ce | random | yes | pending |
-| pure encoder+snapshot | pure_ce | legacy_iqn | yes | pending |
-| capture random | capture | random | no | pending |
+| pure encoder | pure_ce | legacy_iqn | no | ✅ `ctde_pure_encoder_25k` |
+| pure snapshot | pure_ce | random | yes | ✅ `ctde_pure_snapshot_25k` |
+| pure encoder+snapshot | pure_ce | legacy_iqn | yes | ⚠️ metrics 25000，final bundle/eval 未落盘 |
+| capture random | capture | random | no | ⚠️ metrics 25000，final bundle/eval 未落盘 |
 | capture encoder | capture | legacy_iqn | no | pending |
 | capture snapshot | capture | random | yes | pending |
 | capture encoder+snapshot | capture | legacy_iqn | yes | pending |
@@ -879,6 +879,17 @@ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src:. python3 tools/run_continuous_ctde_traini
 
 snapshot 实验追加 `--snapshot-dataset artifacts/2026-08-06_ctde_contract/curriculum_snapshots/snapshots.jsonl`；
 encoder 实验通过 config 中 `initialization.actor_encoder.mode=legacy_iqn` 或独立 config override 启用。
+
+### 13.2 四条 25k 并行线进展（2026-08-07）
+
+汇总：[phase3_matrix_summary_20260807.md](../artifacts/2026-08-06_ctde_contract/phase3_matrix_summary_20260807.md)
+
+- pure encoder 25k：完整 report/bundle 已生成；diagnostic eval 4/4 无碰撞，CE energy progress 3/4 为正；training collision=203。
+- pure snapshot 25k：完整 report/bundle 已生成；diagnostic eval 4/4 无碰撞，CE energy progress 4/4 为正；training collision=114。
+- pure encoder+snapshot 25k：metrics 已达到 25000（5001 updates、collision=3），但进程在最终 report/bundle 落盘前中断，当前只有 step1 bundle 和 metrics.jsonl。
+- capture random 25k：metrics 已达到 25000（5001 updates、collision=1），同样缺最终 report/bundle 与 diagnostic eval。
+
+> 两条“⚠️”线不能算完整 25k 交付；待用户确认后可从 step1 bundle resume 补跑，或按 metrics-only 接受并单独标注。
 
 ### 13.1 pure random 25k 结果（`ctde_pure_random_25k_v2`）
 
