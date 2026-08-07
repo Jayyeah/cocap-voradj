@@ -700,6 +700,8 @@ num_obstacles: 0 → 1
 
 每个子阶段只增加一个难点。
 
+> 并行规则（用户确认 2026-08-07）：Stage 4A 完成 gate 并启动后，Stage 4B 与 Stage 4C 可作为两个独立的单变量分支并行开启；4B 只改 stationary→moving evader，4C 只改 num_obstacles 0→1，二者互不叠加。
+
 ### Stage 4A：stationary evader + global visibility + no obstacle
 
 目标：证明多智能体可以接近并形成 capture geometry。

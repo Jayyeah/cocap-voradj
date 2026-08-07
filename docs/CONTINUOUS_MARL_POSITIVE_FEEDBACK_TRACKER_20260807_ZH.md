@@ -219,7 +219,7 @@ decision: 保留 100k checkpoint 与复盘，不作为阶梯线晋级证据
 - [ ] Stage 2：生成 Stage 2 formal config（1p1e stationary/global/no-obstacle/`(a,ω)`），通过 smoke 后跑 3 seeds × 25k
 - [ ] Stage 3A：4p0e0obs inner-cluster pure coverage，3 seeds × 25k（需要时 50k）
 - [ ] Stage 3B：恢复 1 obstacle
-- [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告
+- [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告（用户确认：4A 启动后 4B/4C 可并行）
 - [ ] Stage 5A/5B：双任务交替与 mixed capture→coverage
 - [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs（待前置 stage 后训练）
 - [x] Stage 7 配置/实现预备：world-frame observation + action（7A1/7A2/7A3）与 robot-obs+yaw 的 7B1
