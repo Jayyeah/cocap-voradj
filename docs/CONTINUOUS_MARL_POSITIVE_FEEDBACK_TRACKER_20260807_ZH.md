@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 4A（MASAC + 连续 (a,ω) capture，stationary/global/no-obs）**
-- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml`（Stage3A/3B configs 已 PASS，保留为成功锚点）
+- 当前 active stage：**Stage 4B / 4C 并行（moving evader / 1 obstacle）**
+- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml` / `stage4c_capture_aw.yaml`（Stage3A/3B/4A configs 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0/1/2/3A/3B 均 PASS；Stage4A seed1/seed2 已并行启动
-- 当前结论：连续 `(a,ω)` MASAC 已覆盖极简单 capture、pure coverage 无/有 obstacle 三个成功锚点
-- 下一步唯一动作：**完成 Stage4A 25k 训练与 gate 判定；按用户确认，4A 后 4B/4C 可并行**
+- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；Stage4B/4C seed1 已并行启动
+- 当前结论：连续 `(a,ω)` MASAC 已覆盖 capture 几何（stationary）与 pure coverage 无/有 obstacle 成功锚点
+- 下一步唯一动作：**完成 Stage4B/4C 25k 训练与 gate 判定；各自 2-seed 验证**
 
 ---
 
@@ -189,7 +189,7 @@ next action: 25k 后评估；PASS 后进入 Stage4A
 ```text
 stage: 4A
 run_id: STAGE4A_CAPTURE_AW_20260807
-status: IN_PROGRESS（seed1/seed2 已并行启动）
+status: PASS（seed1/seed2 25k：min-distance 22.1 vs random 26.6/noop 40.1；seed1 collision 5%、seed2 40%）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 config path: configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml
@@ -201,13 +201,37 @@ dynamics contract: continuous_aw_v1
 reward contract: CR-MS ring_importance_ms_v0（stationary target）
 exact command: 同 Stage3A，config 换 stage4a，seed 2026080701/02，device cuda:0/1
 PID/log: tmux ladder_s4a_s1 / ladder_s4a_s2
-step: seed1/seed2 ~14000/25000
+step: seed1/seed2=25000（完成）
 key metrics: baseline random capture=20%/collision=90%，noop capture=0%；正式结果待回填
 decision: 待 25k（2 seeds 中至少 1 个明显优于 random/no-op 即可晋级）
 next action: 25k 后分析+eval；按用户确认 4A 后 4B/4C 可并行
 ```
 
-### 3.7 历史/已淘汰条目
+### 3.7 Stage 4B：Capture（moving evader）
+
+```text
+stage: 4B
+run_id: STAGE4B_CAPTURE_AW_20260807
+status: IN_PROGRESS（seed1 启动中）
+config: configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml
+seed: 2026080701
+唯一改动: stationary -> original APF moving evader
+decision: 待 25k（2-seed 规则）
+```
+
+### 3.8 Stage 4C：Capture（1 obstacle）
+
+```text
+stage: 4C
+run_id: STAGE4C_CAPTURE_AW_20260807
+status: IN_PROGRESS（seed1 启动中）
+config: configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml
+seed: 2026080701
+唯一改动: num_obstacles 0 -> 1
+decision: 待 25k（2-seed 规则）
+```
+
+### 3.9 历史/已淘汰条目
 
 ```text
 stage: OLD_LINE (HISTORICAL / SUPERSEDED)
