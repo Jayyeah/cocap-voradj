@@ -86,6 +86,27 @@ Stage 0 旧 IQN 基线复现
 - Stage4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），加速验证。
 - 算法正式切换 MATD3/MADDPG、改 reward/observation/map 等仍需用户确认。
 
+## 5.2 4B/4C seed2 无乐观信号备案（2026-08-07 制定，2026-08-08 生效条件）
+
+触发条件：4B 与/或 4C 的两个 seed 均完成 25k，且 eval20 满足以下全部“无信号”判据：
+capture=0/20、avg min-distance ≥ min(random, noop)、训练窗口 capture 终止率无明显上升趋势。
+（任一项不满足即视为有弱信号，直接按弱信号走。）
+
+决策顺序（先证据后动作，绝不自动跳 Stage gate）：
+
+1. 深层次分析（只读/低成本，训练前必做）：
+   - 训练轨迹解剖：metrics.jsonl 每 1k 窗口的 terminated/truncated/collision、Q/target-Q/td_error、action_norm/speed/log_std/alpha 趋势；capture 事件是否集中在后期。
+   - 行为探测：对 25k checkpoint 用 --max-steps 1000/1500 重评估（排除 400 cap 掩盖慢接近）；对比 4A 同条件结果。
+   - 可行性上限（oracle）：用简单 seek 控制器（不训练）在同一场景跑 20 集；oracle 也 capture≈0 ⇒ 合同不可学，需重新定标（用户确认）。
+   - 数据链/合同核对：effective_config vs 期望、seed 无冲突、warmup/replay/focal 正常。
+
+2. 分支决策：
+   - 若存在潜在乐观信号（capture 后期集中 / min-dist 改善 / Q 分化）⇒ 续训到 50k（唯一变量=steps，从 25k bundle 热启动，25k 保存节奏不变），50k 后重新 gate。这是首选。
+   - 若 oracle 可学但训练完全无信号 ⇒ 超参/机制调整候选需用户确认（不自动改）：例如 warmup 5000→10000、update_every 4→2、alpha_init 微调；只改一个变量，单 seed 5k 冒烟→25k。
+   - 若 oracle 也不可学或合同不匹配 ⇒ 不调参，回合同层报告（evader max_speed / 400 cap / capture 半径），由用户定标。
+
+3. 纪律：4B/4C 各自独立判定，不互相背书；同一轮只做一个动作；所有诊断产物写入台账。
+
 ## 5.1 双线证据 TODO 修订（2026-08-07）
 
 - `ctde_pure_random_25k_v2`：world `[ax,ay]` pure-CE 25k 4/4 positive signal → Stage6/7 不再严格串行。

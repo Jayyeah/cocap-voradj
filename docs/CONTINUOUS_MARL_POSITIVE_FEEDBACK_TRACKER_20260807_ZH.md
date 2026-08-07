@@ -261,6 +261,12 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 用户澄清（2026-08-07）：4C 就是动态敌人，原本在 4B 之后，现为加速与 4B 并行；合同/台账/实现线已同步修正，旧“4C=stationary+obstacle 单变量”表述标记为历史。
 - 观察：4B/4C seed1 的 collision 均远低于 random（0–5% vs 90%），说明策略学到规避但未学到接近；capture 终止事件稀疏（34–40/25k）。
 
+### 3.8.3 4B/4C seed2 无信号备案（2026-08-07 制定）
+
+- 触发：两 seed 均 25k 完成且 eval20 capture=0/20、min-dist ≥ min(random,noop)、capture 终止率无上升趋势。
+- 顺序：①深层次分析（训练轨迹/400 vs 1000-1500 cap 重评估/oracle seek 上限/合同核对）→ ②有潜在信号则 50k 续训（唯一变量=steps）→ ③无信号且 oracle 可学则提交超参候选等用户确认（warmup/update_every/alpha，单变量单 seed 验证）→ ④oracle 也不可学则回合同层重新定标。
+- 纪律：4B/4C 独立判定；不自动调参；不跳过 gate。完整版见 `docs/LADDER_IMPLEMENTATION_LINE_20260807_ZH.md` §5.2。
+
 ### 3.9 历史/已淘汰条目
 
 ```text
