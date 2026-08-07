@@ -91,9 +91,10 @@ def _save_checkpoint_bundle(
     runtime_state: Dict[str, Any],
     metrics_history: List[Dict[str, Any]],
     diagnostic_eval: Dict[str, Any],
+    overwrite: bool = False,
 ) -> Path:
     bundle_dir = artifact_dir / "checkpoints" / f"step_{int(step):09d}"
-    if bundle_dir.exists():
+    if bundle_dir.exists() and not overwrite:
         return bundle_dir
     tmp_dir = artifact_dir / ".tmp" / f"step_{int(step):09d}_{os.getpid()}"
     if tmp_dir.exists():
@@ -1004,39 +1005,51 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
-                if transition_count == 1 or transition_count % checkpoint_interval == 0:
-                    diagnostic_eval = (
-                        _screen(
-                            trainer,
-                            root_config,
-                            args.seed,
-                            episodes=int(args.diagnostic_eval_episodes),
-                            device=device,
-                            scenes=scenes,
-                            max_steps=diagnostic_rollout_cap,
-                        )
-                        if transition_count % diagnostic_eval_interval == 0
-                        else {}
-                    )
-                    runtime_state = {
-                        "transition_count": int(transition_count),
-                        "update_count": int(len(updates)),
-                        "next_scene_index": int(scene_index),
-                        "current_scene": str(scene),
-                        "recovery_pool": list(recovery_pool),
-                        "metrics_history": list(metrics_history),
-                    }
-                    _save_checkpoint_bundle(
-                        artifact_dir,
-                        transition_count,
-                        root_config,
-                        manifest,
+            if transition_count == 1 or transition_count % checkpoint_interval == 0:
+                runtime_state = {
+                    "transition_count": int(transition_count),
+                    "update_count": int(len(updates)),
+                    "next_scene_index": int(scene_index),
+                    "current_scene": str(scene),
+                    "recovery_pool": list(recovery_pool),
+                    "metrics_history": list(metrics_history),
+                }
+                _save_checkpoint_bundle(
+                    artifact_dir,
+                    transition_count,
+                    root_config,
+                    manifest,
+                    trainer,
+                    replay,
+                    runtime_state,
+                    metrics_history,
+                    {},
+                )
+                diagnostic_eval = (
+                    _screen(
                         trainer,
-                        replay,
-                        runtime_state,
-                        metrics_history,
-                        diagnostic_eval,
+                        root_config,
+                        args.seed,
+                        episodes=int(args.diagnostic_eval_episodes),
+                        device=device,
+                        scenes=scenes,
+                        max_steps=diagnostic_rollout_cap,
                     )
+                    if transition_count % diagnostic_eval_interval == 0
+                    else {}
+                )
+                _save_checkpoint_bundle(
+                    artifact_dir,
+                    transition_count,
+                    root_config,
+                    manifest,
+                    trainer,
+                    replay,
+                    runtime_state,
+                    metrics_history,
+                    diagnostic_eval,
+                    overwrite=True,
+                )
                 if all(outcome.dones) or any(item is None for item in next_observations):
                     break
             if snapshot_dataset is not None:
@@ -1301,6 +1314,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         runtime_state,
         metrics_history,
         final_diagnostic_eval,
+        overwrite=True,
     )
     report = {
         "schema_version": 1,

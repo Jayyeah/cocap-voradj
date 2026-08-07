@@ -176,3 +176,19 @@ def test_stage7b1_robot_obs_includes_yaw_features() -> None:
     assert self_feat.shape == (11,)
     pursuer = env.pursuers[0]
     assert np.allclose(self_feat[-2:], [np.cos(pursuer.theta), np.sin(pursuer.theta)], atol=1e-6)
+
+
+def test_active_sites_handles_deactivated_pursuer_positions() -> None:
+    config = resolve_ladder_config(STAGE3A)
+    scene = scene_config(config, "pure_ce")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    env.pursuers[2].deactivated = True
+    active_positions = np.asarray(
+        [[p.x, p.y] for idx, p in enumerate(env.pursuers) if not p.deactivated],
+        dtype=float,
+    )
+    keys, sites = env._active_sites(pursuer_positions=active_positions)
+    assert len(keys) == 3
+    assert sites.shape == (3, 2)

@@ -616,17 +616,39 @@ class VorAdjEnv(CoCapEnv):
             pursuer_positions = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
         if evader_positions is None:
             evader_positions = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2), dtype=float)
+        if pursuer_positions.shape[0] != len(self.pursuers):
+            active_indices = [idx for idx, p in enumerate(self.pursuers) if not p.deactivated]
+            pursuer_lookup = {
+                idx: pursuer_positions[offset]
+                for offset, idx in enumerate(active_indices)
+            }
+        else:
+            pursuer_lookup = {
+                idx: pursuer_positions[idx]
+                for idx in range(len(self.pursuers))
+            }
+        if evader_positions.shape[0] != len(self.evaders):
+            active_indices = [idx for idx, e in enumerate(self.evaders) if not e.deactivated]
+            evader_lookup = {
+                idx: evader_positions[offset]
+                for offset, idx in enumerate(active_indices)
+            }
+        else:
+            evader_lookup = {
+                idx: evader_positions[idx]
+                for idx in range(len(self.evaders))
+            }
         for i, p in enumerate(self.pursuers):
             if not p.deactivated:
                 keys.append(("pursuer", i))
-                pts.append(np.asarray(pursuer_positions[i], dtype=float))
+                pts.append(np.asarray(pursuer_lookup[i], dtype=float))
         if include_evaders:
             for j, e in enumerate(self.evaders):
                 if not e.deactivated:
-                    if self._zone_enabled() and not self._zone_point_in_inner(np.asarray(evader_positions[j], dtype=float)):
+                    if self._zone_enabled() and not self._zone_point_in_inner(np.asarray(evader_lookup[j], dtype=float)):
                         continue
                     keys.append(("evader", j))
-                    pts.append(np.asarray(evader_positions[j], dtype=float))
+                    pts.append(np.asarray(evader_lookup[j], dtype=float))
         if not pts:
             return keys, np.zeros((0, 2), dtype=float)
         return keys, np.asarray(pts, dtype=float)
