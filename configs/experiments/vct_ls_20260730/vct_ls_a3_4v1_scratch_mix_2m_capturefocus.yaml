@@ -1,0 +1,30 @@
+extends: ../voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml
+
+seed: 2026073044
+device: cuda:1
+total_timesteps: 2000000
+run_name: vct_ls_a3_4v1_scratch_mix_2m_capturefocus_20260730_run1
+
+voradj:
+  perception_topology_version: friendly_voronoi_comm_v0
+  friendly_comm_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  vct_ls_apply_release_delay: true
+
+experiment_metadata:
+  series_label: vct_ls_v0_scratch_capture_focus
+  parallel_line: VCT-LS is parallel to ZoneDemo B1 and CE-Coverage; this line keeps old mix/A3 rewards and task scenes.
+  training_start: scratch
+  base_config: configs/experiments/voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml
+  vct_ls_semantics: Pursuer-only Voronoi communication graph; evader/obstacle tokens come only from local surface-distance sensing radius; K10 release delay is explicitly enabled.
+  focus_metrics: Capture and local-sensing closure are primary; coverage settle is logged but not used as the main success criterion because CE-Coverage is the parallel coverage-reward line.
+  warm_start_evidence: A3 stage3 8v2 warm-start step_50000 mix rollout reached capture_success_rate=1.00 and collision_rate=0.00 on 20 episodes, so scratch is opened to test learnability from zero.
+  compatibility_boundary: Only active when voradj.perception_topology_version=friendly_voronoi_comm_v0; legacy, ZoneDemo, and CE configs remain opt-in separately.
+
+metadata:
+  series_label: vct_ls_v0_scratch_capture_focus
+  training_start: scratch
+  focus_metrics: Capture success, fully captured rate, collision rate, enemy miss/invisible behavior, and capture steps are primary; coverage settle is secondary.

@@ -1,0 +1,84 @@
+extends: ../vct_ls_20260730/vct_ls_a3_4v1_scratch_mix_2m_capturefocus.yaml
+
+env:
+  episode_max_length: 900
+
+reward:
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_speed_weight_schedule:
+    - step: 0
+      value: 0.0
+    - step: 200000
+      value: 0.0005
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.10
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 4
+  coverage_cv_loose_area_cv_threshold: 0.15
+  min_active_pursuers: 4
+
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  coverage_success_reward_repeat: false
+  coverage_success_repeat_reward: 0.0
+  post_capture_coverage_success_reward: 0.0
+  post_capture_coverage_grace_steps: 0
+  post_capture_success_reward_repeat: false
+  post_capture_success_repeat_reward: 0.0
+  post_capture_hold_reward: 0.0
+  distribution_converged_grace_steps: 0
+  coverage_geometric_latch_reward: 0.0
+  post_capture_geometric_latch_reward: 0.0
+
+  coverage_settle_enabled: false
+  coverage_settle_terminate_on_success: false
+  coverage_settle_geometric_repeat_reward: 0.0
+  coverage_settle_motion_repeat_reward: 0.0
+  coverage_settled_terminal_reward: 0.0
+  coverage_settle_repeat_reward: 0.0
+  coverage_settle_deceleration_coeff: 0.0
+
+  coverage_early_speed_shaping_enabled: false
+  coverage_cell_center_speed_penalty_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+
+  post_capture_coverage_window_steps: 300
+
+iqn:
+  checkpoint_freq: 50000
+
+voradj:
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 16
+    recovery_pure: 32
+  recovery:
+    spawn_mode: inner_random_cluster_plus_capture_snapshot_plus_map_random
+    capture_state_pool_capacity: 1000
+    captured_state_ratio: 0.5
+    map_random_ratio_within_non_capture: 1.0
+  perception_topology_version: friendly_voronoi_comm_v0
+  friendly_comm_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  vct_ls_apply_release_delay: true
+
+experiment_metadata:
+  series_label: vct_ls_plus_ce_coverage_4v1_common
+  parallel_line: VCT-LS+CE is parallel to ZoneDemo and standalone CE lines; it keeps old mix/A3 capture scenes, but replaces coverage reward/success with centroid-energy coverage.
+  core_semantics: Pursuer-only Voronoi communication topology and local enemy/obstacle sensing stay as VCT-LS; coverage reward is CE center-energy with PBRS and delayed light speed-energy cost.
+  replay_batch_counts: pursuing=64, pre_capture_cover=16, post_capture_real=16, recovery_pure=32.
+  recovery_pure_init: 0.5 from captured snapshot pool; the remaining 0.5 uses ordinary map_random, matching the mix pursuer initialization branch and excluding synthetic_cluster for this experiment.
+  coverage_success: CE success means sqrt(mean(d_i^2))<=0.05 and max(d_i)<=0.10 for 30 hold steps; rollout summaries also log loose legacy area-CV success with cv<0.15.
+  max_step_policy: env episode max is capped at 900 and post-capture coverage window at 300 to avoid wasting steps on post/pure coverage timeouts.

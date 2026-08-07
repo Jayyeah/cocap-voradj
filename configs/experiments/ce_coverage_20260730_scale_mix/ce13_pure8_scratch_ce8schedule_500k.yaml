@@ -1,0 +1,24 @@
+extends: ce10_pure8_scratch_delayed_energy0005_300k.yaml
+run_name: ce13_pure8_scratch_ce8schedule_500k_20260730
+device: cuda:0
+total_timesteps: 500000
+seed: 2026071543
+env:
+  episode_max_length: 1200
+iqn:
+  checkpoint_freq: 25000
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 300000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+experiment_metadata:
+  ablation: CE13 pure 8-agent scratch scale test.
+  purpose: Tests whether the CE8 delayed-control-energy coverage objective scales from 4 pursuers to 8 pursuers.
+  schedule: Center-only CE reward before 200k; delayed control-energy weight 0.0005 from 200k onward; no legacy CV success reward, speed-settle shaping, or terminal coverage bonus.
+  success_semantics: New CE coverage success, sqrt(mean(d_i^2))<=0.05 and max(d_i)<=0.10 for 30 hold steps, with d_i=sqrt(N)*||p_i-c_i||/map_diagonal.
+  visualization_rule: Pure coverage rollout may draw cell centers; mix rollouts must not draw cell centers.
+

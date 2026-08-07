@@ -1,0 +1,30 @@
+extends: ../vct_ls_ce_20260731/vctls_ce_4v1_common.yaml
+
+reward:
+  capture_reward_mode: ring_importance_ms_v0
+  capture_timestep_penalty: 0.0
+  omega_ring_ms: 2.0
+  ring_ms_progress_clip: 3.0
+  ring_ms_inner_extra_margin: 0.5
+  ring_ms_preferred_center_radius: 8.0
+  ring_ms_outer_center_radius: 10.5
+  ring_ms_radial_sigma: 2.0
+  ring_ms_cell_size: 1.5
+  ring_ms_angle_alpha: 0.25
+  ring_ms_angle_weight_min: 0.75
+  ring_ms_angle_weight_max: 1.25
+  ring_ms_velocity_static_threshold: 0.30
+  ring_ms_velocity_full_threshold: 1.00
+  ring_ms_occupancy_mode: cartesian_disk
+  ring_ms_occupancy_radius: 4.0
+  omega_approach: 0.0
+  omega_mean_shift: 0.0
+  omega_front: 0.0
+
+experiment_metadata:
+  series_label: cr_ms_vctls_ce_4v1_common
+  parallel_line: CR-MS is a capture reward refactor line parallel to VCT-LS topology, standalone CE, and ZoneDemo.
+  capture_semantics: Direct VCT-LS enemy-body visibility triggers a compact velocity-weighted ring mean-shift target; old approach/MS/front dense terms are disabled.
+  ring_ms_default: inner surface d_safe+0.5, preferred center radius 8.0, outer center radius 10.5, radial sigma 2.0, angle weight 0.75..1.25.
+  coverage_semantics: Coverage uses centroid_energy_v0 CE by default; strict CE and CV<0.15 loose diagnostics are both logged.
+  support_reward_blend: disabled for first CR-MS line; support agents receive CE coverage reward unless they directly enter capture.

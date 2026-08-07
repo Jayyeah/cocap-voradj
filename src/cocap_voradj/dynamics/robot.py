@@ -2,6 +2,8 @@ import copy
 import heapq
 import numpy as np
 
+from cocap_voradj.dynamics.continuous_action import body_to_world
+
 
 class Robot:
     """
@@ -240,6 +242,198 @@ class Robot:
         self.speed = np.clip(self.speed, 0.0, self.max_speed)
         self.theta += w * self.dt
         self.theta = self.theta % (2 * np.pi)
+
+    def update_state_velocity_body(
+        self,
+        command_body: np.ndarray,
+        current_velocity=np.zeros(2),
+        substep_callback=None,
+    ):
+        """Integrate one decision interval from a final body-frame velocity command.
+
+        The command is converted to world coordinates once. Position uses
+        trapezoidal integration over ``N`` substeps; yaw is held fixed.
+        ``substep_callback`` is called after each substep so the environment can
+        apply boundary and collision checks without tunneling.
+        """
+        command_world = body_to_world(np.asarray(command_body, dtype=float), self.theta)
+        ocean_current = np.asarray(current_velocity, dtype=float)
+        previous_world = np.asarray(self.velocity, dtype=float) - ocean_current
+        if previous_world.shape != (2,) or not np.all(np.isfinite(previous_world)):
+            previous_world = np.zeros(2, dtype=float)
+        start_world = previous_world.copy()
+        for substep in range(max(int(self.N), 1)):
+            fraction = float(substep + 1) / float(max(int(self.N), 1))
+            next_world = start_world + fraction * (command_world - start_world)
+            self.x += 0.5 * (previous_world[0] + next_world[0]) * self.dt
+            self.y += 0.5 * (previous_world[1] + next_world[1]) * self.dt
+            self.velocity = next_world + ocean_current
+            self.speed = float(np.linalg.norm(next_world))
+            previous_world = next_world
+            if substep_callback is not None:
+                substep_callback()
+            if self.deactivated:
+                break
+        if not self.deactivated:
+            self.velocity = command_world + ocean_current
+            self.speed = float(np.linalg.norm(command_world))
+
+    def update_state_acceleration_body(
+        self,
+        acceleration_body: np.ndarray,
+        current_velocity=np.zeros(2),
+        substep_callback=None,
+    ) -> bool:
+        """Integrate an explicit body-frame acceleration action.
+
+        The body acceleration is rotated once using the held yaw.  The
+        environment integrates ``v <- v + a*dt`` over ``N`` substeps and
+        applies the physical speed cap after each integration step.  Thus
+        ``a_max`` belongs to the action contract while ``max_speed`` belongs
+        to the environment dynamics.
+
+        Returns:
+            Whether the environment speed cap was active at any substep.
+        """
+        acceleration_world = body_to_world(np.asarray(acceleration_body, dtype=float), self.theta)
+        ocean_current = np.asarray(current_velocity, dtype=float)
+        previous_world = np.asarray(self.velocity, dtype=float) - ocean_current
+        if previous_world.shape != (2,) or not np.all(np.isfinite(previous_world)):
+            previous_world = np.zeros(2, dtype=float)
+        speed_limited = False
+        for _ in range(max(int(self.N), 1)):
+            next_world = previous_world + acceleration_world * self.dt
+            if self.max_speed is not None:
+                next_speed = float(np.linalg.norm(next_world))
+                if next_speed > float(self.max_speed):
+                    next_world *= float(self.max_speed) / max(next_speed, np.finfo(float).eps)
+                    speed_limited = True
+            self.x += 0.5 * (previous_world[0] + next_world[0]) * self.dt
+            self.y += 0.5 * (previous_world[1] + next_world[1]) * self.dt
+            self.velocity = next_world + ocean_current
+            self.speed = float(np.linalg.norm(next_world))
+            previous_world = next_world
+            if substep_callback is not None:
+                substep_callback()
+            if self.deactivated:
+                break
+        if not self.deactivated:
+            self.velocity = previous_world + ocean_current
+            self.speed = float(np.linalg.norm(previous_world))
+        return bool(speed_limited)
+
+    def update_state_acceleration_world(
+        self,
+        acceleration_world: np.ndarray,
+        current_velocity=np.zeros(2),
+        substep_callback=None,
+    ) -> bool:
+        """Integrate an explicit world-frame acceleration command with drag.
+
+        The command is already in the world frame and is never re-rotated by
+        ``theta``.  Every physical substep applies ``dv = (a - k*v)*dt``,
+        clips the resulting speed to ``max_speed``, and uses trapezoidal
+        position integration.  ``substep_callback`` lets the environment run
+        boundary and collision checks after every substep.
+
+        Returns:
+            Whether the environment speed cap was active at any substep.
+        """
+        acceleration = np.asarray(acceleration_world, dtype=float)
+        if acceleration.shape != (2,) or not np.all(np.isfinite(acceleration)):
+            raise ValueError("acceleration_world must be a finite vector of shape (2,)")
+        ocean_current = np.asarray(current_velocity, dtype=float)
+        previous_world = np.asarray(self.velocity, dtype=float) - ocean_current
+        if previous_world.shape != (2,) or not np.all(np.isfinite(previous_world)):
+            previous_world = np.zeros(2, dtype=float)
+        damping = float(self.coefficient_water_resistance or 0.0)
+        speed_limited = False
+        for _ in range(max(int(self.N), 1)):
+            next_world = previous_world + (acceleration - damping * previous_world) * self.dt
+            if self.max_speed is not None:
+                next_speed = float(np.linalg.norm(next_world))
+                if next_speed > float(self.max_speed):
+                    next_world *= float(self.max_speed) / max(next_speed, np.finfo(float).eps)
+                    speed_limited = True
+            self.x += 0.5 * (previous_world[0] + next_world[0]) * self.dt
+            self.y += 0.5 * (previous_world[1] + next_world[1]) * self.dt
+            self.velocity = next_world + ocean_current
+            self.speed = float(np.linalg.norm(next_world))
+            previous_world = next_world
+            if substep_callback is not None:
+                substep_callback()
+            if self.deactivated:
+                break
+        if not self.deactivated:
+            self.velocity = previous_world + ocean_current
+            self.speed = float(np.linalg.norm(previous_world))
+        return bool(speed_limited)
+
+    def update_state_acceleration_angular_velocity_body(
+        self,
+        command: np.ndarray,
+        current_velocity=np.zeros(2),
+        substep_callback=None,
+    ) -> bool:
+        """Integrate the legacy scalar ``(a, w)`` command continuously.
+
+        This is the bridge dynamics for the old IQN action grid: ``a`` changes
+        forward speed with the same water-resistance model as ``update_state``
+        and ``w`` changes yaw every physical substep.  Unlike nearest-grid
+        execution, the replayed command is the exact float pair consumed by
+        the environment.
+        """
+        value = np.asarray(command, dtype=float)
+        if value.shape != (2,) or not np.all(np.isfinite(value)):
+            raise ValueError("(a,w) command must be a finite vector of shape (2,)")
+        acceleration = float(value[0])
+        angular_velocity = float(value[1])
+        ocean_current = np.asarray(current_velocity, dtype=float)
+        if ocean_current.shape != (2,) or not np.all(np.isfinite(ocean_current)):
+            ocean_current = np.zeros(2, dtype=float)
+        damping = self.coefficient_water_resistance
+        if damping is None or not np.isfinite(float(damping)):
+            nominal_a = float(np.max(np.abs(self.a))) if np.size(self.a) else 0.4
+            damping = nominal_a / max(float(self.max_speed or 1.0), np.finfo(float).eps)
+        speed_limited = False
+        last_forward_before: np.ndarray = np.zeros(2, dtype=float)
+        for _ in range(max(int(self.N), 1)):
+            speed_before = float(self.speed)
+            heading_before = float(self.theta)
+            forward_before = speed_before * np.array(
+                [np.cos(heading_before), np.sin(heading_before)], dtype=float
+            )
+            last_forward_before = forward_before
+            # Explicit-Euler position update, matching the legacy IQN
+            # discrete integrator exactly (position is advanced from the
+            # velocity at the beginning of the substep).
+            self.x += forward_before[0] * float(self.dt)
+            self.y += forward_before[1] * float(self.dt)
+            next_speed = speed_before + (acceleration - float(damping) * speed_before) * float(self.dt)
+            next_speed = max(0.0, next_speed)
+            if self.max_speed is not None and next_speed > float(self.max_speed):
+                next_speed = float(self.max_speed)
+                speed_limited = True
+            next_theta = (heading_before + angular_velocity * float(self.dt)) % (2.0 * np.pi)
+            forward_after = next_speed * np.array(
+                [np.cos(next_theta), np.sin(next_theta)], dtype=float
+            )
+            self.speed = float(next_speed)
+            self.theta = float(next_theta)
+            # Legacy IQN quirk: after a substep, ``velocity`` still holds the
+            # pre-substep value; the next substep refreshes it to the updated
+            # heading/speed at its start.
+            self.velocity = forward_before + ocean_current
+            if substep_callback is not None:
+                substep_callback()
+            if self.deactivated:
+                break
+            self.velocity = forward_after + ocean_current
+        if not self.deactivated:
+            # After the final substep the legacy path leaves ``velocity`` at
+            # the start-of-substep value, not the final speed/heading.
+            self.velocity = last_forward_before + ocean_current
+        return bool(speed_limited)
 
     def check_collision(self, entities_x, entities_y, entities_r):
         """Check collision with circular entity."""

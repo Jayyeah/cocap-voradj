@@ -1,0 +1,354 @@
+run_name: continuous_masac_ctde_4v1_20260806
+algorithm: masac_ctde
+critic_mode: central
+trainer_profile: formal_ctde
+seed: 2026080601
+device: cuda:0
+output_root: runs
+env:
+  width: 120.0
+  height: 120.0
+  x_boundary_left: 0.0
+  x_boundary_right: 120.0
+  y_boundary_bottom: 0.0
+  y_boundary_top: 120.0
+  inner_x_min: 0.0
+  inner_x_max: 120.0
+  inner_y_min: 0.0
+  inner_y_max: 120.0
+  num_pursuers: 4
+  num_evaders: 1
+  num_obstacles: 1
+  episode_max_length: 1000
+  capture_distance: 8.0
+  related_distance: 18.0
+  timestep_penalty: -1.0
+  collision_penalty: -160.0
+  emergency_penalty: -10.0
+  goal_reward: 120.0
+  obs_r_range:
+  - 1.0
+  - 1.1
+  spawn_edge_margin: 12.0
+  spawn_cluster_radius: 10.0
+  pursuer_spawn_mode: map_random
+  evader_spawn_mode: map_random
+  pursuer_spawn_min_sep: 15.0
+  pursuer_spawn_min_sep_coverage: 7.0
+  evader_spawn_min_sep: 15.0
+  min_pursuer_evader_init_dis: 15.0
+  init_speed: 0.0
+  enforce_hard_boundary: true
+  boundary_collision_death: true
+  boundary_penalty: -160.0
+  boundary_proximity_penalty_enabled: true
+  boundary_proximity_distance: 4.0
+  boundary_proximity_penalty: -10.0
+pursuer:
+  max_speed: 3.0
+  action_mode: acceleration_2d_world
+  a:
+  - -0.4
+  - 0.0
+  - 0.4
+  w:
+  - -0.5235987755982988
+  - 0.0
+  - 0.5235987755982988
+  a_max: 0.4
+  perception_range: 20.0
+  init_speed: 0.0
+evader:
+  max_speed: 3.5
+  a:
+  - -0.4
+  - 0.0
+  - 0.4
+  w:
+  - -0.5235987755982988
+  - -0.2617993877991494
+  - 0.0
+  - 0.2617993877991494
+  - 0.5235987755982988
+  action_mode: unicycle
+  perception_range: 20.0
+  init_speed: 0.0
+perception:
+  observation_mode: voronoi_adjacency
+  topology: friendly_voronoi_comm_v0
+  range: 20.0
+  angle: 6.283185307179586
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  self_feature_dim: 9
+  max_pursuer_num: 8
+  max_evader_num: 8
+  max_obstacle_num: 5
+  global_evader_visibility: false
+  normalize_observations: false
+  observation_clip: 10.0
+  boundary_feature_mode: nearest_vector_robot_oob
+  normalize_distances: true
+  distance_normalization: map_diagonal
+action:
+  mode: acceleration_2d_world
+  dimension: 2
+  bound_type: l2_disk
+  a_max: 0.4
+dynamics:
+  profile: continuous_parity_v1
+  physics_dt: 0.05
+  substeps_per_action: 10
+  decision_dt: 0.5
+  v_max: 3.0
+  integration: trapezoidal
+  linear_drag_coefficient: 0.13333333333333333
+  speed_clip_each_substep: true
+  collision_check_each_substep: true
+  boundary_check_each_substep: true
+discount:
+  gamma: 0.99
+actor:
+  shared_parameters: true
+  observation: local_vct_ls_only
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_pursuers: 12
+  max_evaders: 8
+  max_obstacles: 5
+  distribution: radial_squashed_gaussian
+  a_max: 0.4
+  decision_dt: 0.5
+  log_std_min: -5.0
+  log_std_max: 1.0
+  dropout: 0.0
+  use_legacy_iqn_encoder_transfer: false
+central_critic:
+  mode: central
+  twin: true
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_agents: 12
+  max_evaders: 8
+  max_obstacles: 5
+  use_joint_actions: true
+  output: per_focal_agent_q
+  dropout: 0.0
+masac:
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  alpha_lr: 0.0001
+  alpha_init: 0.2
+  auto_entropy: true
+  target_entropy: -2.0
+replay:
+  capacity_joint: 250000
+  max_agents: 12
+training:
+  total_env_steps: 2000000
+  warmup_joint_transitions: 5000
+  batch_size: 128
+  max_agents: 12
+  max_focal_items_per_joint_transition: 4
+  update_every_env_steps: 4
+  gradient_steps: 1
+  grad_clip_norm: 0.5
+  checkpoint_interval_env_steps: 25000
+  metrics_flush_interval_env_steps: 1000
+  diagnostic_eval_interval_env_steps: 25000
+  focal_quota:
+    pre_capture_pursuing: 64
+    pre_capture_support: 8
+    pre_capture_coverage: 8
+    post_capture_coverage: 32
+    pure_recovery_coverage: 16
+  fallback_matrix:
+    pre_capture_pursuing:
+    - pre_capture_coverage
+    - pre_capture_support
+    - post_capture_coverage
+    - pure_recovery_coverage
+    pre_capture_support:
+    - pre_capture_coverage
+    - pre_capture_pursuing
+    - post_capture_coverage
+    - pure_recovery_coverage
+    pre_capture_coverage:
+    - pre_capture_support
+    - pre_capture_pursuing
+    - post_capture_coverage
+    - pure_recovery_coverage
+    post_capture_coverage:
+    - pure_recovery_coverage
+    - pre_capture_coverage
+    - pre_capture_support
+    - pre_capture_pursuing
+    pure_recovery_coverage:
+    - post_capture_coverage
+    - pre_capture_coverage
+    - pre_capture_support
+    - pre_capture_pursuing
+evaluation:
+  episodes_per_scene: 20
+  deterministic: true
+  diagnostic_rollout_cap: 400
+  seeds:
+  - 2026080601
+  - 2026080602
+  - 2026080603
+  - 2026080604
+  - 2026080605
+recovery:
+  capture_state_pool_capacity: 1000
+  captured_state_ratio: 0.75
+  map_random_ratio_within_non_capture: 0.5
+initialization:
+  actor_encoder:
+    mode: legacy_iqn
+    checkpoint: runs/crms_supportapproach_ce_curr_stage1_4p1e1obs_scratch2m_20260802_run1/checkpoints/final_step_2000000.pt
+    strict_shape_match: true
+    freeze_env_steps: 0
+teacher_snapshot_restore:
+  mode: geometry_reset
+  dataset: ''
+warmup_action_policy:
+  mode: actor_prior
+reward:
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_speed_weight_schedule:
+  - step: 0
+    value: 0.0
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.1
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 4
+  coverage_cv_loose_area_cv_threshold: 0.15
+  min_active_pursuers: 4
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  coverage_success_reward_repeat: false
+  coverage_success_repeat_reward: 0.0
+  post_capture_coverage_success_reward: 0.0
+  post_capture_coverage_grace_steps: 0
+  post_capture_success_reward_repeat: false
+  post_capture_success_repeat_reward: 0.0
+  post_capture_hold_reward: 0.0
+  distribution_converged_grace_steps: 0
+  coverage_geometric_latch_reward: 0.0
+  post_capture_geometric_latch_reward: 0.0
+  coverage_settle_enabled: false
+  coverage_settle_terminate_on_success: false
+  coverage_settle_geometric_repeat_reward: 0.0
+  coverage_settle_motion_repeat_reward: 0.0
+  coverage_settled_terminal_reward: 0.0
+  coverage_settle_repeat_reward: 0.0
+  coverage_settle_deceleration_coeff: 0.0
+  coverage_early_speed_shaping_enabled: false
+  coverage_cell_center_speed_penalty_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+  post_capture_coverage_window_steps: 500
+  capture_reward_mode: ring_importance_ms_v0
+  capture_timestep_penalty: 0.0
+  omega_ring_ms: 2.0
+  ring_ms_progress_clip: 3.0
+  ring_ms_inner_extra_margin: 0.5
+  ring_ms_preferred_center_radius: 8.0
+  ring_ms_outer_center_radius: 10.5
+  ring_ms_radial_sigma: 2.0
+  ring_ms_cell_size: 1.5
+  ring_ms_angle_alpha: 0.25
+  ring_ms_angle_weight_min: 0.75
+  ring_ms_angle_weight_max: 1.25
+  ring_ms_velocity_static_threshold: 0.3
+  ring_ms_velocity_full_threshold: 1.0
+  ring_ms_occupancy_mode: cartesian_disk
+  ring_ms_occupancy_radius: 4.0
+  omega_approach: 0.0
+  omega_mean_shift: 0.0
+  omega_front: 0.0
+  k_required: 3
+  r_e: 8.0
+  max_angle_gap: 3.141592653589793
+  max_angle_ratio: 3.0
+  capture_stationary_enabled: true
+  capture_stationary_speed_threshold: 0.2
+  capture_stationary_hold_steps: 10
+  capture_stationary_min_pursuers: 2
+  d_safe: 4.0
+  emergency_penalty_mode: flat
+  emergency_critical_distance: 0.5
+voradj:
+  perception_topology_version: friendly_voronoi_comm_v0
+  friendly_comm_obstacle_mode: free_mask_projected
+  voronoi_obstacle_mode: free_mask_projected
+  enemy_sensing_radius: 20.0
+  obstacle_sensing_radius: 20.0
+  local_sensing_uses_surface_distance: true
+  vct_ls_apply_release_delay: true
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: approach_only
+  support_reward_approach_weight: 1.0
+  support_reward_approach_clip: 3.0
+  capture_episode_ends_on_capture: false
+  capture_episode_success_on_capture: false
+  is_pursuing_release_delay_steps: 10
+  center_sqrt_n_normalization_enabled: true
+tasks:
+  capture:
+    env:
+      num_evaders: 1
+      episode_max_length: 1000
+      pre_capture_max_length: 1000
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+    voradj:
+      capture_episode_ends_on_capture: true
+      capture_episode_success_on_capture: true
+  pure_ce:
+    env:
+      num_evaders: 0
+      episode_max_length: 1500
+      pre_capture_max_length: 0
+      pursuer_spawn_mode: inner_random_cluster
+      pursuer_spawn_min_sep: 7.0
+    voradj:
+      capture_episode_ends_on_capture: false
+      capture_episode_success_on_capture: false
+  mixed_crms:
+    env:
+      num_evaders: 1
+      episode_max_length: 1500
+      pre_capture_max_length: 1000
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+    reward:
+      post_capture_coverage_window_steps: 500
+    voradj:
+      capture_episode_ends_on_capture: false
+      capture_episode_success_on_capture: false
+experiment_metadata:
+  series_label: continuous_masac_ctde_formal_20260806
+  stage: stage1_4p1e1obs
+  action_semantics: world-frame acceleration disk, L2 <= 0.4, parity drag
+  replay_unit: joint transition; optimizer unit is focal-agent item
+  formal_entry_contract: unique YAML, central critic only, no local/smoke fallback

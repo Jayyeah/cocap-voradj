@@ -1,0 +1,74 @@
+extends: ../voradj_a3_apfnew_sqrtn_20260723/a3_apfnew_sqrtn_4v1_scratch_mix_2m.yaml
+
+seed: 2026071543
+device: cuda:1
+output_root: runs
+total_timesteps: 300000
+train_mode: voradj
+run_name: ce_common_must_be_overridden
+
+env:
+  num_pursuers: 4
+  num_evaders: 0
+  num_obstacles: 1
+  episode_max_length: 900
+  pursuer_spawn_mode: map_random
+  init_speed: 0.0
+
+reward:
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_speed_weight: 0.05
+  coverage_ce_acceleration_weight: 0.002
+  coverage_ce_angular_velocity_weight: 0.001
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.10
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 2
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  coverage_success_reward_repeat: false
+  coverage_settle_enabled: false
+  coverage_early_speed_shaping_enabled: false
+  coverage_cell_center_speed_penalty_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+  distribution_converged_grace_steps: 0
+
+iqn:
+  gamma: 0.99
+  epsilon_decay_steps: 300000
+  checkpoint_freq: 50000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+
+voradj:
+  scenes:
+    - voradj_coverage
+  voronoi_obstacle_mode: free_mask_projected
+  voronoi_obstacle_grid_margin: null
+  center_sqrt_n_normalization_enabled: true
+
+zone_demo:
+  enabled: false
+
+tasks:
+  voradj:
+    env:
+      num_evaders: 0
+      pursuer_spawn_mode: map_random
+  voradj_coverage:
+    env:
+      num_evaders: 0
+      pursuer_spawn_mode: map_random
+
+experiment_metadata:
+  series_label: ce_coverage_center_energy_v0
+  training_start: scratch
+  scene_scope: pure_coverage_old_mix_map
+  zone_parallel_isolation: CE-Coverage is independent from zonedemo; zone_demo.enabled=false.
+  success_semantics: sqrt(mean(d_i^2))<=0.05 and max(d_i)<=0.10 for 30 steps; d_i=sqrt(N)*||p_i-c_i||/map_diagonal.
+  reward_semantics: '-10*(center_cost+control_cost) plus PBRS gamma*Phi(s'')-Phi(s), Phi=-center_cost; no CV, inside, speed gate, settle window, or terminal bonus.'

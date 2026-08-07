@@ -1,0 +1,28 @@
+extends: vctls_ce_4v1_common.yaml
+
+seed: 2026073153
+device: cuda:1
+total_timesteps: 1000000
+run_name: vctls_ce4v1_support_scratch1m_20260731_run1
+
+iqn:
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+voradj:
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+
+experiment_metadata:
+  series_label: vct_ls_plus_ce_support_scratch1m
+  training_start: scratch
+  support_reward_blend: enabled_0p5_capture_0p5_ce_coverage_when_neighbor_pursues
+  screening: Every 100k checkpoint is evaluated on capture, mix, and pure coverage with CE success plus cv<0.15 loose stats.

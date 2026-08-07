@@ -1,0 +1,74 @@
+extends: ../vct_ls_ce_20260731/vctls_ce_4v1_support_scratch1m.yaml
+
+env:
+  episode_max_length: 3000
+
+reward:
+  coverage_cv_loose_area_cv_threshold: 0.15
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+  post_capture_coverage_window_steps: 600
+
+iqn:
+  checkpoint_freq: 100000
+
+voradj:
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 32
+    recovery_pure: 16
+  recovery:
+    spawn_mode: inner_random_cluster_plus_capture_snapshot_plus_map_random
+    capture_state_pool_capacity: 1000
+    captured_state_ratio: 0.75
+    map_random_ratio_within_non_capture: 0.5
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: capture_task
+
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 2
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+      evader_spawn_min_sep: 15.0
+      enforce_hard_boundary: true
+      boundary_collision_death: true
+      boundary_penalty: -160.0
+      collision_penalty: -160.0
+      emergency_penalty: -10.0
+      boundary_proximity_penalty_enabled: true
+      boundary_proximity_distance: 4.0
+      boundary_proximity_penalty: -10.0
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+      enforce_hard_boundary: true
+      boundary_collision_death: true
+      boundary_penalty: -160.0
+      collision_penalty: -160.0
+      emergency_penalty: -10.0
+      boundary_proximity_penalty_enabled: true
+      boundary_proximity_distance: 4.0
+      boundary_proximity_penalty: -10.0
+
+experiment_metadata:
+  series_label: vct_ls_ce_support_8v2_parallel_20260802
+  stage: 8p2e2obs
+  capture_semantics: VCT-LS/A3 legacy capture with one-hop support reward blend; no CR-MS ring reward.
+  support_semantics: One-hop support agents receive 0.5 legacy capture-task reward plus 0.5 CE coverage reward using neighbor-visible targets.
+  coverage_semantics: Latest CE replay 64/16/32/16, captured snapshot ratio 0.75, 8v2 post window 600, and delayed lambda_v=0.0005 from 200k.
+  screening: Every 100k checkpoint is independently screened on capture, coverage, and mix; stage-cap historical best launches deterministic 20-rollout/10-GIF display evaluation.
+

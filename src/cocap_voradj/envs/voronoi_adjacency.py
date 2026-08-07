@@ -363,7 +363,12 @@ class VorAdjEnv(CoCapEnv):
         if not bool(self.reward_cfg.get("coverage_ce_pbrs_enabled", True)):
             return 0.0
         scale = float(self.reward_cfg.get("coverage_ce_reward_scale", 10.0))
-        gamma = float((self.config.get("iqn", {}) or {}).get("gamma", 0.99))
+        gamma = float(
+            (self.config.get("discount", {}) or {}).get(
+                "gamma",
+                (self.config.get("iqn", {}) or {}).get("gamma", 0.99),
+            )
+        )
         kappa = float(self.reward_cfg.get("coverage_ce_pbrs_kappa", 1.0))
         return scale * gamma * kappa * float(center_cost)
 
@@ -611,17 +616,39 @@ class VorAdjEnv(CoCapEnv):
             pursuer_positions = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
         if evader_positions is None:
             evader_positions = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2), dtype=float)
+        if pursuer_positions.shape[0] != len(self.pursuers):
+            active_indices = [idx for idx, p in enumerate(self.pursuers) if not p.deactivated]
+            pursuer_lookup = {
+                idx: pursuer_positions[offset]
+                for offset, idx in enumerate(active_indices)
+            }
+        else:
+            pursuer_lookup = {
+                idx: pursuer_positions[idx]
+                for idx in range(len(self.pursuers))
+            }
+        if evader_positions.shape[0] != len(self.evaders):
+            active_indices = [idx for idx, e in enumerate(self.evaders) if not e.deactivated]
+            evader_lookup = {
+                idx: evader_positions[offset]
+                for offset, idx in enumerate(active_indices)
+            }
+        else:
+            evader_lookup = {
+                idx: evader_positions[idx]
+                for idx in range(len(self.evaders))
+            }
         for i, p in enumerate(self.pursuers):
             if not p.deactivated:
                 keys.append(("pursuer", i))
-                pts.append(np.asarray(pursuer_positions[i], dtype=float))
+                pts.append(np.asarray(pursuer_lookup[i], dtype=float))
         if include_evaders:
             for j, e in enumerate(self.evaders):
                 if not e.deactivated:
-                    if self._zone_enabled() and not self._zone_point_in_inner(np.asarray(evader_positions[j], dtype=float)):
+                    if self._zone_enabled() and not self._zone_point_in_inner(np.asarray(evader_lookup[j], dtype=float)):
                         continue
                     keys.append(("evader", j))
-                    pts.append(np.asarray(evader_positions[j], dtype=float))
+                    pts.append(np.asarray(evader_lookup[j], dtype=float))
         if not pts:
             return keys, np.zeros((0, 2), dtype=float)
         return keys, np.asarray(pts, dtype=float)
@@ -883,13 +910,14 @@ class VorAdjEnv(CoCapEnv):
         max_o = int(self.per_cfg.get("max_obstacle_num", 5))
         data = self._capture_voronoi_map()
         coverage_data = self._coverage_voronoi_map()
+        world_frame = str(self.per_cfg.get("observation_frame", "robot")).strip().lower() in {"world", "world_frame"}
         key = ("pursuer", idx)
         adjacency = data.get("adjacency", {}).get(key, set())
         raw_is_pursuing = self._has_enemy_neighbor(data, key)
         is_pursuing = self._effective_is_pursuing(idx, raw_is_pursuing)
 
         distance_scale = self._distance_scale()
-        abs_vel = self._robot_frame(pursuer, pursuer.velocity, True)
+        abs_vel = np.asarray(pursuer.velocity, dtype=float) if world_frame else self._robot_frame(pursuer, pursuer.velocity, True)
         if self.obstacles:
             if self._vct_ls_enabled():
                 visible_clearances = [
@@ -911,22 +939,58 @@ class VorAdjEnv(CoCapEnv):
         top_d = float(pursuer.y - yt)
         nearest_y = bottom_d if abs(bottom_d) <= abs(top_d) else top_d
         centroid = coverage_data.get("centroids", {}).get(key, self._position(pursuer))
-        center_r = self._robot_frame(pursuer, np.asarray(centroid, dtype=float) - self._position(pursuer), True)
+        center_vec = np.asarray(centroid, dtype=float) - self._position(pursuer)
+        center_r = center_vec if world_frame else self._robot_frame(pursuer, center_vec, True)
         center_scale = self._center_sqrt_n_scale(coverage_data)
         boundary_mode = str(self.per_cfg.get("boundary_feature_mode", "axis_signed"))
         if boundary_mode == "nearest_vector_robot_oob":
-            boundary_r, is_out_of_bounds = self._nearest_boundary_vector(pursuer)
-            self_feat = [
-                float(abs_vel[0]),
-                float(abs_vel[1]),
-                float(min_obs / distance_scale),
-                float(boundary_r[0] / distance_scale),
-                float(boundary_r[1] / distance_scale),
-                float(is_out_of_bounds),
-                float((center_r[0] / distance_scale) * center_scale),
-                float((center_r[1] / distance_scale) * center_scale),
-                float(is_pursuing),
-            ]
+            if world_frame:
+                xl, xr, yb, yt = self._bounds()
+                position = self._position(pursuer)
+                inside = bool(xl <= pursuer.x <= xr and yb <= pursuer.y <= yt)
+                if inside:
+                    boundary_points = [
+                        np.asarray([xl, pursuer.y], dtype=float),
+                        np.asarray([xr, pursuer.y], dtype=float),
+                        np.asarray([pursuer.x, yb], dtype=float),
+                        np.asarray([pursuer.x, yt], dtype=float),
+                    ]
+                    nearest = min(boundary_points, key=lambda point: float(np.linalg.norm(point - position)))
+                else:
+                    nearest = np.asarray(
+                        [np.clip(pursuer.x, xl, xr), np.clip(pursuer.y, yb, yt)],
+                        dtype=float,
+                    )
+                boundary_r = nearest - position
+                is_out_of_bounds = not inside
+                self_feat = [
+                    float(abs_vel[0]),
+                    float(abs_vel[1]),
+                    float(min_obs / distance_scale),
+                    float(boundary_r[0] / distance_scale),
+                    float(boundary_r[1] / distance_scale),
+                    float(is_out_of_bounds),
+                    float((center_r[0] / distance_scale) * center_scale),
+                    float((center_r[1] / distance_scale) * center_scale),
+                    float(is_pursuing),
+                    float(np.cos(pursuer.theta)),
+                    float(np.sin(pursuer.theta)),
+                ]
+            else:
+                boundary_r, is_out_of_bounds = self._nearest_boundary_vector(pursuer)
+                self_feat = [
+                    float(abs_vel[0]),
+                    float(abs_vel[1]),
+                    float(min_obs / distance_scale),
+                    float(boundary_r[0] / distance_scale),
+                    float(boundary_r[1] / distance_scale),
+                    float(is_out_of_bounds),
+                    float((center_r[0] / distance_scale) * center_scale),
+                    float((center_r[1] / distance_scale) * center_scale),
+                    float(is_pursuing),
+                ]
+                if bool(self.per_cfg.get("include_yaw_features", False)):
+                    self_feat += [float(np.cos(pursuer.theta)), float(np.sin(pursuer.theta))]
         else:
             self_feat = [
                 float(abs_vel[0]),
@@ -951,8 +1015,12 @@ class VorAdjEnv(CoCapEnv):
         pursuer_feats: List[List[float]] = []
         for j in friend_ids[:max_p]:
             other = self.pursuers[j]
-            pos_r = self._robot_frame(pursuer, self._position(other), False)
-            vel_r = self._robot_frame(pursuer, other.velocity, True)
+            if world_frame:
+                pos_r = self._position(other) - self._position(pursuer)
+                vel_r = np.asarray(other.velocity, dtype=float)
+            else:
+                pos_r = self._robot_frame(pursuer, self._position(other), False)
+                vel_r = self._robot_frame(pursuer, other.velocity, True)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             pursuer_feats.append([
@@ -983,8 +1051,12 @@ class VorAdjEnv(CoCapEnv):
         evader_feats: List[List[float]] = []
         for j in enemy_ids[:max_e]:
             evader = self.evaders[j]
-            pos_r = self._robot_frame(pursuer, self._position(evader), False)
-            vel_r = self._robot_frame(pursuer, evader.velocity, True)
+            if world_frame:
+                pos_r = self._position(evader) - self._position(pursuer)
+                vel_r = np.asarray(evader.velocity, dtype=float)
+            else:
+                pos_r = self._robot_frame(pursuer, self._position(evader), False)
+                vel_r = self._robot_frame(pursuer, evader.velocity, True)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             heading = float(np.arctan2(vel_r[1], vel_r[0])) if np.linalg.norm(vel_r) > 1e-9 else 0.0
@@ -1023,7 +1095,10 @@ class VorAdjEnv(CoCapEnv):
         obstacle_feats: List[List[float]] = []
         for oi, _meta in sorted(obstacle_candidates.items(), key=lambda kv: (kv[1][0], kv[1][1]))[:max_o]:
             obs = self.obstacles[oi]
-            pos_r = self._robot_frame(pursuer, np.array([obs.x, obs.y], dtype=float), False)
+            if world_frame:
+                pos_r = np.asarray([obs.x, obs.y], dtype=float) - self._position(pursuer)
+            else:
+                pos_r = self._robot_frame(pursuer, np.array([obs.x, obs.y], dtype=float), False)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
             obstacle_feats.append([
@@ -1054,11 +1129,15 @@ class VorAdjEnv(CoCapEnv):
         active = [i for i, p in enumerate(self.pursuers) if not p.deactivated]
         if not active:
             return values
+        if pursuer_positions.shape[0] == len(self.pursuers):
+            pursuer_lookup = {i: pursuer_positions[i] for i in range(len(self.pursuers))}
+        else:
+            pursuer_lookup = {idx: pursuer_positions[offset] for offset, idx in enumerate(active)}
         if self._ce_coverage_enabled():
             for i in active:
                 key = ("pursuer", i)
-                centroid = data.get("centroids", {}).get(key, pursuer_positions[i])
-                _distance, cost = self._ce_center_distance_and_cost(pursuer_positions[i], centroid, len(active))
+                centroid = data.get("centroids", {}).get(key, pursuer_lookup[i])
+                _distance, cost = self._ce_center_distance_and_cost(pursuer_lookup[i], centroid, len(active))
                 values[i] = cost
             return values
         pursuer_counts = np.asarray([data["counts"].get(("pursuer", i), 0) for i in active], dtype=float)
@@ -1068,8 +1147,8 @@ class VorAdjEnv(CoCapEnv):
         center_scale = self._center_sqrt_n_scale(data)
         for i in active:
             key = ("pursuer", i)
-            centroid = data["centroids"].get(key, pursuer_positions[i])
-            center_error = float((np.linalg.norm(pursuer_positions[i] - centroid) / max(diag, 1e-6)) * center_scale)
+            centroid = data["centroids"].get(key, pursuer_lookup[i])
+            center_error = float((np.linalg.norm(pursuer_lookup[i] - centroid) / max(diag, 1e-6)) * center_scale)
             count = float(data["counts"].get(key, 0))
             area_error = min(abs(count / max(expected, 1e-9) - 1.0), float(self.reward_cfg.get("coverage_area_error_clip", 1.0)))
             values[i] = float(self.reward_cfg.get("coverage_center_weight", 1.0)) * center_error + float(self.reward_cfg.get("coverage_area_weight", 0.5)) * area_error
@@ -1382,6 +1461,11 @@ class VorAdjEnv(CoCapEnv):
     def _action_accel_turn(self, idx: int, actions: List[Optional[int]]) -> Tuple[float, float]:
         if idx >= len(actions) or actions[idx] is None:
             return 0.0, 0.0
+        if self.continuous_control:
+            diagnostics = getattr(self.pursuers[idx], "last_action_diagnostics", {}) or {}
+            return float(diagnostics.get("actual_acceleration", 0.0)), float(
+                diagnostics.get("validated_angular_velocity", diagnostics.get("commanded_angular_velocity", 0.0))
+            )
         try:
             action = int(actions[idx])
             accel, turn = self.pursuers[idx].action_list[action]
@@ -1799,7 +1883,12 @@ class VorAdjEnv(CoCapEnv):
                     after_center_cost=float(after_cov[index]),
                     control_cost=control_cost,
                     reward_scale=float(self.reward_cfg.get("coverage_ce_reward_scale", 10.0)),
-                    gamma=float((self.config.get("iqn", {}) or {}).get("gamma", 0.99)),
+                    gamma=float(
+                        (self.config.get("discount", {}) or {}).get(
+                            "gamma",
+                            (self.config.get("iqn", {}) or {}).get("gamma", 0.99),
+                        )
+                    ),
                     pbrs_enabled=bool(self.reward_cfg.get("coverage_ce_pbrs_enabled", True)),
                     pbrs_kappa=float(self.reward_cfg.get("coverage_ce_pbrs_kappa", 1.0)),
                     terminal=False,
@@ -2213,6 +2302,12 @@ class VorAdjEnv(CoCapEnv):
         self.episode_step += 1
         self.total_steps += 1
         timeout = self.episode_step >= self.episode_max_length
+        pre_capture_max_length = int(self.env_cfg.get("pre_capture_max_length", 0))
+        pre_capture_timeout = bool(
+            active_evaders
+            and pre_capture_max_length > 0
+            and self.episode_step >= pre_capture_max_length
+        )
         post_window = int(self.reward_cfg.get("post_capture_coverage_window_steps", 300))
         voradj_cfg = (self.config.get("voradj", {}) or {})
         capture_terminal_done = bool(
@@ -2241,6 +2336,7 @@ class VorAdjEnv(CoCapEnv):
             coverage_phase_done
             or capture_terminal_done
             or zone_breach_done
+            or pre_capture_timeout
             or (post_capture_phase and self.post_capture_started and not self.post_capture_coverage_success and self.post_capture_step >= post_window)
         )
         # Replay phase describes the state in which the stored action was
@@ -2255,6 +2351,8 @@ class VorAdjEnv(CoCapEnv):
                 apply_ce_pbrs_reset(i, float(after_cov[i]), "terminal")
             if timeout and infos[i]["state"] == "normal":
                 infos[i]["state"] = "too long episode"
+            elif pre_capture_timeout and infos[i]["state"] == "normal":
+                infos[i]["state"] = "pre-capture timeout"
             elif capture_terminal_done and infos[i]["state"] == "normal":
                 infos[i]["state"] = "capture completed"
             elif zone_breach_done and infos[i]["state"] == "normal":
@@ -2311,6 +2409,10 @@ class VorAdjEnv(CoCapEnv):
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,
             }
+            if self.continuous_control:
+                diagnostics = dict(getattr(self.pursuers[i], "last_action_diagnostics", {}) or {})
+                infos[i]["action_diagnostics"] = diagnostics
+                infos[i]["replay_metadata"]["action_diagnostics"] = dict(diagnostics)
             dones.append(done)
         capture_count = int(sum(1 for x in next_labels if x == "capture"))
         coverage_count = int(sum(1 for x in next_labels if x == "coverage"))

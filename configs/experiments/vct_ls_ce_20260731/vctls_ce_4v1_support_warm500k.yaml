@@ -1,0 +1,22 @@
+extends: vctls_ce_4v1_common.yaml
+
+seed: 2026073151
+device: cuda:1
+total_timesteps: 500000
+run_name: vctls_ce4v1_support_warm500k_from_vctls_support1900k_20260731_run1
+
+pretrained:
+  path: runs/vct_ls_a3_4v1_scratch_mix_2m_supportblend_20260730_run2/checkpoints/step_1900000.pt
+  compatibility_mode: shape_compatible
+
+voradj:
+  support_reward_blend_enabled: true
+  support_reward_capture_weight: 0.5
+  support_reward_coverage_weight: 0.5
+  support_reward_capture_target_mode: neighbor_visible
+
+experiment_metadata:
+  series_label: vct_ls_plus_ce_support_warm500k
+  training_start: warm_start_from_vct_ls_support_4v1_1900k
+  pretrained_checkpoint: runs/vct_ls_a3_4v1_scratch_mix_2m_supportblend_20260730_run2/checkpoints/step_1900000.pt
+  support_reward_blend: enabled_0p5_capture_0p5_ce_coverage_when_neighbor_pursues

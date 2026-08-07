@@ -1,0 +1,22 @@
+extends: ce0_center_only_pbrs_300k.yaml
+run_name: ce8_delayed_energy0005_lrdrop200k_4p0e1obs_scratch_300k_20260730
+reward:
+  coverage_ce_pbrs_reset_mode: success_only_legacy
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_speed_weight_schedule:
+    - step: 0
+      value: 0.0
+    - step: 200000
+      value: 0.0005
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+iqn:
+  checkpoint_freq: 25000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+experiment_metadata:
+  ablation: CE8 scratch; center-only through step 200000 checkpoint, then lambda_v=0.0005 with the CE6 learning-rate drop.
+  schedule_boundary: Transitions indexed 0..199999 use lambda_v=0; the next transition uses lambda_v=0.0005.

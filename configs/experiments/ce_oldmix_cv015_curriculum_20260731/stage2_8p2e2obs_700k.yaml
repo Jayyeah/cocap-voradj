@@ -1,0 +1,68 @@
+extends: stage1_4p1e1obs_700k.yaml
+run_name: ce_oldmix_cv015_curr_stage2_8p2e2obs_700k_20260731_run1
+device: cuda:0
+seed: 2026073152
+total_timesteps: 700000
+reward:
+  coverage_cv_loose_area_cv_threshold: 0.15
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+  post_capture_coverage_window_steps: 600
+iqn:
+  learning_rate: 3.0e-05
+  checkpoint_freq: 50000
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 420000
+  learning_rate_schedule:
+  - step: 0
+    learning_rate: 3.0e-05
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 2
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+      evader_spawn_min_sep: 15.0
+      enforce_hard_boundary: true
+      boundary_collision_death: true
+      boundary_penalty: -160.0
+      collision_penalty: -160.0
+      emergency_penalty: -10.0
+      boundary_proximity_penalty_enabled: true
+      boundary_proximity_distance: 4.0
+      boundary_proximity_penalty: -10.0
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+      enforce_hard_boundary: true
+      boundary_collision_death: true
+      boundary_penalty: -160.0
+      collision_penalty: -160.0
+      emergency_penalty: -10.0
+      boundary_proximity_penalty_enabled: true
+      boundary_proximity_distance: 4.0
+      boundary_proximity_penalty: -10.0
+pretrained:
+  path: runs/ce_oldmix_cv015_curr_stage1_4p1e1obs_700k_20260731_run1/checkpoints/step_600000.pt
+experiment_metadata:
+  series_label: ce_oldmix_cv015_curriculum
+  stage: stage2_8p2e2obs
+  training_start: warm_start_from_stage1_selected_checkpoint
+  stage_timesteps: 700000
+  curriculum_policy: Quick old-mix plus CE-coverage curriculum; checks from 300k every
+    100k, early promotion allowed from 500k, otherwise select historical best at cap.
+  optimizer_semantics: warm continuation with lr=3e-5 and epsilon 0.28->0.05.
+  selected_from_previous_stage: true
+  pretrained_checkpoint: runs/ce_oldmix_cv015_curr_stage1_4p1e1obs_700k_20260731_run1/checkpoints/step_600000.pt
+metadata:
+  pretrained_checkpoint: runs/ce_oldmix_cv015_curr_stage1_4p1e1obs_700k_20260731_run1/checkpoints/step_600000.pt
+  selected_from_previous_stage: true
