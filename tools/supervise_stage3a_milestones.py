@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--config", default=str(ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"))
     parser.add_argument("--prefix", default="stage3a_seed")
     parser.add_argument("--run-name", default="")
+    parser.add_argument("--analyzer", default=str(ROOT / "tools/analyze_stage3a_25k.py"))
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     root = Path(args.root)
@@ -41,7 +42,7 @@ def main() -> int:
                 subprocess.run(
                     [
                         sys.executable,
-                        str(ROOT / "tools/analyze_stage3a_25k.py"),
+                        args.analyzer,
                         "--report",
                         str(report),
                         "--baselines",
