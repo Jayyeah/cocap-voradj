@@ -34,13 +34,14 @@ Stage 0 旧 IQN 基线复现
 | 1 连续 (a,ω) bridge | PASS | 9/9 fixed-seed parity，state/reward diff=0 |
 | 2 极简单任务 | PASS | seed1 6/20、seed2 20/20 capture |
 | 3A pure coverage（0 obs） | PASS | seed1/2/3 均 CE energy 改善、collision 可控 |
-| 3B pure coverage（1 obs） | IN_PROGRESS | r3 已修复 active-only 索引 bug，25k 运行中 |
-| 4A-4E | READY | 配置/基线已就绪，待 3B 后启动 |
+| 3B pure coverage（1 obs） | PASS | r3 eval20 CE -51%、collision 15% |
+| 4A capture | IN_PROGRESS | seed1/seed2 已并行启动；基线 capture random 20% |
+| 4B-4E | READY | 配置已就绪；4A 后 4B/4C 可并行 |
 | 5A/5B | READY | 配置已就绪 |
 | 6A-6C body-frame | READY | 实现/配置/20-step smoke 通过 |
 | 7A1-7A3 / 7B1-7B3 world-frame | READY | 实现/配置/20-step smoke 通过 |
 
-当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml`。
+当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml`。
 
 ## 3. 历史结果与结论
 
