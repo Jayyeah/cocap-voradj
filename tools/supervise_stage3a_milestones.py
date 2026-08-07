@@ -78,7 +78,7 @@ def main() -> int:
                         ],
                         check=False,
                     )
-            if analysis.is_file():
+            if analysis.is_file() and eval20.is_file():
                 pending[seed] = False
         if args.once:
             break
