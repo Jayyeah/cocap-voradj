@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 3B（MASAC + 连续 (a,ω) pure coverage，1 obstacle）**
-- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml`（Stage3A config 已 PASS，保留为成功锚点）
+- 当前 active stage：**Stage 4A（MASAC + 连续 (a,ω) capture，stationary/global/no-obs）**
+- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml`（Stage3A/3B configs 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0/1/2/3A 均 PASS；Stage3B seed1 已启动；Stage3A seed3 作为额外证据运行中
-- 当前结论：连续 `(a,ω)` MASAC 已覆盖极简单 capture 与多智能体 pure coverage 两个成功锚点
-- 下一步唯一动作：**完成 Stage3B（1 obstacle）训练与 gate 判定，然后进入 Stage4A**
+- 最近 milestone：Stage 0/1/2/3A/3B 均 PASS；Stage4A seed1/seed2 已并行启动
+- 当前结论：连续 `(a,ω)` MASAC 已覆盖极简单 capture、pure coverage 无/有 obstacle 三个成功锚点
+- 下一步唯一动作：**完成 Stage4A 25k 训练与 gate 判定；按用户确认，4A 后 4B/4C 可并行**
 
 ---
 
@@ -156,7 +156,7 @@ next action: 进入 Stage3B；seed3 作为额外证据继续
 ```text
 stage: 3B
 run_id: STAGE3B_PURE_CE_OBS_AW_20260807
-status: IN_PROGRESS（r3 用修复后代码运行至 ~15k/25k）
+status: PASS（r3 eval20 CE -51%、collision 15%）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 config path: configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml
@@ -168,13 +168,36 @@ dynamics contract: continuous_aw_v1
 reward contract: CE centroid energy + PBRS，speed weight=0
 exact command: 同 Stage3A，config 换 stage3b，seed=2026080701
 PID/log: tmux ladder_s3b_s1
-step: r3 ~15000/25000
+step: r3=25000（完成）
 key metrics: 待回填
 decision: 待 25k
 next action: 25k 后评估；PASS 后进入 Stage4A
 ```
 
-### 3.6 历史/已淘汰条目
+### 3.6 Stage 4A：Capture（stationary/global/no-obs）
+
+```text
+stage: 4A
+run_id: STAGE4A_CAPTURE_AW_20260807
+status: IN_PROGRESS（seed1/seed2 已并行启动）
+date: 2026-08-07
+branch: continuous/masac-ctde-contract-20260806
+config path: configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml
+seed: 2026080701 / 2026080702
+initialization: scratch random-init
+action contract: acceleration_angular_velocity_body
+observation contract: robot-frame local VCT-LS + global_evader_visibility=true
+dynamics contract: continuous_aw_v1
+reward contract: CR-MS ring_importance_ms_v0（stationary target）
+exact command: 同 Stage3A，config 换 stage4a，seed 2026080701/02，device cuda:0/1
+PID/log: tmux ladder_s4a_s1 / ladder_s4a_s2
+step: 启动中
+key metrics: baseline random capture=20%/collision=90%，noop capture=0%；正式结果待回填
+decision: 待 25k
+next action: 25k 后分析+eval；按用户确认 4A 后 4B/4C 可并行
+```
+
+### 3.7 历史/已淘汰条目
 
 ```text
 stage: OLD_LINE (HISTORICAL / SUPERSEDED)
