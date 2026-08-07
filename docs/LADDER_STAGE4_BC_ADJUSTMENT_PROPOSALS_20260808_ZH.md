@@ -6,12 +6,13 @@
 
 - 真实 capture 事件（25k replay 逐条统计）：4B s1=0、4B s2=2、4C s1=1、4C s2=0；碰撞事件 34/79/39/56。
 - 奖励：p50=0、mean 为负；非 capture 最大稠密奖励 ≤1.88（ring 进度 clip=3.0 但实际几乎不达上限）；capture 大奖励（≥50）仅 4B s2 出现 2 条、4C s1 出现 1 条。
+- reward 配置核对（2026-08-08）：capture_reward_mode=ring_importance_ms_v0、capture_timestep_penalty=0.0（capture 场景无 -1 时间惩罚）、omega_ring_ms=2.0、ring_ms_progress_clip=3.0（单步最大 ±6）、k_required=1、capture_stationary_enabled=true → reward 机制接线正确，capture 条件反而宽松；问题不在接线，而在“策略训练中从未稳定接近”。
 - 手写 seek oracle：4B/4C 各 10/10 capture（<50 步）→ 合同可学。
 - 结论：训练几乎从未体验 capture 正反馈 → 策略坍缩（游荡/冲撞）；需要让稠密接近信号更强或让探索能发现 capture。
 
 ## 提案 A：reward 侧强化稠密接近信号（最直接，需明确批准）
 
-原理：4A stationary 下 ring 进度可用；移动 evader 下同一信号噪声大、幅度小（max≈+1.2/步），被 -1 时间惩罚和 -160 碰撞惩罚淹没。提高进度 clip 直接放大“接近”梯度。
+原理：capture 场景无时间惩罚，但 ring 进度信号在移动目标下实际幅度小（max≈+1.2/步，未达 ±6 上限），尾部被 -160 碰撞/边界惩罚主导；提高进度 clip 放大“接近”梯度，直接针对“稠密信号太弱”假设。
 
 ```diff
 - reward.ring_ms_progress_clip: 3.0
