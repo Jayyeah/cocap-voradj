@@ -156,7 +156,7 @@ next action: 进入 Stage3B；seed3 作为额外证据继续
 ```text
 stage: 3B
 run_id: STAGE3B_PURE_CE_OBS_AW_20260807
-status: IN_PROGRESS（seed1 ~6k/25k）
+status: IN_PROGRESS（seed1 ~11k/25k）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 config path: configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml
@@ -168,7 +168,7 @@ dynamics contract: continuous_aw_v1
 reward contract: CE centroid energy + PBRS，speed weight=0
 exact command: 同 Stage3A，config 换 stage3b，seed=2026080701
 PID/log: tmux ladder_s3b_s1
-step: ~6000/25000
+step: ~11000/25000
 key metrics: 待回填
 decision: 待 25k
 next action: 25k 后评估；PASS 后进入 Stage4A
