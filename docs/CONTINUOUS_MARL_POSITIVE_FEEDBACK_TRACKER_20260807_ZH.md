@@ -10,7 +10,7 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 4B / 4C 并行（4B=moving evader + 0 obstacle；4C=moving evader + 1 obstacle，用户确认 4C 即动态敌人分支）**
+- 当前 active stage：**Stage 4B / 4C 均已 25k 完成且 FAIL（等待用户选择调整方案）；Stage4D 未启动**
 - 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml` / `stage4c_capture_aw.yaml`（Stage3A/3B/4A configs 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
@@ -269,6 +269,13 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - Stage4D 准备（2026-08-08 01:00）：smoke20 通过（all finite，local visibility 生效，前 20 步角色为 coverage）；baselines 就绪：random capture=5%/min-dist=13.58、noop capture=0%/min-dist=13.65（`artifacts/2026-08-07_positive_feedback_ladder/stage4d/stage4d_baselines.json`）。待 4B seed2 积极信号即启动 4D 两 seed。
 - Stage4D 提前启动（用户确认 2026-08-08）：4B seed2 先结束且积极 ⇒ 直接启动 4D 两 seed；4C 后结束积极 ⇒ 4D 正常维护；4C 无积极信号 ⇒ 4C 诊断与 4D 训练并行。
 
+### 3.8.5 Stage4C 结论（2026-08-08 03:50）
+
+- 4C seed2 25k：eval20 capture=0/20、collision=35%、avg min-dist=15.48（random 13.44 / noop 13.68）→ FAIL。训练期 terminated=56≈collision=56。
+- 注意：seed2 的 4ep 诊断 min-dist=12.92 < baseline 使自动分析器判 PASS，但 20 集 eval20 无稳定改善（15.48），按 eval20 gate 判 FAIL；4ep 小样本 PASS 为假象，已在完成报告中记录。
+- 2-seed 汇总：seed1 capture 0/20、min-dist 14.96、collision 0%；seed2 上述 → Stage4C FAIL（25k 合同下）。
+- 完成报告：`artifacts/2026-08-07_positive_feedback_ladder/stage4c/STAGE_4C_CAPTURE_COMPLETION.md`。
+
 ### 3.8.4 Stage4B 结论与深层次分析（2026-08-08 03:10）
 
 - 4B seed2 25k：eval20 capture=0/20、collision=100%、avg min-dist=17.15（random 13.99 / noop 13.59）→ FAIL。训练期 terminated=81、collision=79（终止≈碰撞，非真实 capture）。
@@ -280,7 +287,7 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 行为探测（1000 步上限重评估 25k checkpoint）：seed1 0/10 capture、0 collision，但 distance_progress 多为负（远离 evader）、speed_mean 0.02–0.09；seed2 0/10 capture、100% collision、60–351 步即撞停 → 排除“400 cap 掩盖慢接近”。
 - 可行性上限（手写 seek 控制器，完美信息）：4B/4C 各 10/10 capture，平均 23–49 步完成，avg min-dist 7.3–8.0 → 任务合同可学，问题在 RL 训练信号。
 - 结论：无潜在乐观信号（无 capture 事件趋势、无接近趋势、Q 单调下降、更长 horizon 也无改善）→ 按备案不走 50k 续训首选；进入机制/超参调整分支，候选需用户确认（warmup / update_every / alpha / reward 侧机制核对）。
-- 下一步：等 4C seed2 25k + eval20；随后汇总两条线并提交调整方案供用户选择。
+- 下一步：4C seed2 已完成（见 3.8.5），两条线均 FAIL；汇总调整方案供用户选择（warmup / update_every / alpha / reward 侧 / 50k 续训）。
 
 ### 3.9 历史/已淘汰条目
 
