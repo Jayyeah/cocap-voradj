@@ -212,11 +212,19 @@ next action: 25k 后分析+eval；按用户确认 4A 后 4B/4C 可并行
 ```text
 stage: 4B
 run_id: STAGE4B_CAPTURE_AW_20260807
-status: IN_PROGRESS（seed1 启动中）
+status: IN_PROGRESS（seed1 25k 完成，无信号；seed2 已启动）
+date: 2026-08-07 19:31 启动
+branch: ladder/implementation-20260807
 config: configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml
 seed: 2026080701
 唯一改动: stationary -> original APF moving evader
-decision: 待 25k（2-seed 规则）
+exact command: tools/run_continuous_ctde_training.py --config stage4b_capture_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage4b_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage4b
+PID/log: 608229 / tmux ladder_s4b_s1；监督 ladder_s4b_sup1（tools/supervise_stage3a_milestones.py --analyzer tools/analyze_stage4a_25k.py --scenes capture）
+step: seed1=25000（完成）；seed2 启动于 2026-08-07 23:17（PID 1434065 / tmux ladder_s4b_s2 + ladder_s4b_sup2）
+key metrics: seed1 diagnostic 4ep：capture=0/4、collision=0、min-distance mean=15.29（random=13.99、noop=13.59）→ 未优于 baseline；training terminated=0、collision=0；eval20 进行中
+baselines: random capture=0%/min-distance=13.99，noop min-distance=13.59（stage4b_baselines_moving.json）
+decision: seed1 未过“明显优于 random/no-op”门槛；按 2-seed 规则继续 seed2，需至少 1 seed 达标
+next action: 等 seed1 eval20 + seed2 25k；若两者均无信号，则 4B 判 FAIL 并做合同/行为诊断，不得直接晋级
 ```
 
 ### 3.8 Stage 4C：Capture（1 obstacle）
@@ -225,11 +233,29 @@ decision: 待 25k（2-seed 规则）
 stage: 4C
 run_id: STAGE4C_CAPTURE_AW_20260807
 status: IN_PROGRESS（seed1 启动中）
+date: 2026-08-07 20:00 启动
+branch: ladder/implementation-20260807
 config: configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml
 seed: 2026080701
 唯一改动: num_obstacles 0 -> 1
+exact command: tools/run_continuous_ctde_training.py --config stage4c_capture_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage4c_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage4c
+PID/log: 726327 / tmux ladder_s4c_s1；监督 ladder_s4c_sup1（--eval-device cuda:1）
+step: 25k（进行中；2026-08-07 23:16 检查时为 23k，terminated=0/collision=0；最后一千步因移动 evader 仿真变慢）
+key metrics: baseline random capture=10%/min-distance=13.44，noop min-distance=13.68（stage4c_baselines.json）
 decision: 待 25k（2-seed 规则）
+next action: 25k 监督自动分析+eval20；若至少 1 seed 明显优于 random/no-op 则启动 seed2
 ```
+
+### 3.8.1 跨线 TODO 修订与 Stage4 监控记录（2026-08-07 22:32）
+
+- 文档修订（contract/tracker/implementation-line/agent-prompt）已提交推送：commit `cf45d65`，含 `SUPERSEDED BY CROSS-LINE EVIDENCE 2026-08-07` 标记、Stage6A/7A1 并行规则、teacher 失败触发式、action-translation FAILED GATE。
+- 4B/4C seed1 训练中，监督脚本就绪（25k 后自动 analyze + eval20），本轮不做高频轮询，约 10 分钟一次检查。
+
+### 3.8.2 Stage4B/4C 监控更新（2026-08-07 23:17）
+
+- 4B seed1：25k 完成（5001 updates、all finite），诊断 4ep capture=0/4、min-distance=15.29 劣于 baselines（13.99/13.59）→ 无正向信号；eval20 由监督自动执行中。
+- 4B seed2：23:17 启动（cuda:0，seed 2026080702，tag stage4b_seed2_25k），独立监督已就位。
+- 4C seed1：23k/25k，正常推进中；25k 后监督自动 analyze+eval20。
 
 ### 3.9 历史/已淘汰条目
 
