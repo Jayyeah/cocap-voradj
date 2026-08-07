@@ -85,6 +85,29 @@ Stage 0 旧 IQN 基线复现
 - Stage4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），加速验证。
 - 算法正式切换 MATD3/MADDPG、改 reward/observation/map 等仍需用户确认。
 
+## 5.1 双线证据 TODO 修订（2026-08-07）
+
+- `ctde_pure_random_25k_v2`：world `[ax,ay]` pure-CE 25k 4/4 positive signal → Stage6/7 不再严格串行。
+- Stage5 `(a,ω)` anchor 达到 PASS/OPTIMISTIC_PARTIAL 后，Stage6A 与 Stage7A1 并行启动。
+- Stage7A1 首轮目标：复现原线 world-axay pure positive signal（actor-prior warmup、1 obstacle、local VCT-LS、parity drag），不作为新 yaw 设计实验。
+- uniform-disk warmup 降为 Stage7A1b 二级诊断。
+- Teacher-assisted：失败触发式；snapshot 优先用于 post-capture/mixed；encoder 不再默认。
+- Action-translation BC：FAILED GATE / NOT ACTIVE TODO（radial saturation 98.68%、terminal velocity error 2.436、position error 1.307）。
+- yaw=0/world-axis 不再视为 world action 不可学习的必要解释，改为样本效率/泛化/capture/mixed 难度的潜在因素。
+
+```text
+ACTIVE MAINLINE:
+Stage 4A -> 4B/4C -> 4D -> 4E -> 5A -> 5B -> continuous (a,w) anchor
+
+THEN PARALLEL:
+BODY: 6A pure -> 6B capture -> 6C mixed
+WORLD: 7A1 reproduce ctde_pure_random_25k_v2 -> 7A2 capture -> 7A3 mixed
+
+TEACHER: failure-triggered only
+ACTION TRANSLATION BC: FAILED GATE / inactive
+ALGORITHM SWITCH: not active
+```
+
 ## 6. 分支与台账
 
 - 阶梯实现分支：`ladder/implementation-20260807`（基于 `main`，合并连续线提交）。

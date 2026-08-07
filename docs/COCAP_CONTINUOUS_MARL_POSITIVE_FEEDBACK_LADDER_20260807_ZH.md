@@ -1,8 +1,8 @@
 # CoCap-VorAdj 连续 MARL 正反馈阶梯推进方案
 
-**版本：** 2026-08-07 v1  
+**版本：** 2026-08-07 v2（双线证据修订）  
 **适用仓库：** `Jayyeah/cocap-voradj`  
-**当前工作分支：** `continuous/masac-ctde-contract-20260806`  
+**当前工作分支：** `ladder/implementation-20260807`（并行参考 `continuous/masac-ctde-contract-20260806`）  
 **基准分支：** `main`  
 **目标：** 在不破坏旧 IQN 成功主线的前提下，用每次只改变一个核心变量的方式，逐步建立连续控制成功锚点，最终推进到完整的 CTDE MASAC、mixed capture→coverage 和二维连续加速度版本；若最终版本尚未成功，至少获得明确、可重复的乐观学习信号与清晰阻塞定位。
 
@@ -23,6 +23,43 @@
 新台账只记录本文定义的阶梯路线。旧台账不得删除，但不得作为当前路线的唯一执行依据。
 
 ---
+
+## 0.1 双线证据修订（2026-08-07）
+
+以下修订来自并行原线 `continuous/masac-ctde-contract-20260806` 的最新 25k 矩阵结果，历史判断在正文中用 `SUPERSEDED BY CROSS-LINE EVIDENCE 2026-08-07` 标注。
+
+### 关键证据
+
+- `ctde_pure_random_25k_v2`：world-frame `[ax,ay]` + yaw=0 + parity drag + local VCT-LS + MASAC CTDE + pure CE，25k 完成、5001 updates、all finite，诊断 eval 4/4 CE energy progress positive（initial ~0.050–0.164 → final ~0.007–0.021）、collision 0/4；训练 collision=90/25000。
+- `ctde_pure_encoder_25k`：encoder transfer 技术兼容，但 pure CE 3/4 positive，training collision=203/25000（高于 random）。
+- `ctde_pure_snapshot_25k`：snapshot 4/4 positive，但不明显优于 random-init。
+- `action_translation_gate.json`：legacy IQN `(a,w)` → world `[ax,ay]` 翻译 gate **FAILED**（radial saturation 98.68%、terminal velocity error mean 2.436、one-step position error mean 1.307）。
+
+### TODO 修订摘要
+
+```text
+ACTIVE MAINLINE:
+Stage 4A -> 4B/4C -> 4D -> 4E -> 5A -> 5B
+-> continuous (a,w) anchor established
+
+THEN PARALLEL:
+Branch BODY: 6A pure -> 6B capture -> 6C mixed
+Branch WORLD: 7A1 reproduce ctde_pure_random_25k_v2 -> 7A2 capture -> 7A3 mixed
+
+TEACHER: failure-triggered only；snapshot 优先用于 post-capture/mixed；encoder 不再默认。
+ACTION TRANSLATION BC: FAILED GATE；inactive unless formulation changes。
+ALGORITHM SWITCH: MATD3/MADDPG 仍不 active。
+```
+
+### 具体修订
+
+1. Stage4A–4E、Stage5A/5B **完全保留**；Stage4 起使用 2 seeds（用户确认）。
+2. Stage6/7 不再严格串行：`(a,w)` 主干 Stage5 达到 PASS 或明确 OPTIMISTIC_PARTIAL 后，Stage6A（body pure）与 Stage7A1（world pure 复现）允许并行启动。
+3. Stage7A1 首轮目标改为**复现原线 world-axay pure positive signal**，不作为新 yaw/rotation 设计实验；使用 actor-prior warmup 与 `ctde_pure_random_25k_v2` 合同。
+4. uniform-disk warmup 降为二级诊断（Stage7A1b），默认 actor-prior。
+5. Teacher-assisted 改为失败触发式：random-init 两个 seed 到 25k 均无连续正向信号且工程/数据链正常时才允许；snapshot 优先用于 post-capture/mixed，encoder 不再默认。
+6. action-translation BC 主线删除：标记 `FAILED GATE / NOT ACTIVE TODO`。
+7. yaw=0/world-axis 不再视为 world `[ax,ay]` 不可学习的必要解释，改为“样本效率/泛化/capture/mixed 难度的潜在因素”。
 
 # 1. 核心判断
 
@@ -870,7 +907,9 @@ Critic 是否复用必须做一次小规模对照：
 
 ### 前置条件
 
-Stage 5 至少达到 `OPTIMISTIC_PARTIAL`，且 `(a,\omega)` 已建立可靠成功锚点。
+> SUPERSEDED BY CROSS-LINE EVIDENCE 2026-08-07：旧表述“必须先 body 再 world”不再作为严格前置。
+
+Stage 5 的 `(a,\omega)` 主干达到 PASS 或明确 OPTIMISTIC_PARTIAL 后，Stage6A（body pure）与 Stage7A1（world pure 复现）允许并行启动。6B/6C 仍各自依赖 6A/6B 信号。
 
 ### 核心动作合同
 
@@ -945,7 +984,9 @@ speed <= epsilon：
 
 ### 前置条件
 
-body-frame `[a_x,a_y]` 至少在单任务获得积极信号。
+> SUPERSEDED BY CROSS-LINE EVIDENCE 2026-08-07：原线 world `[ax,ay]` + yaw=0 的 pure-CE 已获得 positive signal，因此 body-frame 不再是 world-frame pure 的必要前置。
+
+Stage 5 的 `(a,\omega)` anchor 达到 PASS 或 OPTIMISTIC_PARTIAL 后，Stage7A1 可启动，首个目标是复现 `ctde_pure_random_25k_v2` 的 world-axay pure positive signal；7A2/7A3 仍依赖 7A1/7A2。
 
 ### 目标
 
@@ -972,6 +1013,8 @@ world-frame action 与 robot-frame observation不天然旋转等变。
 - 不允许只随机 yaw 而不提供方向信息。
 
 当前“yaw 恒 0 + robot-frame函数退化为world axes”可作为 7A 的一种退化 baseline，但必须明确它失去旋转归一化和泛化效率。
+
+> 2026-08-07 修订：yaw=0/world-axis 已被证明至少可学习 pure coverage；旋转归一性缺失目前视为样本效率/泛化/capture/mixed 难度的潜在因素，而非 world action 不可学习的必要解释。
 
 ### 子阶段
 
@@ -1016,18 +1059,21 @@ world-frame action 与 robot-frame observation不天然旋转等变。
 
 ## 6.3 触发时机
 
+> SUPERSEDED BY CROSS-LINE EVIDENCE 2026-08-07：以下“默认依次尝试 Encoder/snapshot”已改为失败触发式。
+
 若某阶段：
 
 - bridge 证明旧策略在该任务成功；
 - 新 MASAC random-init 连续两个 25k 无方向性进展；
 - 工程链路和 reward 已验证；
 
-则依次尝试：
+则按任务优先级尝试：
 
-1. Encoder transfer；
-2. geometry snapshot curriculum；
-3. Encoder + snapshot；
-4. 只有动作翻译 gate 通过后才做 BC/demo prefill。
+- Pure coverage：random-init → 若失败再 snapshot → 再 encoder → encoder+snapshot（目前没有主动使用 teacher 的理由）。
+- Capture：优先 snapshot/state curriculum（discovery/approach state coverage 问题）；Encoder transfer 排在后面。
+- Stage5B mixed：若 capture 已出现但 post-capture 状态过少，优先 legacy capture/post-capture geometry snapshots。
+
+> 动作翻译 BC：`FAILED GATE / NOT ACTIVE TODO`。`action_translation_gate.json` 显示 radial saturation 98.68%、terminal velocity error mean 2.436、one-step position error mean 1.307，不能作为高质量 teacher action；除非 action contract/teacher formulation/映射方法实质改变，否则不要重复该实验。
 
 教师辅助属于初始化/数据分布改动，必须单独对照 random-init。
 

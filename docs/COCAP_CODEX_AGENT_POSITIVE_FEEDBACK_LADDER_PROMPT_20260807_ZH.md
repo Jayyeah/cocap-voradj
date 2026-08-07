@@ -6,7 +6,7 @@
 
 工作分支：
 
-`continuous/masac-ctde-contract-20260806`
+`ladder/implementation-20260807`（并行参考 `continuous/masac-ctde-contract-20260806`）
 
 基准分支：
 
@@ -47,6 +47,17 @@
 3. 最低要求是获得可重复的乐观信号，并准确定位最终版本的阻塞层。
 
 不得把“进程存活”“loss finite”或单次幸运 rollout 当作阶段成功。
+
+## 0. 双线证据修订（2026-08-07）
+
+本提示词以 `docs/COCAP_CONTINUOUS_MARL_POSITIVE_FEEDBACK_LADDER_20260807_ZH.md` 的 0.1 节为准。关键修订：
+
+- Stage6/7 不再严格串行：Stage5 `(a,ω)` anchor 达到 PASS/OPTIMISTIC_PARTIAL 后，Stage6A 与 Stage7A1 可并行。
+- Stage7A1 首轮目标是复现 `ctde_pure_random_25k_v2` 的 world-axay pure positive signal（actor-prior warmup），不是新 yaw 设计。
+- Teacher-assisted 改为失败触发式；snapshot 优先用于 post-capture/mixed；encoder 不再默认。
+- Action-translation BC：`FAILED GATE / NOT ACTIVE TODO`。
+- uniform-disk warmup 降为 Stage7A1b 二级诊断。
+- yaw=0/world-axis 不再视为 world action 不可学习的必要解释，改为样本效率/泛化/capture/mixed 难度的潜在因素。
 
 ---
 
@@ -620,7 +631,7 @@ Gate：
 
 ## 十四、Stage 6：body-frame `[ax,ay]`
 
-前置：Stage 5至少 `OPTIMISTIC_PARTIAL`。
+前置：Stage 5至少 `OPTIMISTIC_PARTIAL`（2026-08-07 修订：不再要求先 body 后 world；Stage6A 可与 Stage7A1 并行）。
 
 动作：
 
@@ -658,7 +669,9 @@ speed<=epsilon: hold last valid yaw
 
 ## 十五、Stage 7：world-frame `[ax,ay]`
 
-前置：body ax/ay至少单任务有信号。
+前置：Stage 5 `(a,ω)` anchor 达到 PASS/OPTIMISTIC_PARTIAL（旧表述“必须先 body 成功”已被跨线证据 SUPERSEDED）。
+
+Stage7A1 首轮目标：复现 `ctde_pure_random_25k_v2` 的 world-axay pure positive signal（actor-prior warmup、1 obstacle、local VCT-LS、parity drag、25k），不作为新 yaw 设计实验；若无法复现再按合同 0.1 的检查清单定位。
 
 先做坐标一致方案：
 
@@ -691,18 +704,21 @@ world-frame action
 
 ## 十六、旧 IQN 教师辅助
 
-触发条件：
+> 2026-08-07 修订：教师辅助改为失败触发式，不再默认依次尝试。
+
+触发条件（同时满足）：
 
 - bridge成功；
--新MASAC random-init连续两个25k无趋势；
--工程和reward正确。
+- 当前新阶段 random-init 两个 seed 到 25k 均无连续正向信号；
+- 工程链路和 reward 检查正常。
 
-顺序：
+按任务优先级：
 
-1. exact-shape Encoder transfer；
-2. geometry snapshots；
-3. Encoder+snapshot；
-4. action translation gate通过后才BC/demo。
+- Pure coverage：random-init → 若失败再 snapshot → 再 encoder → encoder+snapshot。
+- Capture：优先 snapshot/state curriculum（discovery/approach state coverage 问题）。
+- Stage5B mixed：post-capture 数据稀缺时优先 legacy capture/post-capture geometry snapshots。
+
+> Action-translation BC：`FAILED GATE / NOT ACTIVE TODO`。`action_translation_gate.json`：radial saturation 98.68%、terminal velocity error mean 2.436、position error mean 1.307；除非 action contract/teacher formulation/映射方法实质改变，否则不要重复。
 
 禁止：
 

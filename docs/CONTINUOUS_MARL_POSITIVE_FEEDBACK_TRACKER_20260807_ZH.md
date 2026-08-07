@@ -22,6 +22,16 @@
 
 ---
 
+## 0.1 跨线证据 TODO 修订（2026-08-07）
+
+依据并行原线 `continuous/masac-ctde-contract-20260806` 最新结果：
+
+- `ctde_pure_random_25k_v2`：world `[ax,ay]` pure-CE 25k 出现 4/4 positive signal → Stage6/7 不再严格串行；Stage5 anchor 后 Stage6A 与 Stage7A1 可并行。
+- `ctde_pure_encoder_25k` / `ctde_pure_snapshot_25k`：teacher 不再默认；改为失败触发式；snapshot 优先用于 post-capture/mixed。
+- `action_translation_gate.json`：FAILED GATE → action-translation BC 主线删除，标 NOT ACTIVE TODO。
+- Stage7A1 首个目标：复现 `ctde_pure_random_25k_v2` 的 world-axay pure positive signal（actor-prior warmup）。
+- uniform-disk warmup 降为二级诊断（Stage7A1b）。
+
 ## 1. 执行纪律摘要
 
 1. 一次只改一个核心变量；任何配置改动必须标注 `[IQN-ALIGN]` / `[ALGO-NECESSARY]` / `[DIAGNOSTIC-ADAPT]`。
@@ -237,17 +247,18 @@ decision: 保留 100k checkpoint 与复盘，不作为阶梯线晋级证据
 
 ## 4. TODO（本阶梯）
 
-- [ ] Stage 0：运行 20-episode 旧 IQN 评估（capture/coverage/mix），输出 `STAGE_0_IQN_BASELINE_COMPLETION.md`
-- [ ] Stage 1：实现/验证旧 IQN 离散 action -> 连续 `(a,ω)` bridge 的 fixed-seed trajectory parity
-- [ ] Stage 2：生成 Stage 2 formal config（1p1e stationary/global/no-obstacle/`(a,ω)`），通过 smoke 后跑 3 seeds × 25k
-- [ ] Stage 3A：4p0e0obs inner-cluster pure coverage，3 seeds × 25k（需要时 50k）
-- [ ] Stage 3B：恢复 1 obstacle
+- [x] Stage 0：20-episode 旧 IQN 基线（PASS）
+- [x] Stage 1：连续 `(a,ω)` bridge parity（PASS）
+- [x] Stage 2：极简单任务 3 seeds × 25k（PASS）
+- [x] Stage 3A：4p0e0obs pure coverage 3 seeds × 25k（PASS）
+- [x] Stage 3B：1 obstacle pure coverage r3 25k（PASS）
 - [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告（用户确认：4A 启动后 4B/4C 可并行；Stage4A 起 2 seeds 验证）
 - [ ] Stage 5A/5B：双任务交替与 mixed capture→coverage
-- [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs（待前置 stage 后训练）
-- [x] Stage 7 配置/实现预备：world-frame observation + action（7A1/7A2/7A3）与 robot-obs+yaw 的 7B1
-- [x] Stage 7 扩展：7B2/7B3 配置；Stage6A/6B/6C 与 7A1/7A2/7A3 全部通过 20-step 训练链冒烟
-- [ ] Stage 7 训练：world-frame `[a_x,a_y]`（待 Stage6 有信号后启动）
+- [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs
+- [x] Stage 7 配置/实现预备：7A1-3、7B1-3 world/robot-obs configs + smoke
+- [ ] Stage 6A/7A1 并行训练：Stage5 anchor 后启动（body pure / world pure 复现 `ctde_pure_random_25k_v2`）
+- [ ] Teacher-assisted：失败触发式，snapshot 优先用于 post-capture/mixed；encoder 不再默认
+- [x] Action-translation BC：FAILED GATE / NOT ACTIVE TODO（除非 formulation 实质改变）
 
 ---
 
