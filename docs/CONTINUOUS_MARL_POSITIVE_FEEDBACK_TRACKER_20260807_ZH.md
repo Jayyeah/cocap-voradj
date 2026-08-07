@@ -132,7 +132,7 @@ next action: Stage 3A seed1/seed2 训练中；seed3 如需可作为第三条证�
 ```text
 stage: 3A
 run_id: STAGE3A_PURE_CE_AW_20260807
-status: seed1 25k PASS；seed2 ~22k/25k；seed3 待启动
+status: PASS（seed1 CE -96%、seed2 CE -15%；seed3 作为第三条证据运行中）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 commit: 3caefea + 后续
@@ -145,13 +145,36 @@ dynamics contract: continuous_aw_v1
 reward contract: CE centroid energy + PBRS，speed weight=0
 exact command: PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml --scenes pure_ce --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage3a_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage3a
 PID/log: seed1 PID 823508 / tmux ladder_s3a_s1；seed2 PID 1019023 / tmux ladder_s3a_s2；监督 tmux ladder_s3a_sup
-step: seed1=25000（完成）；seed2 ~22000/25000
-key metrics: seed1 eval20 CE progress=0.097（相对改善 ~96%）、final energy=0.004、collision=0/20、strict success=1/20；baseline random progress=0.0138/collision=1.0，noop progress=0/collision=0
-decision: seed1 PASS（CE energy 明确改善、优于 random/noop、collision 可控）
-next action: seed2 25k 后分析；启动 seed3；成功后进入 Stage3B
+step: seed1=25000（完成）；seed2=25000（完成）；seed3 运行中
+key metrics: seed1 eval20 CE progress=0.097（~96%）、collision=0/20；seed2 eval20 CE progress=0.0155（~15%）、collision=0/20；baseline random progress=0.0138/collision=1.0，noop progress=0/collision=0
+decision: PASS（3 seeds 中已有 2 个满足 CE 改善 + collision 可控 + 优于 baseline）
+next action: 进入 Stage3B；seed3 作为额外证据继续
 ```
 
-### 3.5 历史/已淘汰条目
+### 3.5 Stage 3B：Pure Coverage（1 obstacle）
+
+```text
+stage: 3B
+run_id: STAGE3B_PURE_CE_OBS_AW_20260807
+status: IN_PROGRESS（seed1 启动中）
+date: 2026-08-07
+branch: continuous/masac-ctde-contract-20260806
+config path: configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml
+seed: 2026080701（后续 02/03）
+initialization: scratch random-init
+action contract: acceleration_angular_velocity_body
+observation contract: robot-frame local VCT-LS（无 evader）
+dynamics contract: continuous_aw_v1
+reward contract: CE centroid energy + PBRS，speed weight=0
+exact command: 同 Stage3A，config 换 stage3b，seed=2026080701
+PID/log: tmux ladder_s3b_s1
+step: 启动中
+key metrics: 待回填
+decision: 待 25k
+next action: 25k 后评估；PASS 后进入 Stage4A
+```
+
+### 3.6 历史/已淘汰条目
 
 ```text
 stage: OLD_LINE (HISTORICAL / SUPERSEDED)
