@@ -11,6 +11,7 @@ import numpy as np
 from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.training.continuous.formal_config import resolve_ladder_config, scene_config
 from cocap_voradj.training.trainer import set_global_config
+from tools.run_continuous_ctde_training import _evader_actions_for_env
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,7 +36,7 @@ def run_episode(config: Dict[str, Any], seed: int, mode: str) -> Dict[str, Any]:
         if len(positions) and env.evaders and not env.evaders[0].deactivated:
             target = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
             min_distance = min(min_distance, float(np.min(np.linalg.norm(positions - target, axis=1))))
-        outcome = env.step(actions, [None] * len(env.evaders))
+        outcome = env.step(actions, _evader_actions_for_env(env))
         if all(outcome.dones):
             break
     record = env.episode_record(task="capture")
