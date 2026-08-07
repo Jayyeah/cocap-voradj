@@ -541,11 +541,13 @@ stationary → 原 moving evader
 
 ### 4C
 
-唯一改动：
+用户确认（2026-08-07）：4C 就是动态敌人（moving evader），原本在 4B 之后；现为加速与 4B 并行开启。相对 4B 唯一改动：
 
 ```text
 0 obstacle → 1 obstacle
 ```
+
+即 4C 完整合同 = moving evader + 1 obstacle。历史表述“4C=stationary+obstacle 单变量”已被用户澄清替代，不再作为当前 TODO。
 
 ### 4D
 

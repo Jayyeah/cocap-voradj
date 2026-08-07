@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STAGE2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage2_simple_aw.yaml"
 STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"
 STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
+STAGE4C = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml"
 STAGE6A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage6a_pure_ce_body.yaml"
 STAGE7A1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7a1_pure_ce_world.yaml"
 STAGE7B1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7b1_pure_ce_world_robot_obs.yaml"
@@ -118,6 +119,24 @@ def test_stage4b_moving_evader_flag() -> None:
     actions = _evader_actions_for_env(env)
     assert actions and actions[0] is not None
     env.step([[0.0, 0.0]], actions)
+    after = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
+    assert not np.allclose(before, after, atol=1e-6)
+
+
+def test_stage4c_moving_evader_with_obstacle() -> None:
+    # User-confirmed 2026-08-07: Stage4C is the dynamic-evader branch with
+    # 1 obstacle (originally sequential after 4B; opened in parallel for speed).
+    from tools.run_continuous_ctde_training import _evader_actions_for_env
+
+    config = resolve_ladder_config(STAGE4C)
+    assert config["env"]["num_obstacles"] == 1
+    assert config["evader"].get("autonomous", False) is True
+    scene = scene_config(config, "capture")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    before = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
+    env.step([[0.0, 0.0]] * config["env"]["num_pursuers"], _evader_actions_for_env(env))
     after = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
     assert not np.allclose(before, after, atol=1e-6)
 

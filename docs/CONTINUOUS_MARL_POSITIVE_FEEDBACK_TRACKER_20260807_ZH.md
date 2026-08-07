@@ -237,14 +237,14 @@ date: 2026-08-07 20:00 启动
 branch: ladder/implementation-20260807
 config: configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml
 seed: 2026080701
-唯一改动: num_obstacles 0 -> 1
+唯一改动（相对 4B）: num_obstacles 0 -> 1；4C = moving evader + 1 obstacle（用户确认 2026-08-07：4C 就是动态敌人分支，原为 4B 之后串行，现并行加速）
 exact command: tools/run_continuous_ctde_training.py --config stage4c_capture_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage4c_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage4c
-PID/log: 726327 / tmux ladder_s4c_s1；监督 ladder_s4c_sup1（--eval-device cuda:1）
-step: seed1=25000（完成）；seed2 启动于 2026-08-07 23:44（tmux ladder_s4c_s2 + ladder_s4c_sup2）
+PID/log: seed1: 726327 / tmux ladder_s4c_s1；seed2: 重启于 23:59（tmux ladder_s4c_s2 + ladder_s4c_sup2）
+step: seed1=25000（完成，有效证据）；seed2 训练中（seed 2026080702，cuda:1，tag stage4c_seed2_25k）
 key metrics: seed1 diagnostic 4ep：capture=0/4、collision=0、min-distance mean=14.13（random=13.44、noop=13.68）；eval20：capture=0/20、collision=0、min-distance mean=14.96 → 未优于 baseline；training terminated=40、collision=39
 baselines: random capture=10%/min-distance=13.44，noop min-distance=13.68（stage4c_baselines.json）
 decision: seed1 未过“明显优于 random/no-op”门槛；按 2-seed 规则继续 seed2，需至少 1 seed 达标
-next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合同/行为诊断，不得与 4B 叠加
+next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合同/行为诊断，不得再叠加其他未授权改动
 ```
 
 ### 3.8.1 跨线 TODO 修订与 Stage4 监控记录（2026-08-07 22:32）
@@ -257,7 +257,8 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 4B seed1：25k 完成（5001 updates、all finite），诊断 4ep capture=0/4、min-distance=15.29 劣于 baselines（13.99/13.59）→ 无正向信号；eval20 由监督自动执行中。
 - 4B seed2：23:17 启动（cuda:0，seed 2026080702，tag stage4b_seed2_25k），独立监督已就位。
 - 4C seed1：25k 完成（2026-08-07 23:38）；diagnostic 4ep capture=0/4，eval20 capture=0/20、min-dist 14.96 劣于 baselines（13.44/13.68）→ 无正向信号；training terminated=40、collision=39。
-- 4C seed2：23:44 启动（cuda:1，seed 2026080702，tag stage4c_seed2_25k），独立监督已就位。
+- 4C seed2：首启 23:44，因中间误判配置为“单变量错误”而短暂停止；用户澄清（23:5x）4C 本就应为动态敌人+obstacle，配置已恢复 `autonomous: true` 并加防回归测试（`test_stage4c_moving_evader_with_obstacle`），seed2 于 23:59 重启（cuda:1，seed 2026080702，tag stage4c_seed2_25k），独立监督已就位。
+- 用户澄清（2026-08-07）：4C 就是动态敌人，原本在 4B 之后，现为加速与 4B 并行；合同/台账/实现线已同步修正，旧“4C=stationary+obstacle 单变量”表述标记为历史。
 - 观察：4B/4C seed1 的 collision 均远低于 random（0–5% vs 90%），说明策略学到规避但未学到接近；capture 终止事件稀疏（34–40/25k）。
 
 ### 3.9 历史/已淘汰条目
