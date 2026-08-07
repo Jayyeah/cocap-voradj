@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 3A（MASAC + 连续 (a,ω) pure coverage，无 obstacle）**
-- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml`（Stage 2 config 已 PASS，保留为历史成功锚点）
+- 当前 active stage：**Stage 3B（MASAC + 连续 (a,ω) pure coverage，1 obstacle）**
+- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml`（Stage3A config 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0 PASS、Stage 1 PASS、Stage 2 PASS（seed1 30% / seed2 100% capture，collision 0）；Stage 3A seed1 ~9k/25k、seed2 已启动；Stage2 seed3 于 14k 停止（可选证据）
-- 当前结论：连续 `(a,ω)` MASAC 已在极简单任务上建立可靠成功锚点；Stage 3A 因机器上多个外部训练进程/高负载而较慢，仍在推进
-- 下一步唯一动作：**完成 Stage 3A 3-seed pure coverage 训练与 gate 判定**
+- 最近 milestone：Stage 0/1/2/3A 均 PASS；Stage3B seed1 已启动；Stage3A seed3 作为额外证据运行中
+- 当前结论：连续 `(a,ω)` MASAC 已覆盖极简单 capture 与多智能体 pure coverage 两个成功锚点
+- 下一步唯一动作：**完成 Stage3B（1 obstacle）训练与 gate 判定，然后进入 Stage4A**
 
 ---
 
