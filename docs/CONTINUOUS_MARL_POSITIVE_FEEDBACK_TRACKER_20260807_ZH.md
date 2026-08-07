@@ -269,6 +269,19 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - Stage4D 准备（2026-08-08 01:00）：smoke20 通过（all finite，local visibility 生效，前 20 步角色为 coverage）；baselines 就绪：random capture=5%/min-dist=13.58、noop capture=0%/min-dist=13.65（`artifacts/2026-08-07_positive_feedback_ladder/stage4d/stage4d_baselines.json`）。待 4B seed2 积极信号即启动 4D 两 seed。
 - Stage4D 提前启动（用户确认 2026-08-08）：4B seed2 先结束且积极 ⇒ 直接启动 4D 两 seed；4C 后结束积极 ⇒ 4D 正常维护；4C 无积极信号 ⇒ 4C 诊断与 4D 训练并行。
 
+### 3.8.4 Stage4B 结论与深层次分析（2026-08-08 03:10）
+
+- 4B seed2 25k：eval20 capture=0/20、collision=100%、avg min-dist=17.15（random 13.99 / noop 13.59）→ FAIL。训练期 terminated=81、collision=79（终止≈碰撞，非真实 capture）。
+- 2-seed 汇总：seed1 capture 0/20、min-dist 14.45、collision 5%；seed2 上述 → 4B 两 seed 均无“明显优于 random/no-op”信号 → Stage4B FAIL（25k 合同下）。
+- 轨迹解剖：
+  - seed1：6k 后 term/coll 归零，speed 0.09–0.16、action 0.35、Q 单调降至 -4.9 → 学成“低速安全游荡”。
+  - seed2：11k–22k term≈coll 密集（最高 10/1k）、speed 0.4–0.76、Q 单调降至 -9.8 → 学成“高速冲撞”，eval 100% collision。
+  - 4C seed1 同 seed1 模式（Q→-4.6）。
+- 行为探测（1000 步上限重评估 25k checkpoint）：seed1 0/10 capture、0 collision，但 distance_progress 多为负（远离 evader）、speed_mean 0.02–0.09；seed2 0/10 capture、100% collision、60–351 步即撞停 → 排除“400 cap 掩盖慢接近”。
+- 可行性上限（手写 seek 控制器，完美信息）：4B/4C 各 10/10 capture，平均 23–49 步完成，avg min-dist 7.3–8.0 → 任务合同可学，问题在 RL 训练信号。
+- 结论：无潜在乐观信号（无 capture 事件趋势、无接近趋势、Q 单调下降、更长 horizon 也无改善）→ 按备案不走 50k 续训首选；进入机制/超参调整分支，候选需用户确认（warmup / update_every / alpha / reward 侧机制核对）。
+- 下一步：等 4C seed2 25k + eval20；随后汇总两条线并提交调整方案供用户选择。
+
 ### 3.9 历史/已淘汰条目
 
 ```text
