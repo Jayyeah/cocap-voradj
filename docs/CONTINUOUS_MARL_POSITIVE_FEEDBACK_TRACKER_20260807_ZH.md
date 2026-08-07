@@ -201,7 +201,7 @@ dynamics contract: continuous_aw_v1
 reward contract: CR-MS ring_importance_ms_v0（stationary target）
 exact command: 同 Stage3A，config 换 stage4a，seed 2026080701/02，device cuda:0/1
 PID/log: tmux ladder_s4a_s1 / ladder_s4a_s2
-step: 启动中
+step: seed1/seed2 ~14000/25000
 key metrics: baseline random capture=20%/collision=90%，noop capture=0%；正式结果待回填
 decision: 待 25k（2 seeds 中至少 1 个明显优于 random/no-op 即可晋级）
 next action: 25k 后分析+eval；按用户确认 4A 后 4B/4C 可并行
