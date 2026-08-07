@@ -702,6 +702,8 @@ num_obstacles: 0 → 1
 
 > 并行规则（用户确认 2026-08-07）：Stage 4A 完成 gate 并启动后，Stage 4B 与 Stage 4C 可作为两个独立的单变量分支并行开启；4B 只改 stationary→moving evader，4C 只改 num_obstacles 0→1，二者互不叠加。
 
+> Seed 数量调整（用户确认 2026-08-07）：Stage 4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），以加速验证；如需更强证据可追加第 3 seed，但不阻塞晋级。
+
 ### Stage 4A：stationary evader + global visibility + no obstacle
 
 目标：证明多智能体可以接近并形成 capture geometry。

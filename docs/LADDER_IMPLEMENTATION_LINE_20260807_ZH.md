@@ -82,6 +82,7 @@ Stage 0 旧 IQN 基线复现
 ## 5. 用户确认规则
 
 - Stage4A 启动后，Stage4B（moving evader）与 Stage4C（1 obstacle）可作为两个独立单变量分支并行开启；二者互不叠加。
+- Stage4A 起，性能验证 seed 数由 3 改为 2（至少 1 个明显优于 random/no-op 即可晋级），加速验证。
 - 算法正式切换 MATD3/MADDPG、改 reward/observation/map 等仍需用户确认。
 
 ## 6. 分支与台账

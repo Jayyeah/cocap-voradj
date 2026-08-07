@@ -183,7 +183,7 @@ status: IN_PROGRESS（seed1/seed2 已并行启动）
 date: 2026-08-07
 branch: continuous/masac-ctde-contract-20260806
 config path: configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml
-seed: 2026080701 / 2026080702
+seed: 2026080701 / 2026080702（用户确认：Stage4A 起 2 seeds 验证）
 initialization: scratch random-init
 action contract: acceleration_angular_velocity_body
 observation contract: robot-frame local VCT-LS + global_evader_visibility=true
@@ -193,7 +193,7 @@ exact command: 同 Stage3A，config 换 stage4a，seed 2026080701/02，device cu
 PID/log: tmux ladder_s4a_s1 / ladder_s4a_s2
 step: 启动中
 key metrics: baseline random capture=20%/collision=90%，noop capture=0%；正式结果待回填
-decision: 待 25k
+decision: 待 25k（2 seeds 中至少 1 个明显优于 random/no-op 即可晋级）
 next action: 25k 后分析+eval；按用户确认 4A 后 4B/4C 可并行
 ```
 
@@ -242,7 +242,7 @@ decision: 保留 100k checkpoint 与复盘，不作为阶梯线晋级证据
 - [ ] Stage 2：生成 Stage 2 formal config（1p1e stationary/global/no-obstacle/`(a,ω)`），通过 smoke 后跑 3 seeds × 25k
 - [ ] Stage 3A：4p0e0obs inner-cluster pure coverage，3 seeds × 25k（需要时 50k）
 - [ ] Stage 3B：恢复 1 obstacle
-- [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告（用户确认：4A 启动后 4B/4C 可并行）
+- [ ] Stage 4A-4E：capture 难度阶梯，每子阶段单独报告（用户确认：4A 启动后 4B/4C 可并行；Stage4A 起 2 seeds 验证）
 - [ ] Stage 5A/5B：双任务交替与 mixed capture→coverage
 - [x] Stage 6 配置/实现预备：velocity-heading yaw + Stage6A/6B/6C body-frame configs（待前置 stage 后训练）
 - [x] Stage 7 配置/实现预备：world-frame observation + action（7A1/7A2/7A3）与 robot-obs+yaw 的 7B1
