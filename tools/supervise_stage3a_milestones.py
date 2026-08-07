@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--eval-device", default="cuda:0")
     parser.add_argument("--config", default=str(ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"))
     parser.add_argument("--prefix", default="stage3a_seed")
+    parser.add_argument("--run-name", default="")
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     root = Path(args.root)
@@ -30,10 +31,11 @@ def main() -> int:
         for seed in list(pending):
             if not pending[seed]:
                 continue
-            run_dir = root / f"{args.prefix}{seed}_25k"
-            report = run_dir / f"{args.prefix}{seed}_25k_report.json"
-            analysis = run_dir / f"{args.prefix}{seed}_25k_analysis.json"
-            eval20 = run_dir / f"{args.prefix}{seed}_25k_eval20.json"
+            run_name = args.run_name if args.run_name else f"{args.prefix}{seed}_25k"
+            run_dir = root / run_name
+            report = run_dir / f"{run_name}_report.json"
+            analysis = run_dir / f"{run_name}_analysis.json"
+            eval20 = run_dir / f"{run_name}_eval20.json"
             if report.is_file() and not analysis.is_file():
                 print(f"[supervisor] analyzing seed{seed}", flush=True)
                 subprocess.run(
@@ -50,7 +52,7 @@ def main() -> int:
                     check=False,
                 )
             if report.is_file() and not eval20.is_file():
-                checkpoint = run_dir / f"{args.prefix}{seed}_25k_step25000.pt"
+                checkpoint = run_dir / f"{run_name}_step25000.pt"
                 if checkpoint.is_file():
                     print(f"[supervisor] eval20 seed{seed}", flush=True)
                     subprocess.run(
