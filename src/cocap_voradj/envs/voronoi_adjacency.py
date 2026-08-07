@@ -1129,11 +1129,15 @@ class VorAdjEnv(CoCapEnv):
         active = [i for i, p in enumerate(self.pursuers) if not p.deactivated]
         if not active:
             return values
+        if pursuer_positions.shape[0] == len(self.pursuers):
+            pursuer_lookup = {i: pursuer_positions[i] for i in range(len(self.pursuers))}
+        else:
+            pursuer_lookup = {idx: pursuer_positions[offset] for offset, idx in enumerate(active)}
         if self._ce_coverage_enabled():
             for i in active:
                 key = ("pursuer", i)
-                centroid = data.get("centroids", {}).get(key, pursuer_positions[i])
-                _distance, cost = self._ce_center_distance_and_cost(pursuer_positions[i], centroid, len(active))
+                centroid = data.get("centroids", {}).get(key, pursuer_lookup[i])
+                _distance, cost = self._ce_center_distance_and_cost(pursuer_lookup[i], centroid, len(active))
                 values[i] = cost
             return values
         pursuer_counts = np.asarray([data["counts"].get(("pursuer", i), 0) for i in active], dtype=float)
@@ -1143,8 +1147,8 @@ class VorAdjEnv(CoCapEnv):
         center_scale = self._center_sqrt_n_scale(data)
         for i in active:
             key = ("pursuer", i)
-            centroid = data["centroids"].get(key, pursuer_positions[i])
-            center_error = float((np.linalg.norm(pursuer_positions[i] - centroid) / max(diag, 1e-6)) * center_scale)
+            centroid = data["centroids"].get(key, pursuer_lookup[i])
+            center_error = float((np.linalg.norm(pursuer_lookup[i] - centroid) / max(diag, 1e-6)) * center_scale)
             count = float(data["counts"].get(key, 0))
             area_error = min(abs(count / max(expected, 1e-9) - 1.0), float(self.reward_cfg.get("coverage_area_error_clip", 1.0)))
             values[i] = float(self.reward_cfg.get("coverage_center_weight", 1.0)) * center_error + float(self.reward_cfg.get("coverage_area_weight", 0.5)) * area_error

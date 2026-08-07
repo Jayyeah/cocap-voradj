@@ -192,3 +192,19 @@ def test_active_sites_handles_deactivated_pursuer_positions() -> None:
     keys, sites = env._active_sites(pursuer_positions=active_positions)
     assert len(keys) == 3
     assert sites.shape == (3, 2)
+
+
+def test_coverage_potentials_handles_deactivated_pursuer_positions() -> None:
+    config = resolve_ladder_config(STAGE3A)
+    scene = scene_config(config, "pure_ce")
+    set_global_config(scene)
+    env = VorAdjEnv(scene, seed=2026080701)
+    env.reset()
+    env.pursuers[2].deactivated = True
+    active_positions = np.asarray(
+        [[p.x, p.y] for idx, p in enumerate(env.pursuers) if not p.deactivated],
+        dtype=float,
+    )
+    values = env._voradj_coverage_potentials(active_positions, np.zeros((0, 2), dtype=float))
+    assert values.shape == (4,)
+    assert np.all(np.isfinite(values))
