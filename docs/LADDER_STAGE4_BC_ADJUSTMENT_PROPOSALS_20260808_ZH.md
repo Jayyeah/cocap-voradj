@@ -9,6 +9,7 @@
 - reward 配置核对（2026-08-08）：capture_reward_mode=ring_importance_ms_v0、capture_timestep_penalty=0.0（capture 场景无 -1 时间惩罚）、omega_ring_ms=2.0、ring_ms_progress_clip=3.0（单步最大 ±6）、k_required=1、capture_stationary_enabled=true → reward 机制接线正确，capture 条件反而宽松；问题不在接线，而在“策略训练中从未稳定接近”。
 - 手写 seek oracle：4B/4C 各 10/10 capture（<50 步）→ 合同可学。
 - 结论：训练几乎从未体验 capture 正反馈 → 策略坍缩（游荡/冲撞）；需要让稠密接近信号更强或让探索能发现 capture。
+- 跨线佐证（2026-08-08 复核参考分支）：world [ax,ay] 的 `ctde_capture_random_25k` 同样 Q1→-14.2、TD≈1.77（Q 坍缩与 body (a,w) 一致），training collision 仅 1/25000 但无 final eval → Q 坍缩非 body/world 特因，支持“训练信号/探索”方向。
 
 ## 提案 A：reward 侧强化稠密接近信号（最直接，需明确批准）
 

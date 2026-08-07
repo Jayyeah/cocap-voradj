@@ -288,6 +288,7 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 可行性上限（手写 seek 控制器，完美信息）：4B/4C 各 10/10 capture，平均 23–49 步完成，avg min-dist 7.3–8.0 → 任务合同可学，问题在 RL 训练信号。
 - 结论：无潜在乐观信号（无 capture 事件趋势、无接近趋势、Q 单调下降、更长 horizon 也无改善）→ 按备案不走 50k 续训首选；进入机制/超参调整分支，候选需用户确认（warmup / update_every / alpha / reward 侧机制核对）。
 - replay 定量证据（2026-08-08 03:53，加载 25k replay 逐条统计）：真实 capture 事件 4B s1=0、4B s2=2、4C s1=1、4C s2=0；碰撞事件 34/79/39/56；ce_success 全 0。active-agent 奖励：mean -0.29/-0.91/-0.27/-0.57、p50=0、p95 0.25–0.78、max（非 capture）≤1.88；≥50 的 capture 奖励仅 s2 各 1–2 条 → 训练 25k 内 capture 正反馈几乎为零，稀疏奖励假设成立。reward 配置核对：capture_reward_mode=ring_importance_ms_v0、capture_timestep_penalty=0、omega_ring_ms=2.0、clip=3.0、k_required=1、stationary capture enabled → 接线正确，问题在策略从未稳定接近（非机制 bug）。
+- 跨线佐证（参考分支 2026-08-08 复核）：`ctde_capture_random_25k`（world [ax,ay] capture random init）同样 25k 内 Q1 降至 ≈-14.2、TD≈1.77（与我们 Q -10~-14 一致），training collision 仅 1/25000，无 final eval → “Q 单调坍缩”跨 body/world action 模式一致，进一步排除 action-mode 特因。
 - 下一步：4C seed2 已完成（见 3.8.5），两条线均 FAIL；汇总调整方案供用户选择（warmup / update_every / alpha / reward 侧 / 50k 续训）。
 
 ### 3.9 历史/已淘汰条目
