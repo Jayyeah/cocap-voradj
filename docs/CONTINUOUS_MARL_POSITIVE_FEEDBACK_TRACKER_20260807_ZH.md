@@ -232,7 +232,7 @@ next action: 等 seed1 eval20 + seed2 25k；若两者均无信号，则 4B 判 F
 ```text
 stage: 4C
 run_id: STAGE4C_CAPTURE_AW_20260807
-status: IN_PROGRESS（seed1 启动中）
+status: IN_PROGRESS（seed1 25k 完成，无信号；seed2 已启动）
 date: 2026-08-07 20:00 启动
 branch: ladder/implementation-20260807
 config: configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml
@@ -240,10 +240,11 @@ seed: 2026080701
 唯一改动: num_obstacles 0 -> 1
 exact command: tools/run_continuous_ctde_training.py --config stage4c_capture_aw.yaml --scenes capture --seed 2026080701 --total-steps 25000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage4c_seed1_25k --artifact-root artifacts/2026-08-07_positive_feedback_ladder/stage4c
 PID/log: 726327 / tmux ladder_s4c_s1；监督 ladder_s4c_sup1（--eval-device cuda:1）
-step: 25k（进行中；2026-08-07 23:16 检查时为 23k，terminated=0/collision=0；最后一千步因移动 evader 仿真变慢）
-key metrics: baseline random capture=10%/min-distance=13.44，noop min-distance=13.68（stage4c_baselines.json）
-decision: 待 25k（2-seed 规则）
-next action: 25k 监督自动分析+eval20；若至少 1 seed 明显优于 random/no-op 则启动 seed2
+step: seed1=25000（完成）；seed2 启动于 2026-08-07 23:44（tmux ladder_s4c_s2 + ladder_s4c_sup2）
+key metrics: seed1 diagnostic 4ep：capture=0/4、collision=0、min-distance mean=14.13（random=13.44、noop=13.68）；eval20：capture=0/20、collision=0、min-distance mean=14.96 → 未优于 baseline；training terminated=40、collision=39
+baselines: random capture=10%/min-distance=13.44，noop min-distance=13.68（stage4c_baselines.json）
+decision: seed1 未过“明显优于 random/no-op”门槛；按 2-seed 规则继续 seed2，需至少 1 seed 达标
+next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合同/行为诊断，不得与 4B 叠加
 ```
 
 ### 3.8.1 跨线 TODO 修订与 Stage4 监控记录（2026-08-07 22:32）
@@ -255,7 +256,9 @@ next action: 25k 监督自动分析+eval20；若至少 1 seed 明显优于 rando
 
 - 4B seed1：25k 完成（5001 updates、all finite），诊断 4ep capture=0/4、min-distance=15.29 劣于 baselines（13.99/13.59）→ 无正向信号；eval20 由监督自动执行中。
 - 4B seed2：23:17 启动（cuda:0，seed 2026080702，tag stage4b_seed2_25k），独立监督已就位。
-- 4C seed1：23k/25k，正常推进中；25k 后监督自动 analyze+eval20。
+- 4C seed1：25k 完成（2026-08-07 23:38）；diagnostic 4ep capture=0/4，eval20 capture=0/20、min-dist 14.96 劣于 baselines（13.44/13.68）→ 无正向信号；training terminated=40、collision=39。
+- 4C seed2：23:44 启动（cuda:1，seed 2026080702，tag stage4c_seed2_25k），独立监督已就位。
+- 观察：4B/4C seed1 的 collision 均远低于 random（0–5% vs 90%），说明策略学到规避但未学到接近；capture 终止事件稀疏（34–40/25k）。
 
 ### 3.9 历史/已淘汰条目
 
