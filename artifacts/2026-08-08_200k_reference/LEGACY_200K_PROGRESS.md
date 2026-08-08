@@ -14,7 +14,11 @@
 | 25k | abs_bearing_error | 0.90 | - | - |
 | 25k | any 8m steps | 10.8% | - | - |
 | 25k | 2+ ring | 0.05% | - | - |
-| 25k | eval20 min-dist | - | - | - |
+| 25k | eval20 min-dist | - | 19.4-67.8（no-op 坍缩，初始=最终） | 14.0-16.4（弱接近） |
+| 50k | capture | - | 5/20 (25%) | 待评估 |
+| 50k | collision | - | 70% | - |
+| 50k | d1_progress（capture 集） | - | +11 ~ +21 | - |
+| 50k | speed_mean | - | 0.37-0.71 | - |
 | 50k | capture | 0/20 | - | - |
 | 50k | collision | 100% | - | - |
 | 50k | d1_min | 2.61 | - | - |
