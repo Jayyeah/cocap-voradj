@@ -55,7 +55,9 @@
 - E. Replay state coverage：距离分桶 histogram + detected/undetected。
 - F. Counterfactual critic Q-ranking：policy/random/seek 三动作 Q 排序。
 - G. Paired deterministic/stochastic evaluation：同 seeds 双模式 20ep + paired delta。
-- H. Legacy IQN scratch 25k/50k reference：原成功合同 scratch 早训时间尺度参照。
+- H. Legacy IQN scratch 25k/50k/200k reference：原成功合同 scratch 早训时间尺度参照。
+  - 25k/50k 结论：capture=0、collision 100%；50k 控制质量改善但仍无包围 → 表现一般。
+  - 用户指令（2026-08-08 12:12）：再开 200k，每 25k 记录表现。`iqn_scratch_200k_20260808` 已启动（cuda:1，checkpoint_freq=25000），将评估 step_25k/50k/75k/100k/125k/150k/175k/200k 并回填进度文档。
   - 25k 完成（2026-08-08 09:41）：capture 0/20、collision 100%、d1_min 2.6、closing 0.70、单机 ring 访问 10.8% 步、2+ ring 0.05%；动作=全油门+全转向；训练期 capture=0、reward -2.77/transition。诊断：`artifacts/2026-08-08_reward_first_batch/LEGACY_IQN_SCRATCH_25K_DIAGNOSTIC.md`。50k 完成（2026-08-08 10:00）：capture 仍 0/20、collision 100%；控制质量改善（bearing 0.90→0.71、turn correct 0.52→0.66、动作从自旋冲撞→直行冲撞），ring 访问 4.7%→6.4%，2+ ring 0.05%→0.13%，仍无包围。诊断：`LEGACY_IQN_SCRATCH_50K_DIAGNOSTIC.md`。结论：25k→50k 无质变，capture=0 不能单独否定候选，但 MASAC 若连续指标也不改善则属于“没学对方向”。
 
 ## 1. 执行纪律摘要
