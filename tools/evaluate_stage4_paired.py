@@ -53,7 +53,8 @@ def run_episode(env, trainer, adapter, mode, seed, max_steps, config, rng, max_a
     observations = list(env.get_observations())
     epos0 = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
     ppos0 = np.asarray([[p.x, p.y] for p in env.pursuers if not p.deactivated], dtype=float)
-    d_init = sorted(np.linalg.norm(ppos0 - epos0, axis=1).tolist()) if len(ppos0) else [99.0, 99.0, 99.0, 99.0]
+    d_init = sorted(np.linalg.norm(ppos0 - epos0, axis=1).tolist()) if len(ppos0) else []
+    d_init = (d_init + [99.0] * 4)[:4]
     min_ds = [float("inf")] * 4
     closing_frac_sum = 0.0
     bearing_sum = 0.0
@@ -147,7 +148,8 @@ def run_episode(env, trainer, adapter, mode, seed, max_steps, config, rng, max_a
     captured = bool(rec.get("captured", False))
     eposf = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float) if env.evaders else epos0
     pposf = np.asarray([[p.x, p.y] for p in env.pursuers if not p.deactivated], dtype=float)
-    d_final = sorted(np.linalg.norm(pposf - eposf, axis=1).tolist()) if len(pposf) else [99.0] * 4
+    d_final = sorted(np.linalg.norm(pposf - eposf, axis=1).tolist()) if len(pposf) else []
+    d_final = (d_final + [99.0] * 4)[:4]
     return {
         "seed": seed, "mode": mode, "captured": captured, "collision": collision, "length": steps,
         "d1_initial": float(d_init[0]), "d2_initial": float(d_init[1]),
