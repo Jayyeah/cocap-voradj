@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**reward 第一批三线并行（A1/A2/A3，基于 4B 场景，seed1 25k）**；4B/4C 原配置 FAIL 记录保留
+- 当前 active stage：**Stage4A/4C 原合同 200k 对照训练中（IQN 200k 参照已完成并入；A 批 reward 变体记录保留）**
 - 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml` / `stage4c_capture_aw.yaml`（Stage3A/3B/4A configs 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；Stage4B/4C seed1 已并行启动
+- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；IQN 200k 全阶段评估完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A 200k @50k capture 25%；4C 200k @50k 仍 0 capture
 - 当前结论：连续 `(a,ω)` MASAC 已覆盖 capture 几何（stationary）与 pure coverage 无/有 obstacle 成功锚点
-- 下一步唯一动作：**完成 Stage4B/4C 25k 训练与 gate 判定；各自 2-seed 验证**
+- 下一步唯一动作：**4A/4C 200k 逐 25k 评估对照：75k 起每节点评估 eval20、回填 `LEGACY_200K_PROGRESS.md` 并推送；200k 完成后输出与 IQN 200k 的完整对照结论**
 
 ---
 
@@ -59,6 +59,43 @@
   - 25k/50k 结论：capture=0、collision 100%；50k 控制质量改善但仍无包围 → 表现一般。
   - 用户指令（2026-08-08 12:12）：再开 200k，每 25k 记录表现。`iqn_scratch_200k_20260808` 已启动（cuda:1，checkpoint_freq=25000），将评估 step_25k/50k/75k/100k/125k/150k/175k/200k 并回填进度文档。
   - 25k 完成（2026-08-08 09:41）：capture 0/20、collision 100%、d1_min 2.6、closing 0.70、单机 ring 访问 10.8% 步、2+ ring 0.05%；动作=全油门+全转向；训练期 capture=0、reward -2.77/transition。诊断：`artifacts/2026-08-08_reward_first_batch/LEGACY_IQN_SCRATCH_25K_DIAGNOSTIC.md`。50k 完成（2026-08-08 10:00）：capture 仍 0/20、collision 100%；控制质量改善（bearing 0.90→0.71、turn correct 0.52→0.66、动作从自旋冲撞→直行冲撞），ring 访问 4.7%→6.4%，2+ ring 0.05%→0.13%，仍无包围。诊断：`LEGACY_IQN_SCRATCH_50K_DIAGNOSTIC.md`。结论：25k→50k 无质变，capture=0 不能单独否定候选，但 MASAC 若连续指标也不改善则属于“没学对方向”。
+
+## 0.4 [2026-08-09 05:15] IQN 200k 全部完成并入 GitHub + 4A/4C 200k 逐 25k 对照推进中
+
+### IQN 200k 分阶段表现（capture 主线，已并入 `artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`）
+
+| step | capture | collision | d1_min | d2_min | closing | bearing | 2+ ring |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 25k | 0/20 | 100% | 2.60 | 25.1 | 0.70 | 0.90 | 0.05% |
+| 50k | 0/20 | 100% | 2.61 | 26.0 | 0.70 | 0.71 | 0.13% |
+| 75k | 0/20 | 100% | 2.52 | 16.4 | 0.82 | 0.38 | 0.37% |
+| 100k | 8/20 | 75% | 2.50 | 10.1 | 0.59 | 0.54 | 0.08% |
+| 125k | 15/20 | 5% | 5.51 | 7.76 | 0.16 | 1.03 | 19.9% |
+| 150k | 10/20 | 0% | 6.80 | 8.07 | 0.11 | 1.07 | 10.8% |
+| 175k | 5/20 | 0% | 7.11 | 8.68 | 0.14 | 1.65 | 29.6% |
+| 200k | 8/20 | 0% | 7.06 | 8.33 | 0.12 | 1.70 | 36.9% |
+
+- 关键时间尺度：25k–75k 均 0 capture 且 collision 100%；100k 首次 8/20；125k 峰值 75%；之后 capture 回落 25–50%，但 collision 归零、ring 多机占用持续上升 → “受控包围但 capture 决策不稳定”。
+- 含义：原成功算法在 25k 时也并无 capture；ladder 判断不能只看 25k capture，需结合连续几何指标（closing/bearing/ring 访问）。
+
+### Stage4A/4C 200k 最新评估（新 seed 2026080801，原合同）
+
+- 25k：4A eval20 capture 0/20、collision 0%、min-dist 19.4–67.8（no-op 坍缩）；4C eval20 capture 0/20、collision 0%、min-dist 10.4–21.7（多集接近但无 capture）。
+- 50k：4A eval20 capture 5/20（25%）、collision 70%、capture 集 d1 progress +11~+21 → 走出 no-op 坍缩，出现首个可靠 capture；4C eval20 capture 0/20、collision 0%、多集 slow approach（d1 progress +10~+56、min_dist 11–16）但 400 步未达 capture。
+- 对照含义：IQN 25k–75k 无 capture、100k 才突破；4A（stationary）50k 即出 capture → MASAC 在简单合同下学习时间尺度不劣于 IQN；4C（moving+obs）50k 仍无 capture → 指向移动目标合同的真实难点。
+
+### GitHub 推送记录
+
+- `6061350`：IQN 200k 全阶段结果 + 4A/4C 200k 25k eval20 JSON + A1/A2 analysis（首次完整并入）。
+- `819b09e`：4A 200k @50k（capture 25%）。
+- `310d0c6`：4C 200k @50k（slow approach only）。
+- 当前分支 `ladder/implementation-20260807` 与 origin 同步。
+
+### 运行状态（2026-08-09 05:15）
+
+- Stage4A 200k：PID 527834（cuda:0），metrics 最新 step≈54000；Stage4C 200k：PID 528005（cuda:1），metrics 最新 step≈53000。
+- 75k 等待器（session 64955）存活；checkpoint 生成后自动评估 eval20、回填本表并推送。
+- 后续节点：75k/100k/125k/150k/175k/200k 逐点评估 → 回填 `LEGACY_200K_PROGRESS.md` → commit/push。
 
 ## 1. 执行纪律摘要
 
