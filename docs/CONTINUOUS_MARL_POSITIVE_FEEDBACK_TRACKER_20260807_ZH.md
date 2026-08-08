@@ -291,6 +291,16 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 跨线佐证（参考分支 2026-08-08 复核）：`ctde_capture_random_25k`（world [ax,ay] capture random init）同样 25k 内 Q1 降至 ≈-14.2、TD≈1.77（与我们 Q -10~-14 一致），training collision 仅 1/25000，无 final eval → “Q 单调坍缩”跨 body/world action 模式一致，进一步排除 action-mode 特因。
 - 下一步：4C seed2 已完成（见 3.8.5），两条线均 FAIL；汇总调整方案供用户选择（warmup / update_every / alpha / reward 侧 / 50k 续训）。
 
+### 3.8.6 reward 第一批三线并行（用户确认 2026-08-08 08:40）
+
+- 用户决策：三线并跑 A1/A2/A3（reward-first 批）；若无明显积极，再做一轮以探索为改变的（entropy/alpha init/warmup 等，叠加在更积极一侧）；若奖励改动已积极，以更优且改动更小的继续进入下一阶段。
+- A1：omega_ring_ms 2.0→4.0 + ring_ms_progress_clip 3.0→6.0。
+- A2：A1 + omega_approach 0.0→3.0（旧 capture 距离进度吸引项叠加在 ring 之上；代码改动 `src/cocap_voradj/envs/voronoi_adjacency.py` capture_task_reward，默认 0 不影响旧配置；单步验证 A2>A1 奖励 +0.0727）。
+- A3：A1 + warmup_joint_transitions 5000→10000。
+- 配置：`stage4b_a1/a2/a3_reward_20260808.yaml`；合同测试新增 `test_stage4b_reward_first_variants_contract`（12/12 通过）；三线 smoke20 均通过（all finite）。
+- 运行计划：三线各 25k seed1（seed 2026080801），A1/A3 共 cuda:0、A2 用 cuda:1；监督自动 analyze+eval20（baselines=stage4b_baselines_moving.json）；判定标准不变（eval20 capture≥1 或 min-dist 明显优于 random/noop）。
+- 待办：若某线 25k 明显积极 → 补 seed2 并择优进入 4D/4C；若均不积极 → 第二轮探索批（target_entropy/alpha_init/warmup）在较积极侧增量调整。
+
 ### 3.9 历史/已淘汰条目
 
 ```text

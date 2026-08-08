@@ -18,6 +18,9 @@ STAGE2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage2_si
 STAGE3A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage3a_pure_ce_aw.yaml"
 STAGE4B = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml"
 STAGE4C = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml"
+STAGE4B_A1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_a1_reward_20260808.yaml"
+STAGE4B_A2 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_a2_reward_20260808.yaml"
+STAGE4B_A3 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage4b_a3_reward_20260808.yaml"
 STAGE6A = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage6a_pure_ce_body.yaml"
 STAGE7A1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7a1_pure_ce_world.yaml"
 STAGE7B1 = ROOT / "configs/experiments/positive_feedback_ladder_20260807/stage7b1_pure_ce_world_robot_obs.yaml"
@@ -121,6 +124,25 @@ def test_stage4b_moving_evader_flag() -> None:
     env.step([[0.0, 0.0]], actions)
     after = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
     assert not np.allclose(before, after, atol=1e-6)
+
+
+def test_stage4b_reward_first_variants_contract() -> None:
+    # User-approved 2026-08-08 reward-first batch (A1/A2/A3).
+    a1 = resolve_ladder_config(STAGE4B_A1)
+    assert float(a1["reward"]["omega_ring_ms"]) == 4.0
+    assert float(a1["reward"]["ring_ms_progress_clip"]) == 6.0
+    assert float(a1["reward"]["omega_approach"]) == 0.0
+    assert int(a1["training"]["warmup_joint_transitions"]) == 5000
+    a2 = resolve_ladder_config(STAGE4B_A2)
+    assert float(a2["reward"]["omega_ring_ms"]) == 4.0
+    assert float(a2["reward"]["ring_ms_progress_clip"]) == 6.0
+    assert float(a2["reward"]["omega_approach"]) == 3.0
+    assert int(a2["training"]["warmup_joint_transitions"]) == 5000
+    a3 = resolve_ladder_config(STAGE4B_A3)
+    assert float(a3["reward"]["omega_ring_ms"]) == 4.0
+    assert float(a3["reward"]["ring_ms_progress_clip"]) == 6.0
+    assert float(a3["reward"]["omega_approach"]) == 0.0
+    assert int(a3["training"]["warmup_joint_transitions"]) == 10000
 
 
 def test_stage4c_moving_evader_with_obstacle() -> None:

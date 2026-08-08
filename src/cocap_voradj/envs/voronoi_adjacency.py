@@ -1828,6 +1828,15 @@ class VorAdjEnv(CoCapEnv):
                         before_evader_velocities,
                         after_p,
                     )
+                    # 2026-08-08 reward-first A2: legacy capture approach term
+                    # stacked on top of ring-MS. omega_approach=0 (default)
+                    # keeps prior behavior unchanged.
+                    approach_weight = float(self.reward_cfg.get("omega_approach", 0.0))
+                    if approach_weight != 0.0:
+                        d_before = float(np.linalg.norm(before_p[index] - before_e[target_id]))
+                        d_after = float(np.linalg.norm(after_p[index] - after_e[target_id]))
+                        c_d = float(self.reward_cfg.get("c_d", 3.0))
+                        task_reward += approach_weight * float(np.clip(d_before - d_after, -c_d, c_d))
                 return float(task_reward)
 
             task_reward = timestep_penalty
