@@ -60,16 +60,16 @@ Base：reward 批中最积极/最少差者（Q 趋势最平、capture_events 最
 
 ## 3.5 诊断补丁 TODO（2026-08-08 PATCH，主线不变）
 
-- [ ] E1 已暂停（方向未定）；E0 entropy calibration 指标接入训练 metrics（alpha/log_alpha/alpha_loss、log_prob 分布、physical/normalized entropy、entropy residual、log_std_a/log_std_omega、std_a/std_omega）。
-- [ ] 动作指标拆分 a/omega（mean/abs/std/p 分位/阈值占比/正负占比）；speed 增加 p50/p95/fraction 指标；action_norm 降为辅助。
-- [ ] pursuit 行为指标：排序距离 d1–d4（initial/final/min/mean）、distance progress、radial closing velocity + fraction_closing(+after_detection)。
-- [ ] heading/steering：bearing error（abs mean/p50/p95、initial/final/progress）、turn_direction_correct_rate。
-- [ ] capture/ring 访问：num within 8/10.5/12/20m、ring 8–10.5m、episode 汇总（max/fraction steps）、ring_ms_raw/progress（复用 reward 内部计算）。
-- [ ] reward 拆分统计：total/ring_ms_raw/ring_ms_progress/approach/capture/collision/boundary 等实际存在 term，含分布与 nonzero/positive fraction。
-- [ ] replay state-coverage histogram（<8/8–12/12–20/20–30/>30m + detected/undetected），每 5k 或 25k 输出。
-- [ ] counterfactual critic Q-ranking（policy/random/seek 三套 joint action，twin Q + min，按距离分桶）。
-- [ ] deterministic/stochastic 20ep 对照（同 seeds，仅诊断）；paired seeds 评估（trained/random/noop/oracle/A1/A2/A3 同初始状态，输出 paired delta）。
-- [ ] legacy IQN scratch 25k/50k early-training 参照（找 main 成功 4v1 scratch config，原合同不改；25k 保存 checkpoint + 行为指标；必要时续 50k；产出 LEGACY_IQN_SCRATCH_25K/50K_DIAGNOSTIC.md）。
+- [x] E1 已暂停（方向未定）；E0 entropy calibration 指标接入训练 metrics（alpha/log_alpha/alpha_loss、log_prob 分布、physical/normalized entropy、entropy residual、log_std_a/log_std_omega、std_a/std_omega）——已实现：central_sac.py 两分支 + runner 窗口分位/normalized entropy。
+- [x] 动作指标拆分 a/omega（mean/abs/std/p 分位/阈值占比/正负占比）；speed 增加 p50/p95/fraction 指标；action_norm 降为辅助——已实现。
+- [x] pursuit 行为指标：排序距离 d1–d4（step 级 mean/min）、distance progress（eval 侧 initial/final）、radial closing velocity + fraction_closing——已实现（训练窗口 step 级；episode 级在 paired eval）。
+- [x] heading/steering：bearing error（abs mean/p50/p95）、turn_direction_correct_rate——已实现。
+- [x] capture/ring 访问：num within 8/10.5/12/20m、ring 8–10.5m、episode 汇总（max/fraction steps）——已实现；ring_ms_raw/progress 待接（reward 拆分未做）。
+- [ ] reward 拆分统计：total/ring_ms_raw/ring_ms_progress/approach/capture/collision/boundary 等实际存在 term——待实现（需 env 暴露组件；当前可从 replay 后验统计）。
+- [ ] replay state-coverage histogram（<8/8–12/12–20/20–30/>30m + detected/undetected）——待实现（训练窗口 d1 已近似；正式 histogram 待加）。
+- [x] counterfactual critic Q-ranking（policy/random/seek 三套 joint action，twin Q + min，按距离分桶）——工具 `tools/diagnose_critic_q_ranking.py` 已实现并验证；4B seed1 20 状态样例：Q_policy>Q_random 80%、Q_seek>Q_policy 15%。
+- [x] deterministic/stochastic 20ep 对照（同 seeds，仅诊断）；paired seeds 评估（trained/random/noop/oracle 同初始状态，输出 paired delta）——工具 `tools/evaluate_stage4_paired.py` 已实现并验证。
+- [ ] legacy IQN scratch 25k/50k early-training 参照——训练中（`iqn_scratch_early_25k50k_20260808`，连续 50k，25k/50k checkpoint）；诊断脚本待产出。
 
 ## 4. 详细 TODO（本批完成前）
 
