@@ -10,7 +10,7 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage 4B / 4C 均已 25k 完成且 FAIL（等待用户选择调整方案）；Stage4D 未启动**
+- 当前 active stage：**reward 第一批三线并行（A1/A2/A3，基于 4B 场景，seed1 25k）**；4B/4C 原配置 FAIL 记录保留
 - 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml` / `stage4c_capture_aw.yaml`（Stage3A/3B/4A configs 已 PASS，保留为成功锚点）
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
