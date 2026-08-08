@@ -43,19 +43,20 @@ def main() -> int:
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    env_cfg = copy.deepcopy(cfg["env"])
-    env_cfg["num_evaders"] = 1
-    set_global_config(env_cfg)
+    eval_cfg = copy.deepcopy(cfg)
+    eval_cfg["env"] = copy.deepcopy(cfg["env"])
+    eval_cfg["env"]["num_evaders"] = 1
+    set_global_config(eval_cfg)
     model = CoCapIQN.load(args.checkpoint, args.device)
     model.eval()
-    action_list = env_cfg.get("pursuer", {}).get("a", [-0.4, 0.0, 0.4])
-    w_list = env_cfg.get("pursuer", {}).get("w", [-0.5235987755982988, 0.0, 0.5235987755982988])
+    action_list = eval_cfg.get("pursuer", {}).get("a", [-0.4, 0.0, 0.4])
+    w_list = eval_cfg.get("pursuer", {}).get("w", [-0.5235987755982988, 0.0, 0.5235987755982988])
     grid = [(float(a), float(w)) for a in action_list for w in w_list]
 
     records = []
     for idx in range(args.episodes):
         seed = args.seed_base + idx
-        env = VorAdjEnv(copy.deepcopy(env_cfg), seed=seed + 43)
+        env = VorAdjEnv(copy.deepcopy(eval_cfg), seed=seed + 43)
         env.reset()
         obs_list = list(env.get_observations())
         action_hist = [0] * len(grid)
@@ -145,7 +146,8 @@ def main() -> int:
         captured = bool(rec.get("captured", False))
         eposf = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
         pposf = np.asarray([[p.x, p.y] for p in env.pursuers if not p.deactivated], dtype=float)
-        d_final = sorted(np.linalg.norm(pposf - eposf, axis=1).tolist()) if len(pposf) else [99.0] * 4
+        d_final = sorted(np.linalg.norm(pposf - eposf, axis=1).tolist()) if len(pposf) else []
+        d_final = (d_final + [99.0] * 4)[:4]
         records.append({
             "seed": seed, "captured": captured, "collision": collision, "length": steps,
             "d1_initial": float(d_init[0]), "d2_initial": float(d_init[1]),
