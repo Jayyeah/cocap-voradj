@@ -636,7 +636,7 @@ def _wrap_angle(value: float) -> float:
     return float((value + np.pi) % (2.0 * np.pi) - np.pi)
 
 
-def _pursuit_step_geometry(env: Any) -> Dict[str, float] | None:
+def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Dict[str, float] | None:
     """Per-step pursuit diagnostics for capture scenes (uses env state after step)."""
     active_p = [p for p in env.pursuers if not p.deactivated]
     active_e = [e for e in env.evaders if not e.deactivated]
@@ -661,8 +661,12 @@ def _pursuit_step_geometry(env: Any) -> Dict[str, float] | None:
             phi = float(np.arctan2(rel[1], rel[0]))
             be = abs(_wrap_angle(phi - float(p.theta)))
             bearing.append(be)
-            w = float(p.w)
-            if be >= 0.05 and abs(w) >= 0.01:
+            w = None
+            if actions is not None:
+                idx = env.pursuers.index(p)
+                if idx < len(actions):
+                    w = float(actions[idx][1])
+            if w is not None and be >= 0.05 and abs(w) >= 0.01:
                 turn_n += 1
                 if w * _wrap_angle(phi - float(p.theta)) > 0:
                     turn_ok += 1
@@ -1026,7 +1030,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
                 window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
                 if scene == "capture":
-                    _geom = _pursuit_step_geometry(env)
+                    _geom = _pursuit_step_geometry(env, actions)
                     if _geom is not None:
                         window_geometry.append(_geom)
                 for info in outcome.infos:
@@ -1244,7 +1248,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
             window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
             if scene == "capture":
-                _geom = _pursuit_step_geometry(env)
+                _geom = _pursuit_step_geometry(env, actions)
                 if _geom is not None:
                     window_geometry.append(_geom)
             for info in outcome.infos:
