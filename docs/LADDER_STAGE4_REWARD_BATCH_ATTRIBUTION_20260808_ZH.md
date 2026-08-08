@@ -54,6 +54,11 @@ Base：reward 批中最积极/最少差者（Q 趋势最平、capture_events 最
 - A3（A1+warmup 10k）：eval20 capture 0/20、collision 0%、min-dist 14.02；paired 1000 步：d1_progress +8.45（det，75% 正向）/ +11.15（sto，90% 正向）、collision 0%、ring 访问仍 0 → **学会“慢速接近”但未进入 capture 半径**，是 A 批最积极侧。
 - 重要发现：400 步 eval20 低估慢速接近（A3 接近发生在 400–1000 步之间）→ 后续 gate 需以 1000 步 paired 行为指标为辅助判据。
 - 结论：reward 幅度/approach 增强单独不足以产生 capture；A3 的 warmup 增量+reward 增强提供了“安全慢接近”基础 → 探索批 Base 默认取 A3（E1/E2/E3 在其上增量）。
+- A 批 paired（1000 步，同 seeds）补充归因：
+  - A1：closing 0.69（vs random 0.51，paired +0.18、95% 集更高）、bearing 1.06（paired -0.69）、collision 95%、capture 5% → 学成“方向性猛冲”，碰撞失控。
+  - A2：d1_progress +6.3（75% 正向，paired +9.6）、closing 0.59（paired +0.08）、bearing 1.29（paired -0.46）、collision 100%、capture 0% → approach 项增强接近但更冲撞。
+  - A3：d1_progress +8.5/+11.2（75-90% 正向）、closing/bearing ≈ random、collision 0% → “安全慢接近”。
+  - 三者共同点：都学到接近方向（closing/d1_progress/bearing 至少一项优于 random），但均未形成受控 capture；A3 是唯一 collision 受控线 → 探索批 Base=A3 确认。
 
 ## 3. 超出预期的归因备案（决策树，发现即执行，无需再次询问方向）
 
