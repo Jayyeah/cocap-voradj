@@ -22,7 +22,14 @@
 | 50k | abs_bearing_error | 0.71 | - | - |
 | 50k | any 8m steps | 13.4% | - | - |
 | 50k | 2+ ring | 0.13% | - | - |
-| 75k | ... | 待评估 | - | - |
+| 75k | capture | 0/20 | - | - |
+| 75k | collision | 100% | - | - |
+| 75k | d1_min / d2_min | 2.52 / 16.4 | - | - |
+| 75k | fraction_closing | 0.82 | - | - |
+| 75k | abs_bearing_error | 0.38 | - | - |
+| 75k | any 8m steps | 19.4% | - | - |
+| 75k | 2+ ring | 0.37% | - | - |
+| 100k | ... | 待评估 | - | - |
 
 ## 运行状态
 
