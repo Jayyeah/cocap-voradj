@@ -15,7 +15,14 @@
 | 25k | any 8m steps | 10.8% | - | - |
 | 25k | 2+ ring | 0.05% | - | - |
 | 25k | eval20 min-dist | - | - | - |
-| 50k | ... | 待评估 | - | - |
+| 50k | capture | 0/20 | - | - |
+| 50k | collision | 100% | - | - |
+| 50k | d1_min | 2.61 | - | - |
+| 50k | fraction_closing | 0.70 | - | - |
+| 50k | abs_bearing_error | 0.71 | - | - |
+| 50k | any 8m steps | 13.4% | - | - |
+| 50k | 2+ ring | 0.13% | - | - |
+| 75k | ... | 待评估 | - | - |
 
 ## 运行状态
 
