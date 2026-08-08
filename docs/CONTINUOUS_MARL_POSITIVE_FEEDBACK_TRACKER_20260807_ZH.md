@@ -331,6 +331,15 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - 待办：若某线 25k 明显积极 → 补 seed2 并择优进入 4D/4C；若均不积极 → 第二轮探索批（target_entropy/alpha_init/warmup）在较积极侧增量调整。
 - 归因与备案：完整消融归因矩阵、E 批归因、Case 1-8 决策树见 `docs/LADDER_STAGE4_REWARD_BATCH_ATTRIBUTION_20260808_ZH.md`（2026-08-08 固化为可执行规则）。
 
+### 3.8.7 A 批与 200k 对照进展（2026-08-08 12:35）
+
+- A3（A1+warmup 10000）25k 完成：eval20 capture 0/20、collision 0%、min-dist 14.02（≈random 13.99）→ 无信号；训练 terminated=7。paired 行为评估进行中。
+- A2 25k 完成（12:30），报告/分析生成中；A1 ~23k 接近完成。
+- 用户指令（2026-08-08 12:30）：A3 结束后开启原合同 Stage4A/4C 200k 训练，每 25k 记录表现，与 IQN 200k 对照；奖励设置可参考 A1–A3 结果做 MASAC 架构内改进。
+- 已启动：`stage4a_200k_20260808`（cuda:0，原 stage4a 合同）与 `stage4c_200k_20260808`（cuda:1，原 stage4c 合同），`--total-steps 200000`，checkpoint 每 25k（step_000025000/...），将逐 25k 评估并回填 `LEGACY_200K_PROGRESS` 对照表。
+- IQN 200k：`iqn_scratch_200k_20260808` 训练中（cuda:1，12:12 启动），25k 步 checkpoint 监控就绪。
+- 奖励改进决策：待 A1/A2 eval20 结果齐后，若某 A 变体（A1 权重/clip 或 A2 approach 项）有正向信号，则将对应 reward 字段作为 4A/4C 200k 后续变体候选；当前 4A/4C 200k 按原合同先跑（与 IQN 200k 严格对照）。
+
 ### 3.9 历史/已淘汰条目
 
 ```text
