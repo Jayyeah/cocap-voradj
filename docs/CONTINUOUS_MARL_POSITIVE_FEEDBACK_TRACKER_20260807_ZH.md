@@ -334,6 +334,11 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 ### 3.8.7 A 批与 200k 对照进展（2026-08-08 12:35）
 
 - A3（A1+warmup 10000）25k 完成：eval20 capture 0/20、collision 0%、min-dist 14.02（≈random 13.99）→ 无信号；训练 terminated=7。paired 行为评估进行中。
+- A 批归因矩阵（2026-08-08 13:00，全部 seed1/25k/4B）：
+  - A1（ring 4/clip 6）：eval20 capture 1/20、collision 95%、min-dist 21.9；训练 term=62/coll=59 → 冲撞坍缩，偶发 capture 不可靠。
+  - A2（A1+approach 3）：eval20 capture 0/20、collision 90%、min-dist 16.0；term=12/coll=12 → 冲撞坍缩。
+  - A3（A1+warmup 10k）：eval20 capture 0/20、collision 0%、min-dist 14.0；term=7 → 安全游荡，无信号。
+  - 结论：reward 幅度/clip/approach 增强在 25k 均未产生可靠 capture；A1/A2 反而诱发碰撞坍缩。→ 4A/4C 200k 保持原 reward（严格对照 IQN 200k）；后续探索批需先有 E0 数据（4A/4C 200k 25k 起会带 E0 指标）。
 - A2 25k 完成（12:30），报告/分析生成中；A1 ~23k 接近完成。
 - 用户指令（2026-08-08 12:30）：A3 结束后开启原合同 Stage4A/4C 200k 训练，每 25k 记录表现，与 IQN 200k 对照；奖励设置可参考 A1–A3 结果做 MASAC 架构内改进。
 - 已启动：`stage4a_200k_20260808`（cuda:0，原 stage4a 合同）与 `stage4c_200k_20260808`（cuda:1，原 stage4c 合同），`--total-steps 200000`，checkpoint 每 25k（step_000025000/...），将逐 25k 评估并回填 `LEGACY_200K_PROGRESS` 对照表。
