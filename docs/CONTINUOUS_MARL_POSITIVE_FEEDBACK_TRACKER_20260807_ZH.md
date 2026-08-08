@@ -299,6 +299,7 @@ next action: 等 seed2 25k；若两者均无信号，则 4C 判 FAIL 并做合�
 - A3：A1 + warmup_joint_transitions 5000→10000。
 - 配置：`stage4b_a1/a2/a3_reward_20260808.yaml`；合同测试新增 `test_stage4b_reward_first_variants_contract`（12/12 通过）；三线 smoke20 均通过（all finite）。
 - 运行计划：三线各 25k seed1（seed 2026080801），A1/A3 共 cuda:0、A2 用 cuda:1；监督自动 analyze+eval20（baselines=stage4b_baselines_moving.json）；判定标准不变（eval20 capture≥1 或 min-dist 明显优于 random/noop）。
+- 进度快照（2026-08-08 08:52）：A1/A2 均 ~6k（warmup 后训练开始，update=251）、A3 ~10k（warmup 10000 中）；GPU0 94%（A1+A3）、GPU1 100%（A2）；无异常；10k 初检待执行。
 - 待办：若某线 25k 明显积极 → 补 seed2 并择优进入 4D/4C；若均不积极 → 第二轮探索批（target_entropy/alpha_init/warmup）在较积极侧增量调整。
 - 归因与备案：完整消融归因矩阵、E 批归因、Case 1-8 决策树见 `docs/LADDER_STAGE4_REWARD_BATCH_ATTRIBUTION_20260808_ZH.md`（2026-08-08 固化为可执行规则）。
 
