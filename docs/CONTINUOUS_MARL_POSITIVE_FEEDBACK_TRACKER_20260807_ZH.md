@@ -32,6 +32,31 @@
 - Stage7A1 首个目标：复现 `ctde_pure_random_25k_v2` 的 world-axay pure positive signal（actor-prior warmup）。
 - uniform-disk warmup 降为二级诊断（Stage7A1b）。
 
+## 0.2 [2026-08-08 PATCH] Stage4 诊断补丁（主线不变）
+
+```text
+[2026-08-08 PATCH]
+1. Stage4 mainline unchanged.
+2. E1 target_entropy=-4 plan paused pending entropy calibration.
+3. Added action / geometry / reward / entropy / critic diagnostics.
+4. Added legacy IQN scratch 25k/50k early-training reference.
+```
+
+- 现有 A1/A2/A3 训练与归因主线保持不变、不重排。
+- E1 标记 `PAUSED — ENTROPY DIRECTION NOT JUSTIFIED`，由 E0（entropy calibration，只记录不调整）取代；方向待 E0 数据决定。
+- 详细设计见 `docs/LADDER_STAGE4_REWARD_BATCH_ATTRIBUTION_20260808_ZH.md` §2/§3.5。
+
+## 0.3 Stage4 Diagnostic Patch 2026-08-08（章节 A–H，逐步回填）
+
+- A. Entropy calibration（E0）：alpha/log_alpha/alpha_loss、log_prob 分布、physical/normalized entropy、entropy residual、log_std_a/log_std_omega —— 接入训练 metrics。
+- B. Action-component diagnostics：a/omega 拆分统计、speed 分位与占比；action_norm 降为辅助。
+- C. Pursuit geometry diagnostics：d1–d4 排序距离、distance progress、radial closing velocity、fraction_closing。
+- D. Reward density diagnostics：reward term 拆分 + nonzero/positive fraction。
+- E. Replay state coverage：距离分桶 histogram + detected/undetected。
+- F. Counterfactual critic Q-ranking：policy/random/seek 三动作 Q 排序。
+- G. Paired deterministic/stochastic evaluation：同 seeds 双模式 20ep + paired delta。
+- H. Legacy IQN scratch 25k/50k reference：原成功合同 scratch 早训时间尺度参照。
+
 ## 1. 执行纪律摘要
 
 1. 一次只改一个核心变量；任何配置改动必须标注 `[IQN-ALIGN]` / `[ALGO-NECESSARY]` / `[DIAGNOSTIC-ADAPT]`。

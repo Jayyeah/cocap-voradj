@@ -79,6 +79,14 @@ Stage 0 旧 IQN 基线复现
 - Stage3B 曾暴露 active-only 索引 bug（已修复并加回归测试）。
 - Stage4 之后尚未训练；Stage5-7 仅实现/冒烟就绪，无训练结果。
 
+## 4.5 [2026-08-08 PATCH] Stage4 诊断补丁（主线不变）
+
+- Stage4 mainline（A1/A2/A3、4B/4C、4D 预备）保持不变，不重排。
+- E1 target_entropy -2→-4 暂停（方向未定），替换为 E0 entropy calibration（只记录指标）。
+- 新增诊断：action 拆分、pursuit 几何（d1–d4/closing/bearing/ring 访问）、reward 密度、replay state coverage、critic Q-ranking、deterministic/stochastic + paired seeds 评估。
+- 新增 legacy IQN scratch 25k/50k early-training 参照（原成功合同不改），产出 25K/50K DIAGNOSTIC。
+- 完整设计：`docs/LADDER_STAGE4_REWARD_BATCH_ATTRIBUTION_20260808_ZH.md`；台账 §0.2/§0.3。
+
 ## 5. 用户确认规则
 
 - Stage4A 启动后，Stage4B（moving evader）与 Stage4C（moving evader + 1 obstacle）可作为两个独立分支并行开启以加速。用户确认 2026-08-07：4C 就是动态敌人分支（原为 4B 之后串行）；4B/4C 不得再叠加其他未授权改动。
