@@ -47,6 +47,14 @@ Base：reward 批中最积极/最少差者（Q 趋势最平、capture_events 最
 - E3 仅当 reward 批显示 warmup 有微弱正向（A3 略好于 A1）时优先。
 - 验证节奏：5k 冒烟（Q 停止单调坍缩、capture_events>0、log_std 不提前收缩）→ 25k seed1 → eval20 → 积极则 seed2。
 
+## 2.5 A 批实测归因（2026-08-08 回填）
+
+- A1（ring 4/clip 6）：eval20 capture 1/20、collision 95%、min-dist 21.9 → 冲撞坍缩（偶发 capture 不可靠）。
+- A2（A1+approach 3）：eval20 capture 0/20、collision 90%、min-dist 16.0 → 冲撞坍缩。
+- A3（A1+warmup 10k）：eval20 capture 0/20、collision 0%、min-dist 14.02；paired 1000 步：d1_progress +8.45（det，75% 正向）/ +11.15（sto，90% 正向）、collision 0%、ring 访问仍 0 → **学会“慢速接近”但未进入 capture 半径**，是 A 批最积极侧。
+- 重要发现：400 步 eval20 低估慢速接近（A3 接近发生在 400–1000 步之间）→ 后续 gate 需以 1000 步 paired 行为指标为辅助判据。
+- 结论：reward 幅度/approach 增强单独不足以产生 capture；A3 的 warmup 增量+reward 增强提供了“安全慢接近”基础 → 探索批 Base 默认取 A3（E1/E2/E3 在其上增量）。
+
 ## 3. 超出预期的归因备案（决策树，发现即执行，无需再次询问方向）
 
 - Case 1 全部积极：选更优且改动更小（默认 A1）；若 A2 显著更优（capture ≥2× 或 min-dist 低 ≥2 且 collision 可控）选 A2；A3 仅当 A1 不达标。选定后：4B seed2 → 复制到 4C 两 seed → 通过后 4D 两 seed。
