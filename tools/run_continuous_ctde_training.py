@@ -632,6 +632,58 @@ def _percentile(values: Sequence[float], q: float) -> float:
     return float(np.percentile(np.asarray(values, dtype=float), q))
 
 
+def _wrap_angle(value: float) -> float:
+    return float((value + np.pi) % (2.0 * np.pi) - np.pi)
+
+
+def _pursuit_step_geometry(env: Any) -> Dict[str, float] | None:
+    """Per-step pursuit diagnostics for capture scenes (uses env state after step)."""
+    active_p = [p for p in env.pursuers if not p.deactivated]
+    active_e = [e for e in env.evaders if not e.deactivated]
+    if not active_p or not active_e:
+        return None
+    epos = np.asarray([active_e[0].x, active_e[0].y], dtype=float)
+    evel = np.asarray(active_e[0].velocity, dtype=float)
+    dists = []
+    closing = []
+    bearing = []
+    turn_ok = 0
+    turn_n = 0
+    for p in active_p:
+        ppos = np.asarray([p.x, p.y], dtype=float)
+        pvel = np.asarray(p.velocity, dtype=float)
+        rel = epos - ppos
+        d = float(np.linalg.norm(rel))
+        dists.append(d)
+        if d > 1e-6:
+            unit = rel / d
+            closing.append(float(np.dot(pvel - evel, unit)))
+            phi = float(np.arctan2(rel[1], rel[0]))
+            be = abs(_wrap_angle(phi - float(p.theta)))
+            bearing.append(be)
+            w = float(p.w)
+            if be >= 0.05 and abs(w) >= 0.01:
+                turn_n += 1
+                if w * _wrap_angle(phi - float(p.theta)) > 0:
+                    turn_ok += 1
+    if not dists:
+        return None
+    d_sorted = sorted(dists)
+    d = [float(d_sorted[i]) if i < len(d_sorted) else 99.0 for i in range(4)]
+    return {
+        "d1": d[0], "d2": d[1], "d3": d[2], "d4": d[3],
+        "closing": float(np.mean(closing)) if closing else 0.0,
+        "fraction_closing": float(np.mean([c > 0 for c in closing])) if closing else 0.0,
+        "abs_bearing_error": float(np.mean(bearing)) if bearing else 0.0,
+        "turn_direction_correct_rate": float(turn_ok / turn_n) if turn_n else 0.0,
+        "num_within_8": int(np.sum([x < 8.0 for x in dists])),
+        "num_within_10_5": int(np.sum([x < 10.5 for x in dists])),
+        "num_within_12": int(np.sum([x < 12.0 for x in dists])),
+        "num_within_20": int(np.sum([x < 20.0 for x in dists])),
+        "num_in_ring_8_10_5": int(np.sum([8.0 <= x < 10.5 for x in dists])),
+    }
+
+
 def _metrics_record(
     step: int,
     update_count: int,
@@ -645,6 +697,9 @@ def _metrics_record(
     collision_count: int,
     scene_counts: Mapping[str, int],
     origin_counts: Mapping[str, int],
+    action_a: Sequence[float] = (),
+    action_w: Sequence[float] = (),
+    geometry: Sequence[Dict[str, Any]] = (),
 ) -> Dict[str, Any]:
     record: Dict[str, Any] = {
         "step": int(step),
@@ -660,7 +715,30 @@ def _metrics_record(
         "action_norm_max": float(np.max(action_norms)) if action_norms else 0.0,
         "near_zero_action_rate": float(np.mean([float(v) <= 0.02 for v in action_norms])) if action_norms else 0.0,
         "speed_mean": float(np.mean(speeds)) if speeds else 0.0,
+        "speed_p50": _percentile(speeds, 50),
+        "speed_p95": _percentile(speeds, 95),
         "speed_max": float(np.max(speeds)) if speeds else 0.0,
+        "fraction_speed_lt_0_2": float(np.mean([float(v) < 0.2 for v in speeds])) if speeds else 0.0,
+        "fraction_speed_gt_2_5": float(np.mean([float(v) > 2.5 for v in speeds])) if speeds else 0.0,
+        # ---- E0 / action-component diagnostics (2026-08-08) ----
+        "a_mean": float(np.mean(action_a)) if action_a else 0.0,
+        "a_abs_mean": float(np.mean(np.abs(action_a))) if action_a else 0.0,
+        "a_std": float(np.std(action_a)) if action_a else 0.0,
+        "a_p5": _percentile(action_a, 5),
+        "a_p50": _percentile(action_a, 50),
+        "a_p95": _percentile(action_a, 95),
+        "fraction_abs_a_lt_0_05": float(np.mean([abs(float(v)) < 0.05 for v in action_a])) if action_a else 0.0,
+        "fraction_abs_a_gt_0_35": float(np.mean([abs(float(v)) > 0.35 for v in action_a])) if action_a else 0.0,
+        "fraction_a_positive": float(np.mean([float(v) > 0 for v in action_a])) if action_a else 0.0,
+        "fraction_a_negative": float(np.mean([float(v) < 0 for v in action_a])) if action_a else 0.0,
+        "omega_mean": float(np.mean(action_w)) if action_w else 0.0,
+        "omega_abs_mean": float(np.mean(np.abs(action_w))) if action_w else 0.0,
+        "omega_std": float(np.std(action_w)) if action_w else 0.0,
+        "omega_p5": _percentile(action_w, 5),
+        "omega_p50": _percentile(action_w, 50),
+        "omega_p95": _percentile(action_w, 95),
+        "fraction_abs_omega_lt_0_05": float(np.mean([abs(float(v)) < 0.05 for v in action_w])) if action_w else 0.0,
+        "fraction_abs_omega_gt_0_45": float(np.mean([abs(float(v)) > 0.45 for v in action_w])) if action_w else 0.0,
         "terminated_count": int(terminated_count),
         "truncated_count": int(truncated_count),
         "collision_count": int(collision_count),
@@ -676,6 +754,43 @@ def _metrics_record(
         for key in ("q1_summary", "q2_summary", "target_q_summary", "td_error_summary"):
             if key in last:
                 record[key] = dict(last[key])
+        e0_keys = (
+            "log_alpha", "log_prob_mean", "log_prob_std", "log_prob_p5", "log_prob_p50", "log_prob_p95",
+            "entropy_proxy_mean", "entropy_residual_mean", "entropy_residual_p5", "entropy_residual_p50", "entropy_residual_p95",
+            "log_std_a_mean", "log_std_omega_mean", "std_a_mean", "std_omega_mean",
+        )
+        for key in e0_keys:
+            values = [item[key] for item in window_updates if isinstance(item.get(key), (int, float))]
+            if values:
+                record[f"p5_{key}"] = _percentile(values, 5)
+                record[f"p50_{key}"] = _percentile(values, 50)
+                record[f"p95_{key}"] = _percentile(values, 95)
+        lp_means = [item.get("entropy_proxy_mean") for item in window_updates if isinstance(item.get("entropy_proxy_mean"), (int, float))]
+        if lp_means:
+            # normalized entropy = physical entropy + log(a_max) + log(w_max) (BoxActor affine scale)
+            record["normalized_entropy_mean"] = float(np.mean(lp_means) + np.log(0.4) + np.log(np.pi / 6.0))
+    if geometry:
+        record.update({
+            "d1_mean": float(np.mean([g["d1"] for g in geometry])),
+            "d2_mean": float(np.mean([g["d2"] for g in geometry])),
+            "d3_mean": float(np.mean([g["d3"] for g in geometry])),
+            "d4_mean": float(np.mean([g["d4"] for g in geometry])),
+            "d1_min": float(np.min([g["d1"] for g in geometry])),
+            "closing_velocity_mean": float(np.mean([g["closing"] for g in geometry])),
+            "closing_velocity_p50": _percentile([g["closing"] for g in geometry], 50),
+            "closing_velocity_p95": _percentile([g["closing"] for g in geometry], 95),
+            "fraction_closing": float(np.mean([g["fraction_closing"] for g in geometry])),
+            "abs_bearing_error_mean": float(np.mean([g["abs_bearing_error"] for g in geometry])),
+            "abs_bearing_error_p50": _percentile([g["abs_bearing_error"] for g in geometry], 50),
+            "abs_bearing_error_p95": _percentile([g["abs_bearing_error"] for g in geometry], 95),
+            "turn_direction_correct_rate": float(np.mean([g["turn_direction_correct_rate"] for g in geometry])),
+            "max_num_within_8m": int(np.max([g["num_within_8"] for g in geometry])),
+            "max_num_in_ring": int(np.max([g["num_in_ring_8_10_5"] for g in geometry])),
+            "fraction_steps_any_within_8m": float(np.mean([g["num_within_8"] > 0 for g in geometry])),
+            "fraction_steps_any_in_ring": float(np.mean([g["num_in_ring_8_10_5"] > 0 for g in geometry])),
+            "fraction_steps_2plus_in_ring": float(np.mean([g["num_in_ring_8_10_5"] >= 2 for g in geometry])),
+            "fraction_steps_3plus_in_ring": float(np.mean([g["num_in_ring_8_10_5"] >= 3 for g in geometry])),
+        })
     return record
 
 
@@ -842,6 +957,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     speeds: List[float] = []
     window_action_norms: List[float] = []
     window_speeds: List[float] = []
+    window_action_a: List[float] = []
+    window_action_w: List[float] = []
+    window_geometry: List[Dict[str, Any]] = []
     speed_limited_count = 0
     action_sample_count = 0
     terminated_count = 0
@@ -897,6 +1015,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 )
                 action_norms.extend(float(np.linalg.norm(action)) for action in actions)
                 window_action_norms.extend(float(np.linalg.norm(action)) for action in actions)
+                window_action_a.extend(float(action[0]) for action in actions)
+                window_action_w.extend(float(action[1]) for action in actions)
                 try:
                     outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
                 except ActionContractError as exc:
@@ -905,6 +1025,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 next_observations = list(outcome.observations)
                 speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
                 window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
+                if scene == "capture":
+                    _geom = _pursuit_step_geometry(env)
+                    if _geom is not None:
+                        window_geometry.append(_geom)
                 for info in outcome.infos:
                     diagnostics = info.get("action_diagnostics", {})
                     speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -996,12 +1120,18 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         window_collision_count,
                         scene_counts,
                         origin_counts,
+                        action_a=window_action_a,
+                        action_w=window_action_w,
+                        geometry=window_geometry,
                     )
                     metrics_history.append(record)
                     _append_metrics_jsonl(artifact_dir / "metrics.jsonl", record)
                     window_updates = []
                     window_action_norms = []
                     window_speeds = []
+                    window_action_a = []
+                    window_action_w = []
+                    window_geometry = []
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
@@ -1103,6 +1233,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             )
             action_norms.extend(float(np.linalg.norm(action)) for action in actions)
             window_action_norms.extend(float(np.linalg.norm(action)) for action in actions)
+            window_action_a.extend(float(action[0]) for action in actions)
+            window_action_w.extend(float(action[1]) for action in actions)
             try:
                 outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
             except ActionContractError as exc:
@@ -1111,6 +1243,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             next_observations = list(outcome.observations)
             speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
             window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
+            if scene == "capture":
+                _geom = _pursuit_step_geometry(env)
+                if _geom is not None:
+                    window_geometry.append(_geom)
             for info in outcome.infos:
                 diagnostics = info.get("action_diagnostics", {})
                 speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1202,12 +1338,18 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_collision_count,
                     scene_counts,
                     origin_counts,
+                    action_a=window_action_a,
+                    action_w=window_action_w,
+                    geometry=window_geometry,
                 )
                 metrics_history.append(record)
                 _append_metrics_jsonl(artifact_dir / "metrics.jsonl", record)
                 window_updates = []
                 window_action_norms = []
                 window_speeds = []
+                window_action_a = []
+                window_action_w = []
+                window_geometry = []
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
