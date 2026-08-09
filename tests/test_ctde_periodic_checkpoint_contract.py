@@ -11,6 +11,7 @@ from cocap_voradj.training.continuous.joint_replay import FocalReplaySampler, Jo
 from tools.run_continuous_ctde_training import (
     _link_or_copy_atomic,
     _make_trainer,
+    _periodic_checkpoint_due,
     _runtime_state,
     _save_checkpoint_bundle,
     _verify_resume_steps,
@@ -162,6 +163,14 @@ def test_standalone_checkpoint_uses_atomic_hardlink(tmp_path: Path) -> None:
 
     assert destination.read_bytes() == b"replay-payload"
     assert source.samefile(destination)
+
+
+def test_final_step_is_not_saved_as_a_periodic_checkpoint() -> None:
+    assert _periodic_checkpoint_due(1, 200000, 25000)
+    assert _periodic_checkpoint_due(25000, 200000, 25000)
+    assert _periodic_checkpoint_due(175000, 200000, 25000)
+    assert not _periodic_checkpoint_due(200000, 200000, 25000)
+    assert not _periodic_checkpoint_due(25000, 25000, 25000)
 
 
 def test_runtime_state_preserves_runner_and_focal_sampler_rng() -> None:

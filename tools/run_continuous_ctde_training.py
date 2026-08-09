@@ -94,6 +94,13 @@ def _link_or_copy_atomic(source: Path, destination: Path) -> None:
     os.replace(tmp, destination)
 
 
+def _periodic_checkpoint_due(step: int, total_steps: int, interval: int) -> bool:
+    """Return true for non-final periodic milestones; final save owns total_steps."""
+    return int(step) < int(total_steps) and (
+        int(step) == 1 or int(step) % int(interval) == 0
+    )
+
+
 def _save_checkpoint_bundle(
     artifact_dir: Path,
     step: int,
@@ -1210,9 +1217,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
-                if (
-                    transition_count < total_steps
-                    and (transition_count == 1 or transition_count % checkpoint_interval == 0)
+                if _periodic_checkpoint_due(
+                    transition_count, total_steps, checkpoint_interval
                 ):
                     diagnostic_eval = (
                         _screen(
@@ -1429,9 +1435,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
-            if (
-                transition_count < total_steps
-                and (transition_count == 1 or transition_count % checkpoint_interval == 0)
+            if _periodic_checkpoint_due(
+                transition_count, total_steps, checkpoint_interval
             ):
                 diagnostic_eval = (
                     _screen(
