@@ -114,6 +114,41 @@ def _save_checkpoint_bundle(
     return bundle_dir
 
 
+def _runtime_state(
+    *,
+    transition_count: int,
+    update_count: int,
+    scene_index: int,
+    current_scene: str,
+    recovery_pool: Deque[Dict[str, Any]],
+    metrics_history: List[Dict[str, Any]],
+    runner_rng: np.random.Generator,
+    focal_sampler: FocalReplaySampler,
+    scene_counts: Mapping[str, int],
+    origin_counts: Mapping[str, int],
+    sampling_stats: Mapping[str, Any],
+    all_finite: bool,
+    update_metrics_tail: List[Dict[str, float]],
+) -> Dict[str, Any]:
+    """Build the episode-boundary state needed for a faithful continuation."""
+    return {
+        "runtime_state_schema_version": 2,
+        "transition_count": int(transition_count),
+        "update_count": int(update_count),
+        "next_scene_index": int(scene_index),
+        "current_scene": str(current_scene),
+        "recovery_pool": list(recovery_pool),
+        "metrics_history": list(metrics_history),
+        "runner_rng_state": copy.deepcopy(runner_rng.bit_generator.state),
+        "focal_sampler_state": focal_sampler.state_dict(),
+        "scene_counts": {str(key): int(value) for key, value in scene_counts.items()},
+        "origin_counts": {str(key): int(value) for key, value in origin_counts.items()},
+        "sampling_stats": copy.deepcopy(dict(sampling_stats)),
+        "all_finite": bool(all_finite),
+        "update_metrics_tail": copy.deepcopy(list(update_metrics_tail[-10:])),
+    }
+
+
 def _implementation_hash() -> str:
     paths = [
         Path(__file__),
@@ -433,7 +468,15 @@ def _manifest(
         "implementation_hash": _implementation_hash(),
         "trainer_contract": _trainer_contract(trainer),
         "resume_contract": {
-            "rng": ["torch_cpu", "torch_cuda", "python", "numpy", "replay_numpy"],
+            "rng": [
+                "torch_cpu",
+                "torch_cuda",
+                "python",
+                "numpy",
+                "replay_numpy",
+                "runner_numpy",
+                "focal_sampler_numpy",
+            ],
             "scene_index": "saved",
             "exact_env_state": False,
             "continuation_mode": "seeded_episode_boundary",
@@ -910,6 +953,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     if bool(args.resume_checkpoint) != bool(args.resume_replay):
         raise ValueError("--resume-checkpoint and --resume-replay must be supplied together")
     resume_info = None
+    runtime_state: Dict[str, Any] = {}
     if args.resume_checkpoint:
         trainer.load_checkpoint(args.resume_checkpoint, manifest)
         replay = JointReplayBuffer.load(args.resume_replay, manifest)
@@ -943,6 +987,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         fallback_matrix=root_config["training"].get("fallback_matrix", None),
         seed=args.seed,
     )
+    if resume_info is not None:
+        if "runner_rng_state" not in runtime_state or "focal_sampler_state" not in runtime_state:
+            raise ValueError("resume checkpoint is missing runner/focal sampler RNG state")
+        rng.bit_generator.state = copy.deepcopy(runtime_state["runner_rng_state"])
+        sampler.load_state_dict(runtime_state["focal_sampler_state"])
     total_steps = int(args.total_steps if args.total_steps is not None else root_config["training"]["total_env_steps"])
     warmup = int(root_config["training"]["warmup_joint_transitions"])
     update_every = int(root_config["training"]["update_every_env_steps"])
@@ -973,12 +1022,18 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     window_truncated_count = 0
     window_collision_count = 0
     transition_attempt_count = 0
-    updates: List[Dict[str, float]] = []
+    update_count = int(runtime_state.get("update_count", 0))
+    updates: List[Dict[str, float]] = list(runtime_state.get("update_metrics_tail", []))
     window_updates: List[Dict[str, float]] = []
-    metrics_history: List[Dict[str, Any]] = []
-    sampling_stats_accum: Dict[str, Any] = {}
-    scene_counts: Dict[str, int] = {}
-    origin_counts: Dict[str, int] = {}
+    metrics_history: List[Dict[str, Any]] = list(runtime_state.get("metrics_history", []))
+    sampling_stats_accum: Dict[str, Any] = dict(runtime_state.get("sampling_stats", {}))
+    scene_counts: Dict[str, int] = {
+        str(key): int(value) for key, value in dict(runtime_state.get("scene_counts", {})).items()
+    }
+    origin_counts: Dict[str, int] = {
+        str(key): int(value) for key, value in dict(runtime_state.get("origin_counts", {})).items()
+    }
+    all_finite_so_far = bool(runtime_state.get("all_finite", True))
     env = None
     observations: List[Optional[Dict[str, np.ndarray]]] = []
 
@@ -1107,13 +1162,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 ):
                     batch = replay.sample(batch_size, device=device, sampler=sampler)
                     metric = trainer.update(batch)
+                    update_count += 1
+                    all_finite_so_far = all_finite_so_far and float(metric.get("finite", 1.0)) == 1.0
                     updates.append(metric)
+                    del updates[:-10]
                     window_updates.append(metric)
                     sampling_stats_accum = dict(batch.get("sampling_stats", {}))
                 if transition_count % metrics_flush_interval == 0:
                     record = _metrics_record(
                         transition_count,
-                        len(updates),
+                        update_count,
                         window_updates,
                         replay,
                         sampling_stats_accum,
@@ -1139,51 +1197,46 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
-            if transition_count == 1 or transition_count % checkpoint_interval == 0:
-                runtime_state = {
-                    "transition_count": int(transition_count),
-                    "update_count": int(len(updates)),
-                    "next_scene_index": int(scene_index),
-                    "current_scene": str(scene),
-                    "recovery_pool": list(recovery_pool),
-                    "metrics_history": list(metrics_history),
-                }
-                _save_checkpoint_bundle(
-                    artifact_dir,
-                    transition_count,
-                    root_config,
-                    manifest,
-                    trainer,
-                    replay,
-                    runtime_state,
-                    metrics_history,
-                    {},
-                )
-                diagnostic_eval = (
-                    _screen(
-                        trainer,
-                        root_config,
-                        args.seed,
-                        episodes=int(args.diagnostic_eval_episodes),
-                        device=device,
-                        scenes=scenes,
-                        max_steps=diagnostic_rollout_cap,
+                if transition_count == 1 or transition_count % checkpoint_interval == 0:
+                    diagnostic_eval = (
+                        _screen(
+                            trainer,
+                            root_config,
+                            args.seed,
+                            episodes=int(args.diagnostic_eval_episodes),
+                            device=device,
+                            scenes=scenes,
+                            max_steps=diagnostic_rollout_cap,
+                        )
+                        if transition_count % diagnostic_eval_interval == 0
+                        else {}
                     )
-                    if transition_count % diagnostic_eval_interval == 0
-                    else {}
-                )
-                _save_checkpoint_bundle(
-                    artifact_dir,
-                    transition_count,
-                    root_config,
-                    manifest,
-                    trainer,
-                    replay,
-                    runtime_state,
-                    metrics_history,
-                    diagnostic_eval,
-                    overwrite=True,
-                )
+                    runtime_state = _runtime_state(
+                        transition_count=transition_count,
+                        update_count=update_count,
+                        scene_index=scene_index,
+                        current_scene=scene,
+                        recovery_pool=recovery_pool,
+                        metrics_history=metrics_history,
+                        runner_rng=rng,
+                        focal_sampler=sampler,
+                        scene_counts=scene_counts,
+                        origin_counts=origin_counts,
+                        sampling_stats=sampling_stats_accum,
+                        all_finite=all_finite_so_far,
+                        update_metrics_tail=updates,
+                    )
+                    _save_checkpoint_bundle(
+                        artifact_dir,
+                        transition_count,
+                        root_config,
+                        manifest,
+                        trainer,
+                        replay,
+                        runtime_state,
+                        metrics_history,
+                        diagnostic_eval,
+                    )
                 if all(outcome.dones) or any(item is None for item in next_observations):
                     break
             if snapshot_dataset is not None:
@@ -1325,13 +1378,16 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             ):
                 batch = replay.sample(batch_size, device=device, sampler=sampler)
                 metric = trainer.update(batch)
+                update_count += 1
+                all_finite_so_far = all_finite_so_far and float(metric.get("finite", 1.0)) == 1.0
                 updates.append(metric)
+                del updates[:-10]
                 window_updates.append(metric)
                 sampling_stats_accum = dict(batch.get("sampling_stats", {}))
             if transition_count % metrics_flush_interval == 0:
                 record = _metrics_record(
                     transition_count,
-                    len(updates),
+                    update_count,
                     window_updates,
                     replay,
                     sampling_stats_accum,
@@ -1371,14 +1427,21 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     if transition_count % diagnostic_eval_interval == 0
                     else {}
                 )
-                runtime_state = {
-                    "transition_count": int(transition_count),
-                    "update_count": int(len(updates)),
-                    "next_scene_index": int(scene_index),
-                    "current_scene": str(scene),
-                    "recovery_pool": list(recovery_pool),
-                    "metrics_history": list(metrics_history),
-                }
+                runtime_state = _runtime_state(
+                    transition_count=transition_count,
+                    update_count=update_count,
+                    scene_index=scene_index,
+                    current_scene=scene,
+                    recovery_pool=recovery_pool,
+                    metrics_history=metrics_history,
+                    runner_rng=rng,
+                    focal_sampler=sampler,
+                    scene_counts=scene_counts,
+                    origin_counts=origin_counts,
+                    sampling_stats=sampling_stats_accum,
+                    all_finite=all_finite_so_far,
+                    update_metrics_tail=updates,
+                )
                 _save_checkpoint_bundle(
                     artifact_dir,
                     transition_count,
@@ -1413,14 +1476,21 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             encoding="utf-8",
         )
     checkpoint = artifact_dir / f"{args.tag}_step{transition_count}.pt"
-    runtime_state = {
-        "transition_count": int(transition_count),
-        "update_count": int(len(updates)),
-        "next_scene_index": int(scene_index),
-        "current_scene": str(scene),
-        "recovery_pool": list(recovery_pool),
-        "metrics_history": list(metrics_history),
-    }
+    runtime_state = _runtime_state(
+        transition_count=transition_count,
+        update_count=update_count,
+        scene_index=scene_index,
+        current_scene=scene,
+        recovery_pool=recovery_pool,
+        metrics_history=metrics_history,
+        runner_rng=rng,
+        focal_sampler=sampler,
+        scene_counts=scene_counts,
+        origin_counts=origin_counts,
+        sampling_stats=sampling_stats_accum,
+        all_finite=all_finite_so_far,
+        update_metrics_tail=updates,
+    )
     trainer.save_checkpoint(checkpoint, manifest, runtime_state=runtime_state)
     replay_path = artifact_dir / f"{args.tag}_replay.pkl"
     replay.save(replay_path, manifest, runtime_state=runtime_state)
@@ -1475,7 +1545,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "replay_size": len(replay),
         "focal_index_sizes": replay.focal_index_sizes,
         "recovery_pool_size": len(recovery_pool),
-        "updates": len(updates),
+        "updates": update_count,
         "update_metrics_tail": updates[-10:],
         "metrics_history_tail": metrics_history[-20:],
         "metrics_jsonl_path": str(artifact_dir / "metrics.jsonl"),
@@ -1486,7 +1556,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         ) if (artifact_dir / "checkpoints").exists() else [],
         "final_checkpoint_bundle": str(final_bundle),
         "diagnostic_eval_400": final_diagnostic_eval,
-        "all_finite": bool(all(item["finite"] == 1.0 for item in updates)) if updates else True,
+        "all_finite": bool(all_finite_so_far),
         "action_norm_mean": float(np.mean(action_norms)) if action_norms else 0.0,
         "action_norm_max": float(np.max(action_norms)) if action_norms else 0.0,
         "speed_mean": float(np.mean(speeds)) if speeds else 0.0,

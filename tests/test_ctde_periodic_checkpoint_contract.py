@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections import deque
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 from cocap_voradj.training.continuous.formal_config import resolve_formal_config
-from cocap_voradj.training.continuous.joint_replay import JointReplayBuffer
+from cocap_voradj.training.continuous.joint_replay import FocalReplaySampler, JointReplayBuffer
 from tools.run_continuous_ctde_training import (
     _make_trainer,
+    _runtime_state,
     _save_checkpoint_bundle,
     _verify_resume_steps,
 )
@@ -147,3 +149,39 @@ def test_diagnostic_rollout_cap_is_400() -> None:
     assert config["training"]["checkpoint_interval_env_steps"] == 25000
     assert config["training"]["metrics_flush_interval_env_steps"] == 1000
     assert config["training"]["diagnostic_eval_interval_env_steps"] == 25000
+
+
+def test_runtime_state_preserves_runner_and_focal_sampler_rng() -> None:
+    runner_rng = np.random.default_rng(123)
+    sampler = FocalReplaySampler({"pre_capture_pursuing": 1}, seed=456)
+    runner_rng.integers(0, 1000)
+    sampler.rng.integers(0, 1000)
+
+    state = _runtime_state(
+        transition_count=25000,
+        update_count=5001,
+        scene_index=26,
+        current_scene="capture",
+        recovery_pool=deque([{"step": 7}], maxlen=8),
+        metrics_history=[{"step": 25000}],
+        runner_rng=runner_rng,
+        focal_sampler=sampler,
+        scene_counts={"capture": 25000},
+        origin_counts={"map_random": 25000},
+        sampling_stats={"actual_batch_size": 128},
+        all_finite=True,
+        update_metrics_tail=[{"finite": 1.0}],
+    )
+
+    expected_runner = int(runner_rng.integers(0, 2**31))
+    expected_sampler = int(sampler.rng.integers(0, 2**31))
+    restored_runner = np.random.default_rng(999)
+    restored_runner.bit_generator.state = state["runner_rng_state"]
+    restored_sampler = FocalReplaySampler({"pre_capture_pursuing": 1}, seed=999)
+    restored_sampler.load_state_dict(state["focal_sampler_state"])
+
+    assert int(restored_runner.integers(0, 2**31)) == expected_runner
+    assert int(restored_sampler.rng.integers(0, 2**31)) == expected_sampler
+    assert state["update_count"] == 5001
+    assert state["scene_counts"] == {"capture": 25000}
+    assert state["origin_counts"] == {"map_random": 25000}

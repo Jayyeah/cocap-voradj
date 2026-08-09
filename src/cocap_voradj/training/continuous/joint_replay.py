@@ -8,6 +8,7 @@ tests; formal training uses ``FocalReplaySampler``.
 """
 from __future__ import annotations
 
+import copy
 import pickle
 from collections import OrderedDict, defaultdict, deque
 from dataclasses import dataclass
@@ -673,6 +674,19 @@ class FocalReplaySampler:
             for name in FOCAL_BUCKETS
         }
         self.rng = np.random.default_rng(int(seed))
+
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "rng_state": copy.deepcopy(self.rng.bit_generator.state),
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        if int(state.get("schema_version", -1)) != 1:
+            raise ValueError("focal sampler state schema version mismatch")
+        if "rng_state" not in state:
+            raise ValueError("focal sampler state is missing rng_state")
+        self.rng.bit_generator.state = copy.deepcopy(state["rng_state"])
 
     @staticmethod
     def _candidate_pool(

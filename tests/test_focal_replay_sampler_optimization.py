@@ -60,3 +60,24 @@ def test_dense_incremental_role_pool_sparse_sampling_is_uniform_and_valid() -> N
     assert replay.focal_index_sizes["pre_capture_pursuing"] == 5000
     for item in sampler.sample_items(replay):
         replay.get_item_transition(item)
+
+
+def test_focal_sampler_rng_state_round_trip_reproduces_next_batch() -> None:
+    replay = JointReplayBuffer(capacity=5000, max_agents=1, seed=3)
+    for index in range(5000):
+        _add_pursuing(replay, float(index))
+    sampler = FocalReplaySampler({"pre_capture_pursuing": 64}, seed=4)
+    sampler.sample_items(replay)
+    state = sampler.state_dict()
+    expected = [
+        (item.slot_id, item.generation_id, item.agent_id, item.bucket_id)
+        for item in sampler.sample_items(replay)
+    ]
+
+    restored = FocalReplaySampler({"pre_capture_pursuing": 64}, seed=999)
+    restored.load_state_dict(state)
+    actual = [
+        (item.slot_id, item.generation_id, item.agent_id, item.bucket_id)
+        for item in restored.sample_items(replay)
+    ]
+    assert actual == expected
