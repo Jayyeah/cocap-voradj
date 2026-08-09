@@ -136,6 +136,7 @@
 - 存储 blocker：根盘仅余约 41GiB，现有双线后续 checkpoint 估计已超过剩余容量；`/data/disk1`/`disk2` 空间充足但当前用户无写权限。启动优化版双 200k 前需获得专用目录权限或用户批准精确归档清单。
 - residual 资源上限：Blender PID 64227 约占 55 核且同时使用两张 GPU（各约 6.3GiB）；它不是旧 replay-size 线性恶化的主因，但 sampler 修复后会限制 trainer/GPU 稳态吞吐，外部进程不做干预。
 - residual replay 排除：真实 25k replay 上 `sample_items`/batch materialize/完整 CPU `replay.sample` median=1.37/8.70/9.74ms；剩余秒级 update 属 central SAC/attention + GPU 共享，不引入 AMP/compile 改变数值路径。
+- 最终 50k/20-repeat 基准已归档：`focal_sampler_50k_benchmark.json`，sample median/mean/max=1.052/3.559/18.813ms，role-pool median=0.607µs。
 - 用户最新边界：任何连续动作均可；Stage6/7 不再阻塞最终路线，关键路径改为 `(a,ω)` Stage4D/4E→Stage5A/5B→8v2/12v3。
 - 全量审查与执行 gate：`docs/PROJECT_AUDIT_AND_FAST_FINAL_PLAN_20260809_ZH.md`。
 

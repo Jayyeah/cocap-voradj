@@ -61,6 +61,8 @@
 
 真实 25k replay 的完整 CPU batch 路径（10 次）进一步测得：`sample_items` median 0.001372 s、`batch_from_items` median 0.008702 s、完整 `replay.sample` median 0.009744 s（max 0.009930 s）。因此 residual 秒级 update 成本不在 replay/batch 物化，而在 central SAC/attention 计算及当前 GPU 共享；不为追求额外速度擅自引入 AMP/compile 等数值路径变化。
 
+最终 commit 上的可归档 50k/20-repeat 复测见 `artifacts/2026-08-09_focal_replay_speed_validation/focal_sampler_50k_benchmark.json`：`sample_items` median/mean/max=0.001052/0.003559/0.018813 s，role-pool median=0.607 µs；高负载下仍稳定为毫秒级。
+
 回归结果：
 
 - focal/replay/checkpoint 目标测试：16 passed；
