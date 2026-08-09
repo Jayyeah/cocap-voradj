@@ -538,6 +538,17 @@ class JointReplayBuffer:
             "next_id": self._next_id,
             "next_slot": self._next_slot,
             "records": list(self._records.items()),
+            # Dense pool order affects how sampler RNG indexes map to focal
+            # items after ring overwrite. Persist the derived ordering so a
+            # resumed run reproduces the next batch exactly. Older schema-4
+            # payloads omit this optional field and rebuild in record order.
+            "role_items": {
+                bucket: [
+                    (item.slot_id, item.generation_id, item.agent_id)
+                    for item in self._role_items[bucket]
+                ]
+                for bucket in FOCAL_BUCKETS
+            },
             "rng_state": self.rng.bit_generator.state,
             "manifest": dict(manifest),
             "runtime_state": dict(runtime_state or {}),
@@ -556,6 +567,8 @@ class JointReplayBuffer:
         replay = cls(payload["capacity"], payload["max_agents"])
         replay._next_id = int(payload["next_id"])
         replay._next_slot = int(payload.get("next_slot", 0))
+        saved_role_items = payload.get("role_items")
+        expected_role_counts = {bucket: 0 for bucket in FOCAL_BUCKETS}
         for transition_id, transition in payload["records"]:
             replay._records[int(transition_id)] = transition
             replay._order.append(int(transition_id))
@@ -567,12 +580,34 @@ class JointReplayBuffer:
             for agent_id, role in enumerate(transition.agent_role_id):
                 bucket = replay._role_bucket(transition.phase, int(role))
                 if bucket is not None:
-                    replay._add_role_reference(
-                        bucket,
-                        int(transition.slot_id),
-                        int(transition.generation_id),
-                        int(agent_id),
+                    expected_role_counts[bucket] += 1
+                    if saved_role_items is None:
+                        replay._add_role_reference(
+                            bucket,
+                            int(transition.slot_id),
+                            int(transition.generation_id),
+                            int(agent_id),
+                        )
+        if saved_role_items is not None:
+            if set(saved_role_items) != set(FOCAL_BUCKETS):
+                raise ValueError("joint replay role_items buckets mismatch")
+            for bucket in FOCAL_BUCKETS:
+                for raw_key in saved_role_items[bucket]:
+                    if len(raw_key) != 3:
+                        raise ValueError("joint replay role_items key must have three integers")
+                    slot, generation, agent_id = (int(value) for value in raw_key)
+                    if not replay._is_index_valid(slot, generation):
+                        raise ValueError("joint replay role_items contains a stale reference")
+                    transition = replay._records[replay._slot_record[slot]]
+                    expected_bucket = replay._role_bucket(
+                        transition.phase,
+                        int(transition.agent_role_id[agent_id]),
                     )
+                    if expected_bucket != bucket:
+                        raise ValueError("joint replay role_items bucket mismatch")
+                    replay._add_role_reference(bucket, slot, generation, agent_id)
+                if len(replay._role_items[bucket]) != expected_role_counts[bucket]:
+                    raise ValueError("joint replay role_items cardinality mismatch")
         replay.rng.bit_generator.state = payload["rng_state"]
         replay.runtime_state = dict(payload.get("runtime_state", {}) or {})
         return replay

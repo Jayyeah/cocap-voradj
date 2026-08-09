@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from cocap_voradj.training.continuous.joint_replay import (
@@ -80,4 +82,30 @@ def test_focal_sampler_rng_state_round_trip_reproduces_next_batch() -> None:
         (item.slot_id, item.generation_id, item.agent_id, item.bucket_id)
         for item in restored.sample_items(replay)
     ]
+    assert actual == expected
+
+
+def test_replay_reload_preserves_dense_pool_order_after_ring_overwrite(tmp_path: Path) -> None:
+    replay = JointReplayBuffer(capacity=5000, max_agents=1, seed=5)
+    for index in range(5017):
+        _add_pursuing(replay, float(index))
+    sampler = FocalReplaySampler({"pre_capture_pursuing": 64}, seed=6)
+    sampler.sample_items(replay)
+    sampler_state = sampler.state_dict()
+    expected = [
+        (item.slot_id, item.generation_id, item.agent_id, item.bucket_id)
+        for item in sampler.sample_items(replay)
+    ]
+
+    path = tmp_path / "replay.pkl"
+    manifest = {"test": "dense-pool-order"}
+    replay.save(path, manifest)
+    restored_replay = JointReplayBuffer.load(path, manifest)
+    restored_sampler = FocalReplaySampler({"pre_capture_pursuing": 64}, seed=999)
+    restored_sampler.load_state_dict(sampler_state)
+    actual = [
+        (item.slot_id, item.generation_id, item.agent_id, item.bucket_id)
+        for item in restored_sampler.sample_items(restored_replay)
+    ]
+
     assert actual == expected
