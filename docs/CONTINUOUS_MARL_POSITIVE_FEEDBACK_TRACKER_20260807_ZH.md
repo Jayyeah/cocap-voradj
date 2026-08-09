@@ -114,6 +114,7 @@
 - 其余组件：env.step ≈32ms/step；完整单步循环 ≈55ms/step；GPU 0% 利用；内存充足。
 - 修复方向（不改变采样语义）：role pool 增量缓存/索引 + fallback 复用池；预计提速 10–100 倍。
 - 详细数据：`artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`。
+- 交接文档已创建：`docs/PROJECT_HANDOFF_20260809_ZH.md`（项目现状、文档索引、维护训练线、速度瓶颈初步归因与“仅供参考”声明、接手步骤）。
 
 ## 1. 执行纪律摘要
 
