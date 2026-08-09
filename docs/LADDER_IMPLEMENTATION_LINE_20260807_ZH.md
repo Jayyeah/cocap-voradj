@@ -39,13 +39,13 @@ Stage 0 旧 IQN 基线复现
 | 4B capture（moving） | FAIL（历史） | 2 seeds × 25k eval20 capture 0/20、min-dist ≥ baseline；oracle seek 10/10 证明合同可学 |
 | 4C capture（moving+1obs） | FAIL（历史） | 2 seeds × 25k eval20 capture 0/20、min-dist ≥ baseline；400 步 cap 掩盖慢接近 |
 | A 批 reward 变体（A1/A2/A3） | FAIL/参考 | A1/A2 碰撞坍缩、A3 安全但无信号；探索批 Base=A3，GPU 释放后再启动 |
-| 4A/4C 200k 原合同对照 | IN_PROGRESS | IQN 200k 参照已完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A @50k capture 5/20（25%）、4C @50k 0/20 slow approach；当前约 58k/57k（2026-08-09 07:42） |
+| 4A/4C 200k 原合同对照 | IN_PROGRESS | IQN 200k 参照已完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A @50k capture 5/20（25%）、4C @50k 0/20 slow approach；当前 61k/61k（2026-08-09 10:45）；速度瓶颈已定位为自身 focal replay 采样 |
 | 4D-4E | READY | 配置已就绪；4B 有积极信号才提前启动 4D（当前未满足） |
 | 5A/5B | READY | 配置已就绪 |
 | 6A-6C body-frame | READY | 实现/配置/20-step smoke 通过 |
 | 7A1-7A3 / 7B1-7B3 world-frame | READY | 实现/配置/20-step smoke 通过 |
 
-当前位置（2026-08-09）：Stage4A/4C 200k 原合同对照训练中（seed 2026080801，每 25k 评估并回填 `artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`）；完成后输出与 IQN 200k 的完整三线对照结论，再按 gate 决定 4D/4E/5 的推进。
+当前位置（2026-08-09）：Stage4A/4C 200k 原合同对照训练中（seed 2026080801，每 25k 评估并回填 `artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`）；训练速度实测与瓶颈归因见该文件（外部线非主因，`FocalReplaySampler` 池重建为主因）；完成后输出与 IQN 200k 的完整三线对照结论，再按 gate 决定 4D/4E/5 的推进。
 
 当前 formal config：`stage4a_capture_aw.yaml` / `stage4c_capture_aw.yaml`（`configs/experiments/positive_feedback_ladder_20260807/`，200k 对照用原合同，奖励不改）。
 

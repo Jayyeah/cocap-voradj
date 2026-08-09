@@ -98,3 +98,28 @@
 - Stage4C 200k：`artifacts/2026-08-08_200k_reference/stage4c`（cuda:1，12:31 启动，原合同 stage4c_capture_aw.yaml，seed 2026080801）。
 - 评估工具：MASAC 用 `tools/evaluate_ctde_formal.py`（eval20）+ `tools/evaluate_stage4_paired.py`（行为指标）；IQN 用 `tools/evaluate_iqn_scratch_early.py`。
 - 奖励改进参考：A1/A2/A3 结果（A2 冲撞坍缩、A3 无信号、A1 待定）→ 若 A1 也无信号，则 4A/4C 200k 保持原 reward 作为严格对照；后续探索批再考虑熵/warmup 改进。
+
+## 运行速度与瓶颈分析（2026-08-09 10:45）
+
+### 实际训练时间 / 速度
+
+| 线 | 启动 | 25k | 50k | 当前 | 25k→50k | 50k→61k |
+|---|---|---|---|---|---|---|
+| IQN 200k | 08-08 12:12 | 12:32（20 min） | 12:54（+22 min） | 15:08 完成 200k | 13:17 75k（+23 min） | 全程每 25k 20–25 min |
+| Stage4A 200k | 08-08 12:31:40 | 16:15:39（3h44m） | 01:54:10（+9h39m） | 61k @ 10:45 | 6.7k/h → 2.6k/h | ≈1.2k/h |
+| Stage4C 200k | 08-08 12:31:41 | 16:21:58（3h50m） | 03:12:41（+10h51m） | 61k @ 10:45 | 6.5k/h → 2.3k/h | ≈1.5k/h |
+
+速度对照：IQN ≈ 68–75k/h（~19 steps/s，恒定）；4A/4C 平均 ≈ 2.75k/h（0.76 steps/s），且随时间递减。
+
+### 瓶颈归因：外部线 vs 自身原因
+
+结论：**外部线不是主因，MASAC CTDE 训练循环自身是主因。**
+
+1. 外部负载：另一用户 `blenderproc` 进程占用约 55 核（5457% CPU，已运行 2d10h），loadavg≈95/128；但 IQN 200k 与 4A/4C 同时运行在同一外部负载下仍保持 75k/h 恒定，且 4A/4C 各自仅使用 ~1.25 核，128 核机器不缺核 → 外部线存在但不是主要限制。
+2. 自身原因（决定性）：`FocalReplaySampler.sample_items` 每次训练更新（每 4 env steps）耗时随 replay 规模增长：
+   - 25k replay：3.0–5.3s / 次；50k replay：5.5–9.0s / 次。
+   - `_role_pool('pre_capture_pursuing')` 单次重建 0.15s（25k，池 100k items）→ 1.7s（50k，池 200k items）；池大小 = 4 × replay_size。
+   - 因当前其他 focal bucket 全空，fallback 矩阵会多次重建同一个 pursuing 池 → 单次采样 3–9s，完全主导观测到的 ~3s/step。
+3. 其余组件开销：env.step ≈ 32ms/step；[obs stack + central obs + step + geometry] ≈ 55ms/step；GPU 利用率 0%（非 GPU 瓶颈）；内存充足。
+
+修复方向（不改变采样语义）：对 role pool 做增量缓存/索引，或让 fallback 路径复用已构建池；预计单次采样降到 O(batch) 量级，速度可提升 10–100 倍。

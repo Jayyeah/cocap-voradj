@@ -16,7 +16,7 @@
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；IQN 200k 全阶段评估完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A 200k @50k capture 25%；4C 200k @50k 仍 0 capture
+- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；IQN 200k 全阶段评估完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A 200k @50k capture 25%；4C 200k @50k 仍 0 capture；训练速度瓶颈定位为自身 focal replay 采样（外部线非主因）
 - 当前结论：连续 `(a,ω)` MASAC 已覆盖 capture 几何（stationary）与 pure coverage 无/有 obstacle 成功锚点
 - 下一步唯一动作：**4A/4C 200k 逐 25k 评估对照：75k 起每节点评估 eval20、回填 `LEGACY_200K_PROGRESS.md` 并推送；200k 完成后输出与 IQN 200k 的完整对照结论**
 
@@ -93,9 +93,27 @@
 
 ### 运行状态（2026-08-09 05:15）
 
-- Stage4A 200k：PID 527834（cuda:0），metrics 最新 step≈54000；Stage4C 200k：PID 528005（cuda:1），metrics 最新 step≈53000。
+- Stage4A 200k：PID 527834（cuda:0），metrics 最新 step≈61000；Stage4C 200k：PID 528005（cuda:1），metrics 最新 step≈61000。
 - 75k 等待器（session 64955）存活；checkpoint 生成后自动评估 eval20、回填本表并推送。
 - 后续节点：75k/100k/125k/150k/175k/200k 逐点评估 → 回填 `LEGACY_200K_PROGRESS.md` → commit/push。
+
+## 0.5 [2026-08-09 10:45] 训练速度实测与瓶颈归因（已推送）
+
+### 实际训练时间 / 速度
+
+| 线 | 启动 | 25k | 50k | 当前 | 速率 |
+|---|---|---|---|---|---|
+| IQN 200k | 08-08 12:12 | 12:32 | 12:54 | 15:08 完成 200k | 每 25k 20–25 min，≈68–75k/h（~19 steps/s）恒定 |
+| Stage4A 200k | 08-08 12:31:40 | 16:15:39（3h44m） | 01:54:10（+9h39m） | 61k @ 10:45 | 6.7k/h → 2.6k/h → ≈1.2k/h |
+| Stage4C 200k | 08-08 12:31:41 | 16:21:58（3h50m） | 03:12:41（+10h51m） | 61k @ 10:45 | 6.5k/h → 2.3k/h → ≈1.5k/h |
+
+### 归因结论
+
+- 外部线不是主因：另一用户 blenderproc 占 ~55 核（5457% CPU）且全程存在，IQN 200k 在同一外部负载下仍保持 75k/h；4A/4C 各只用 ~1.25 核，128 核不缺资源。
+- 自身主因：`FocalReplaySampler.sample_items` 每次更新（每 4 env steps）耗时 3.0–5.3s（25k replay）→ 5.5–9.0s（50k replay）；`_role_pool` 重建 0.15s（100k items）→ 1.7s（200k items），且 fallback 矩阵会多次重建同一池 → 完全主导 ~3s/step。
+- 其余组件：env.step ≈32ms/step；完整单步循环 ≈55ms/step；GPU 0% 利用；内存充足。
+- 修复方向（不改变采样语义）：role pool 增量缓存/索引 + fallback 复用池；预计提速 10–100 倍。
+- 详细数据：`artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`。
 
 ## 1. 执行纪律摘要
 
