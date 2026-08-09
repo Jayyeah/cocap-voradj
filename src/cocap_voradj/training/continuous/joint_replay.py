@@ -153,7 +153,15 @@ class JointReplayBuffer:
         self._generation: Dict[int, int] = {}
         self._regime_index: MutableMapping[str, set[int]] = defaultdict(set)
         self._event_index: MutableMapping[str, set[int]] = defaultdict(set)
-        self._role_index: Dict[str, Set[Tuple[int, int, int]]] = {name: set() for name in FOCAL_BUCKETS}
+        # Derived role indexes are kept as dense pools plus O(1) key->position
+        # maps. They are rebuilt from records on load and therefore do not
+        # change the persistent replay schema.
+        self._role_index: Dict[str, Dict[Tuple[int, int, int], int]] = {
+            name: {} for name in FOCAL_BUCKETS
+        }
+        self._role_items: Dict[str, List[FocalItem]] = {
+            name: [] for name in FOCAL_BUCKETS
+        }
         self.rng = np.random.default_rng(int(seed))
         self.last_sample_stats: Dict[str, Any] = {}
         self.runtime_state: Dict[str, Any] = {}
@@ -167,7 +175,10 @@ class JointReplayBuffer:
 
     @property
     def focal_index_sizes(self) -> Dict[str, int]:
-        return {name: len(self._role_pool(name)) for name in FOCAL_BUCKETS}
+        # Role references are maintained atomically by add/remove/load, so their
+        # cardinality is already the focal pool size. Materializing every
+        # FocalItem here made a metrics-only query O(replay_size).
+        return {name: len(self._role_index[name]) for name in FOCAL_BUCKETS}
 
     def _validate_obs_tree(self, value: Mapping[str, Any], name: str) -> Dict[str, np.ndarray]:
         if not value:
@@ -210,6 +221,40 @@ class JointReplayBuffer:
         if phase in {"pure_coverage", "pure_recovery", "pure_ce"}:
             return "pure_recovery_coverage"
         return None
+
+    def _add_role_reference(
+        self,
+        bucket: str,
+        slot: int,
+        generation: int,
+        agent_id: int,
+    ) -> None:
+        key = (int(slot), int(generation), int(agent_id))
+        positions = self._role_index[bucket]
+        if key in positions:
+            return
+        positions[key] = len(self._role_items[bucket])
+        self._role_items[bucket].append(
+            FocalItem(key[0], key[1], key[2], bucket)
+        )
+
+    def _remove_role_reference(
+        self,
+        bucket: str,
+        slot: int,
+        generation: int,
+        agent_id: int,
+    ) -> None:
+        key = (int(slot), int(generation), int(agent_id))
+        positions = self._role_index[bucket]
+        position = positions.pop(key, None)
+        if position is None:
+            return
+        items = self._role_items[bucket]
+        last = items.pop()
+        if position < len(items):
+            items[position] = last
+            positions[(last.slot_id, last.generation_id, last.agent_id)] = position
 
     def add(
         self,
@@ -308,7 +353,7 @@ class JointReplayBuffer:
         for agent_id, role in enumerate(roles):
             bucket = self._role_bucket(phase, int(role))
             if bucket is not None:
-                self._role_index[bucket].add((slot, generation, int(agent_id)))
+                self._add_role_reference(bucket, slot, generation, int(agent_id))
         return transition_id
 
     def _remove(self, transition_id: int) -> None:
@@ -320,8 +365,15 @@ class JointReplayBuffer:
         self._regime_index[transition.metadata["regime"]].discard(int(transition_id))
         for event_id in transition.metadata["event_ids"]:
             self._event_index[event_id].discard(int(transition_id))
-        for bucket in self._role_index:
-            self._role_index[bucket] = {item for item in self._role_index[bucket] if item[0] != slot}
+        for agent_id, role in enumerate(transition.agent_role_id):
+            bucket = self._role_bucket(transition.phase, int(role))
+            if bucket is not None:
+                self._remove_role_reference(
+                    bucket,
+                    slot,
+                    int(transition.generation_id),
+                    int(agent_id),
+                )
 
     def _is_index_valid(self, slot_id: int, generation_id: int) -> bool:
         current_id = self._slot_record.get(int(slot_id))
@@ -332,11 +384,7 @@ class JointReplayBuffer:
     def _role_pool(self, bucket: str) -> List[FocalItem]:
         if bucket not in self._role_index:
             raise ValueError(f"unknown focal bucket: {bucket}")
-        return [
-            FocalItem(int(slot), int(gen), int(agent), bucket)
-            for slot, gen, agent in self._role_index[bucket]
-            if self._is_index_valid(slot, gen)
-        ]
+        return self._role_items[bucket]
 
     def _pool(self, kind: str, key: Optional[str] = None) -> List[int]:
         if kind == "uniform":
@@ -518,7 +566,12 @@ class JointReplayBuffer:
             for agent_id, role in enumerate(transition.agent_role_id):
                 bucket = replay._role_bucket(transition.phase, int(role))
                 if bucket is not None:
-                    replay._role_index[bucket].add((int(transition.slot_id), int(transition.generation_id), int(agent_id)))
+                    replay._add_role_reference(
+                        bucket,
+                        int(transition.slot_id),
+                        int(transition.generation_id),
+                        int(agent_id),
+                    )
         replay.rng.bit_generator.state = payload["rng_state"]
         replay.runtime_state = dict(payload.get("runtime_state", {}) or {})
         return replay
@@ -623,15 +676,14 @@ class FocalReplaySampler:
 
     @staticmethod
     def _candidate_pool(
-        replay: JointReplayBuffer,
-        bucket: str,
+        pool: Sequence[FocalItem],
         selected: Set[Tuple[int, int]],
         slot_counts: Dict[int, int],
         max_items: int,
     ) -> List[FocalItem]:
         return [
             item
-            for item in replay._role_pool(bucket)
+            for item in pool
             if (item.slot_id, item.agent_id) not in selected
             and slot_counts.get(item.slot_id, 0) < max_items
         ]
@@ -645,12 +697,9 @@ class FocalReplaySampler:
     ) -> Tuple[List[FocalItem], int]:
         """Draw unique focal items; count with-replacement attempts that collide."""
         chosen: List[FocalItem] = []
-        candidates = [
-            item
-            for item in pool
-            if (item.slot_id, item.agent_id) not in selected
-            and slot_counts.get(item.slot_id, 0) < self.max_focal_items_per_joint_transition
-        ]
+        # sample_items passes an already filtered candidate list. Repeating
+        # this full scan doubled the hot-path work for every primary quota.
+        candidates = pool
         take = min(need, len(candidates))
         if take:
             indexes = self.rng.choice(len(candidates), size=take, replace=False)
@@ -677,6 +726,60 @@ class FocalReplaySampler:
             remaining -= 1
         return chosen, replacement_attempts
 
+    def _draw_sparse_unique(
+        self,
+        pool: Sequence[FocalItem],
+        need: int,
+        selected: Set[Tuple[int, int]],
+        slot_counts: Dict[int, int],
+    ) -> List[FocalItem] | None:
+        """Uniformly draw from a large dense pool without scanning it.
+
+        Rejection sampling is uniform over the currently eligible items. Small
+        or dense-exclusion pools return None so the exact exhaustive path
+        remains available for edge cases.
+        """
+        if need <= 0:
+            return []
+        if len(pool) < max(4096, 16 * int(need)):
+            return None
+        chosen: List[FocalItem] = []
+        used_positions: Set[int] = set()
+        attempts = 0
+        attempt_limit = max(512, 32 * int(need))
+        while len(chosen) < need and attempts < attempt_limit:
+            position = int(self.rng.integers(0, len(pool)))
+            attempts += 1
+            if position in used_positions:
+                continue
+            used_positions.add(position)
+            item = pool[position]
+            if (
+                (item.slot_id, item.agent_id) in selected
+                or slot_counts.get(item.slot_id, 0)
+                >= self.max_focal_items_per_joint_transition
+            ):
+                continue
+            chosen.append(item)
+            selected.add((item.slot_id, item.agent_id))
+            slot_counts[item.slot_id] = slot_counts.get(item.slot_id, 0) + 1
+        if len(chosen) < need:
+            candidates = self._candidate_pool(
+                pool,
+                selected,
+                slot_counts,
+                self.max_focal_items_per_joint_transition,
+            )
+            take = min(need - len(chosen), len(candidates))
+            if take:
+                indexes = self.rng.choice(len(candidates), size=take, replace=False)
+                for position in indexes:
+                    item = candidates[int(position)]
+                    chosen.append(item)
+                    selected.add((item.slot_id, item.agent_id))
+                    slot_counts[item.slot_id] = slot_counts.get(item.slot_id, 0) + 1
+        return chosen
+
     def sample_items(self, replay: JointReplayBuffer, batch_size: int | None = None) -> List[FocalItem]:
         batch_size = self.batch_size if batch_size is None else int(batch_size)
         if batch_size != self.batch_size:
@@ -691,14 +794,37 @@ class FocalReplaySampler:
         replacement_count = 0
         fallback_count = 0
         fallback_targets: List[str] = []
+        # A replay does not mutate during one synchronous sample call. Reuse
+        # each dense role pool across primary and fallback quota paths instead
+        # of rebuilding hundreds of thousands of FocalItem objects.
+        role_pools = {bucket: replay._role_pool(bucket) for bucket in FOCAL_BUCKETS}
         for bucket in FOCAL_BUCKETS:
             target = self.quotas[bucket]
             if target <= 0:
                 continue
             need = target
-            pool = self._candidate_pool(replay, bucket, selected, slot_counts, self.max_focal_items_per_joint_transition)
-            if pool:
-                part, replacements = self._draw_unique(pool, need, selected, slot_counts)
+            raw_pool = role_pools[bucket]
+            sparse_part = self._draw_sparse_unique(
+                raw_pool,
+                need,
+                selected,
+                slot_counts,
+            )
+            if sparse_part is None:
+                pool = self._candidate_pool(
+                    raw_pool,
+                    selected,
+                    slot_counts,
+                    self.max_focal_items_per_joint_transition,
+                )
+                part, replacements = (
+                    self._draw_unique(pool, need, selected, slot_counts)
+                    if pool
+                    else ([], 0)
+                )
+            else:
+                part, replacements = sparse_part, 0
+            if part:
                 chosen.extend(part)
                 actual_counts[bucket] = actual_counts.get(bucket, 0) + len(part)
                 replacement_count += replacements
@@ -708,26 +834,44 @@ class FocalReplaySampler:
             for fallback_bucket in self.fallback_matrix.get(bucket, ()):
                 if need <= 0:
                     break
-                fallback_pool = self._candidate_pool(
-                    replay,
-                    fallback_bucket,
+                raw_fallback_pool = role_pools[fallback_bucket]
+                sparse_part = self._draw_sparse_unique(
+                    raw_fallback_pool,
+                    need,
                     selected,
                     slot_counts,
-                    self.max_focal_items_per_joint_transition,
                 )
-                if not fallback_pool:
+                if sparse_part is None:
+                    fallback_pool = self._candidate_pool(
+                        raw_fallback_pool,
+                        selected,
+                        slot_counts,
+                        self.max_focal_items_per_joint_transition,
+                    )
+                    take = min(need, len(fallback_pool))
+                    indexes = (
+                        self.rng.choice(
+                            len(fallback_pool),
+                            size=take,
+                            replace=False,
+                        )
+                        if take
+                        else []
+                    )
+                    part = [fallback_pool[int(pos)] for pos in indexes]
+                    for item in part:
+                        selected.add((item.slot_id, item.agent_id))
+                        slot_counts[item.slot_id] = slot_counts.get(item.slot_id, 0) + 1
+                else:
+                    part = sparse_part
+                if not part:
                     continue
-                take = min(need, len(fallback_pool))
-                indexes = self.rng.choice(len(fallback_pool), size=take, replace=False)
-                for pos in indexes:
-                    item = fallback_pool[int(pos)]
+                for item in part:
                     chosen.append(item)
-                    selected.add((item.slot_id, item.agent_id))
-                    slot_counts[item.slot_id] = slot_counts.get(item.slot_id, 0) + 1
                     actual_counts[item.bucket_id] = actual_counts.get(item.bucket_id, 0) + 1
                     fallback_count += 1
                     fallback_targets.append(bucket)
-                need -= take
+                need -= len(part)
             if need > 0:
                 raise RuntimeError(
                     f"focal bucket {bucket} cannot be filled through the explicit fallback matrix; "
