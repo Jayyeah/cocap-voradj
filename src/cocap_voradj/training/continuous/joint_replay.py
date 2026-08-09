@@ -542,13 +542,17 @@ class JointReplayBuffer:
             # items after ring overwrite. Persist the derived ordering so a
             # resumed run reproduces the next batch exactly. Older schema-4
             # payloads omit this optional field and rebuild in record order.
-            "role_items": {
-                bucket: [
-                    (item.slot_id, item.generation_id, item.agent_id)
-                    for item in self._role_items[bucket]
-                ]
-                for bucket in FOCAL_BUCKETS
-            },
+            "role_items": (
+                {
+                    bucket: [
+                        (item.slot_id, item.generation_id, item.agent_id)
+                        for item in self._role_items[bucket]
+                    ]
+                    for bucket in FOCAL_BUCKETS
+                }
+                if self._next_id > self.capacity
+                else None
+            ),
             "rng_state": self.rng.bit_generator.state,
             "manifest": dict(manifest),
             "runtime_state": dict(runtime_state or {}),
