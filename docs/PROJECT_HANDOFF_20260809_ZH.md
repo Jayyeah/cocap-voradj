@@ -2,6 +2,8 @@
 
 > 本文档写给下一个接手 Agent / 后续窗口：快速建立项目全貌、找到相关文档、知道当前维护哪些训练线、当前最突出的问题是什么，以及哪些结论需要自行复核。
 > 生成时间：2026-08-09 10:59 CST。生成时仓库 HEAD：`6db5105`，分支 `ladder/implementation-20260807`。
+>
+> **2026-08-09 11:55 增补：** 瓶颈已在隔离分支修复并通过 6k smoke/源码回归，25k 4A gate 正在运行；恢复合同、历史证据、磁盘风险与最终最短路线见 `docs/PROJECT_AUDIT_AND_FAST_FINAL_PLAN_20260809_ZH.md`。本增补优先于下文 10:59 快照中的 waiter/下一步描述。
 
 ## 0. 一句话现状
 
@@ -90,7 +92,7 @@
 ## 5. 运行状态与监控约定
 
 - 训练进程：4A PID 527834（cuda:0）、4C PID 528005（cuda:1）；`Rl+`、~124% CPU、metrics 全 finite、无 OOM。
-- tmux：`stage4a_200k` / `stage4c_200k`（训练输出）；等待器 session 64955 仍在等待 75k checkpoint。
+- tmux：`stage4a_200k` / `stage4c_200k`（原训练输出）及 `stage4a_speedopt_25k`（隔离低优先级验证）；当前未发现先前记录的等待器 session 64955，75k 评估需人工或重新建立监督器。
 - 磁盘：`/` 用量 96%（约 42G 可用），注意 checkpoint/日志增长；`metrics.jsonl` 被 .gitignore 忽略，**不要提交**。
 - 监控频率：约每 10 分钟一次；只查 PID/step/log tail/checkpoint/NaN/OOM/GPU/磁盘。
 - 保存合同：每 25k 原子保存完整 bundle（trainer.pt / replay.pkl / runtime_state.pkl / effective_config.yaml / manifest.json / metrics.jsonl / diagnostic_eval.json）。

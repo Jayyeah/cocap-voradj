@@ -10,15 +10,15 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage4A/4C 原合同 200k 对照训练中（IQN 200k 参照已完成并入；A 批 reward 变体记录保留）**
-- 当前唯一 formal config：`configs/experiments/positive_feedback_ladder_20260807/stage4b_capture_aw.yaml` / `stage4c_capture_aw.yaml`（Stage3A/3B/4A configs 已 PASS，保留为成功锚点）
+- 当前 active stage：**Stage4A/4C 原合同 200k 对照继续运行；隔离 speedopt Stage4A 25k 正在低优先级验证**
+- 当前 formal config：原对照与 speedopt 4A 使用 `stage4a_capture_aw.yaml`，4C 使用 `stage4c_capture_aw.yaml`；配置/seed 不变，speedopt 只修改 focal replay 实现
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：Stage 0/1/2/3A/3B/4A 均 PASS；IQN 200k 全阶段评估完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A 200k @50k capture 25%；4C 200k @50k 仍 0 capture；训练速度瓶颈定位为自身 focal replay 采样（外部线非主因）
-- 当前结论：连续 `(a,ω)` MASAC 已覆盖 capture 几何（stationary）与 pure coverage 无/有 obstacle 成功锚点
-- 下一步唯一动作：**4A/4C 200k 逐 25k 评估对照：75k 起每节点评估 eval20、回填 `LEGACY_200K_PROGRESS.md` 并推送；200k 完成后输出与 IQN 200k 的完整对照结论**
+- 最近 milestone：50k replay 的 focal sample 从旧 5.5–9.0s 降到 median 0.004433s；6k 同配置 4A smoke 251 updates 全 finite；完整源码回归通过
+- 当前结论：连续 `(a,ω)` 已有 stationary capture 几何与 pure-coverage anchor，但 Stage3B/Stage4A 历史 PASS 证据强度需按 0.6 审查结论降级表述；4C/mixed/local/support 尚未建立可靠成功闭环
+- 下一步唯一动作：**完成 speedopt 4A 25k+eval20 gate；通过后在存储前置条件解决的情况下开同配置优化版 4A/4C 追赶，原线在新线超过进度且 gate 通过前继续保留**
 
 ---
 
@@ -115,6 +115,29 @@
 - 修复方向（不改变采样语义）：role pool 增量缓存/索引 + fallback 复用池；预计提速 10–100 倍。
 - 详细数据：`artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`。
 - 交接文档已创建：`docs/PROJECT_HANDOFF_20260809_ZH.md`（项目现状、文档索引、维护训练线、速度瓶颈初步归因与“仅供参考”声明、接手步骤）。
+
+## 0.6 [2026-08-09 11:55] 独立提速实现、恢复契约修复与全面审查
+
+- 隔离 worktree/branch：`/home/yjq/rl/CoCap1/cocap-voradj-speedopt` / `perf/focal-replay-20260809`；原训练进程未改代码、未暂停。
+- `4d88e15`：dense role pool + O(1) swap-delete + 大池均匀稀疏采样；真实 50k replay 20 次 median 0.004433s，相对旧 5.5–9.0s 约 1240–2030×。
+- 语义边界：quota/fallback/unique pair/max-per-transition/均匀分布保持；大池 RNG 映射变化，不宣称逐 transition bit-identical。
+- `0e7de8d`：持久化 runner/focal RNG，恢复累计 update/metrics/counts；修正 snapshot exact checkpoint 缩进与重复 replay 写盘。
+- `16d7e19`：持久化 dense focal pool 顺序，补齐 ring overwrite 后 sampler 下一 batch 精确恢复。
+- `2300725`：终点 checkpoint/eval 只执行一次，standalone trainer/replay 原子 hardlink 到 final bundle，避免终点重复评估和第二份完整 replay。
+- `43e7514`：终点不走 periodic-save 的显式 gate 测试；`2f7e1fa`：仅 ring 实际回绕后保存 pool 顺序，当前 200k/250k capacity 不增 checkpoint 元数据。
+- 测试：目标用例累计 16 passed；最终代码完整 154 passed，隔离 worktree 缺历史 `runs/` 导致的 2 项在原数据路径复核 4 passed。
+- 6k smoke：6000 transitions、251 updates、`all_finite=true`，训练产物 11:43:32 完整落盘，eval4 于 11:45:04 完成。
+- 独立 6k smoke 与 25k run 的前 1k–6k metrics 字节级一致（SHA256 `9925e0e5…006a7`），相同 config/seed 可确定复现。
+- 最新 final-save CPU 1-step smoke：仅一个 bundle；standalone trainer/replay 与 bundle inode 相同（link count=2），runtime RNG 状态齐全，实际只占一份模型/replay。
+- 25k gate：11:52:49 启动 `stage4a_speedopt_25k`，PID 769401/cuda:0/nice10，原 config/seed，最终 eval20；11:55 已到 3k，原 4A/4C 仍各约 124% CPU，未见受扰。
+- 原线最新审计快照：4A/4C 均 63k；4A Q1=-16.52/critic pre-clip grad=1111，4C Q1=-7.12/grad=1917。虽 finite，但 critic 长期严重 clipping，下一 checkpoint 必须做 Q/TD/Q-ranking 诊断，当前不改冻结参数。
+- 证据更正：Stage3A PASS 有 seed1+seed3 支撑但完成文档漏 seed3；Stage3B 仅一个 fixed run，应视为 provisional/OPTIMISTIC_PARTIAL；Stage4A 25k 是安全/几何 anchor，capture 未超过 random；A3 是安全慢接近信号，不是“完全无信号”；IQN 完整合同与简化 4A 不能作算法优劣直接对照。
+- 当前 tmux 未发现台账先前声称的 waiter/session 64955；75k 评估不能假设自动执行。
+- 存储 blocker：根盘仅余约 41GiB，现有双线后续 checkpoint 估计已超过剩余容量；`/data/disk1`/`disk2` 空间充足但当前用户无写权限。启动优化版双 200k 前需获得专用目录权限或用户批准精确归档清单。
+- residual 资源上限：Blender PID 64227 约占 55 核且同时使用两张 GPU（各约 6.3GiB）；它不是旧 replay-size 线性恶化的主因，但 sampler 修复后会限制 trainer/GPU 稳态吞吐，外部进程不做干预。
+- residual replay 排除：真实 25k replay 上 `sample_items`/batch materialize/完整 CPU `replay.sample` median=1.37/8.70/9.74ms；剩余秒级 update 属 central SAC/attention + GPU 共享，不引入 AMP/compile 改变数值路径。
+- 用户最新边界：任何连续动作均可；Stage6/7 不再阻塞最终路线，关键路径改为 `(a,ω)` Stage4D/4E→Stage5A/5B→8v2/12v3。
+- 全量审查与执行 gate：`docs/PROJECT_AUDIT_AND_FAST_FINAL_PLAN_20260809_ZH.md`。
 
 ## 1. 执行纪律摘要
 
