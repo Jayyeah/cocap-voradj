@@ -25,7 +25,7 @@
 
 训练每 4 env steps 更新一次，所以采样开销完全主导原线后半段吞吐。环境本身约 32 ms/step，包含 observation/central state/geometry 的循环约 55 ms/step，不是 replay 规模相关的减速来源。
 
-外部 Blender PID 64227 当前约占 55 CPU cores，且在两张 GPU 上各保留约 6.3 GiB。它不能解释旧线随 replay 增大而线性恶化，故不是原主因；但 sampler 降到毫秒后，trainer/GPU 成为主路径，Blender 与原训练进程的 GPU 共享会限制优化线端到端上限。外部进程不属于本项目，不做停止或改优先级操作。
+外部 Blender PID 64227 当前约占 55 CPU cores，且在两张 GPU 上各保留约 6.3 GiB。它不能解释旧线随 replay 增大而线性恶化，故不是原主因；sampler 降到毫秒后，trainer/GPU 成为主路径，Blender 与原训练进程构成共享背景，可能限制优化线端到端上限。外部进程不属于本项目，不做停止或改优先级操作。
 
 ### 1.2 实现
 
@@ -61,6 +61,8 @@
 
 真实 25k replay 的完整 CPU batch 路径（10 次）进一步测得：`sample_items` median 0.001372 s、`batch_from_items` median 0.008702 s、完整 `replay.sample` median 0.009744 s（max 0.009930 s）。因此 residual 秒级 update 成本不在 replay/batch 物化，而在 central SAC/attention 计算及当前 GPU 共享；不为追求额外速度擅自引入 AMP/compile 等数值路径变化。
 
+60 秒、5 秒间隔的设备级采样中，GPU0 SM 连续为 95–100%、功耗 249–293W；GPU1 多数为 0%，一次 burst 为 100%。这证明 speedopt 已把 central trainer 推到 GPU-compute 主路径；设备级计数不能拆分 trainer/Blender 的各自贡献，故不把 residual 唯一归因给外部进程。
+
 最终 commit 上的可归档 50k/20-repeat 复测见 `artifacts/2026-08-09_focal_replay_speed_validation/focal_sampler_50k_benchmark.json`：`sample_items` median/mean/max=0.001052/0.003559/0.018813 s，role-pool median=0.607 µs；高负载下仍稳定为毫秒级。
 
 回归结果：
@@ -81,6 +83,8 @@
 ### 1.4 25k/迁移 gate
 
 正在运行：tmux `stage4a_speedopt_25k`，PID 769401，cuda:0，`nice=10`，原 Stage4A config/seed 2026080801，25k 后 eval20。
+
+12:26 快照：11k transitions / 1501 updates 全 finite，warmup 后约 14–15k steps/h；原 4A 同期从 63k 前进到 64k，原 4C 保持 63k 慢速运行，两个原进程均存活且 CPU 占用不降。该验证线继续在后台跑满 25k。
 
 通过必须同时满足：
 
@@ -169,6 +173,16 @@ local discovery
 - 正常策略：新线 checkpoint step 大于原线实际 step，且最新 checkpoint gate 通过后，优雅停止对应原线并保留其最后完整 checkpoint。
 - 快速替换例外：25k 端到端 ≥8×、两线资源互不干扰、行为无新增退化，同时存储无法支撑追赶时，可在 25k 完整 bundle 后直接停原线。
 - 4A/4C 到 200k 后选“历史最佳 checkpoint”，不机械选择 final；IQN 的 125k 峰值后回落已证明必须按 checkpoint 选优。
+
+存储可写后使用以下同合同命令（`<writable-artifact-root>` 必须替换为数据盘专用目录）；追赶阶段保持 `nice=10`：
+
+```bash
+cd /home/yjq/rl/CoCap1/cocap-voradj-speedopt
+nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage4a_capture_aw.yaml --scenes capture --seed 2026080801 --total-steps 200000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:0 --tag stage4a_speedopt_200k_20260809 --artifact-root <writable-artifact-root>/stage4a
+nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --config configs/experiments/positive_feedback_ladder_20260807/stage4c_capture_aw.yaml --scenes capture --seed 2026080801 --total-steps 200000 --screen-episodes 0 --diagnostic-eval-episodes 4 --device cuda:1 --tag stage4c_speedopt_200k_20260809 --artifact-root <writable-artifact-root>/stage4c
+```
+
+实际启动时分别放入独立 tmux，stdout 指向各自 artifact root；不得复用 tag 或覆盖原线目录。
 
 ### P3：完成 capture 难度阶梯
 

@@ -129,13 +129,14 @@
 - 6k smoke：6000 transitions、251 updates、`all_finite=true`，训练产物 11:43:32 完整落盘，eval4 于 11:45:04 完成。
 - 独立 6k smoke 与 25k run 的前 1k–6k metrics 字节级一致（SHA256 `9925e0e5…006a7`），相同 config/seed 可确定复现。
 - 最新 final-save CPU 1-step smoke：仅一个 bundle；standalone trainer/replay 与 bundle inode 相同（link count=2），runtime RNG 状态齐全，实际只占一份模型/replay。
-- 25k gate：11:52:49 启动 `stage4a_speedopt_25k`，PID 769401/cuda:0/nice10，原 config/seed，最终 eval20；11:55 已到 3k，原 4A/4C 仍各约 124% CPU，未见受扰。
+- 25k gate：11:52:49 启动 `stage4a_speedopt_25k`，PID 769401/cuda:0/nice10，原 config/seed，最终 eval20；12:26 已到 11k/1501 updates、全 finite，warmup 后约 14–15k/h。原 4A 同期 63k→64k，4C 保持 63k 慢速运行，未见进程停摆。
 - 原线最新审计快照：4A/4C 均 63k；4A Q1=-16.52/critic pre-clip grad=1111，4C Q1=-7.12/grad=1917。虽 finite，但 critic 长期严重 clipping，下一 checkpoint 必须做 Q/TD/Q-ranking 诊断，当前不改冻结参数。
 - 证据更正：Stage3A PASS 有 seed1+seed3 支撑但完成文档漏 seed3；Stage3B 仅一个 fixed run，应视为 provisional/OPTIMISTIC_PARTIAL；Stage4A 25k 是安全/几何 anchor，capture 未超过 random；A3 是安全慢接近信号，不是“完全无信号”；IQN 完整合同与简化 4A 不能作算法优劣直接对照。
 - 当前 tmux 未发现台账先前声称的 waiter/session 64955；75k 评估不能假设自动执行。
 - 存储 blocker：根盘仅余约 41GiB，现有双线后续 checkpoint 估计已超过剩余容量；`/data/disk1`/`disk2` 空间充足但当前用户无写权限。启动优化版双 200k 前需获得专用目录权限或用户批准精确归档清单。
-- residual 资源上限：Blender PID 64227 约占 55 核且同时使用两张 GPU（各约 6.3GiB）；它不是旧 replay-size 线性恶化的主因，但 sampler 修复后会限制 trainer/GPU 稳态吞吐，外部进程不做干预。
+- residual 资源上限：Blender PID 64227 约占 55 核且同时使用两张 GPU（各约 6.3GiB）；它不是旧 replay-size 线性恶化的主因，只是 sampler 修复后的共享背景，外部进程不做干预。
 - residual replay 排除：真实 25k replay 上 `sample_items`/batch materialize/完整 CPU `replay.sample` median=1.37/8.70/9.74ms；剩余秒级 update 属 central SAC/attention + GPU 共享，不引入 AMP/compile 改变数值路径。
+- 60 秒 GPU dmon：GPU0 SM 连续 95–100%/249–293W，GPU1 多数 0%、一次 100% burst；speedopt 已转为 GPU-compute 主路径，设备计数不能把 residual 唯一归因给某个共享进程。
 - 最终 50k/20-repeat 基准已归档：`focal_sampler_50k_benchmark.json`，sample median/mean/max=1.052/3.559/18.813ms，role-pool median=0.607µs。
 - 用户最新边界：任何连续动作均可；Stage6/7 不再阻塞最终路线，关键路径改为 `(a,ω)` Stage4D/4E→Stage5A/5B→8v2/12v3。
 - 全量审查与执行 gate：`docs/PROJECT_AUDIT_AND_FAST_FINAL_PLAN_20260809_ZH.md`。
