@@ -9,6 +9,7 @@ import pytest
 from cocap_voradj.training.continuous.formal_config import resolve_formal_config
 from cocap_voradj.training.continuous.joint_replay import FocalReplaySampler, JointReplayBuffer
 from tools.run_continuous_ctde_training import (
+    _link_or_copy_atomic,
     _make_trainer,
     _runtime_state,
     _save_checkpoint_bundle,
@@ -149,6 +150,18 @@ def test_diagnostic_rollout_cap_is_400() -> None:
     assert config["training"]["checkpoint_interval_env_steps"] == 25000
     assert config["training"]["metrics_flush_interval_env_steps"] == 1000
     assert config["training"]["diagnostic_eval_interval_env_steps"] == 25000
+
+
+def test_standalone_checkpoint_uses_atomic_hardlink(tmp_path: Path) -> None:
+    source = tmp_path / "bundle" / "replay.pkl"
+    source.parent.mkdir()
+    source.write_bytes(b"replay-payload")
+    destination = tmp_path / "run_replay.pkl"
+
+    _link_or_copy_atomic(source, destination)
+
+    assert destination.read_bytes() == b"replay-payload"
+    assert source.samefile(destination)
 
 
 def test_runtime_state_preserves_runner_and_focal_sampler_rng() -> None:

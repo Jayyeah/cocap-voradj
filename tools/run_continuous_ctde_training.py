@@ -81,6 +81,19 @@ def _replace_dir_atomic(tmp_dir: Path, final_dir: Path) -> None:
         shutil.rmtree(old_dir)
 
 
+def _link_or_copy_atomic(source: Path, destination: Path) -> None:
+    """Expose a bundle file under the legacy standalone name without duplication."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    tmp = destination.with_name(f"{destination.name}.tmp_{os.getpid()}")
+    if tmp.exists():
+        tmp.unlink()
+    try:
+        os.link(source, tmp)
+    except OSError:
+        shutil.copy2(source, tmp)
+    os.replace(tmp, destination)
+
+
 def _save_checkpoint_bundle(
     artifact_dir: Path,
     step: int,
@@ -1197,7 +1210,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
-                if transition_count == 1 or transition_count % checkpoint_interval == 0:
+                if (
+                    transition_count < total_steps
+                    and (transition_count == 1 or transition_count % checkpoint_interval == 0)
+                ):
                     diagnostic_eval = (
                         _screen(
                             trainer,
@@ -1413,7 +1429,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
-            if transition_count == 1 or transition_count % checkpoint_interval == 0:
+            if (
+                transition_count < total_steps
+                and (transition_count == 1 or transition_count % checkpoint_interval == 0)
+            ):
                 diagnostic_eval = (
                     _screen(
                         trainer,
@@ -1475,7 +1494,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             yaml.safe_dump(scene_config(root_config, scene), sort_keys=False),
             encoding="utf-8",
         )
-    checkpoint = artifact_dir / f"{args.tag}_step{transition_count}.pt"
     runtime_state = _runtime_state(
         transition_count=transition_count,
         update_count=update_count,
@@ -1491,10 +1509,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         all_finite=all_finite_so_far,
         update_metrics_tail=updates,
     )
-    trainer.save_checkpoint(checkpoint, manifest, runtime_state=runtime_state)
-    replay_path = artifact_dir / f"{args.tag}_replay.pkl"
-    replay.save(replay_path, manifest, runtime_state=runtime_state)
-
     screening = (
         _screen(
             trainer,
@@ -1532,6 +1546,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         final_diagnostic_eval,
         overwrite=True,
     )
+    checkpoint = artifact_dir / f"{args.tag}_step{transition_count}.pt"
+    replay_path = artifact_dir / f"{args.tag}_replay.pkl"
+    _link_or_copy_atomic(final_bundle / "trainer.pt", checkpoint)
+    _link_or_copy_atomic(final_bundle / "replay.pkl", replay_path)
     report = {
         "schema_version": 1,
         "kind": "continuous_ctde_formal",
