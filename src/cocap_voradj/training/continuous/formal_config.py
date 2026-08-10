@@ -23,6 +23,47 @@ def _require_mapping(value: Any, name: str) -> Dict[str, Any]:
         raise ValueError(f"{name} must be a mapping in the formal config")
     return value
 
+def training_mode_contract(config: Dict[str, Any], label: str = "formal config") -> Dict[str, Any]:
+    """Resolve and validate the optimizer/replay unit without changing legacy defaults."""
+    training = _require_mapping(config.get("training"), "training")
+    focal_training = bool(training.get("focal_training", True))
+    optimizer_unit = str(
+        training.get(
+            "optimizer_unit",
+            "focal_agent_item" if focal_training else "",
+        )
+    ).strip()
+    replay_sampling = str(
+        training.get(
+            "replay_sampling",
+            "focal_role_balanced" if focal_training else "",
+        )
+    ).strip()
+    if focal_training:
+        if optimizer_unit != "focal_agent_item":
+            raise ValueError(f"{label}: focal training requires optimizer_unit=focal_agent_item")
+        if replay_sampling != "focal_role_balanced":
+            raise ValueError(f"{label}: focal training requires replay_sampling=focal_role_balanced")
+        quotas = _require_mapping(training.get("focal_quota"), "training.focal_quota")
+        if sum(int(value) for value in quotas.values()) != int(training.get("batch_size", 0)):
+            raise ValueError(f"{label}: focal quotas must sum to training.batch_size")
+    else:
+        if optimizer_unit != "joint_transition_all_active_agents":
+            raise ValueError(
+                f"{label}: all-agent training requires "
+                "optimizer_unit=joint_transition_all_active_agents"
+            )
+        if replay_sampling != "uniform_joint":
+            raise ValueError(f"{label}: all-agent training requires replay_sampling=uniform_joint")
+        if training.get("focal_quota") not in (None, {}):
+            raise ValueError(f"{label}: all-agent training must explicitly disable focal_quota")
+    return {
+        "optimizer_unit": optimizer_unit,
+        "replay_sampling": replay_sampling,
+        "focal_training": focal_training,
+    }
+
+
 
 def validate_formal_config(config: Dict[str, Any], path: str | Path | None = None) -> Dict[str, Any]:
     """Validate the frozen formal CTDE contract and reject legacy/local paths."""
@@ -64,11 +105,12 @@ def validate_formal_config(config: Dict[str, Any], path: str | Path | None = Non
     _require_mapping(config.get("replay"), "replay")
     training = _require_mapping(config.get("training"), "training")
     if int(training.get("batch_size", 0)) != 128:
-        raise ValueError(f"{label}: training.batch_size must be 128 focal items")
+        raise ValueError(f"{label}: training.batch_size must be 128")
     if abs(float(training.get("grad_clip_norm", 0.0)) - 0.5) > 1e-9:
         raise ValueError(f"{label}: training.grad_clip_norm must be 0.5")
     if int(training.get("max_agents", 0)) != 12:
         raise ValueError(f"{label}: training.max_agents must be 12")
+    training_mode_contract(config, label)
     _require_mapping(config.get("tasks"), "tasks")
     evaluation = _require_mapping(config.get("evaluation"), "evaluation")
     if int(evaluation.get("diagnostic_rollout_cap", 0)) != 400:
@@ -128,6 +170,7 @@ def validate_ladder_config(config: Dict[str, Any], path: str | Path | None = Non
         raise ValueError(f"{label}: training.grad_clip_norm must be 0.5")
     if int(training.get("max_agents", 0)) != 12:
         raise ValueError(f"{label}: training.max_agents must be 12")
+    training_mode_contract(config, label)
     _require_mapping(config.get("tasks"), "tasks")
     evaluation = _require_mapping(config.get("evaluation"), "evaluation")
     if int(evaluation.get("diagnostic_rollout_cap", 0)) != 400:

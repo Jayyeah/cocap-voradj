@@ -2,8 +2,8 @@
 
 The runner deliberately has no local-critic, smoke, or CLI algorithm override
 path.  It resolves exactly one formal YAML, deep-merges ``tasks.<scene>``,
-stores one joint transition per environment step, and updates on focal-agent
-items produced by ``FocalReplaySampler``.
+stores one joint transition per environment step, and uses the manifest-bound
+focal-item or standard all-active-agent optimizer unit.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ import os
 import pickle
 import random
 import shutil
+import time
 from collections import deque
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Mapping, Optional, Tuple
@@ -40,11 +41,13 @@ from cocap_voradj.training.continuous.formal_config import (
     resolve_formal_config,
     resolve_ladder_config,
     scene_config,
+    training_mode_contract,
 )
 from cocap_voradj.training.continuous.joint_replay import (
     FOCAL_BUCKETS,
     FocalReplaySampler,
     JointReplayBuffer,
+    UniformJointReplaySampler,
 )
 from cocap_voradj.training.trainer import load_config, set_global_config
 
@@ -222,15 +225,16 @@ def _runtime_state(
     recovery_pool: Deque[Dict[str, Any]],
     metrics_history: List[Dict[str, Any]],
     runner_rng: np.random.Generator,
-    focal_sampler: FocalReplaySampler,
+    focal_sampler: Optional[FocalReplaySampler],
     scene_counts: Mapping[str, int],
     origin_counts: Mapping[str, int],
     sampling_stats: Mapping[str, Any],
     all_finite: bool,
     update_metrics_tail: List[Dict[str, float]],
+    training_mode: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the episode-boundary state needed for a faithful continuation."""
-    return {
+    state = {
         "runtime_state_schema_version": 2,
         "transition_count": int(transition_count),
         "update_count": int(update_count),
@@ -239,13 +243,17 @@ def _runtime_state(
         "recovery_pool": list(recovery_pool),
         "metrics_history": list(metrics_history),
         "runner_rng_state": copy.deepcopy(runner_rng.bit_generator.state),
-        "focal_sampler_state": focal_sampler.state_dict(),
         "scene_counts": {str(key): int(value) for key, value in scene_counts.items()},
         "origin_counts": {str(key): int(value) for key, value in origin_counts.items()},
         "sampling_stats": copy.deepcopy(dict(sampling_stats)),
         "all_finite": bool(all_finite),
         "update_metrics_tail": copy.deepcopy(list(update_metrics_tail[-10:])),
+        "training_mode": copy.deepcopy(dict(training_mode or {})),
     }
+    if focal_sampler is not None:
+        state["focal_sampler_state"] = focal_sampler.state_dict()
+    return state
+
 
 
 def _implementation_hash() -> str:
@@ -547,6 +555,22 @@ def _manifest(
     config_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     source = Path(config_path).resolve() if config_path else FORMAL_CONFIG_PATH
+    mode = training_mode_contract(config)
+    configured_scenes = (config.get("training", {}) or {}).get("scene_cycle", SCENES)
+    if isinstance(configured_scenes, str):
+        configured_scenes = [
+            item.strip() for item in configured_scenes.split(",") if item.strip()
+        ]
+    resume_rng = [
+        "torch_cpu",
+        "torch_cuda",
+        "python",
+        "numpy",
+        "replay_numpy",
+        "runner_numpy",
+    ]
+    if bool(mode["focal_training"]):
+        resume_rng.append("focal_sampler_numpy")
     return {
         "manifest_schema_version": 3,
         "config": str(source.relative_to(ROOT)),
@@ -563,24 +587,21 @@ def _manifest(
         "batch_size": int(config["training"]["batch_size"]),
         "grad_clip_norm": float(config["training"]["grad_clip_norm"]),
         "seed": int(seed),
+        "optimizer_unit": str(mode["optimizer_unit"]),
+        "replay_sampling": str(mode["replay_sampling"]),
+        "focal_training": bool(mode["focal_training"]),
+        "scene_cycle": [str(item) for item in configured_scenes],
         "effective_config_hashes": scene_hashes,
         "implementation_hash": _implementation_hash(),
         "trainer_contract": _trainer_contract(trainer),
         "resume_contract": {
-            "rng": [
-                "torch_cpu",
-                "torch_cuda",
-                "python",
-                "numpy",
-                "replay_numpy",
-                "runner_numpy",
-                "focal_sampler_numpy",
-            ],
+            "rng": resume_rng,
             "scene_index": "saved",
             "exact_env_state": False,
             "continuation_mode": "seeded_episode_boundary",
         },
     }
+
 
 
 def _derive_roles(
@@ -890,6 +911,8 @@ def _metrics_record(
     action_a: Sequence[float] = (),
     action_w: Sequence[float] = (),
     geometry: Sequence[Dict[str, Any]] = (),
+    window_wall_time_s: float = 0.0,
+    window_env_steps: int = 0,
 ) -> Dict[str, Any]:
     record: Dict[str, Any] = {
         "step": int(step),
@@ -897,6 +920,11 @@ def _metrics_record(
         "replay_size": len(replay),
         "focal_index_sizes": replay.focal_index_sizes,
         "sampling_stats": dict(sampling_stats or {}),
+        "window_wall_time_s": float(window_wall_time_s),
+        "window_env_steps": int(window_env_steps),
+        "env_steps_per_second": float(
+            window_env_steps / max(window_wall_time_s, 1e-12)
+        ),
         "action_norm_mean": float(np.mean(action_norms)) if action_norms else 0.0,
         "action_norm_std": float(np.std(action_norms)) if action_norms else 0.0,
         "action_norm_p5": _percentile(action_norms, 5),
@@ -1054,6 +1082,7 @@ def _reset_from_snapshot(
 
 
 def run(args: argparse.Namespace) -> Dict[str, Any]:
+    run_started_at = time.perf_counter()
     loaded = load_config(str(args.config))
     action_mode = str(loaded.get("action", {}).get("mode", "")).strip().lower()
     is_ladder = str((loaded.get("experiment_metadata", {}) or {}).get("series_label", "")).startswith("positive_feedback_ladder")
@@ -1066,6 +1095,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         root_config = resolve_ladder_config(args.config)
     else:
         root_config = resolve_formal_config(args.config)
+    training_mode = training_mode_contract(root_config)
     _set_seed(args.seed)
     if args.legacy_encoder_checkpoint:
         root_config.setdefault("initialization", {})["actor_encoder"] = {
@@ -1152,18 +1182,32 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         transition_count = 0
         scene_index = 0
 
-    quotas = dict(root_config["training"]["focal_quota"])
-    sampler = FocalReplaySampler(
-        quotas,
-        max_focal_items_per_joint_transition=int(root_config["training"]["max_focal_items_per_joint_transition"]),
-        fallback_matrix=root_config["training"].get("fallback_matrix", None),
-        seed=args.seed,
-    )
+    focal_sampler: Optional[FocalReplaySampler] = None
+    if bool(training_mode["focal_training"]):
+        quotas = dict(root_config["training"]["focal_quota"])
+        focal_sampler = FocalReplaySampler(
+            quotas,
+            max_focal_items_per_joint_transition=int(
+                root_config["training"]["max_focal_items_per_joint_transition"]
+            ),
+            fallback_matrix=root_config["training"].get("fallback_matrix", None),
+            seed=args.seed,
+        )
+        sampler = focal_sampler
+    else:
+        sampler = UniformJointReplaySampler()
+
     if resume_info is not None:
-        if "runner_rng_state" not in runtime_state or "focal_sampler_state" not in runtime_state:
-            raise ValueError("resume checkpoint is missing runner/focal sampler RNG state")
+        if "runner_rng_state" not in runtime_state:
+            raise ValueError("resume checkpoint is missing runner RNG state")
         rng.bit_generator.state = copy.deepcopy(runtime_state["runner_rng_state"])
-        sampler.load_state_dict(runtime_state["focal_sampler_state"])
+        if focal_sampler is not None:
+            if "focal_sampler_state" not in runtime_state:
+                raise ValueError("focal resume checkpoint is missing sampler RNG state")
+            focal_sampler.load_state_dict(runtime_state["focal_sampler_state"])
+        elif "focal_sampler_state" in runtime_state:
+            raise ValueError("all-agent resume unexpectedly contains focal sampler state")
+
     total_steps = int(args.total_steps if args.total_steps is not None else root_config["training"]["total_env_steps"])
     warmup = int(root_config["training"]["warmup_joint_transitions"])
     update_every = int(root_config["training"]["update_every_env_steps"])
@@ -1200,6 +1244,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     window_collision_count = 0
     transition_attempt_count = 0
     update_count = int(runtime_state.get("update_count", 0))
+    window_start_step = int(transition_count)
+    window_started_at = time.perf_counter()
     updates: List[Dict[str, float]] = list(runtime_state.get("update_metrics_tail", []))
     window_updates: List[Dict[str, float]] = []
     metrics_history: List[Dict[str, Any]] = list(runtime_state.get("metrics_history", []))
@@ -1362,6 +1408,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         action_a=window_action_a,
                         action_w=window_action_w,
                         geometry=window_geometry,
+                        window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
+                        window_env_steps=transition_count - window_start_step,
                     )
                     metrics_history.append(record)
                     _append_metrics_jsonl(artifact_dir / "metrics.jsonl", record)
@@ -1374,6 +1422,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
+                    window_start_step = int(transition_count)
+                    window_started_at = time.perf_counter()
                 if _periodic_checkpoint_due(
                     transition_count, total_steps, checkpoint_interval
                 ):
@@ -1398,7 +1448,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         recovery_pool=recovery_pool,
                         metrics_history=metrics_history,
                         runner_rng=rng,
-                        focal_sampler=sampler,
+                        focal_sampler=focal_sampler,
+                        training_mode=training_mode,
                         scene_counts=scene_counts,
                         origin_counts=origin_counts,
                         sampling_stats=sampling_stats_accum,
@@ -1593,6 +1644,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     action_a=window_action_a,
                     action_w=window_action_w,
                     geometry=window_geometry,
+                    window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
+                    window_env_steps=transition_count - window_start_step,
                 )
                 metrics_history.append(record)
                 _append_metrics_jsonl(artifact_dir / "metrics.jsonl", record)
@@ -1605,6 +1658,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
+                window_start_step = int(transition_count)
+                window_started_at = time.perf_counter()
             if _periodic_checkpoint_due(
                 transition_count, total_steps, checkpoint_interval
             ):
@@ -1629,7 +1684,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     recovery_pool=recovery_pool,
                     metrics_history=metrics_history,
                     runner_rng=rng,
-                    focal_sampler=sampler,
+                    focal_sampler=focal_sampler,
+                    training_mode=training_mode,
                     scene_counts=scene_counts,
                     origin_counts=origin_counts,
                     sampling_stats=sampling_stats_accum,
@@ -1690,7 +1746,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         recovery_pool=recovery_pool,
         metrics_history=metrics_history,
         runner_rng=rng,
-        focal_sampler=sampler,
+        focal_sampler=focal_sampler,
+        training_mode=training_mode,
         scene_counts=scene_counts,
         origin_counts=origin_counts,
         sampling_stats=sampling_stats_accum,
@@ -1740,11 +1797,15 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     replay_path = artifact_dir / f"{args.tag}_replay.pkl"
     _link_or_copy_atomic(final_bundle / "trainer.pt", checkpoint)
     _link_or_copy_atomic(final_bundle / "replay.pkl", replay_path)
+    run_wall_time_s = max(time.perf_counter() - run_started_at, 1e-12)
     report = {
         "schema_version": 1,
         "kind": "continuous_ctde_formal",
         "algorithm": root_config["algorithm"],
         "critic_mode": root_config["critic_mode"],
+        "optimizer_unit": str(training_mode["optimizer_unit"]),
+        "replay_sampling": str(training_mode["replay_sampling"]),
+        "focal_training": bool(training_mode["focal_training"]),
         "effective_config_path": str(effective_path),
         "scene_config_hashes": scene_hashes,
         "seed": args.seed,
@@ -1774,6 +1835,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "truncated_transition_count": truncated_count,
         "collision_transition_count": collision_count,
         "transition_attempt_count": transition_attempt_count,
+        "run_wall_time_s": float(run_wall_time_s),
+        "env_steps_per_second": float(transition_count / run_wall_time_s),
         "sampling_stats": sampling_stats_accum,
         "screening": screening,
         "manifest": manifest,

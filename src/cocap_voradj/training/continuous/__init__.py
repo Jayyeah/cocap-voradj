@@ -5,6 +5,7 @@ from cocap_voradj.training.continuous.joint_replay import (
     FocalReplaySampler,
     JointReplayBuffer,
     JointReplaySampler,
+    UniformJointReplaySampler,
     JointTransition,
 )
 from cocap_voradj.training.continuous.local_sac import LocalSACConfig, LocalSACTrainer
@@ -14,6 +15,7 @@ __all__ = [
     "FocalReplaySampler",
     "JointReplayBuffer",
     "JointReplaySampler",
+    "UniformJointReplaySampler",
     "JointTransition",
     "LocalSACConfig",
     "LocalSACTrainer",
@@ -25,6 +27,7 @@ from cocap_voradj.training.continuous.joint_replay import (
     FocalReplaySampler,
     JointReplayBuffer,
     JointReplaySampler,
+    UniformJointReplaySampler,
 )
 from cocap_voradj.training.continuous.local_sac import LocalSACConfig, LocalSACTrainer
 
@@ -36,6 +39,7 @@ __all__ = [
     "FocalReplaySampler",
     "JointReplayBuffer",
     "JointReplaySampler",
+    "UniformJointReplaySampler",
     "LocalSACConfig",
     "LocalSACTrainer",
 ]

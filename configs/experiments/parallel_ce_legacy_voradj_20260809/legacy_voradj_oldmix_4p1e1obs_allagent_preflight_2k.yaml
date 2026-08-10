@@ -1,0 +1,14 @@
+extends: ./legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent.yaml
+
+run_name: legacy_voradj_oldmix_allagent_preflight_2k_20260810
+
+# Preflight-only: exercise the formal optimizer after a short replay fill.
+# The 200k Baseline B config remains unchanged and keeps its original warmup.
+training:
+  total_env_steps: 2000
+  warmup_joint_transitions: 128
+  metrics_flush_interval_env_steps: 250
+
+experiment_metadata:
+  stage: legacy_voradj_oldmix_allagent_preflight_2k
+  preflight_only: true

@@ -1,10 +1,12 @@
-"""Joint replay contract: one joint transition per environment step plus
-focal-agent item sampling for the CTDE MASAC line.
+"""Joint replay contract for focal-item and standard all-agent CTDE MASAC.
 
 Storage unit: a complete joint transition ``(S,O,A,R,S',O',M,meta)``.
-Optimizer unit: a ``(joint_transition_id, focal_agent_id, bucket_id)`` item.
+Optimizer unit is selected explicitly by the formal config: either a focal
+``(joint_transition_id, focal_agent_id, bucket_id)`` item or a complete joint
+transition whose active agents all enter the losses.
 The legacy 70/20/10 ``JointReplaySampler`` is retained only for old smoke
-tests; formal training uses ``FocalReplaySampler``.
+tests. Formal focal training uses ``FocalReplaySampler``; the all-agent
+ablation uses ``UniformJointReplaySampler``.
 """
 from __future__ import annotations
 
@@ -418,7 +420,11 @@ class JointReplayBuffer:
             raise ValueError("focal item refers to an inactive agent")
         return transition
 
-    def sample_ids(self, batch_size: int, sampler: "JointReplaySampler | FocalReplaySampler | None" = None) -> List[int]:
+    def sample_ids(
+        self,
+        batch_size: int,
+        sampler: "JointReplaySampler | UniformJointReplaySampler | FocalReplaySampler | None" = None,
+    ) -> List[int]:
         if len(self) == 0:
             raise ValueError("cannot sample an empty joint replay")
         if sampler is not None and hasattr(sampler, "sample_items"):
@@ -513,7 +519,12 @@ class JointReplayBuffer:
             "generation_ids": torch.as_tensor([item.generation_id for item in items], dtype=torch.long, device=device),
         }
 
-    def sample(self, batch_size: int, device: str = "cpu", sampler: "JointReplaySampler | FocalReplaySampler | None" = None) -> Dict[str, Any]:
+    def sample(
+        self,
+        batch_size: int,
+        device: str = "cpu",
+        sampler: "JointReplaySampler | UniformJointReplaySampler | FocalReplaySampler | None" = None,
+    ) -> Dict[str, Any]:
         if len(self) == 0:
             raise ValueError("cannot sample an empty joint replay")
         if sampler is not None and hasattr(sampler, "sample_items"):
@@ -615,6 +626,64 @@ class JointReplayBuffer:
         replay.rng.bit_generator.state = payload["rng_state"]
         replay.runtime_state = dict(payload.get("runtime_state", {}) or {})
         return replay
+
+
+class UniformJointReplaySampler:
+    """Uniformly sample stored joint transitions without role/phase balancing.
+
+    Sampling is without replacement whenever the replay contains at least one
+    full batch. Role and phase metadata are summarized only after selection;
+    they never influence which transition enters the optimizer.
+    """
+
+    def sample_ids(self, replay: JointReplayBuffer, batch_size: int) -> List[int]:
+        batch_size = int(batch_size)
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        pool = replay._pool("uniform")
+        if not pool:
+            raise ValueError("cannot sample an empty joint replay")
+        replace = len(pool) < batch_size
+        chosen = [
+            int(value)
+            for value in replay.rng.choice(
+                np.asarray(pool, dtype=np.int64),
+                size=batch_size,
+                replace=replace,
+            )
+        ]
+        transitions = [replay.get(idx) for idx in chosen]
+        phase_counts: Dict[str, int] = {}
+        scene_counts: Dict[str, int] = {}
+        role_counts = {"pursuing": 0, "support": 0, "coverage": 0}
+        active_agent_count = 0
+        for transition in transitions:
+            phase = str(transition.phase)
+            scene = str(transition.scene)
+            phase_counts[phase] = phase_counts.get(phase, 0) + 1
+            scene_counts[scene] = scene_counts.get(scene, 0) + 1
+            active = np.asarray(transition.active_mask, dtype=bool)
+            roles = np.asarray(transition.agent_role_id, dtype=np.uint8)
+            active_agent_count += int(np.count_nonzero(active))
+            role_counts["pursuing"] += int(np.count_nonzero(active & (roles == ROLE_PURSUING)))
+            role_counts["support"] += int(np.count_nonzero(active & (roles == ROLE_SUPPORT)))
+            role_counts["coverage"] += int(np.count_nonzero(active & (roles == ROLE_COVERAGE)))
+        replay.last_sample_stats = {
+            "sampler": "uniform_joint",
+            "requested_batch_size": batch_size,
+            "actual_batch_size": len(chosen),
+            "unique_joint_transitions": len(set(chosen)),
+            "replacement_count": len(chosen) - len(set(chosen)),
+            "pre_capture_transition_count": int(sum(str(item.phase) == "pre_capture" for item in transitions)),
+            "post_capture_transition_count": int(sum(str(item.phase) == "post_capture" for item in transitions)),
+            "pure_ce_transition_count": int(sum(str(item.scene) == "pure_ce" for item in transitions)),
+            "sampled_phase_counts": phase_counts,
+            "sampled_scene_counts": scene_counts,
+            "sampled_active_agent_role_counts": role_counts,
+            "active_agent_loss_terms": int(active_agent_count),
+            "role_metadata_used_for_sampling": False,
+        }
+        return chosen
 
 
 class JointReplaySampler:

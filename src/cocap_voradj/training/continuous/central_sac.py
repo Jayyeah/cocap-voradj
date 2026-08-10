@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Mapping
 import random
+import time
 
 import numpy as np
 import torch
@@ -45,6 +46,51 @@ def _quantile_summary(tensor: torch.Tensor) -> Dict[str, float]:
         "mean": float(value.mean()),
         "std": float(value.std()),
     }
+
+
+class _UpdateProfiler:
+    """Low-overhead phase timing with one CUDA synchronization per update."""
+
+    def __init__(self, device: torch.device):
+        self.device = device
+        self.cuda = device.type == "cuda"
+        self.cpu_marks: Dict[str, float] = {}
+        self.cuda_marks: Dict[str, torch.cuda.Event] = {}
+        if self.cuda:
+            torch.cuda.reset_peak_memory_stats(device)
+        self.mark("start")
+
+    def mark(self, name: str) -> None:
+        if self.cuda:
+            event = torch.cuda.Event(enable_timing=True)
+            event.record(torch.cuda.current_stream(self.device))
+            self.cuda_marks[name] = event
+        else:
+            self.cpu_marks[name] = time.perf_counter()
+
+    def _elapsed(self, start: str, end: str) -> float:
+        if self.cuda:
+            return float(self.cuda_marks[start].elapsed_time(self.cuda_marks[end]) / 1000.0)
+        return float(self.cpu_marks[end] - self.cpu_marks[start])
+
+    def finish(self) -> Dict[str, float]:
+        self.mark("done")
+        if self.cuda:
+            self.cuda_marks["done"].synchronize()
+        update_wall_time = max(self._elapsed("start", "done"), 1e-12)
+        return {
+            "update_wall_time_s": update_wall_time,
+            "critic_time_s": self._elapsed("start", "critic_done"),
+            "actor_q_time_s": self._elapsed("actor_q_start", "actor_q_done"),
+            "actor_time_s": self._elapsed("critic_done", "actor_done"),
+            "alpha_time_s": self._elapsed("actor_done", "done"),
+            "updates_per_second": 1.0 / update_wall_time,
+            "peak_vram_mib": (
+                float(torch.cuda.max_memory_allocated(self.device) / (1024.0 * 1024.0))
+                if self.cuda
+                else 0.0
+            ),
+        }
 
 
 @dataclass(frozen=True)
@@ -139,15 +185,39 @@ class CentralSACTrainer:
         batch, agents = local_obs["self"].shape[:2]
         return action.reshape(batch, agents, 2), log_prob.reshape(batch, agents), latent.reshape(batch, agents, 2)
 
+    def _focal_actor_q_reference(
+        self,
+        central_obs: Mapping[str, torch.Tensor],
+        actions: torch.Tensor,
+        active: torch.Tensor,
+    ) -> torch.Tensor:
+        """Reference all-slot implementation retained for equivalence tests."""
+        values = []
+        for focal in range(actions.shape[1]):
+            focal_actions = actions.detach().clone()
+            focal_actions[:, focal] = actions[:, focal]
+            q1 = self.critic1(central_obs, focal_actions)[:, focal]
+            q2 = self.critic2(central_obs, focal_actions)[:, focal]
+            values.append(torch.minimum(q1, q2))
+        result = torch.stack(values, dim=1)
+        return result * active.to(dtype=result.dtype)
+
     def _focal_actor_q(
         self,
         central_obs: Mapping[str, torch.Tensor],
         actions: torch.Tensor,
         active: torch.Tensor,
     ) -> torch.Tensor:
-        """Evaluate Q_i with all other-agent action branches detached."""
+        """Equivalent actor-Q path that skips globally inactive padded slots."""
+        active_slots = set(
+            int(slot)
+            for slot in torch.nonzero(active.any(dim=0), as_tuple=False).flatten().tolist()
+        )
         values = []
         for focal in range(actions.shape[1]):
+            if focal not in active_slots:
+                values.append(actions[:, focal, 0] * 0.0)
+                continue
             focal_actions = actions.detach().clone()
             focal_actions[:, focal] = actions[:, focal]
             q1 = self.critic1(central_obs, focal_actions)[:, focal]
@@ -174,6 +244,8 @@ class CentralSACTrainer:
     def update(self, batch: Mapping[str, Any]) -> Dict[str, float]:
         if "focal_agent_id" in batch:
             return self._update_focal(batch)
+
+        profiler = _UpdateProfiler(self.device)
         local_obs = self._central_batch(batch, "local_obs")
         next_local_obs = self._central_batch(batch, "next_local_obs")
         central_obs = self._central_batch(batch, "global_state")
@@ -196,79 +268,175 @@ class CentralSACTrainer:
         q1 = self.critic1(central_obs, actions)
         q2 = self.critic2(central_obs, actions)
         critic_loss = masked_mean(
-            F.mse_loss(q1, target, reduction="none") + F.mse_loss(q2, target, reduction="none"), active
+            F.mse_loss(q1, target, reduction="none")
+            + F.mse_loss(q2, target, reduction="none"),
+            active,
         )
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_loss.backward()
-        critic_grad_norm = grad_norm([*self.critic1.parameters(), *self.critic2.parameters()])
+        critic_pre_clip_grad_norm = grad_norm(
+            [*self.critic1.parameters(), *self.critic2.parameters()]
+        )
         if self.config.grad_clip_norm is not None:
             torch.nn.utils.clip_grad_norm_(
                 [*self.critic1.parameters(), *self.critic2.parameters()],
                 float(self.config.grad_clip_norm),
             )
+            critic_post_clip_grad_norm = grad_norm(
+                [*self.critic1.parameters(), *self.critic2.parameters()]
+            )
+        else:
+            critic_post_clip_grad_norm = critic_pre_clip_grad_norm
         self.critic_optimizer.step()
+        profiler.mark("critic_done")
 
         policy_actions, log_prob, latent = self._actor_sample(local_obs)
         flat_local_obs = flatten_joint_local_obs(local_obs)
         _, log_std = self.actor.distribution(flat_local_obs)
+        log_std = log_std.reshape(log_prob.shape[0], log_prob.shape[1], -1)
+        profiler.mark("actor_q_start")
         actor_q = self._focal_actor_q(central_obs, policy_actions, active)
+        profiler.mark("actor_q_done")
         actor_loss = masked_mean(self.alpha.detach() * log_prob - actor_q, active)
-        self.actor_optimizer.zero_grad(set_to_none=True)
-        actor_loss.backward()
-        actor_grad_norm = grad_norm(self.actor.parameters())
-        if self.config.grad_clip_norm is not None:
-            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), float(self.config.grad_clip_norm))
-        self.actor_optimizer.step()
+        for critic in (self.critic1, self.critic2):
+            for parameter in critic.parameters():
+                parameter.requires_grad_(False)
+        try:
+            self.actor_optimizer.zero_grad(set_to_none=True)
+            actor_loss.backward()
+            actor_pre_clip_grad_norm = grad_norm(self.actor.parameters())
+            if self.config.grad_clip_norm is not None:
+                torch.nn.utils.clip_grad_norm_(
+                    self.actor.parameters(),
+                    float(self.config.grad_clip_norm),
+                )
+                actor_post_clip_grad_norm = grad_norm(self.actor.parameters())
+            else:
+                actor_post_clip_grad_norm = actor_pre_clip_grad_norm
+            self.actor_optimizer.step()
+        finally:
+            for critic in (self.critic1, self.critic2):
+                for parameter in critic.parameters():
+                    parameter.requires_grad_(True)
+        profiler.mark("actor_done")
 
-        alpha_loss = -masked_mean(self.log_alpha * (log_prob.detach() + self.config.target_entropy), active)
+        alpha_loss = -masked_mean(
+            self.log_alpha * (log_prob.detach() + self.config.target_entropy),
+            active,
+        )
         self.alpha_optimizer.zero_grad(set_to_none=True)
         alpha_loss.backward()
-        alpha_grad_norm = grad_norm([self.log_alpha])
+        alpha_pre_clip_grad_norm = grad_norm([self.log_alpha])
         if self.config.grad_clip_norm is not None:
-            torch.nn.utils.clip_grad_norm_([self.log_alpha], float(self.config.grad_clip_norm))
+            torch.nn.utils.clip_grad_norm_(
+                [self.log_alpha],
+                float(self.config.grad_clip_norm),
+            )
+            alpha_post_clip_grad_norm = grad_norm([self.log_alpha])
+        else:
+            alpha_post_clip_grad_norm = alpha_pre_clip_grad_norm
         self.alpha_optimizer.step()
         self._soft_update(self.critic1, self.target_critic1)
         self._soft_update(self.critic2, self.target_critic2)
+        timing = profiler.finish()
 
-        finite = all(torch.isfinite(item).all() for item in (critic_loss, actor_loss, alpha_loss, self.alpha, q1, q2))
+        q1_active = q1[active]
+        q2_active = q2[active]
+        target_q_active = target_q[active]
+        target_active = target[active]
+        log_prob_active = log_prob[active]
+        log_std_active = log_std[active]
+        latent_active = latent[active]
+        active_count = int(active.sum().detach())
+        finite = all(
+            torch.isfinite(item).all()
+            for item in (
+                critic_loss,
+                actor_loss,
+                alpha_loss,
+                self.alpha,
+                q1_active,
+                q2_active,
+                target_active,
+                log_prob_active,
+            )
+        )
         metrics = {
             "critic_loss": float(critic_loss.detach()),
             "actor_loss": float(actor_loss.detach()),
             "alpha_loss": float(alpha_loss.detach()),
             "alpha": float(self.alpha.detach()),
-            "active_count": float(active.sum().detach()),
-            "q1_mean": float(q1.detach().mean()),
-            "q2_mean": float(q2.detach().mean()),
-            "twin_q_gap": float((q1.detach() - q2.detach()).abs().mean()),
-            "target_q_mean": float(target_q.detach().mean()),
-            "td_error_abs_mean": float((q1.detach() - target.detach()).abs().mean()),
-            "log_prob_mean": float(log_prob.detach().mean()),
-            "entropy_proxy_mean": float((-log_prob.detach()).mean()),
-            # ---- E0 entropy calibration diagnostics (2026-08-08) ----
+            "active_count": float(active_count),
+            "active_agent_loss_terms_per_update": float(active_count),
+            "active_agent_loss_terms_per_second": float(
+                active_count / timing["update_wall_time_s"]
+            ),
+            "active_actor_q_slots": float(active.any(dim=0).sum().detach()),
+            "q1_mean": float(q1_active.detach().mean()),
+            "q2_mean": float(q2_active.detach().mean()),
+            "twin_q_gap": float((q1_active.detach() - q2_active.detach()).abs().mean()),
+            "target_q_mean": float(target_q_active.detach().mean()),
+            "td_error_abs_mean": float(
+                (q1_active.detach() - target_active.detach()).abs().mean()
+            ),
+            "q1_summary": _quantile_summary(q1_active),
+            "q2_summary": _quantile_summary(q2_active),
+            "target_q_summary": _quantile_summary(target_q_active),
+            "td_error_summary": _quantile_summary(
+                (q1_active.detach() - target_active.detach()).abs()
+            ),
+            "log_prob_mean": float(log_prob_active.detach().mean()),
+            "entropy_proxy_mean": float((-log_prob_active.detach()).mean()),
             "log_alpha": float(self.log_alpha.detach()),
-            "log_prob_std": float(log_prob.detach().std()),
-            "log_prob_p5": float(torch.quantile(log_prob.detach(), 0.05)),
-            "log_prob_p50": float(torch.quantile(log_prob.detach(), 0.50)),
-            "log_prob_p95": float(torch.quantile(log_prob.detach(), 0.95)),
-            "entropy_residual_mean": float((log_prob.detach() + self.config.target_entropy).mean()),
-            "entropy_residual_p5": float(torch.quantile(log_prob.detach() + self.config.target_entropy, 0.05)),
-            "entropy_residual_p50": float(torch.quantile(log_prob.detach() + self.config.target_entropy, 0.50)),
-            "entropy_residual_p95": float(torch.quantile(log_prob.detach() + self.config.target_entropy, 0.95)),
-            "log_std_a_mean": float(log_std.detach()[..., 0].mean()),
-            "log_std_omega_mean": float(log_std.detach()[..., 1].mean()),
-            "std_a_mean": float(log_std.detach()[..., 0].exp().mean()),
-            "std_omega_mean": float(log_std.detach()[..., 1].exp().mean()),
-            "log_std_mean": float(log_std.detach().mean()),
-            "log_std_min": float(log_std.detach().min()),
-            "log_std_max": float(log_std.detach().max()),
-            "latent_norm_mean": float(torch.linalg.vector_norm(latent.detach(), dim=-1).mean()),
-            "critic_grad_norm": critic_grad_norm,
-            "actor_grad_norm": actor_grad_norm,
-            "alpha_grad_norm": alpha_grad_norm,
+            "log_prob_std": float(log_prob_active.detach().std()),
+            "log_prob_p5": float(torch.quantile(log_prob_active.detach(), 0.05)),
+            "log_prob_p50": float(torch.quantile(log_prob_active.detach(), 0.50)),
+            "log_prob_p95": float(torch.quantile(log_prob_active.detach(), 0.95)),
+            "entropy_residual_mean": float(
+                (log_prob_active.detach() + self.config.target_entropy).mean()
+            ),
+            "entropy_residual_p5": float(
+                torch.quantile(
+                    log_prob_active.detach() + self.config.target_entropy,
+                    0.05,
+                )
+            ),
+            "entropy_residual_p50": float(
+                torch.quantile(
+                    log_prob_active.detach() + self.config.target_entropy,
+                    0.50,
+                )
+            ),
+            "entropy_residual_p95": float(
+                torch.quantile(
+                    log_prob_active.detach() + self.config.target_entropy,
+                    0.95,
+                )
+            ),
+            "log_std_a_mean": float(log_std_active.detach()[..., 0].mean()),
+            "log_std_omega_mean": float(log_std_active.detach()[..., 1].mean()),
+            "std_a_mean": float(log_std_active.detach()[..., 0].exp().mean()),
+            "std_omega_mean": float(log_std_active.detach()[..., 1].exp().mean()),
+            "log_std_mean": float(log_std_active.detach().mean()),
+            "log_std_min": float(log_std_active.detach().min()),
+            "log_std_max": float(log_std_active.detach().max()),
+            "latent_norm_mean": float(
+                torch.linalg.vector_norm(latent_active.detach(), dim=-1).mean()
+            ),
+            "critic_grad_norm": critic_pre_clip_grad_norm,
+            "critic_pre_clip_grad_norm": critic_pre_clip_grad_norm,
+            "critic_post_clip_grad_norm": critic_post_clip_grad_norm,
+            "actor_grad_norm": actor_pre_clip_grad_norm,
+            "actor_pre_clip_grad_norm": actor_pre_clip_grad_norm,
+            "actor_post_clip_grad_norm": actor_post_clip_grad_norm,
+            "alpha_grad_norm": alpha_pre_clip_grad_norm,
+            "alpha_pre_clip_grad_norm": alpha_pre_clip_grad_norm,
+            "alpha_post_clip_grad_norm": alpha_post_clip_grad_norm,
+            **timing,
             "finite": float(finite),
         }
         if not finite:
-            raise FloatingPointError("central SAC update produced NaN or Inf")
+            raise FloatingPointError("all-agent central SAC update produced NaN or Inf")
         return metrics
 
     def _update_focal(self, batch: Mapping[str, Any]) -> Dict[str, float]:
