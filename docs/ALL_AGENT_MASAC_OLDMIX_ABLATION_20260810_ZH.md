@@ -1,6 +1,14 @@
 # Baseline B — Standard All-Agent MASAC on Legacy-VorAdj Old-Mix
 
-更新日期：2026-08-10
+更新日期：2026-08-11
+
+## 2026-08-11 04:00 A/B实时状态
+
+- Baseline B已于01:35:28在cuda:0正式启动；CUDA32与2k Gate通过，2k共469次更新、all_finite=true、约1.167 env step/s、3.145 s/update、512 agent loss terms/update、峰值VRAM约22,462 MiB。
+- 当前Baseline B为14k、2,251次更新、all finite；最近窗口约1.109 env step/s（约4.0k/h），uniform joint batch为63条pre-capture与65条pure-CE transition，role metadata未参与采样。
+- B当前没有25k行为评估，积极信号仅限数值稳定、自然mixed:pure近1:1、512个有效agent loss terms/update以及当前窗口collision=0；不能提前宣称all-agent性能优于focal。
+- Baseline A control当前107k；其100k pure-CE为strict 1/4、CV<0.20 4/4，capture仍0/4且collision 3/4。A已表现出coverage和接敌信号，但还没有可靠capture。
+- ETA：B首个25k约07:00--07:30；B 200k训练约08-13 03:00--07:00，final report约08-13 05:00--09:00。A 200k训练约今日13:00--14:00、report约14:00--15:30。
 
 ## 1. 研究问题与唯一实验变量
 
@@ -129,3 +137,16 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 - A 明显优于 B：继续比较 focal role balancing 与 phase-balanced joint replay + all-agent update，不宣称当前 quota 最优。
 - 两者都差：focal 不是主要瓶颈，转向 reward、observation、credit、task interference、critic stability、curriculum。
 - 两者都好：优先采用更标准、简单且易扩展的 all-agent 主线。
+
+<!-- AUTO_ALLAGENT_FORMAL_LAUNCH -->
+## Baseline B — Standard All-Agent Old-Mix 已启动
+
+- 时间：2026-08-11T01:35:28+08:00
+- 释放资源的旧线：Stage4A
+- branch/worktree：`ablation/all-agent-oldmix-20260810` / `/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix`
+- seed/GPU/tmux：`2026080902` / `cuda:0` / `allagent_oldmix_ablation_200k`
+- artifact root：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation`
+- 唯一算法差异：focal role-balanced item update → uniform joint-transition all-active-agent update。
+- 保持不变：mixed:pure=1:1、reward、Legacy-VorAdj、APF、network、SAC hyperparameters、seed、200k budget。
+- 2k preflight：`{"cuda32_tag": "allagent_oldmix_cuda0_smoke32_20260810", "preflight_tag": "legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810", "report": "/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/preflight_2k/legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810/legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810_report.json", "updates": 469, "env_steps_per_second": 1.1669494495633304, "update_wall_time_s": 3.145146484375, "critic_time_s": 0.8741939086914062, "actor_q_time_s": 0.750358642578125, "updates_per_second": 0.3179502147095444, "active_agent_loss_terms_per_update": 512.0, "active_agent_loss_terms_per_second": 162.79050993128672, "peak_vram_mib": 22461.93408203125, "gpu_profile": {"elapsed_s": 1719.469720097004, "samples": 341, "gpu_utilization_mean_percent": 99.99413489736071, "gpu_utilization_max_percent": 100, "temperature_max_c": 86, "memory_used_max_mib": 43354, "memory_free_min_mib": 5786}, "all_finite": true}`
+- 下一个正式 checkpoint：25k。

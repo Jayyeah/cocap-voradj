@@ -1,5 +1,26 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-11 04:00 完结结果、在训信号与ETA
+
+### 已完结
+
+- Stage4A 于01:04生成clean 200k report，48,751次更新全部finite。final 4-episode diagnostic 为 capture 4/4、collision 0/4、平均完成37.5步、平均接敌进展+19.97、平均最小敌距8.37。25k序列在50/125/150/200k均为4/4 capture，说明围捕能力可重复出现但checkpoint非单调；统计更强的既有50k eval20为capture 19/20、collision 1/20，因此50k仍是当前“最佳已充分验证”模型，200k final保留为强final候选但尚缺同规模eval20。
+- Stage4C 于02:01生成clean 200k report，48,751次更新全部finite，但所有25k里程碑capture均为0/4；final为capture 0/4、collision 2/4、平均速度0.116、平均最小敌距14.55。结论是训练链路正确但任务学习失败，不应晋级为capture anchor。
+- Stage4A final trainer/replay/runtime已严格验证为同一200k步；仅旧milestone replay被清理23,471,987,148 B，所有里程碑trainer/eval及final/resume replay均保留。
+
+### 未完结
+
+- Legacy-VorAdj Baseline A：107k，最新100k checkpoint。coverage信号明确：25/50/75/100k pure-CE strict为1/4、2/4、1/4、1/4，CV<0.20为2/4、3/4、3/4、4/4，CE progress始终约+0.061至+0.069。capture仍0/4，但50/75/100k distance progress为+14.79/+13.95/+10.85；同时collision为4/4、2/4、3/4，属于“接敌学会、围捕未成、碰撞严重”的混合信号。
+- Pure-CE：73k，最新50k checkpoint。strict仍0/4，但CV<0.20由25k的0/4升至50k的2/4，collision由2/4降至1/4，CE progress由+0.0108升至+0.0524；存在弱积极信号，尚未达到严格成功。
+- Baseline B all-agent：01:35在cuda:0正式启动，当前14k、2,251次更新，全部finite；自然uniform batch约mixed:pure=63:65、512 active-agent loss terms/update、约1.109 env step/s（约4.0k/h）。目前只有数值稳定、无当前窗口碰撞和采样合同正确的系统信号，尚无25k行为评估。
+
+### ETA（按最近稳定吞吐）
+
+- Baseline A：训练200k约08-11 13:00--14:00；完整final评估/report约14:00--15:30。
+- Pure-CE：训练200k约08-11 23:30--08-12 00:30；完整report约08-12 00:30--02:00。
+- Baseline B：25k首个诊断约08-11 07:00--07:30；训练200k约08-13 03:00--07:00，完整report约08-13 05:00--09:00。25k后用实测里程碑吞吐再次收紧。
+- 当前GPU0/1为86°C/93°C且均100%利用；根盘余约57 GiB。以上区间已计入共享GPU与checkpoint诊断开销，但final长评估仍可能造成额外波动。
+
 ## 2026-08-10 22:17 Baseline B GPU调度修订
 
 - Baseline B 固定在 Pure-CE 所在 `cuda:0`，不再动态选择 Stage4A/C 任一释放 GPU。

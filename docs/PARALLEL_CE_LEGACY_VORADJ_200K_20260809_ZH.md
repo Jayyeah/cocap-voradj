@@ -1,5 +1,11 @@
 # Pure-CE 与 Legacy-VorAdj 并行 200k 线（2026-08-09）
 
+## 2026-08-11 04:00 状态与ETA
+
+- Legacy-VorAdj Baseline A：107k、finite；最新100k pure-CE为strict 1/4、CV<0.20 4/4、collision 0/4、CE progress +0.0688。capture仍0/4，但distance progress +10.85，collision 3/4；积极信号是稳定coverage与接敌，主要负面是没有围捕成功且碰撞率高。预计200k训练约13:00--14:00，final report约14:00--15:30。
+- Pure-CE：73k、finite；50k为strict 0/4、CV<0.20 2/4、collision 1/4、CE progress +0.0524。相对25k有改善，但不能称为strict成功。预计200k训练约23:30--次日00:30，final report约次日00:30--02:00。
+- Baseline B已于01:35在Pure-CE同卡cuda:0启动，Baseline A/cuda:1未被抢占。
+
 ## 2026-08-10 22:17 Baseline B placement修订
 
 - Baseline B 固定与 Pure-CE 同驻 `cuda:0`，只等待同卡旧 Stage4A clean 200k。
