@@ -1,5 +1,14 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-10 22:13 五线状态
+
+- Stage4A：PID 240128 / cuda:0 / metrics 181k，175k checkpoint 已落盘；175k diagnostic capture 3/4、collision 1/4，仍有明显围捕能力但非无碰撞。
+- Stage4C：PID 240122 / cuda:1 / metrics 169k，最新完整 checkpoint 150k。
+- Legacy-VorAdj old-mix Baseline A：PID 224386 / cuda:1 / metrics 52k，50k checkpoint 已落盘。50k pure-CE strict 2/4、CV<0.20 3/4；capture/mixed 都是 0/4 capture，但 distance progress 分别 +14.79/+15.85，同时 collision 4/4、3/4，说明出现接敌进展并伴随严重碰撞退化。
+- Pure-CE：PID 224391 / cuda:0 / metrics 36k，最新完整 checkpoint 25k。
+- 四条现有线最新窗口均 `mean_finite=1`。Baseline B 尚未启动；supervisor PID 454469 持续健康等待 Stage4A/C 任一条 clean 200k，正式 tmux/run artifact 均不存在。
+- 资源快照：GPU0 85°C / GPU1 92°C、均 100% utilization；根盘余约 57 GiB。监督器按设计未抢跑 CUDA/2k Gate。
+
 ## 2026-08-10 20:34 五线状态与 All-Agent 对照队列
 
 - Stage4A：PID 240128 / cuda:0 / metrics 170k；最新完整 checkpoint 150k，尚未到 175k。

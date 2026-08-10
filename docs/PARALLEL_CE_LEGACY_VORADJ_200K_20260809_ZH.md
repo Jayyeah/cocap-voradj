@@ -14,6 +14,13 @@
 - 两线所有最新训练窗口 `mean_finite=1`。25k 只有 4 episodes，继续按原合同训练至 200k，不据此提前停止。
 - 对照 Baseline B 尚未启动；自动 supervisor 已武装，等待 Stage4A/C 任一 clean 200k 释放 GPU 后执行 CUDA/2k Gate 并自动启动。
 
+### 2026-08-10 22:13 快照
+
+- Legacy-VorAdj Baseline A 已到 52k，50k checkpoint/诊断完整落盘；Pure-CE 已到 36k，最新 checkpoint 仍为 25k。两线最新训练窗口均 finite。
+- Baseline A 50k pure-CE 继续给出正向 coverage 信号：strict 2/4、CV<0.20 3/4、平均 CE progress +0.0660。
+- Baseline A 50k capture/mixed 尚未围捕成功，但平均 distance progress 已转正为 +14.79/+15.85、最小敌距降到 10.84/8.75；代价是 collision 达 4/4 与 3/4。这是“接敌增强但碰撞坍缩”的混合信号，不能视为 capture 成功。
+- Baseline B 尚未启动；Stage4A/C 仅到 181k/169k，supervisor 继续等待首条 clean 200k。
+
 ## 线一：Pure CE
 
 - 配置：`configs/experiments/parallel_ce_legacy_voradj_20260809/pure_ce_4p0e1obs_200k_aw.yaml`
