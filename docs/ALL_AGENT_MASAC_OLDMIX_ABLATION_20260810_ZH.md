@@ -73,7 +73,7 @@ Baseline B 显式使用 `periodic_checkpoint_replay_mode: rolling_latest`：
 
 正式 200k 启动前必须完成：配置 effective diff；focal regression；uniform joint sampler；all-active-agent/active-mask/gradient equivalence；manifest A/B 隔离；rolling-latest regression；32-step CPU/CUDA smoke；约 2k 的吞吐、显存和共存影响检查。
 
-资源 Gate：Baseline A、Pure-CE、Stage4A/C 不得被 kill、重启或明显降速。只有 Stage4A/C 任一条自然结束释放资源后，才选择最安全 GPU 启动 Baseline B。
+资源 Gate：Baseline A、Pure-CE、Stage4A/C 不得被 kill、重启或明显降速。Baseline B 固定放在 Pure-CE 所在的 `cuda:0`；只等待同卡旧 Stage4A 自然结束，不使用 Stage4C 释放的 `cuda:1`，因此不与 Baseline A 抢资源。
 
 2026-08-10 19:58 启动前证据：
 
@@ -114,6 +114,14 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 - Baseline A control：52k，50k checkpoint 已落盘；Pure-CE：36k。
 - Baseline A 50k 对后续 A/B 的关键基准：pure-CE strict 2/4、CV<0.20 3/4；capture/mixed distance progress +14.79/+15.85，但 capture 0/4 且 collision 4/4、3/4。
 - GPU0/GPU1 均为 100% utilization，温度 85°C/92°C；根盘余约 57 GiB，故继续等待是符合资源保护合同的行为。
+
+### 2026-08-10 22:17 资源调度合同修订
+
+- 用户指定 Baseline B 与 Pure-CE 同驻 `cuda:0`，不得使用 Baseline A 所在 `cuda:1`。
+- 唯一释放 Gate 改为旧 Stage4A/cuda:0 clean 200k；Stage4C 是否先结束不再触发 Baseline B。
+- 旧 supervisor 已单独停止，四条训练线均未受影响；新调度合同及相关 SAC/replay/storage 回归共 35 项通过。
+- 新 supervisor 已于 22:17:55 以同名 tmux 重新武装，PID `542373`；实时状态仅含 `Stage4A: true`，消息为 `waiting for clean Stage4A completion on Pure-CE GPU`。
+- 正式 Baseline B tmux/run artifact 仍不存在，没有提前启动。
 
 ## 8. 最终解释 Gate
 

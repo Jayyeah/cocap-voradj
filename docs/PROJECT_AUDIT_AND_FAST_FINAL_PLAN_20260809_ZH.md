@@ -1,5 +1,12 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-10 22:17 Baseline B GPU调度修订
+
+- Baseline B 固定在 Pure-CE 所在 `cuda:0`，不再动态选择 Stage4A/C 任一释放 GPU。
+- 只等待同卡旧 Stage4A 达到 clean 200k 后执行 CUDA32/2k Gate并启动；Stage4C/cuda:1 即使先结束也不会触发。
+- Baseline A 继续独占其当前 `cuda:1` 份额，不与 Baseline B 竞争。旧 supervisor 已单独停止以加载新逻辑，四条训练线全部保持运行。
+- 35项相关回归通过；新 supervisor PID `542373` 已于22:17:55重新武装，状态只等待 `Stage4A`，Baseline B 尚未启动。
+
 ## 2026-08-10 22:13 五线状态
 
 - Stage4A：PID 240128 / cuda:0 / metrics 181k，175k checkpoint 已落盘；175k diagnostic capture 3/4、collision 1/4，仍有明显围捕能力但非无碰撞。

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Safely launch and monitor the all-agent old-mix ablation.
 
-The supervisor never stops an existing run. It waits until Stage4A or Stage4C
-has a verified finite 200k final bundle, validates that bundle, removes only
-obsolete milestone replay files covered by the rolling-latest contract, runs
-CUDA/2k preflights on the released GPU, and then launches Baseline B.
+The supervisor never stops an existing run. Baseline B is pinned to the
+Pure-CE GPU (cuda:0) and waits specifically for the old Stage4A line on that
+GPU to produce a verified finite 200k final bundle. It then validates that
+bundle, removes only obsolete milestone replay files covered by the
+rolling-latest contract, runs CUDA/2k preflights on cuda:0, and launches
+Baseline B there. Stage4C/cuda:1 is never a release candidate, so Baseline A
+keeps its GPU allocation unchanged.
 """
 from __future__ import annotations
 
@@ -64,14 +67,6 @@ OLD_LINES = (
         "run_dir": SPEED_ROOT
         / "artifacts/2026-08-09_200k_speedopt/stage4a/"
         "stage4a_speedopt_200k_20260809",
-    },
-    {
-        "name": "Stage4C",
-        "gpu": 1,
-        "tag": "stage4c_speedopt_200k_20260809",
-        "run_dir": SPEED_ROOT
-        / "artifacts/2026-08-09_200k_speedopt/stage4c/"
-        "stage4c_speedopt_200k_20260809",
     },
 )
 
@@ -771,7 +766,7 @@ def main() -> int:
             completed.append(line)
         if not completed:
             log(
-                "waiting for first clean Stage4 completion",
+                "waiting for clean Stage4A completion on Pure-CE GPU",
                 old_line_alive={
                     line["name"]: process_alive(str(line["tag"]))
                     for line in OLD_LINES

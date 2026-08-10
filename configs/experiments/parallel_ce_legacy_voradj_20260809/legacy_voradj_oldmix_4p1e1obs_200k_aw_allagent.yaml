@@ -2,7 +2,7 @@ extends: ../positive_feedback_ladder_20260807/stage5b_mixed_aw.yaml
 
 run_name: legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810
 seed: 2026080902
-device: cuda:1
+device: cuda:0
 
 env:
   num_pursuers: 4
@@ -173,3 +173,4 @@ experiment_metadata:
   replay_mix: uniform over stored joint transitions; role metadata is diagnostics-only
   diagnostic_signals: capture rate, detection rate/step, initial/final/min enemy distance and progress, CE progress
   storage_semantics: model at every 25k; only latest replay remains resumable; final bundle is full
+  resource_placement: cuda:0 with Pure-CE; wait for old Stage4A on cuda:0 to finish; never use Baseline-A cuda:1

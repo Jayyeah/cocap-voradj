@@ -1,5 +1,11 @@
 # Pure-CE 与 Legacy-VorAdj 并行 200k 线（2026-08-09）
 
+## 2026-08-10 22:17 Baseline B placement修订
+
+- Baseline B 固定与 Pure-CE 同驻 `cuda:0`，只等待同卡旧 Stage4A clean 200k。
+- Stage4C/cuda:1 不再是 Baseline B 的释放候选，Baseline A 的 GPU 资源保持不变。
+- 新 supervisor PID `542373` 已重新武装且只报告 Stage4A 候选；Baseline B 尚未启动。
+
 ## 当前执行状态
 
 - 两份正式配置、扩展评估指标、滚动 replay 保存和安全启动器已经完成；32-step 双线端到端预检 finite，核心新合同和相关整组回归通过。

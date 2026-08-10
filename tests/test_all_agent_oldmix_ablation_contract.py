@@ -48,6 +48,7 @@ BASELINE_B = ROOT / (
 def _without_ablation_fields(config: dict) -> dict:
     result = copy.deepcopy(config)
     result.pop("run_name", None)
+    result.pop("device", None)
     training = result["training"]
     for key in (
         "optimizer_unit",
@@ -187,6 +188,8 @@ def test_effective_config_changes_only_training_unit() -> None:
         "focal_training": False,
     }
     assert _without_ablation_fields(baseline_a) == _without_ablation_fields(baseline_b)
+    assert baseline_a["device"] == "cuda:1"
+    assert baseline_b["device"] == "cuda:0"
     assert baseline_b["seed"] == baseline_a["seed"] == 2026080902
     assert baseline_b["training"]["scene_cycle"] == ["mixed_crms", "pure_ce"]
     assert baseline_b["training"]["periodic_checkpoint_replay_mode"] == "rolling_latest"

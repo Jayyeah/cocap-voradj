@@ -31,6 +31,15 @@ def _legacy_final(tmp_path: Path) -> tuple[dict, Path]:
     return {"name": "Legacy", "tag": tag, "run_dir": run_dir}, bundle
 
 
+def test_release_gate_is_pinned_to_stage4a_on_pure_ce_gpu() -> None:
+    assert len(supervisor.OLD_LINES) == 1
+    release = supervisor.OLD_LINES[0]
+    assert release["name"] == "Stage4A"
+    assert release["gpu"] == 0
+    assert "stage4a" in str(release["run_dir"]).lower()
+    assert all(item["gpu"] != 1 for item in supervisor.OLD_LINES)
+
+
 def test_legacy_final_without_storage_sidecar_is_migrated_after_validation(
     tmp_path: Path,
     monkeypatch,
