@@ -75,9 +75,21 @@ Baseline B 显式使用 `periodic_checkpoint_replay_mode: rolling_latest`：
 
 资源 Gate：Baseline A、Pure-CE、Stage4A/C 不得被 kill、重启或明显降速。只有 Stage4A/C 任一条自然结束释放资源后，才选择最安全 GPU 启动 Baseline B。
 
+2026-08-10 19:58 启动前证据：
+
+- Baseline A/B effective config diff 仅包含 run metadata 与 optimizer/replay/focal mode 三项预期变量；
+- all-agent loss/gradient、active mask、uniform joint sampler、focal regression、manifest 隔离、rolling-latest 与旧 final 安全迁移共 34 项测试通过；
+- Python 编译与 `git diff --check` 通过；CPU 32-step smoke 已通过；
+- CUDA 32-step 与约 2k 吞吐/显存检查不在两张满载 GPU 上抢跑，由 supervisor 在 Stage4A/C 首条自然完成、资源 Gate 通过后执行；
+- 旧 final 只有在 trainer、replay、runtime 三者 200k 步数一致且能够完整 load 时，才会原子建立 `resume_latest`；随后仅清理由该完整 bundle 覆盖的旧 milestone replay。
+
 ## 7. 正式运行台账
 
-状态：准备与验证中；尚未启动正式 Baseline B。
+状态：实现与本地回归完成；尚未启动正式 Baseline B。自动 supervisor 已于 2026-08-10 19:58 武装，当前等待 Stage4A/C 首条 clean 200k。
+
+代码：本地 branch `ablation/all-agent-oldmix-20260810`，commit `18255b2`。
+
+supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式训练 tmux 预留名 `allagent_oldmix_ablation_200k`。
 
 计划 artifact root：`artifacts/2026-08-10_allagent_oldmix_ablation/`
 
