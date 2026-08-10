@@ -1,5 +1,15 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-10 20:34 五线状态与 All-Agent 对照队列
+
+- Stage4A：PID 240128 / cuda:0 / metrics 170k；最新完整 checkpoint 150k，尚未到 175k。
+- Stage4C：PID 240122 / cuda:1 / metrics 153k；150k checkpoint 已落盘。
+- Legacy-VorAdj old-mix Baseline A：PID 224386 / cuda:1 / metrics 35k；25k checkpoint 与三场景自动评估已落盘。
+- Pure-CE：PID 224391 / cuda:0 / metrics/checkpoint 25k。
+- Baseline B standard all-agent 尚未启动。tmux `allagent_oldmix_ablation_supervisor` / PID 454469 健康轮询，等待 Stage4A/C 任一条 clean 200k 后，再自动执行 CUDA 32-step、2k 吞吐/显存 Gate；全部通过才启动正式 200k。
+- 25k 早期信号：Baseline A 的 pure-CE 为 strict 1/4、CV<0.20 2/4、平均 CE energy progress +0.0608；capture/mixed 均 0/4 capture，但 detected 4/4、collision 0/4。独立 Pure-CE 为 strict 0/4、CV<0.20 0/4、collision 2/4、平均 CE progress +0.0108。样本仅 4 episodes，记录为早期诊断，不触发停线。
+- 资源快照：GPU0 84°C / GPU1 92°C，均 100% utilization；根盘余约 63 GiB。监督器未抢跑或修改四条现有线。
+
 ## 2026-08-10 17:17 停机恢复与四线启动
 
 - 服务器在 02:23 后停机，tmux 全部丢失。停机前 Stage4A/C metrics 到 161k/145k；可验证完整恢复点为 A150/C125，因此不可把未 checkpoint 的 11k/20k 当作可恢复进度。

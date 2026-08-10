@@ -7,6 +7,13 @@
 - Pure-CE：PID 224391、tmux `parallel_pure_ce_200k`、cuda:0；Legacy-VorAdj：PID 224386、tmux `parallel_legacy_voradj_200k`、cuda:1。两线 step-1 checkpoint 与 rolling resume 均已落盘。
 - 同机还从 A150/C125 恢复旧 A/C，现为每张 GPU 两条本项目训练加既有外部负载。17:17 GPU 温度约 80°C/92°C，当前吞吐尚未形成稳定窗口；旧 ETA 已失效，首个 1k/25k 后重算。
 
+### 2026-08-10 20:34 快照
+
+- Pure-CE 已到 25k 并落盘：strict 0/4、CV<0.20 0/4、collision 2/4，平均 CE energy progress +0.0108；尚无成功信号，但部分 episode 的 CE energy 有下降。
+- Legacy-VorAdj Baseline A 已到 35k，25k checkpoint 已落盘：pure-CE strict 1/4、CV<0.20 2/4、collision 1/4、平均 CE progress +0.0608；capture 与 mixed 均 0/4 capture、detected 4/4、collision 0/4，平均 distance progress 分别 -5.82/-3.99。
+- 两线所有最新训练窗口 `mean_finite=1`。25k 只有 4 episodes，继续按原合同训练至 200k，不据此提前停止。
+- 对照 Baseline B 尚未启动；自动 supervisor 已武装，等待 Stage4A/C 任一 clean 200k 释放 GPU 后执行 CUDA/2k Gate 并自动启动。
+
 ## 线一：Pure CE
 
 - 配置：`configs/experiments/parallel_ce_legacy_voradj_20260809/pure_ce_4p0e1obs_200k_aw.yaml`

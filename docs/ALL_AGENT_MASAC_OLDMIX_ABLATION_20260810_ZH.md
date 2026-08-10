@@ -97,6 +97,15 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 
 每 25k 在本节追加 A/B 的 sample efficiency、wall-clock efficiency、best/final performance，以及 sampler distribution 对照。25k 仅作早期诊断，不作为提前停止 Gate。
 
+### 2026-08-10 20:34 自动启动状态
+
+- Baseline B：未启动；未出现正式训练 PID、tmux 或 run artifact。
+- supervisor：PID 454469 持续健康轮询，状态为等待 Stage4A/C 首条 clean 200k。
+- 资源释放候选：Stage4A 170k（最新 checkpoint 150k），Stage4C 153k（150k checkpoint 已落盘）。
+- Baseline A control：35k，最新正式诊断为 25k；Pure-CE：25k。
+- Baseline A 25k：capture/mixed capture 0/4，但两场景 detected 4/4、collision 0/4；pure-CE strict 1/4、CV<0.20 2/4。该结果只作为 B 后续同 step A/B 比较基准。
+- GPU0/GPU1 均为 100% utilization，温度 84°C/92°C；因此 supervisor 正确地没有提前执行 CUDA/2k 或启动 B。
+
 ## 8. 最终解释 Gate
 
 - B 明显优于 A：后续主线默认 all-agent，focal 保留作历史消融。
