@@ -10,15 +10,16 @@
 
 ## 0. 当前状态（每次更新必须保持最新）
 
-- 当前 active stage：**Stage4A/4C 原合同 200k 对照继续运行；隔离 speedopt Stage4A 25k 正在低优先级验证**
-- 当前 formal config：原对照与 speedopt 4A 使用 `stage4a_capture_aw.yaml`，4C 使用 `stage4c_capture_aw.yaml`；配置/seed 不变，speedopt 只修改 focal replay 实现
+- 当前 active stage：**四线并行运行**。服务器停机后，Stage4A 从 150k/PID 240128/cuda:0、Stage4C 从 125k/PID 240122/cuda:1 严格恢复；Pure-CE 新 200k 为 PID 224391/cuda:0，Legacy-VorAdj old-mix 新 200k 为 PID 224386/cuda:1
+- 当前 formal config：4A 使用 `stage4a_capture_aw.yaml`，4C 使用 `stage4c_capture_aw.yaml`；seed 2026080801、奖励/训练合同不变，speedopt 只修改 focal replay 实现
 - 当前 action contract：连续 `acceleration_angular_velocity_body`，独立 box 边界 `a∈[-0.4,0.4]`、`w∈[-π/6,π/6]`（Stage 1 已严格等价）
 - 当前 observation contract：Stage 0 使用旧 IQN VCT-LS robot-frame observation；Stage 2+ 目标为同一 robot-frame local observation，Actor 不得读取全局/oracle
 - 当前 dynamics contract：`continuous_aw_v1`（显式 Euler、10 substeps、dt=0.05、decision_dt=0.5、v_max=3.0、drag=0.4/3、yaw 积分、legacy_random 初始化、碰撞整步检查；与旧 IQN 完全一致）
 - 当前 reward contract：Stage 3A 使用 CE centroid energy + PBRS，speed weight=0（`[IQN-ALIGN]`；Stage 2 简化 reward 已退出）
-- 最近 milestone：50k replay 的 focal sample 从旧 5.5–9.0s 降到 median 0.004433s；6k 同配置 4A smoke 251 updates 全 finite；完整源码回归通过
-- 当前结论：连续 `(a,ω)` 已有 stationary capture 几何与 pure-coverage anchor，但 Stage3B/Stage4A 历史 PASS 证据强度需按 0.6 审查结论降级表述；4C/mixed/local/support 尚未建立可靠成功闭环
-- 下一步唯一动作：**完成 speedopt 4A 25k+eval20 gate；通过后在存储前置条件解决的情况下开同配置优化版 4A/4C 追赶，原线在新线超过进度且 gate 通过前继续保留**
+- 最近 milestone：A125/A150 的 diagnostic 均 capture=4/4、collision=0/4；A150 平均 distance progress=20.04、平均最小敌距=8.30、平均长度=53.25。C125 仍 capture=0/4、collision=0/4、平均最小敌距=15.02、平均速度=0.019
+- 当前结论：A 在 125k/150k 连续恢复强 capture，是停机前最积极信号；但 A161 训练窗口 critic loss 已到 3251，仍需保留历史最优而不能默认 final 最优。C145 仍低速、无 ring visitation/有效 closing，尚无正向闭环
+- 停机/恢复合同：02:23 前最后 metrics 为 A161/C145；最后完整 trainer+replay 为 A150/C125，分别回退 11k/20k。恢复使用 detached HEAD `54c7488`，implementation hash `ca5e1cf9...` 与两个 checkpoint 精确匹配，未放宽安全校验
+- 下一步动作：**四线继续；A/C 每 25k 与 final 都保留，Pure-CE/Legacy-VorAdj 每 25k 自动评估、final eval20。新线 25k 前不据随机早期行为改配置，完成自动评估且用户确认前不清 checkpoint。**
 
 ---
 

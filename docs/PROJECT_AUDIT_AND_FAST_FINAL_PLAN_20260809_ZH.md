@@ -1,5 +1,44 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-10 17:17 停机恢复与四线启动
+
+- 服务器在 02:23 后停机，tmux 全部丢失。停机前 Stage4A/C metrics 到 161k/145k；可验证完整恢复点为 A150/C125，因此不可把未 checkpoint 的 11k/20k 当作可恢复进度。
+- 停机前 A125/A150 diagnostic 均为 capture 4/4、collision 0/4；A150 平均 distance progress=20.04、平均最小敌距=8.30。C125 仍 capture 0/4、collision 0/4、平均最小敌距=15.02、平均速度=0.019。
+- 为保持原 checkpoint 合同，旧线没有使用当前已改动 runner，也没有绕过 implementation hash。创建 detached worktree `/tmp/cocap_stage4_resume_exact` 指向 `54c7488`；其完整 manifest 与 A150 零差异（implementation `ca5e1cf9...`），随后从 A150/C125 恢复。
+- 当前 PID/tmux：A 240128/`stage4a_speedopt_200k_resume`/cuda:0；C 240122/`stage4c_speedopt_200k_resume`/cuda:1；Pure-CE 224391/`parallel_pure_ce_200k`/cuda:0；Legacy-VorAdj 224386/`parallel_legacy_voradj_200k`/cuda:1。
+- 两条新线 step-1 model-only milestone 与 `resume_latest` 完整 replay 已原子落盘。17:17 根盘余约 71 GiB；GPU0/1 约 80°C/92°C。当前按用户要求四线并行，首个新 1k/25k 后再按共存吞吐更新 ETA。
+
+## 2026-08-09 20:35 用户指定 Pure-CE / Legacy-VorAdj 并行分支
+
+- 已新增两条 scratch 200k 连续 `(a,w)` 线：Pure-CE 4P/0E/1obs，以及 legacy VorAdj capture reward/graph + CE coverage 的 4P/1E/1obs old-mix；详见 `docs/PARALLEL_CE_LEGACY_VORADJ_200K_20260809_ZH.md`。
+- runner 新增 config 驱动 scene cycle、独立 diagnostic scenes、CV<0.20 与接敌正向信号汇总，以及 `rolling_latest` replay 模式。每 25k 的 trainer/评估永久保留，只有 replay 滚动替换；final 仍是完整恢复点。
+- 核心新合同 13/13、相关整组回归 62/62 和双 32-step 端到端预检均通过。20:49 旧 A/C 约 88k/79k、GPU1 为 90°C，因此使用持久安全队列，预计旧线 08-10 06:20--07:10 完成冷却后再同时启动，不抢占当前线。
+- 新双线 first-25k 是首个可信分流 gate：Pure-CE 看 CE strict、CV<0.20、CE progress；legacy capture 看 capture/collision，并同时看 detected、discovery step、最小敌距与 distance progress。200k 完成与自动评估前不做 checkpoint 清理。
+
+## 2026-08-09 20:06 状态、选优与并行决策
+
+- speedopt Stage4A/4C 进程健康：PID 1326505/cuda:0 与 1326499/cuda:1 仍存活；20:06 最新 metrics 为 77k/69k，`mean_finite=1`。
+- 实测稳态吞吐已收敛到 A 约 13.6–13.7k steps/h、C 约 13.3k steps/h。更新 ETA：A 200k+final eval 为 08-10 05:10–05:50，C 为 06:00–06:40；保守两线 07:00 前完成。
+- 新增正式 eval20：A50 capture=95%、collision=5%、平均 distance progress=24.86；A75 capture=25%、collision=75%、平均 distance progress=11.90。A50 明确 PASS 且必须永久保留；A75 是显著退化点，不得以 final 自动覆盖最佳点。
+- 退化与 critic 尺度同时发生：A 的 critic loss 25k/50k/75k 为 5.0/775.1/1986.9，raw critic grad 为 41.8/582.8/1258.7，Q mean 从 -2.22/-2.86 翻到 +10.4；虽然 finite，75k 的高速度/高 closing 已转化为碰撞坍缩。这是“学会追捕后过度激进”，不是无学习。
+- C 暂无晋级信号：25k/50k diagnostic 均 0/4 capture，50k speed mean=0.067、d1_min=14.83，69k 仍无 ring visitation/capture。C 保留到后续 checkpoint 观察，但当前不能据此开 Stage4D。
+- 加速决策：可以提前并行 **Stage4B moving/no-obstacle**，它是 A50 后唯一合法的下一难度和 4D 的解锁路径；不能直接开 4D/4E/5。仅建议 GPU0 上一条低优先级 25k gate，先做 2k 共存吞吐门槛（现有 A/C 下降不超过 10%、GPU0 <88°C）再延长。GPU1 已到 90–91°C，不叠线。
+- 实现前置：当前 runner 只支持同 manifest 的 full checkpoint+replay resume 和 legacy IQN encoder 初始化，没有 MASAC actor-only 跨配置初始化。full resume 会被 manifest 拒绝且不应通过绕过校验混入 stationary replay。优先补严格 actor-only 初始化、审计记录和合同测试，再从 A50 启动 Stage4B；若不补接口，只能做价值较低的 scratch B 重跑。
+
+正式评估产物：`artifacts/2026-08-09_200k_speedopt/analysis/stage4a_50k_eval20_seed2026080801.json`、`stage4a_75k_eval20_seed2026080801.json`。
+
+本节覆盖下文 14:45/11:55 的状态与 ETA；其余冻结合同继续有效。
+
+## 2026-08-09 14:45 执行更新：speedopt 双线已替换原线
+
+- 用户确认执行磁盘批次 R1/R2/R3，并授权立即关闭原 Stage4A/4C、保留旧 trainer checkpoint、不保留旧 replay。
+- 原 PID 527834/528005 已于最后 metrics step=67,000 时停止；最后完整模型 bundle 为各自 step=50,000。旧根中的 6 个 replay 已删除，step1/25k/50k 的 `trainer.pt`、config、manifest、runtime state、metrics 与 diagnostic eval 均保留；两棵旧输出由各约 2.67 GiB 降至约 338 MiB。
+- speedopt 同配置 200k 双线已于 14:45 启动：Stage4A PID 1326505 / cuda:0 / tmux `stage4a_speedopt_200k`，Stage4C PID 1326499 / cuda:1 / tmux `stage4c_speedopt_200k`。共同输出根为 `artifacts/2026-08-09_200k_speedopt/`，tag 分别为 `stage4a_speedopt_200k_20260809` 与 `stage4c_speedopt_200k_20260809`。
+- 保存/评估合同不变：每 25k 写完整 checkpoint bundle 并执行内置 diagnostic eval，200k 终点写 final report/eval；在自动评估完成且用户再次确认前，不清理新线任何 checkpoint/replay。
+- R3 已完成，当前使用的 VS Code Server `df53...`、OpenAI 26.803、Claude 2.1.226 均保留并继续运行。R1/R2 以 nice=19、idle I/O 独立执行，manifest 位于 `docs/audits/`；新训练为 nice=10。
+
+本节覆盖下文 11:55 快照中“原线继续、等待追赶后再停”的旧状态；架构审查、最终场景路线与 gate 仍有效。
+
 > 审查基线：`bd63549`；隔离优化分支：`perf/focal-replay-20260809`；本文快照时间：2026-08-09 11:55 CST。
 > 用户最新边界：最终动作空间只要保持连续即可，`(a,ω)`、`[v_x,v_y]` 或 `[a_x,a_y]` 均可。因此 Stage6/7 动作迁移不再是最终场景训练的前置条件。
 

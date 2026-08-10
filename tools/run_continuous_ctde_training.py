@@ -112,11 +112,58 @@ def _save_checkpoint_bundle(
     metrics_history: List[Dict[str, Any]],
     diagnostic_eval: Dict[str, Any],
     overwrite: bool = False,
+    include_replay: bool = True,
 ) -> Path:
     bundle_dir = artifact_dir / "checkpoints" / f"step_{int(step):09d}"
     if bundle_dir.exists() and not overwrite:
         return bundle_dir
     tmp_dir = artifact_dir / ".tmp" / f"step_{int(step):09d}_{os.getpid()}"
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    trainer.save_checkpoint(tmp_dir / "trainer.pt", manifest, runtime_state=runtime_state)
+    if include_replay:
+        replay.save(tmp_dir / "replay.pkl", manifest, runtime_state=runtime_state)
+    (tmp_dir / "runtime_state.pkl").write_bytes(pickle.dumps(runtime_state))
+    (tmp_dir / "effective_config.yaml").write_text(yaml.safe_dump(root_config, sort_keys=False), encoding="utf-8")
+    (tmp_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (tmp_dir / "metrics.jsonl").write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in metrics_history),
+        encoding="utf-8",
+    )
+    (tmp_dir / "diagnostic_eval.json").write_text(json.dumps(diagnostic_eval, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (tmp_dir / "checkpoint_storage.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": "full_resume" if include_replay else "evaluation_model_only",
+                "step": int(step),
+                "contains_replay": bool(include_replay),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _replace_dir_atomic(tmp_dir, bundle_dir)
+    return bundle_dir
+
+
+def _save_rolling_resume_bundle(
+    artifact_dir: Path,
+    step: int,
+    root_config: Dict[str, Any],
+    manifest: Dict[str, Any],
+    trainer: CentralSACTrainer,
+    replay: JointReplayBuffer,
+    runtime_state: Dict[str, Any],
+    metrics_history: List[Dict[str, Any]],
+    diagnostic_eval: Dict[str, Any],
+) -> Path:
+    """Atomically keep exactly one full resume bundle beside model-only milestones."""
+    final_dir = artifact_dir / "resume_latest"
+    tmp_dir = artifact_dir / ".tmp" / f"resume_latest_{int(step):09d}_{os.getpid()}"
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir)
     tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -130,8 +177,40 @@ def _save_checkpoint_bundle(
         encoding="utf-8",
     )
     (tmp_dir / "diagnostic_eval.json").write_text(json.dumps(diagnostic_eval, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    _replace_dir_atomic(tmp_dir, bundle_dir)
-    return bundle_dir
+    (tmp_dir / "checkpoint_storage.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": "rolling_latest_full_resume",
+                "step": int(step),
+                "contains_replay": True,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _replace_dir_atomic(tmp_dir, final_dir)
+    return final_dir
+
+
+def _link_bundle_tree_atomic(source_dir: Path, destination_dir: Path) -> Path:
+    """Expose a completed full bundle as resume_latest without duplicating large files."""
+    tmp_dir = destination_dir.parent / ".tmp" / f"{destination_dir.name}_links_{os.getpid()}"
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    for source in source_dir.iterdir():
+        if not source.is_file():
+            continue
+        destination = tmp_dir / source.name
+        try:
+            os.link(source, destination)
+        except OSError:
+            shutil.copy2(source, destination)
+    _replace_dir_atomic(tmp_dir, destination_dir)
+    return destination_dir
 
 
 def _runtime_state(
@@ -637,6 +716,13 @@ def _screen(
                 if all(outcome.dones):
                     break
             record = env.episode_record(task=scene)
+            coverage_area_cv = float(record.get("coverage_strict_area_cv", float("inf")))
+            coverage_cv_loose_threshold = float(
+                record.get(
+                    "coverage_cv_loose_area_cv_threshold",
+                    (config.get("reward", {}) or {}).get("coverage_cv_loose_area_cv_threshold", 0.15),
+                )
+            )
             print(
                 f"[eval] scene={scene} episode={episode + 1}/{int(episodes)} "
                 f"length={int(record['length'])} captured={bool(record['captured'])} "
@@ -650,7 +736,13 @@ def _screen(
                     "captured": bool(record["captured"]),
                     "collision_event": bool(record["collision_event"]),
                     "coverage_strict_success": bool(record["coverage_strict_success"]),
-                    "coverage_cv015_success": bool(record["coverage_cv015_success"]),
+                    "coverage_cv015_success": bool(coverage_area_cv <= 0.15),
+                    "coverage_cv020_success": bool(coverage_area_cv <= 0.20),
+                    "coverage_cv_loose_success": bool(record.get("coverage_cv_loose_success", False)),
+                    "coverage_cv_loose_threshold": coverage_cv_loose_threshold,
+                    "coverage_area_cv": coverage_area_cv,
+                    "coverage_ce_center_rms": float(record.get("coverage_ce_center_rms", float("inf"))),
+                    "coverage_ce_center_max": float(record.get("coverage_ce_center_max", float("inf"))),
                     "speed_limited_rate": float(speed_limited_count / max(action_count, 1)),
                     "initial_min_distance": initial_min_distance,
                     "final_min_distance": min_distances[-1] if min_distances else None,
@@ -678,11 +770,42 @@ def _screen(
                     "speed_max": float(np.max(episode_speeds)) if episode_speeds else 0.0,
                 }
             )
+        def mean_present(key: str) -> float | None:
+            values = [
+                float(item[key])
+                for item in records
+                if item.get(key) is not None and np.isfinite(float(item[key]))
+            ]
+            return float(np.mean(values)) if values else None
+
         result[scene] = {
             "episodes": len(records),
             "success_rate": float(np.mean([bool(item["episode_success"]) for item in records])) if records else 0.0,
             "capture_rate": float(np.mean([bool(item["captured"]) for item in records])) if records else 0.0,
             "collision_rate": float(np.mean([bool(item["collision_event"]) for item in records])) if records else 0.0,
+            "coverage_strict_rate": float(np.mean([bool(item["coverage_strict_success"]) for item in records])) if records else 0.0,
+            "coverage_cv015_rate": float(np.mean([bool(item["coverage_cv015_success"]) for item in records])) if records else 0.0,
+            "coverage_cv020_rate": float(np.mean([bool(item["coverage_cv020_success"]) for item in records])) if records else 0.0,
+            "coverage_cv_loose_rate": float(np.mean([bool(item["coverage_cv_loose_success"]) for item in records])) if records else 0.0,
+            "coverage_cv_loose_threshold": (
+                float(records[0]["coverage_cv_loose_threshold"]) if records else None
+            ),
+            "detected_rate": float(np.mean([bool(item["detected"]) for item in records])) if records else 0.0,
+            "mean_discovery_step": mean_present("discovery_step"),
+            "mean_episode_length": mean_present("length"),
+            "mean_initial_min_distance": mean_present("initial_min_distance"),
+            "mean_final_min_distance": mean_present("final_min_distance"),
+            "mean_min_min_distance": mean_present("min_min_distance"),
+            "mean_distance_progress": mean_present("distance_progress"),
+            "mean_initial_ce_energy": mean_present("initial_ce_energy"),
+            "mean_final_ce_energy": mean_present("final_ce_energy"),
+            "mean_min_ce_energy": mean_present("min_ce_energy"),
+            "mean_ce_energy_progress": mean_present("ce_energy_progress"),
+            "mean_coverage_area_cv": mean_present("coverage_area_cv"),
+            "mean_coverage_ce_center_rms": mean_present("coverage_ce_center_rms"),
+            "mean_coverage_ce_center_max": mean_present("coverage_ce_center_max"),
+            "mean_action_norm": mean_present("action_norm_mean"),
+            "mean_speed": mean_present("speed_mean"),
             "speed_limited_rate": float(np.mean([item["speed_limited_rate"] for item in records])) if records else 0.0,
             "records": records,
         }
@@ -955,11 +1078,40 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     trainer = _make_trainer(root_config, device)
     max_agents = int(root_config["training"]["max_agents"])
     actor_max_pursuers = int(root_config["actor"]["max_pursuers"])
-    scenes: Tuple[str, ...] = tuple(item.strip() for item in args.scenes.split(",") if item.strip())
+    scene_text = str(getattr(args, "scenes", "") or "").strip()
+    configured_training_scenes = (root_config.get("training", {}) or {}).get(
+        "scene_cycle", SCENES
+    )
+    if isinstance(configured_training_scenes, str):
+        configured_training_scenes = tuple(
+            item.strip() for item in configured_training_scenes.split(",") if item.strip()
+        )
+    scenes: Tuple[str, ...] = (
+        tuple(item.strip() for item in scene_text.split(",") if item.strip())
+        if scene_text
+        else tuple(str(item).strip() for item in configured_training_scenes if str(item).strip())
+    )
+    if not scenes:
+        raise ValueError("--scenes must contain at least one scene")
     unknown_scenes = set(scenes).difference(SCENES)
     if unknown_scenes:
         raise ValueError(f"unknown scenes: {sorted(unknown_scenes)}")
-    scene_hashes = {scene: _stable_hash(scene_config(root_config, scene)) for scene in scenes}
+    configured_diagnostic_scenes = (root_config.get("evaluation", {}) or {}).get("diagnostic_scenes", scenes)
+    if isinstance(configured_diagnostic_scenes, str):
+        configured_diagnostic_scenes = configured_diagnostic_scenes.split(",")
+    diagnostic_scene_text = str(getattr(args, "diagnostic_eval_scenes", "") or "").strip()
+    diagnostic_scenes: Tuple[str, ...] = (
+        tuple(item.strip() for item in diagnostic_scene_text.split(",") if item.strip())
+        if diagnostic_scene_text
+        else tuple(str(item).strip() for item in configured_diagnostic_scenes if str(item).strip())
+    )
+    if not diagnostic_scenes:
+        diagnostic_scenes = scenes
+    unknown_diagnostic_scenes = set(diagnostic_scenes).difference(SCENES)
+    if unknown_diagnostic_scenes:
+        raise ValueError(f"unknown diagnostic scenes: {sorted(unknown_diagnostic_scenes)}")
+    all_scenes = tuple(dict.fromkeys((*scenes, *diagnostic_scenes)))
+    scene_hashes = {scene: _stable_hash(scene_config(root_config, scene)) for scene in all_scenes}
     manifest = _manifest(root_config, args.seed, args.tag, trainer, scene_hashes, config_path=args.config)
     recovery_cfg = root_config.get("recovery", {}) or {}
     recovery_pool: Deque[Dict[str, Any]] = deque(maxlen=int(recovery_cfg.get("capture_state_pool_capacity", 1000)))
@@ -1017,6 +1169,11 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     update_every = int(root_config["training"]["update_every_env_steps"])
     batch_size = int(root_config["training"]["batch_size"])
     checkpoint_interval = int(root_config["training"].get("checkpoint_interval_env_steps", 25000))
+    periodic_checkpoint_replay_mode = str(
+        root_config["training"].get("periodic_checkpoint_replay_mode", "full")
+    ).strip().lower()
+    if periodic_checkpoint_replay_mode not in {"full", "rolling_latest"}:
+        raise ValueError("training.periodic_checkpoint_replay_mode must be full or rolling_latest")
     metrics_flush_interval = int(root_config["training"].get("metrics_flush_interval_env_steps", 1000))
     diagnostic_eval_interval = int(root_config["training"].get("diagnostic_eval_interval_env_steps", 25000))
     diagnostic_rollout_cap = int((root_config.get("evaluation", {}) or {}).get("diagnostic_rollout_cap", 400))
@@ -1104,7 +1261,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 next_observations = list(outcome.observations)
                 speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
                 window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
-                if scene == "capture":
+                if scene in {"capture", "mixed_crms"}:
                     _geom = _pursuit_step_geometry(env, actions)
                     if _geom is not None:
                         window_geometry.append(_geom)
@@ -1227,7 +1384,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                             args.seed,
                             episodes=int(args.diagnostic_eval_episodes),
                             device=device,
-                            scenes=scenes,
+                            scenes=diagnostic_scenes,
                             max_steps=diagnostic_rollout_cap,
                         )
                         if transition_count % diagnostic_eval_interval == 0
@@ -1258,7 +1415,20 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         runtime_state,
                         metrics_history,
                         diagnostic_eval,
+                        include_replay=periodic_checkpoint_replay_mode == "full",
                     )
+                    if periodic_checkpoint_replay_mode == "rolling_latest":
+                        _save_rolling_resume_bundle(
+                            artifact_dir,
+                            transition_count,
+                            root_config,
+                            manifest,
+                            trainer,
+                            replay,
+                            runtime_state,
+                            metrics_history,
+                            diagnostic_eval,
+                        )
                 if all(outcome.dones) or any(item is None for item in next_observations):
                     break
             if snapshot_dataset is not None:
@@ -1322,7 +1492,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             next_observations = list(outcome.observations)
             speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
             window_speeds.extend(float(p.speed) for p in env.pursuers if not p.deactivated)
-            if scene == "capture":
+            if scene in {"capture", "mixed_crms"}:
                 _geom = _pursuit_step_geometry(env, actions)
                 if _geom is not None:
                     window_geometry.append(_geom)
@@ -1445,7 +1615,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         args.seed,
                         episodes=int(args.diagnostic_eval_episodes),
                         device=device,
-                        scenes=scenes,
+                        scenes=diagnostic_scenes,
                         max_steps=diagnostic_rollout_cap,
                     )
                     if transition_count % diagnostic_eval_interval == 0
@@ -1476,7 +1646,20 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     runtime_state,
                     metrics_history,
                     diagnostic_eval,
+                    include_replay=periodic_checkpoint_replay_mode == "full",
                 )
+                if periodic_checkpoint_replay_mode == "rolling_latest":
+                    _save_rolling_resume_bundle(
+                        artifact_dir,
+                        transition_count,
+                        root_config,
+                        manifest,
+                        trainer,
+                        replay,
+                        runtime_state,
+                        metrics_history,
+                        diagnostic_eval,
+                    )
             if all(outcome.dones) or any(item is None for item in next_observations):
                 break
         if env is not None:
@@ -1494,7 +1677,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     effective_path.write_text(yaml.safe_dump(root_config, sort_keys=False), encoding="utf-8")
     scene_config_dir = artifact_dir / "scene_configs"
     scene_config_dir.mkdir(exist_ok=True)
-    for scene in scenes:
+    for scene in all_scenes:
         (scene_config_dir / f"{scene}.yaml").write_text(
             yaml.safe_dump(scene_config(root_config, scene), sort_keys=False),
             encoding="utf-8",
@@ -1521,7 +1704,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             args.seed,
             episodes=int(args.screen_episodes),
             device=device,
-            scenes=scenes,
+            scenes=diagnostic_scenes,
         )
         if int(args.screen_episodes) > 0
         else {}
@@ -1533,7 +1716,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             args.seed,
             episodes=int(args.diagnostic_eval_episodes),
             device=device,
-            scenes=scenes,
+            scenes=diagnostic_scenes,
             max_steps=diagnostic_rollout_cap,
         )
         if int(args.diagnostic_eval_episodes) > 0
@@ -1551,6 +1734,8 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         final_diagnostic_eval,
         overwrite=True,
     )
+    if periodic_checkpoint_replay_mode == "rolling_latest":
+        _link_bundle_tree_atomic(final_bundle, artifact_dir / "resume_latest")
     checkpoint = artifact_dir / f"{args.tag}_step{transition_count}.pt"
     replay_path = artifact_dir / f"{args.tag}_replay.pkl"
     _link_or_copy_atomic(final_bundle / "trainer.pt", checkpoint)
@@ -1596,6 +1781,9 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         "replay_path": str(replay_path),
         "checkpoint": str(checkpoint),
         "diagnostic_rollout_cap": diagnostic_rollout_cap,
+        "training_scenes": list(scenes),
+        "diagnostic_scenes": list(diagnostic_scenes),
+        "periodic_checkpoint_replay_mode": periodic_checkpoint_replay_mode,
     }
     report_path = artifact_dir / f"{args.tag}_report.json"
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -1608,13 +1796,18 @@ def main() -> int:
     parser.add_argument("--artifact-root", default="")
     parser.add_argument("--seed", type=int, default=2026080601)
     parser.add_argument("--device", default="")
-    parser.add_argument("--scenes", default=",".join(SCENES))
+    parser.add_argument(
+        "--scenes",
+        default="",
+        help="Comma-separated training scenes. Empty uses training.scene_cycle from the config.",
+    )
     parser.add_argument("--snapshot-dataset", default="")
     parser.add_argument("--warmup-action-mode", choices=("actor_prior", "uniform_disk"), default="")
     parser.add_argument("--legacy-encoder-checkpoint", default="")
     parser.add_argument("--total-steps", type=int, default=None)
     parser.add_argument("--screen-episodes", type=int, default=2)
     parser.add_argument("--diagnostic-eval-episodes", type=int, default=4)
+    parser.add_argument("--diagnostic-eval-scenes", default="")
     parser.add_argument("--tag", required=True)
     parser.add_argument("--resume-checkpoint", default="")
     parser.add_argument("--resume-replay", default="")

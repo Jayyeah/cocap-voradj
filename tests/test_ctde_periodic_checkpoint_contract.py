@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+import json
 from pathlib import Path
 
 import numpy as np
@@ -10,10 +11,12 @@ from cocap_voradj.training.continuous.formal_config import resolve_formal_config
 from cocap_voradj.training.continuous.joint_replay import FocalReplaySampler, JointReplayBuffer
 from tools.run_continuous_ctde_training import (
     _link_or_copy_atomic,
+    _link_bundle_tree_atomic,
     _make_trainer,
     _periodic_checkpoint_due,
     _runtime_state,
     _save_checkpoint_bundle,
+    _save_rolling_resume_bundle,
     _verify_resume_steps,
 )
 
@@ -132,6 +135,48 @@ def test_bundle_failure_does_not_destroy_previous_bundle(tmp_path: Path, monkeyp
         )
     assert (first / "trainer.pt").read_bytes() == before
     assert not (Path(tmp_path) / "checkpoints" / "step_000025000").exists()
+
+
+def test_model_only_milestone_and_rolling_resume_contract(tmp_path: Path) -> None:
+    config = resolve_formal_config(FORMAL)
+    trainer = _make_trainer(config, "cpu")
+    replay = make_replay()
+    manifest = {"step": 25000}
+    runtime = {"transition_count": 25000}
+
+    milestone = _save_checkpoint_bundle(
+        Path(tmp_path),
+        25000,
+        config,
+        manifest,
+        trainer,
+        replay,
+        runtime,
+        [],
+        {},
+        include_replay=False,
+    )
+    assert (milestone / "trainer.pt").is_file()
+    assert not (milestone / "replay.pkl").exists()
+    storage = json.loads((milestone / "checkpoint_storage.json").read_text())
+    assert storage["kind"] == "evaluation_model_only"
+    assert storage["contains_replay"] is False
+
+    resume = _save_rolling_resume_bundle(
+        Path(tmp_path), 25000, config, manifest, trainer, replay, runtime, [], {}
+    )
+    assert resume.name == "resume_latest"
+    assert (resume / "trainer.pt").is_file()
+    assert (resume / "replay.pkl").is_file()
+    storage = json.loads((resume / "checkpoint_storage.json").read_text())
+    assert storage["kind"] == "rolling_latest_full_resume"
+    assert storage["contains_replay"] is True
+
+    final_bundle = _save_checkpoint_bundle(
+        Path(tmp_path), 200000, config, {"step": 200000}, trainer, replay, runtime, [], {}
+    )
+    linked = _link_bundle_tree_atomic(final_bundle, Path(tmp_path) / "resume_latest")
+    assert (linked / "replay.pkl").samefile(final_bundle / "replay.pkl")
 
 
 def test_resume_step_mismatch_rejected() -> None:

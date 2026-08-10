@@ -1,0 +1,55 @@
+extends: ../positive_feedback_ladder_20260807/stage3b_pure_ce_obs_aw.yaml
+
+run_name: parallel_pure_ce_4p0e1obs_200k_aw_20260809
+seed: 2026080901
+device: cuda:0
+
+training:
+  total_env_steps: 200000
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+  periodic_checkpoint_replay_mode: rolling_latest
+  scene_cycle: [pure_ce]
+  focal_quota:
+    pre_capture_pursuing: 0
+    pre_capture_support: 0
+    pre_capture_coverage: 0
+    post_capture_coverage: 0
+    pure_recovery_coverage: 128
+
+evaluation:
+  diagnostic_scenes: [pure_ce]
+  episodes_per_scene: 20
+  deterministic: true
+  diagnostic_rollout_cap: 400
+
+reward:
+  coverage_objective_version: centroid_energy_v0
+  coverage_ce_reward_scale: 10.0
+  coverage_ce_pbrs_enabled: true
+  coverage_ce_pbrs_kappa: 1.0
+  coverage_ce_pbrs_reset_mode: phase_and_all_terminal
+  # Deliberately tiny: preserve a weak preference for slowing down without
+  # changing the CE-strict success definition into a speed gate.
+  coverage_ce_speed_weight: 0.0001
+  coverage_ce_speed_weight_schedule:
+    - step: 0
+      value: 0.0001
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_ce_success_rms_threshold: 0.05
+  coverage_ce_success_max_threshold: 0.10
+  coverage_ce_success_hold_steps: 30
+  coverage_ce_min_active_pursuers: 4
+  min_active_pursuers: 4
+  coverage_cv_loose_area_cv_threshold: 0.20
+  coverage_strict_static_enabled: false
+
+experiment_metadata:
+  series_label: positive_feedback_ladder_parallel_20260809
+  stage: pure_ce_4p0e1obs_200k_aw
+  training_start: scratch
+  primary_success: CE strict, RMS<=0.05 and max<=0.10 held for 30 steps
+  secondary_success: Voronoi area CV<0.20, logged independently
+  speed_semantics: CE speed coefficient=0.0001; speed is not part of CE-strict success
+  storage_semantics: model at every 25k; only latest replay remains resumable; final bundle is full

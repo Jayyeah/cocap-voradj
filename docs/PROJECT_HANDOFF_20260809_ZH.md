@@ -4,6 +4,12 @@
 > 生成时间：2026-08-09 10:59 CST。生成时仓库 HEAD：`6db5105`，分支 `ladder/implementation-20260807`。
 >
 > **2026-08-09 11:55 增补：** 瓶颈已在隔离分支修复并通过 6k smoke/源码回归，25k 4A gate 正在运行；恢复合同、历史证据、磁盘风险与最终最短路线见 `docs/PROJECT_AUDIT_AND_FAST_FINAL_PLAN_20260809_ZH.md`。本增补优先于下文 10:59 快照中的 waiter/下一步描述。
+>
+> **2026-08-09 20:06 增补（当前权威状态）：** 原慢线已停止并保留 trainer；speedopt Stage4A/4C 分别为 PID 1326505/cuda:0 和 1326499/cuda:1，20:06 时约 77k/69k，均 `mean_finite=1`。A50 正式 eval20 为 capture 95%、collision 5%，A75 为 capture 25%、collision 75%，因此 A50 是已确认的 stationary capture 强 anchor，且证明 checkpoint 表现非单调；4C 到 50k diagnostic 仍 0/4，69k 训练窗口仍无 ring/capture 信号。当前 ETA 为 A 08-10 05:10–05:50、C 06:00–06:40，保守两线 07:00 前完成。可提前并行的正确候选是 Stage4B moving/no-obstacle 25k gate，不是 Stage4D/5；Stage4D 仍需 4B/4C moving 信号。硬件只建议在较冷的 GPU0 增加一条低优先级短线，GPU1 90–91°C 不叠加。现 runner 尚无 MASAC actor-only 跨配置初始化接口，启动 warm-start B 前须先补接口和合同测试；不得用 full resume 混入 A replay。
+>
+> **2026-08-09 20:49 增补（最新用户指定并行实验）：** 新增 Pure-CE 4P/0E/1obs 与 Legacy-VorAdj old-mix capture+CE coverage 两条 scratch 200k `(a,w)` 线；每 25k 模型+自动诊断，replay 仅保留滚动 latest，final 完整保留且自动 eval20。配置/指标/测试/ETA 见 `docs/PARALLEL_CE_LEGACY_VORADJ_200K_20260809_ZH.md`。20:49 旧 A/C 已到约 88k/79k、均 finite，GPU 78°C/90°C；为遵守“不影响现有线”并避开 GPU1 热上限，新双线由 tmux `parallel_ce_voradj_200k_queue` 在旧 PID 自然结束且温度/磁盘通过 gate 后同时启动，预计 08-10 06:20–07:10 起跑。该用户指定分支独立于原阶梯的 Stage4B 推荐，不将其误记为 Stage4D 解锁。
+>
+> **2026-08-10 17:17 增补（服务器停机恢复，当前最高优先级）：** 服务器约在 02:23 后停机，所有 tmux 丢失。停机前 A/C metrics 分别到 161k/145k，最后完整恢复点为 A150/C125；A150 diagnostic 为 capture 4/4、collision 0/4，C125 为 capture 0/4、collision 0/4。17:11 已直接启动用户指定 Pure-CE/Legacy-VorAdj 两条新 200k（PID 224391/cuda:0、224386/cuda:1）；17:16 使用 detached HEAD `54c7488` 的原 runner 且 manifest 零差异，从 A150/C125 严格恢复旧线（PID 240128/cuda:0、240122/cuda:1）。四个 tmux 均存活；旧线没有放宽 checkpoint 安全校验。GPU1 约 92°C，需后续观察，但按用户要求当前四线均保持运行。
 
 ## 0. 一句话现状
 

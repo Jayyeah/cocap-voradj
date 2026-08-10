@@ -39,13 +39,13 @@ Stage 0 旧 IQN 基线复现
 | 4B capture（moving） | FAIL（历史） | 2 seeds × 25k eval20 capture 0/20、min-dist ≥ baseline；oracle seek 10/10 证明合同可学 |
 | 4C capture（moving+1obs） | FAIL（历史） | 2 seeds × 25k eval20 capture 0/20、min-dist ≥ baseline；400 步 cap 掩盖慢接近 |
 | A 批 reward 变体（A1/A2/A3） | FAIL/参考 | A1/A2 碰撞坍缩、A3 安全但无信号；探索批 Base=A3，GPU 释放后再启动 |
-| 4A/4C 200k 原合同对照 | IN_PROGRESS | IQN 200k 参照已完成（100k 首现 capture、125k 峰值 75%、200k 40%）；4A @50k capture 5/20（25%）、4C @50k 0/20 slow approach；当前 61k/61k（2026-08-09 10:45）；速度瓶颈已定位为自身 focal replay 采样 |
-| 4D-4E | READY | 配置已就绪；4B 有积极信号才提前启动 4D（当前未满足） |
+| 4A/4C speedopt 200k 同合同 | IN_PROGRESS | 20:06 为 77k/69k；A50 eval20 capture 95%/collision 5%（当前最佳），A75 25%/75%（碰撞退化）；4C 50k diagnostic 0/4，尚无 moving 信号 |
+| 4D-4E | READY/BLOCKED_BY_GATE | 配置已就绪；4D 仍需 4B 或 4C 的 moving capture/geometry 信号，不能只凭 A50 stationary PASS 提前启动 |
 | 5A/5B | READY | 配置已就绪 |
 | 6A-6C body-frame | READY | 实现/配置/20-step smoke 通过 |
 | 7A1-7A3 / 7B1-7B3 world-frame | READY | 实现/配置/20-step smoke 通过 |
 
-当前位置（2026-08-09）：Stage4A/4C 200k 原合同对照训练中（seed 2026080801，每 25k 评估并回填 `artifacts/2026-08-08_200k_reference/LEGACY_200K_PROGRESS.md`）；训练速度实测与瓶颈归因见该文件（外部线非主因，`FocalReplaySampler` 池重建为主因）；完成后输出与 IQN 200k 的完整三线对照结论，再按 gate 决定 4D/4E/5 的推进。
+当前位置（2026-08-09 20:06）：speedopt Stage4A/4C 同合同 200k 训练中（seed 2026080801，每 25k 自动诊断）；A50 已形成可靠 stationary anchor，但 A75 明显退化，必须按 checkpoint 选优。为缩短关键路径，可先实现严格的 MASAC actor-only checkpoint 初始化并从 A50 并行 Stage4B moving/no-obstacle 25k gate；当前 runner 仅支持同 manifest full resume，不能安全承担该跨配置 warm start。Stage4D/4E/5 仍按 moving gate 推进。
 
 当前 formal config：`stage4a_capture_aw.yaml` / `stage4c_capture_aw.yaml`（`configs/experiments/positive_feedback_ladder_20260807/`，200k 对照用原合同，奖励不改）。
 
