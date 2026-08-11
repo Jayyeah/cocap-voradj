@@ -1,0 +1,24 @@
+extends: ./legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent.yaml
+
+run_name: legacy_voradj_oldmix_allagent_noclip_scratch_4p1e1obs_200k_aw_20260811
+seed: 2026080902
+device: cuda:0
+
+training:
+  total_env_steps: 200000
+  grad_clip_norm: null
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+  periodic_checkpoint_replay_mode: rolling_latest
+  optimizer_unit: joint_transition_all_active_agents
+  replay_sampling: uniform_joint
+  focal_training: false
+  focal_quota: null
+
+experiment_metadata:
+  stage: legacy_voradj_oldmix_allagent_noclip_scratch_200k_aw
+  training_start: scratch
+  actor_q_implementation: bounded_critic_vjp_v1
+  gradient_clipping: disabled from step 0
+  resource_placement: cuda:0; independent P1 artifact and no checkpoint warm start
+

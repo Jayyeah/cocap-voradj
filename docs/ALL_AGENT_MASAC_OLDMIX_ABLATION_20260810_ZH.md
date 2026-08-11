@@ -2,6 +2,15 @@
 
 更新日期：2026-08-11
 
+## 2026-08-11 17:14 接手事实快照（停训前）
+
+- Git：worktree `/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix`，branch `ablation/all-agent-oldmix-20260810`，HEAD `1353193`；台账已有 supervisor 自动追加，artifact 目录未跟踪。
+- Baseline B：PID `666602`，tmux `allagent_oldmix_ablation_200k`，`cuda:0`；supervisor PID `542373` / tmux `allagent_oldmix_ablation_supervisor`。同机另有其他用户 PID `589205` 占用 `cuda:1`，不得触碰。
+- 停训前最后一条完整 metrics 窗口：env step `104000`、update count `24751`、replay size `104000`、`mean_finite=1`、critic loss `43.3365`、actor loss `30.1598`、alpha `0.04010`、update wall-time `1.0855 s`、窗口吞吐 `3.3235 step/s`。
+- 最新完整可恢复点不是 104k，而是 `resume_latest @ 100000`：trainer `16:52:09`、replay `16:52:33`、runtime/manifest/metrics `16:52:35` 写完；对应 milestone `step_000100000`。runner 没有 signal-triggered checkpoint，因此 100k 后未落盘约 4k 只作 pre-stop 事实记录，不冒充可恢复进度。
+- 资源：`cuda:0` 中 B 占 `23156 MiB`，整卡约 `23181/49140 MiB`；RAM `23/125 GiB` used、swap `1.2/8 GiB`；根盘 `831/915 GiB`、仅余 `38 GiB`。最新指标记录的 PyTorch peak allocated 为 `22461.934 MiB`。
+- 其他正式线：进程表中未发现 Baseline A 或 Pure-CE 训练；Stage4A 命令残留是 supervisor 的父 tmux shell，不是 Stage4A Python 训练。只停止上述 Baseline B，不处理 PID `589205` 或其他项目。
+
 ## 2026-08-11 10:08 A/B 25k/50k早期对照
 
 - Baseline B当前54k、12,251次更新、all finite；最近窗口约1.860 env step/s，50k里程碑约1.957 env step/s（约7.0k/h）、1.829 s/update、289 active-agent loss terms/s。
@@ -303,3 +312,14 @@ for a_id in sorted(set(
 | **合计** | **~22 GB** | |
 
 修复后 Actor update 降至 ~2–3 GB，总峰值降至 ~12–14 GB，Pure-CE（~10 GB）可与其更舒适地共存于 48 GB A6000。
+
+<!-- AUTO_ALLAGENT_STEP_100000 -->
+### Baseline B 自动里程碑 100,000
+
+- 时间：2026-08-11T16:52:38+08:00
+- checkpoint：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000100000`
+- diagnostic：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000100000/diagnostic_eval.json`
+- storage：`evaluation_model_only`，contains_replay=False
+- 指标摘要：`{"step": 100000, "update_count": 23751, "mean_finite": 1.0, "mean_critic_loss": 31.23241411781311, "mean_actor_loss": 29.80998917388916, "mean_alpha": 0.03932702188193798, "mean_update_wall_time_s": 1.2904385898437498, "mean_updates_per_second": 0.797520158482335, "mean_active_agent_loss_terms_per_update": 512.0, "mean_active_agent_loss_terms_per_second": 408.33032114295554, "env_steps_per_second": 2.786929419352983, "collision_count": 1}`
+- sampler 摘要：`{"sampler": "uniform_joint", "requested_batch_size": 128, "actual_batch_size": 128, "unique_joint_transitions": 128, "replacement_count": 0, "pre_capture_transition_count": 40, "post_capture_transition_count": 0, "pure_ce_transition_count": 88, "sampled_phase_counts": {"pure_coverage": 88, "pre_capture": 40}, "sampled_scene_counts": {"pure_ce": 88, "mixed_crms": 40}, "sampled_active_agent_role_counts": {"pursuing": 110, "support": 49, "coverage": 353}, "active_agent_loss_terms": 512, "role_metadata_used_for_sampling": false}`
+- GPU 摘要：`{"index": 0, "temperature_c": 70, "utilization_percent": 100, "memory_used_mib": 33063, "memory_total_mib": 49140, "memory_free_mib": 16077}`

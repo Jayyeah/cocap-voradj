@@ -90,6 +90,12 @@ def main() -> int:
         epos = np.asarray([env.evaders[0].x, env.evaders[0].y], dtype=float)
         active_pos = ppos[before_active]
         d1 = float(np.min(np.linalg.norm(active_pos - epos, axis=1))) if len(active_pos) else 99.0
+        visible_by_agent = np.any(
+            np.asarray(before_obs_padded["masks"], dtype=bool)[:len(before_active)]
+            & (np.asarray(before_obs_padded["types"])[:len(before_active)] == 2),
+            axis=1,
+        )
+        enemy_distances = np.linalg.norm(ppos - epos, axis=1)
         states.append({
             "local_obs": before_obs_padded,
             "global_obs": before_global,
@@ -98,6 +104,8 @@ def main() -> int:
             "ptheta": ptheta,
             "epos": epos,
             "d1": d1,
+            "enemy_visible_by_agent": visible_by_agent,
+            "enemy_distances": enemy_distances,
         })
         actions, _ = _sample_actions(
             trainer, before_obs_padded, len(env.pursuers), adapter,
@@ -111,20 +119,20 @@ def main() -> int:
             observations = list(env.get_observations())
 
     def q_values(global_obs, joint_np):
-        joint = torch.as_tensor(joint_np, dtype=torch.float32, device=trainer.device).unsqueeze(0)
-        go = {k: torch.as_tensor(v, dtype=torch.float32, device=trainer.device).unsqueeze(0) for k, v in global_obs.items()}
+        joint = torch.as_tensor(joint_np, dtype=torch.float32, device=trainer.device)
+        go = {
+            key: torch.as_tensor(value, device=trainer.device)
+            for key, value in global_obs.items()
+        }
         with torch.no_grad():
             q1 = trainer.critic1(go, joint)
             q2 = trainer.critic2(go, joint)
-        if q1.dim() == 1:
-            q1 = q1.view(1, -1)
-            q2 = q2.view(1, -1)
-        return q1[0].detach().cpu().numpy(), q2[0].detach().cpu().numpy()
+        return q1.detach().cpu().numpy(), q2.detach().cpu().numpy()
 
-    rows = []
+    policy_actions_all = []
+    random_actions_all = []
+    seek_actions_all = []
     for st in states:
-        active = st["active"]
-        idx = np.where(active)[0]
         with torch.no_grad():
             policy_acts, _, _ = trainer.actor.sample(_tensor_obs(st["local_obs"], trainer.device), deterministic=True)
         policy_np = policy_acts.detach().cpu().numpy()
@@ -139,19 +147,37 @@ def main() -> int:
         seek_np = seek_actions(st["ppos"][: len(env.pursuers)], st["epos"], st["ptheta"][: len(env.pursuers)], w_max=w_max)
         seek_full = np.zeros((max_agents, 2), dtype=np.float32)
         seek_full[: len(env.pursuers)] = seek_np
+        policy_actions_all.append(policy_full)
+        random_actions_all.append(random_full)
+        seek_actions_all.append(seek_full)
 
-        qp1, qp2 = q_values(st["global_obs"], policy_full)
-        qr1, qr2 = q_values(st["global_obs"], random_full)
-        qs1, qs2 = q_values(st["global_obs"], seek_full)
-        qp = np.minimum(qp1, qp2)[idx].mean()
-        qr = np.minimum(qr1, qr2)[idx].mean()
-        qs = np.minimum(qs1, qs2)[idx].mean()
-        rows.append({
-            "d1": st["d1"],
-            "bucket": "near" if st["d1"] < 12.0 else ("medium" if st["d1"] < 20.0 else "far"),
-            "Q_policy": float(qp), "Q_random": float(qr), "Q_seek": float(qs),
-            "q1_policy_mean": float(qp1[idx].mean()), "q2_policy_mean": float(qp2[idx].mean()),
-        })
+    global_batch = {
+        key: np.stack([state["global_obs"][key] for state in states])
+        for key in states[0]["global_obs"]
+    }
+    qp1, qp2 = q_values(global_batch, np.stack(policy_actions_all))
+    qr1, qr2 = q_values(global_batch, np.stack(random_actions_all))
+    qs1, qs2 = q_values(global_batch, np.stack(seek_actions_all))
+    rows = []
+    for row_index, st in enumerate(states):
+        idx = np.where(st["active"])[0]
+        for agent_id in idx:
+            distance = float(st["enemy_distances"][agent_id])
+            qp = min(qp1[row_index, agent_id], qp2[row_index, agent_id])
+            qr = min(qr1[row_index, agent_id], qr2[row_index, agent_id])
+            qs = min(qs1[row_index, agent_id], qs2[row_index, agent_id])
+            rows.append({
+                "state_index": int(row_index),
+                "agent_id": int(agent_id),
+                "distance": distance,
+                "bucket": "near" if distance < 12.0 else (
+                    "medium" if distance < 20.0 else "far"
+                ),
+                "enemy_visible": bool(st["enemy_visible_by_agent"][agent_id]),
+                "Q_policy": float(qp), "Q_random": float(qr), "Q_seek": float(qs),
+                "q1_policy": float(qp1[row_index, agent_id]),
+                "q2_policy": float(qp2[row_index, agent_id]),
+            })
 
     def agg(sub):
         n = len(sub)
@@ -162,6 +188,9 @@ def main() -> int:
         qs = np.asarray([r["Q_seek"] for r in sub])
         return {
             "n": n,
+            "fraction_Qseek_gt_Qpolicy_gt_Qrandom": float(
+                np.mean((qs > qp) & (qp > qr))
+            ),
             "fraction_Qseek_gt_Qpolicy": float(np.mean(qs > qp)),
             "fraction_Qseek_gt_Qrandom": float(np.mean(qs > qr)),
             "fraction_Qpolicy_gt_Qrandom": float(np.mean(qp > qr)),
@@ -176,11 +205,20 @@ def main() -> int:
     summary = {"overall": agg(rows)}
     for bucket in ("near", "medium", "far"):
         summary[bucket] = agg([r for r in rows if r["bucket"] == bucket])
+    for visibility in (True, False):
+        label = "enemy_visible" if visibility else "enemy_invisible"
+        subset = [r for r in rows if r["enemy_visible"] is visibility]
+        summary[label] = agg(subset)
+        for bucket in ("near", "medium", "far"):
+            summary[f"{label}_{bucket}"] = agg([
+                r for r in subset if r["bucket"] == bucket
+            ])
     payload = {
         "kind": "counterfactual_critic_q_ranking",
         "config": str(args.config),
         "checkpoint": str(args.checkpoint),
-        "samples": len(rows),
+        "states": len(states),
+        "agent_samples": len(rows),
         "seed": args.seed,
         "summary": summary,
         "rows": rows,

@@ -43,6 +43,10 @@ BASELINE_B = ROOT / (
     "configs/experiments/parallel_ce_legacy_voradj_20260809/"
     "legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent.yaml"
 )
+P1_NOCLIP_SCRATCH = ROOT / (
+    "configs/experiments/parallel_ce_legacy_voradj_20260809/"
+    "legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent_noclip_scratch.yaml"
+)
 
 
 def _without_ablation_fields(config: dict) -> dict:
@@ -240,6 +244,28 @@ def test_manifest_strictly_separates_focal_and_all_agent() -> None:
     assert manifest_b["initialization"] == "scratch"
     assert "focal_sampler_numpy" not in manifest_b["resume_contract"]["rng"]
     assert manifest_a != manifest_b
+
+
+def test_p1_is_noclip_all_agent_scratch_without_warm_start() -> None:
+    config = resolve_ladder_config(P1_NOCLIP_SCRATCH)
+    trainer = _make_trainer(config, "cpu")
+    manifest = _manifest(
+        config,
+        2026080902,
+        config["run_name"],
+        trainer,
+        {"capture": "a", "pure_ce": "b", "mixed_crms": "c"},
+        config_path=str(P1_NOCLIP_SCRATCH),
+    )
+    assert config["training"]["grad_clip_norm"] is None
+    assert config["training"]["optimizer_unit"] == "joint_transition_all_active_agents"
+    assert config["training"]["replay_sampling"] == "uniform_joint"
+    assert config["training"]["focal_training"] is False
+    assert config["seed"] == 2026080902
+    assert config.get("initialization", {}).get("actor_encoder", {}).get("mode", "none") == "none"
+    assert manifest["grad_clip"] == "none"
+    assert manifest["initialization"] == "scratch"
+    assert manifest["actor_q_implementation"] == "bounded_critic_vjp_v1"
 
 
 def test_uniform_sampler_returns_joint_batch_without_focal_optimizer_fields() -> None:
