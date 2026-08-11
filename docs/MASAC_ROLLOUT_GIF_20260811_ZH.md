@@ -55,3 +55,17 @@ Old-Mix 和 VCT-LS 分别把 preset 换成 `old_mix.yaml` 与 `vct_ls_capture.ya
 - Legacy Old-Mix Focal A、All-Agent B：各自 last=200k；best必须在相同20-rollout三场景合同下选，不用4-episode diagnostic直接定夺。
 
 正式批处理放到对应训练完成后执行，当前不启动，避免与在训线竞争CPU/GPU。
+
+## 2026-08-11 14:15 正式批处理状态
+
+已启动完结线的 paired 评估，统一输出到 artifacts/2026-08-11_completed_lines_20rollout5gif/。Stage4A 的 50k 候选最佳与 200k last 已各自完成 20 rollout / 5 GIF：两点均为 capture 20/20、collision 0/20；50k 平均完成 65.85 步，200k 平均完成 42.85 步。因此在本组完全相同 seed 上，200k 不仅保持成功率，而且完成更快；最终 best 选择应结合这批 paired rollout 修正，不能沿用另一组 seed 下的旧标签。
+
+Stage4C 的 150k 诊断点与 200k last、Baseline A 的 100k coverage-diagnostic 点与 200k last 正在独立 tmux 中自动完成。VCT-LS 每点为 20 rollout / 5 GIF；Old-Mix 每点为 capture、pure-CE、mixed 各 20 rollout / 5 GIF，即总计 60 rollout / 15 GIF。任务完成时会写出各目录的 all_summaries.json 与 timing.json，无需保持交互窗口。
+
+首次并发启动暴露出 PyTorch 默认 CPU thread pool 过度创建：6 个父进程各约 66 threads，使一分负载瞬时达到 370。只停止了这6个 rollout，不触碰训练；随后在 run_masac_rollout_gifs.py 的父进程和 spawned worker 内显式固定 torch intra-op/inter-op 为1，并用 OMP_NUM_THREADS=1、MKL_NUM_THREADS=1、OPENBLAS_NUM_THREADS=1、nice=15 重启。合同测试 5/5 通过。安全版每个父进程3 threads，每个worker约2 threads且最多占1个CPU核；当前剩余4个任务共8个计算worker，GPU rollout占用为0，系统一分负载约20/128核。
+
+## 与旧 IQN 并行脚本的实现差异
+
+旧 IQN 的 batch_voradj_rollouts_parallel_20260721.py / tools/batch_rollouts_parallel.py 已经是并行实现，但准确说是多进程而非 Python 多线程：默认4个worker，以子进程分别运行 batch脚本，每个worker加载一份 IQN，历史默认放在 cuda:1，结果先写 _workers/ 再合并。旧实现没有显式设置 PyTorch/BLAS CPU线程上限，因此4 workers并不严格等于只创建4个OS线程；空闲服务器通常表现为约4个持续占用的CPU核，但库线程池仍有在高并发时放大 runnable thread 数的风险。
+
+当前 MASAC 脚本同样采用多进程，使用 spawn ProcessPoolExecutor；每个worker加载一份与 checkpoint contract/effective config 严格匹配的 central MASAC trainer，并直接按固定episode index合并结果。正式preset默认4 workers，但本批为保护在训线显式使用2 workers/任务，并新增单线程池限制。它还与旧 IQN 有三项语义差异：MASAC走确定性连续actor而非IQN midpoint动作；按 Pure-CE/Old-Mix/VCT-LS 三套精确场景合同分别执行；运行前校验root/scene/action hash，拒绝错配checkpoint。

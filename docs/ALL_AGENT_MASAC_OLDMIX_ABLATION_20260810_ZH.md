@@ -181,3 +181,20 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 - 指标摘要：`{"step": 50000, "update_count": 11251, "mean_finite": 1.0, "mean_critic_loss": 25.8559407081604, "mean_actor_loss": 25.056128120422365, "mean_alpha": 0.0671182989180088, "mean_update_wall_time_s": 1.8292255302734375, "mean_updates_per_second": 0.5651204524466106, "mean_active_agent_loss_terms_per_update": 512.0, "mean_active_agent_loss_terms_per_second": 289.3416716526646, "env_steps_per_second": 1.9569574220841743, "collision_count": 2}`
 - sampler 摘要：`{"sampler": "uniform_joint", "requested_batch_size": 128, "actual_batch_size": 128, "unique_joint_transitions": 128, "replacement_count": 0, "pre_capture_transition_count": 40, "post_capture_transition_count": 0, "pure_ce_transition_count": 88, "sampled_phase_counts": {"pre_capture": 40, "pure_coverage": 88}, "sampled_scene_counts": {"mixed_crms": 40, "pure_ce": 88}, "sampled_active_agent_role_counts": {"pursuing": 119, "support": 41, "coverage": 352}, "active_agent_loss_terms": 512, "role_metadata_used_for_sampling": false}`
 - GPU 摘要：`{"index": 0, "temperature_c": 83, "utilization_percent": 100, "memory_used_mib": 33063, "memory_total_mib": 49140, "memory_free_mib": 16077}`
+
+<!-- AUTO_ALLAGENT_STEP_75000 -->
+### Baseline B 自动里程碑 75,000
+
+- 时间：2026-08-11T13:11:20+08:00
+- checkpoint：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000075000`
+- diagnostic：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000075000/diagnostic_eval.json`
+- storage：`evaluation_model_only`，contains_replay=False
+- 指标摘要：`{"step": 75000, "update_count": 17501, "mean_finite": 1.0, "mean_critic_loss": 31.32510574531555, "mean_actor_loss": 27.56184755706787, "mean_alpha": 0.0430303825289011, "mean_update_wall_time_s": 1.9056682998046874, "mean_updates_per_second": 0.525597536520836, "mean_active_agent_loss_terms_per_update": 512.0, "mean_active_agent_loss_terms_per_second": 269.105938698668, "env_steps_per_second": 1.8552578344404043, "collision_count": 1}`
+- sampler 摘要：`{"sampler": "uniform_joint", "requested_batch_size": 128, "actual_batch_size": 128, "unique_joint_transitions": 128, "replacement_count": 0, "pre_capture_transition_count": 36, "post_capture_transition_count": 0, "pure_ce_transition_count": 92, "sampled_phase_counts": {"pure_coverage": 92, "pre_capture": 36}, "sampled_scene_counts": {"pure_ce": 92, "mixed_crms": 36}, "sampled_active_agent_role_counts": {"pursuing": 98, "support": 46, "coverage": 368}, "active_agent_loss_terms": 512, "role_metadata_used_for_sampling": false}`
+- GPU 摘要：`{"index": 0, "temperature_c": 84, "utilization_percent": 98, "memory_used_mib": 33063, "memory_total_mib": 49140, "memory_free_mib": 16077}`
+
+### 2026-08-11 14:15 运行状态与 ETA
+
+- Baseline B 正常运行于 cuda:0，最新81k/200k，loss finite；75k pure-CE 为 strict 1/4、CV<0.15 2/4、CV<0.20 3/4，存在coverage积极信号，但 capture/mixed均0/4且collision均4/4，尚无围捕成功信号。近25k稳态约6.7k steps/h，训练到200k ETA 为 2026-08-12 08:00左右，含最终20回合screening约08:30--09:15。
+- Pure-CE 正常运行于同一 cuda:0，最新174k/200k；150k为strict 0/4、CV<0.15 2/4、CV<0.20 3/4、collision 0/4，CE energy平均改善0.05669，属于明确宽松coverage/energy积极信号。稳态约10k steps/h，训练到200k ETA 为当日16:45--17:00，含最终screening约17:15--17:45。
+- Stage4A、Stage4C、Baseline A已完成。完结线20-rollout/5-GIF任务使用CPU低优先级后台tmux，不使用训练GPU；Stage4A 50k/200k paired结果已完成，剩余Stage4C与Baseline A四个任务会自行退出并落盘。

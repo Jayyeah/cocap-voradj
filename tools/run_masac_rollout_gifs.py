@@ -47,6 +47,18 @@ from tools.run_continuous_ctde_training import (
 PRESET_SCENES = set(SCENES)
 
 
+def _limit_cpu_threads() -> None:
+    """Keep background rollout workers from oversubscribing training hosts."""
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        # PyTorch only permits setting the inter-op pool before parallel work
+        # starts. A spawned worker reaches this function early enough; the
+        # fallback keeps repeated in-process test calls harmless.
+        pass
+
+
 def now() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -468,6 +480,7 @@ def rollout_episode(
 
 
 def _run_chunk(payload: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    _limit_cpu_threads()
     config = load_config(str(payload["config"]))
     checkpoint = Path(payload["checkpoint"])
     saved = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -536,6 +549,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    _limit_cpu_threads()
     args = parse_args()
     preset_path = Path(args.preset_config)
     config_path = Path(args.config)
