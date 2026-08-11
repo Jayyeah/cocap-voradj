@@ -1,5 +1,26 @@
 # CoCap-VorAdj 全面审查、训练提速与最终场景最短计划（2026-08-09）
 
+## 2026-08-11 10:08 状态、信号与ETA更新
+
+### 完结线结论
+
+- Stage4A结论不变：200k clean/finite，final 4/4 capture且0/4 collision；统计更强的当前最佳仍是50k eval20（19/20 capture、1/20 collision），50k与200k均保留。
+- Stage4C结论不变：200k clean/finite，但所有里程碑capture均0/4，final collision 2/4；训练实现正确、任务学习失败。
+
+### 在训线
+
+- Baseline A：180k，最新175k checkpoint。capture从25k到175k始终0/4；50--150k多次出现正distance progress，但collision长期为2--4/4，175k进展回落到+3.47。pure-CE在50k strict 2/4、100k CV<0.20 4/4后，125--175k退化为strict 0/4、CV<0.20 2/4。结论：有coverage和接敌能力，但capture失败且后期非单调退化。
+- Pure-CE：134k，最新125k checkpoint。最强75k为strict 1/4、CV<0.20 4/4、collision 0/4；100/125k回落为strict 0/4、CV<0.20 1/4与2/4。存在明确但非单调的积极信号，75k暂为最佳候选。
+- Baseline B：54k，25k/50k均finite且storage/model-only合同正确。50k pure-CE为strict 0/4、CV<0.20 3/4、collision 0/4、CE progress +0.0642；capture仍0/4、collision 4/4、distance progress +9.83。存在coverage/接敌信号，但围捕和碰撞问题未解。
+- A/B同step早期比较：Focal A在25/50k pure-CE strict分别1/4、2/4，All-Agent B均0/4；50k capture两者均0/4且collision 4/4，A/B distance progress为+14.79/+9.83。当前早期证据偏向Focal的coverage样本效率，但每点只有4 episodes且两线均未学出capture，不能提前裁决。
+
+### ETA
+
+- Baseline A：200k训练约今日11:40--12:00；完整final report约12:30--14:00。
+- Pure-CE：200k训练约今日16:30--17:15；完整report约17:30--19:00。
+- Baseline B：75k诊断约今日13:15--13:45；200k训练约08-12 07:00--09:00，完整report约09:00--12:00。
+- 最近吞吐约为A 12.0k/h、Pure 10.0k/h、B 6.7k/h；GPU0/1为85°C/92°C且均满载，根盘余约49 GiB。
+
 ## 2026-08-11 04:00 完结结果、在训信号与ETA
 
 ### 已完结

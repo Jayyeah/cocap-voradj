@@ -2,6 +2,15 @@
 
 更新日期：2026-08-11
 
+## 2026-08-11 10:08 A/B 25k/50k早期对照
+
+- Baseline B当前54k、12,251次更新、all finite；最近窗口约1.860 env step/s，50k里程碑约1.957 env step/s（约7.0k/h）、1.829 s/update、289 active-agent loss terms/s。
+- B25k：capture 0/4、collision 4/4、distance progress +4.17；pure-CE strict 0/4、CV<0.20 0/4；mixed capture 0/4、collision 4/4、CV<0.20 2/4。
+- B50k：capture 0/4、collision 4/4、distance progress +9.83；pure-CE strict 0/4、CV<0.20 3/4、collision 0/4、CE progress +0.0642；mixed capture 0/4、collision 3/4。
+- 同step Focal A：25k pure-CE strict 1/4、CV<0.20 2/4；50k strict 2/4、CV<0.20 3/4。50k capture同样0/4、collision 4/4，但distance progress +14.79。
+- 早期判断：B的coverage从25k到50k有积极改善，但strict sample efficiency暂落后A；capture两者都失败，B并未解决碰撞。样本仅4 episodes且A后续明显非单调，继续完整200k，不作提前裁决。
+- ETA：B75k约今日13:15--13:45；B200k训练约08-12 07:00--09:00，final report约09:00--12:00。Baseline A约今日11:40--12:00完成训练、12:30--14:00完成report。
+
 ## 2026-08-11 04:00 A/B实时状态
 
 - Baseline B已于01:35:28在cuda:0正式启动；CUDA32与2k Gate通过，2k共469次更新、all_finite=true、约1.167 env step/s、3.145 s/update、512 agent loss terms/update、峰值VRAM约22,462 MiB。
@@ -150,3 +159,25 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 - 保持不变：mixed:pure=1:1、reward、Legacy-VorAdj、APF、network、SAC hyperparameters、seed、200k budget。
 - 2k preflight：`{"cuda32_tag": "allagent_oldmix_cuda0_smoke32_20260810", "preflight_tag": "legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810", "report": "/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/preflight_2k/legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810/legacy_voradj_oldmix_allagent_preflight_2k_cuda0_20260810_report.json", "updates": 469, "env_steps_per_second": 1.1669494495633304, "update_wall_time_s": 3.145146484375, "critic_time_s": 0.8741939086914062, "actor_q_time_s": 0.750358642578125, "updates_per_second": 0.3179502147095444, "active_agent_loss_terms_per_update": 512.0, "active_agent_loss_terms_per_second": 162.79050993128672, "peak_vram_mib": 22461.93408203125, "gpu_profile": {"elapsed_s": 1719.469720097004, "samples": 341, "gpu_utilization_mean_percent": 99.99413489736071, "gpu_utilization_max_percent": 100, "temperature_max_c": 86, "memory_used_max_mib": 43354, "memory_free_min_mib": 5786}, "all_finite": true}`
 - 下一个正式 checkpoint：25k。
+
+<!-- AUTO_ALLAGENT_STEP_25000 -->
+### Baseline B 自动里程碑 25,000
+
+- 时间：2026-08-11T05:42:47+08:00
+- checkpoint：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000025000`
+- diagnostic：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000025000/diagnostic_eval.json`
+- storage：`evaluation_model_only`，contains_replay=False
+- 指标摘要：`{"step": 25000, "update_count": 5001, "mean_finite": 1.0, "mean_critic_loss": 16.239204359054565, "mean_actor_loss": 17.235658317565917, "mean_alpha": 0.1228210374712944, "mean_update_wall_time_s": 1.9219128017578122, "mean_updates_per_second": 0.5210293972269913, "mean_active_agent_loss_terms_per_update": 512.0, "mean_active_agent_loss_terms_per_second": 266.7670513802195, "env_steps_per_second": 1.8571332086226953, "collision_count": 1}`
+- sampler 摘要：`{"sampler": "uniform_joint", "requested_batch_size": 128, "actual_batch_size": 128, "unique_joint_transitions": 128, "replacement_count": 0, "pre_capture_transition_count": 48, "post_capture_transition_count": 0, "pure_ce_transition_count": 80, "sampled_phase_counts": {"pre_capture": 48, "pure_coverage": 80}, "sampled_scene_counts": {"mixed_crms": 48, "pure_ce": 80}, "sampled_active_agent_role_counts": {"pursuing": 135, "support": 55, "coverage": 322}, "active_agent_loss_terms": 512, "role_metadata_used_for_sampling": false}`
+- GPU 摘要：`{"index": 0, "temperature_c": 85, "utilization_percent": 100, "memory_used_mib": 33063, "memory_total_mib": 49140, "memory_free_mib": 16077}`
+
+<!-- AUTO_ALLAGENT_STEP_50000 -->
+### Baseline B 自动里程碑 50,000
+
+- 时间：2026-08-11T09:26:03+08:00
+- checkpoint：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000050000`
+- diagnostic：`/home/yjq/rl/CoCap1/cocap-voradj-allagent-oldmix/artifacts/2026-08-10_allagent_oldmix_ablation/legacy_voradj_oldmix_allagent_4p1e1obs_200k_aw_20260810/checkpoints/step_000050000/diagnostic_eval.json`
+- storage：`evaluation_model_only`，contains_replay=False
+- 指标摘要：`{"step": 50000, "update_count": 11251, "mean_finite": 1.0, "mean_critic_loss": 25.8559407081604, "mean_actor_loss": 25.056128120422365, "mean_alpha": 0.0671182989180088, "mean_update_wall_time_s": 1.8292255302734375, "mean_updates_per_second": 0.5651204524466106, "mean_active_agent_loss_terms_per_update": 512.0, "mean_active_agent_loss_terms_per_second": 289.3416716526646, "env_steps_per_second": 1.9569574220841743, "collision_count": 2}`
+- sampler 摘要：`{"sampler": "uniform_joint", "requested_batch_size": 128, "actual_batch_size": 128, "unique_joint_transitions": 128, "replacement_count": 0, "pre_capture_transition_count": 40, "post_capture_transition_count": 0, "pure_ce_transition_count": 88, "sampled_phase_counts": {"pre_capture": 40, "pure_coverage": 88}, "sampled_scene_counts": {"mixed_crms": 40, "pure_ce": 88}, "sampled_active_agent_role_counts": {"pursuing": 119, "support": 41, "coverage": 352}, "active_agent_loss_terms": 512, "role_metadata_used_for_sampling": false}`
+- GPU 摘要：`{"index": 0, "temperature_c": 83, "utilization_percent": 100, "memory_used_mib": 33063, "memory_total_mib": 49140, "memory_free_mib": 16077}`
