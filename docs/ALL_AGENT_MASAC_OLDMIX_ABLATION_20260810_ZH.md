@@ -198,3 +198,108 @@ supervisor：tmux `allagent_oldmix_ablation_supervisor`，PID `454469`；正式�
 - Baseline B 正常运行于 cuda:0，最新81k/200k，loss finite；75k pure-CE 为 strict 1/4、CV<0.15 2/4、CV<0.20 3/4，存在coverage积极信号，但 capture/mixed均0/4且collision均4/4，尚无围捕成功信号。近25k稳态约6.7k steps/h，训练到200k ETA 为 2026-08-12 08:00左右，含最终20回合screening约08:30--09:15。
 - Pure-CE 正常运行于同一 cuda:0，最新174k/200k；150k为strict 0/4、CV<0.15 2/4、CV<0.20 3/4、collision 0/4，CE energy平均改善0.05669，属于明确宽松coverage/energy积极信号。稳态约10k steps/h，训练到200k ETA 为当日16:45--17:00，含最终screening约17:15--17:45。
 - Stage4A、Stage4C、Baseline A已完成。完结线20-rollout/5-GIF任务使用CPU低优先级后台tmux，不使用训练GPU；Stage4A 50k/200k paired结果已完成，剩余Stage4C与Baseline A四个任务会自行退出并落盘。
+
+## 9. 2026-08-11 代码审计：显存占用、断点续训与修复方案
+
+### 9.1 断点续训合同验证 ✅
+
+对 Baseline B 的 checkpoint/resume 合同进行逐项核查，结论：**正确实现，可正常断训续训**。
+
+| 检查项 | 路径/文件 | 结果 |
+|--------|-----------|------|
+| 里程碑 checkpoint | `checkpoints/step_000025000/` (×3: 25k/50k/75k) | ✅ `evaluation_model_only`，不含 replay.pkl（138MB trainer.pt only） |
+| 滚动 resume bundle | `resume_latest/` | ✅ `rolling_latest_full_resume`，含完整 replay.pkl（2.4GB）+ trainer.pt（138MB） |
+| 存储模式 | `checkpoint_storage.json` | ✅ milestone=`evaluation_model_only`/contains_replay=false；resume=`rolling_latest_full_resume`/contains_replay=true |
+| 原子保存 | `_replace_dir_atomic(tmp, bundle_dir)` | ✅ tmp → rename，防半写 |
+| Resume step 校验 | `_verify_resume_steps()` | ✅ trainer.transition_count == replay.transition_count，不匹配拒绝加载 |
+| Manifest 隔离 | manifest.json 含 `optimizer_unit`/`replay_sampling`/`focal_training` | ✅ A/B 线 manifest 不同，A 线 checkpoint 无法误加载到 B 线 |
+| step-1 初始点 | `checkpoints/step_000000001/` | ✅ 含 trainer.pt（63MB，结构初始化参数），可做初始化对照 |
+| 75k 全景 | `resume_latest/` @ 75k | ✅ 2.5GB 总量：trainer 138MB + replay 2.4GB + 元数据 ~300KB |
+
+**结论**：任意时刻断电/被 kill 后，用 `resume_latest/trainer.pt` + `resume_latest/replay.pkl` + `--resume-step <step>` 即可精确续训。milestone 的 trainer.pt 可独立用于 eval，不依赖 replay。
+
+### 9.2 显存占用根因分析 🔍
+
+Baseline B 峰值显存 **22,462 MiB**（preflight 记录），稳态 nvidia-smi 显示 **23,156 MiB**。根因定位：
+
+**罪魁祸首：`_focal_actor_q` 在 all-agent 路径中循环执行 8 次完整 critic 前向传播**
+
+位置：[`src/cocap_voradj/training/continuous/central_sac.py:205-227`](../src/cocap_voradj/training/continuous/central_sac.py#L205-L227)，由 all-agent update 路径第 298 行调用。
+
+```python
+# central_sac.py:298 — all-agent 更新路径中的 actor Q 计算
+actor_q = self._focal_actor_q(central_obs, policy_actions, active)
+
+# _focal_actor_q 内部（L205-227）：
+# 对 4 个 active agent slot 各执行 critic1 + critic2 前向：
+for focal in range(actions.shape[1]):   # max_agents=12
+    if focal not in active_slots:        # 8 个 inactive 跳过
+        continue
+    focal_actions = actions.detach().clone()
+    focal_actions[:, focal] = actions[:, focal]
+    q1 = self.critic1(central_obs, focal_actions)[:, focal]  # ← 完整前向
+    q2 = self.critic2(central_obs, focal_actions)[:, focal]  # ← 完整前向
+    # 共 4 agents × 2 critics = 8 次完整 transformer 前向
+```
+
+**为何消耗 22GB**：
+
+每次 critic 前向处理 `[B×max_agents, 26 tokens, 256 dim] = [1536, 26, 256]`，经过 4 层 transformer。每层 FFN 中间张量 `[1536, 26, 1024]` ≈ 156 MB。8 次前向的 autograd 图**全部在 `actor_loss.backward()` 之前保持存活**（因为需要用 `torch.no_grad` 但此处不能——actor 需要 Q 对 action 的梯度），仅 actor update 阶段的 autograd 图就占用 ~10–12 GB。
+
+**为何 Focal Baseline A 无此问题**：Focal 路径用 `_focal_actor_q_for_ids`（L229-242），一次 critic 前向覆盖所有 batch item（每个 item 的 focal agent 不同，通过 gather 取对应的 Q 值），**只需 2 次 critic 前向**（c1+c2），而非 8 次。
+
+**这是设计问题，不是内存泄漏**：语义正确、梯度正确、所有 metric finite。`_focal_actor_q` 是为 focal path（每个 batch item 只有一个 agent 进入 loss）设计的，被直接复用到 all-agent path（需要所有 active agent 的 Q 值），产生了 4× 的冗余计算和 ~3–4× 的显存放大。
+
+### 9.3 修复方案
+
+**方案（推荐）**：增量 backward，一次一个 active agent，立即释放 autograd 图。
+
+```python
+# 替换 central_sac.py:298（all-agent update 中）
+# 旧代码：
+actor_q = self._focal_actor_q(central_obs, policy_actions, active)
+actor_loss = masked_mean(self.alpha.detach() * log_prob - actor_q, active)
+...
+actor_loss.backward()
+
+# 新代码：逐个 agent 计算 loss 并累积梯度，每步释放计算图
+self.actor_optimizer.zero_grad(set_to_none=True)
+n_total = active.sum().clamp_min(1)
+for a_id in sorted(set(
+    int(s) for s in torch.nonzero(active.any(dim=0), as_tuple=False).flatten().tolist()
+)):
+    a_id_tensor = torch.full((actions.shape[0],), a_id, dtype=torch.long, device=self.device)
+    q_i = self._focal_actor_q_for_ids(central_obs, policy_actions, a_id_tensor)
+    mask_i = active[:, a_id].to(dtype=torch.float32)
+    loss_i = (mask_i * (self.alpha.detach() * log_prob[:, a_id] - q_i)).sum() / n_total
+    loss_i.backward()  # 立即释放该 agent 的计算图
+# 梯度已累积在 actor 参数中，接续原有的 grad clip + optimizer.step()
+```
+
+**效果预估**：
+
+| 指标 | 当前 | 修复后 |
+|------|------|--------|
+| Actor update 阶段 critic 前向次数 | 8（4×2） | 8（4×2，但逐个 backward 释放） |
+| Peak autograd 图同时存活 | 8 个完整的 critic 计算图 | **1 个** agent 的 2 个 critic 图 |
+| Actor update 阶段峰值显存 | ~10–12 GB | ~2–3 GB |
+| **总峰值显存** | **~22 GB** | **~12–14 GB** (↓ ~40%) |
+| 训练语义 | 参考 | **完全等价**（masked mean 可分解为逐 agent 加权和） |
+
+**验证方法**：在同一 `resume_latest` checkpoint 上跑 1k steps A/B smoke，确认 (a) loss 曲线一致、(b) 梯度数值一致（max abs diff < 1e-6）、(c) `torch.cuda.max_memory_allocated` 显存下降。
+
+**执行时机**：当前 Baseline B 的 200k 训练**不中断**。修复在 200k 完成后、下一条 all-agent 主线启动前实施。当前不影响训练正确性。
+
+### 9.4 显存账本（供后续参考）
+
+| 组件 | 大小 | 说明 |
+|------|------|------|
+| 模型参数（Actor + 4 Critics） | ~65 MB | 16.3M params × float32 |
+| 优化器状态（Adam） | ~233 MB | momentum + variance |
+| PyTorch CUDA context/cuDNN | ~1 GB | 固定开销 |
+| Critic update（2 critics backward） | ~4–6 GB | 双 critic 前向+反向 |
+| Actor update（8 critic forwards） | ~10–12 GB | ⚠️ 当前冗余 |
+| PyTorch caching allocator | ~1–3 GB | 碎片/缓存 |
+| **合计** | **~22 GB** | |
+
+修复后 Actor update 降至 ~2–3 GB，总峰值降至 ~12–14 GB，Pure-CE（~10 GB）可与其更舒适地共存于 48 GB A6000。
