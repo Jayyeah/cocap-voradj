@@ -166,8 +166,9 @@ def validate_ladder_config(config: Dict[str, Any], path: str | Path | None = Non
     training = _require_mapping(config.get("training"), "training")
     if int(training.get("batch_size", 0)) != 128:
         raise ValueError(f"{label}: training.batch_size must be 128")
-    if abs(float(training.get("grad_clip_norm", 0.0)) - 0.5) > 1e-9:
-        raise ValueError(f"{label}: training.grad_clip_norm must be 0.5")
+    grad_clip_norm = training.get("grad_clip_norm")
+    if grad_clip_norm is not None and abs(float(grad_clip_norm) - 0.5) > 1e-9:
+        raise ValueError(f"{label}: training.grad_clip_norm must be 0.5 or null")
     if int(training.get("max_agents", 0)) != 12:
         raise ValueError(f"{label}: training.max_agents must be 12")
     training_mode_contract(config, label)

@@ -44,6 +44,7 @@ perception:
 
 training:
   total_env_steps: 200000
+  grad_clip_norm: null
   checkpoint_interval_env_steps: 25000
   diagnostic_eval_interval_env_steps: 25000
   periodic_checkpoint_replay_mode: rolling_latest
@@ -174,3 +175,5 @@ experiment_metadata:
   diagnostic_signals: capture rate, detection rate/step, initial/final/min enemy distance and progress, CE progress
   storage_semantics: model at every 25k; only latest replay remains resumable; final bundle is full
   resource_placement: cuda:0 with Pure-CE; wait for old Stage4A on cuda:0 to finish; never use Baseline-A cuda:1
+  actor_q_implementation: bounded_critic_vjp_v1
+  gradient_clipping: disabled from the verified resume switch; the pre-switch history used 0.5

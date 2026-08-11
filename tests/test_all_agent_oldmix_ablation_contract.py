@@ -55,6 +55,7 @@ def _without_ablation_fields(config: dict) -> dict:
         "replay_sampling",
         "focal_training",
         "focal_quota",
+        "grad_clip_norm",
     ):
         training.pop(key, None)
     result.pop("experiment_metadata", None)
@@ -149,7 +150,10 @@ def _central_batch(batch_size: int = 3, agents: int = 6) -> dict[str, object]:
     }
 
 
-def _small_trainer(agents: int = 6) -> CentralSACTrainer:
+def _small_trainer(
+    agents: int = 6,
+    grad_clip_norm: float | None = 0.5,
+) -> CentralSACTrainer:
     return CentralSACTrainer(
         encoder_config=LocalEntityTokenEncoderConfig(
             hidden_dim=16,
@@ -168,13 +172,16 @@ def _small_trainer(agents: int = 6) -> CentralSACTrainer:
             max_evaders=2,
             max_obstacles=1,
         ),
-        config=CentralSACConfig(hidden_dim=16, grad_clip_norm=0.5),
+        config=CentralSACConfig(
+            hidden_dim=16,
+            grad_clip_norm=grad_clip_norm,
+        ),
         device="cpu",
         action_mode="aw",
     )
 
 
-def test_effective_config_changes_only_training_unit() -> None:
+def test_effective_config_records_development_line_switch() -> None:
     baseline_a = resolve_ladder_config(BASELINE_A)
     baseline_b = resolve_ladder_config(BASELINE_B)
     assert training_mode_contract(baseline_a) == {
@@ -193,18 +200,21 @@ def test_effective_config_changes_only_training_unit() -> None:
     assert baseline_b["seed"] == baseline_a["seed"] == 2026080902
     assert baseline_b["training"]["scene_cycle"] == ["mixed_crms", "pure_ce"]
     assert baseline_b["training"]["periodic_checkpoint_replay_mode"] == "rolling_latest"
+    assert baseline_a["training"]["grad_clip_norm"] == 0.5
+    assert baseline_b["training"]["grad_clip_norm"] is None
 
 
 def test_manifest_strictly_separates_focal_and_all_agent() -> None:
     baseline_a = resolve_ladder_config(BASELINE_A)
     baseline_b = resolve_ladder_config(BASELINE_B)
-    trainer = _make_trainer(baseline_b, "cpu")
+    trainer_a = _make_trainer(baseline_a, "cpu")
+    trainer_b = _make_trainer(baseline_b, "cpu")
     scenes = {"capture": "a", "pure_ce": "b", "mixed_crms": "c"}
     manifest_a = _manifest(
         baseline_a,
         2026080902,
         "baseline-a",
-        trainer,
+        trainer_a,
         scenes,
         config_path=str(BASELINE_A),
     )
@@ -212,7 +222,7 @@ def test_manifest_strictly_separates_focal_and_all_agent() -> None:
         baseline_b,
         2026080902,
         "baseline-b",
-        trainer,
+        trainer_b,
         scenes,
         config_path=str(BASELINE_B),
     )
@@ -224,6 +234,10 @@ def test_manifest_strictly_separates_focal_and_all_agent() -> None:
     assert manifest_b["replay_sampling"] == "uniform_joint"
     assert manifest_b["focal_training"] is False
     assert manifest_b["scene_cycle"] == ["mixed_crms", "pure_ce"]
+    assert manifest_b["grad_clip_norm"] is None
+    assert manifest_b["grad_clip"] == "none"
+    assert manifest_b["actor_q_implementation"] == "bounded_critic_vjp_v1"
+    assert manifest_b["initialization"] == "scratch"
     assert "focal_sampler_numpy" not in manifest_b["resume_contract"]["rng"]
     assert manifest_a != manifest_b
 
@@ -270,10 +284,45 @@ def test_active_slot_actor_q_matches_all_slot_reference() -> None:
     assert torch.count_nonzero(grad_optimized[:, 4:]) == 0
 
 
+def test_bounded_actor_q_vjp_matches_reference_action_gradient() -> None:
+    trainer = _small_trainer()
+    batch = _central_batch()
+    central = trainer._central_batch(batch, "global_state")
+    active = batch["active_mask"]
+    reference_actions = torch.randn(3, 6, 2, requires_grad=True)
+    reference_q = trainer._focal_actor_q_reference(
+        central,
+        reference_actions,
+        active,
+    )
+    reference_loss = -(reference_q * active).sum() / active.sum()
+    reference_gradient = torch.autograd.grad(
+        reference_loss,
+        reference_actions,
+    )[0]
+    optimized_q, optimized_gradient = (
+        trainer._all_agent_actor_q_and_action_gradient(
+            central,
+            reference_actions.detach(),
+            active,
+        )
+    )
+    assert torch.allclose(reference_q, optimized_q, atol=1e-6, rtol=1e-6)
+    assert torch.allclose(
+        reference_gradient,
+        optimized_gradient,
+        atol=1e-6,
+        rtol=1e-6,
+    )
+    assert torch.count_nonzero(optimized_gradient[:, 4:]) == 0
+
+
 def test_all_agent_losses_and_actor_gradients_match_reference() -> None:
     reference = _small_trainer()
     optimized = copy.deepcopy(reference)
-    reference._focal_actor_q = reference._focal_actor_q_reference
+    reference._all_agent_actor_backward_terms = (
+        reference._all_agent_actor_backward_terms_reference
+    )
     batch = _central_batch()
     rng_state = torch.get_rng_state()
     torch.set_rng_state(rng_state)
@@ -302,6 +351,18 @@ def test_all_agent_losses_and_actor_gradients_match_reference() -> None:
     assert optimized_metrics["active_actor_q_slots"] == 4.0
     assert optimized_metrics["active_agent_loss_terms_per_second"] > 0.0
     assert optimized_metrics["updates_per_second"] > 0.0
+
+
+def test_no_clip_keeps_raw_gradient_diagnostics_without_clipping() -> None:
+    trainer = _small_trainer(grad_clip_norm=None)
+    metrics = trainer.update(_central_batch())
+    for prefix in ("critic", "actor", "alpha"):
+        assert metrics[f"{prefix}_pre_clip_grad_norm"] > 0.0
+        assert (
+            metrics[f"{prefix}_post_clip_grad_norm"]
+            == metrics[f"{prefix}_pre_clip_grad_norm"]
+        )
+        assert metrics[f"{prefix}_clip_ratio"] == 1.0
 
 
 def test_all_agent_runtime_state_has_no_focal_sampler_input() -> None:

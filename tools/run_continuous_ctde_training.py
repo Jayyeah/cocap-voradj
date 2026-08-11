@@ -478,6 +478,7 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
         max_obstacles=int(critic_cfg.get("max_obstacles", 5)),
         dropout=float(critic_cfg.get("dropout", 0.0)),
     )
+    configured_grad_clip = config["training"].get("grad_clip_norm")
     trainer_cfg = CentralSACConfig(
         hidden_dim=int(critic_cfg["hidden_dim"]),
         gamma=float(sac_cfg["gamma"]),
@@ -487,7 +488,11 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
         alpha_lr=float(sac_cfg["alpha_lr"]),
         alpha_init=float(sac_cfg["alpha_init"]),
         target_entropy=float(sac_cfg["target_entropy"]),
-        grad_clip_norm=float(config["training"]["grad_clip_norm"]),
+        grad_clip_norm=(
+            None
+            if configured_grad_clip is None
+            else float(configured_grad_clip)
+        ),
     )
     trainer = CentralSACTrainer(
         encoder_config=encoder,
@@ -571,6 +576,8 @@ def _manifest(
     ]
     if bool(mode["focal_training"]):
         resume_rng.append("focal_sampler_numpy")
+    experiment_metadata = config.get("experiment_metadata", {}) or {}
+    configured_grad_clip = config["training"].get("grad_clip_norm")
     return {
         "manifest_schema_version": 3,
         "config": str(source.relative_to(ROOT)),
@@ -585,11 +592,24 @@ def _manifest(
         "v_max": float(config["dynamics"]["v_max"]),
         "max_agents": int(config["training"]["max_agents"]),
         "batch_size": int(config["training"]["batch_size"]),
-        "grad_clip_norm": float(config["training"]["grad_clip_norm"]),
+        "grad_clip_norm": (
+            None
+            if configured_grad_clip is None
+            else float(configured_grad_clip)
+        ),
+        "grad_clip": (
+            "none" if configured_grad_clip is None else float(configured_grad_clip)
+        ),
         "seed": int(seed),
         "optimizer_unit": str(mode["optimizer_unit"]),
         "replay_sampling": str(mode["replay_sampling"]),
         "focal_training": bool(mode["focal_training"]),
+        "actor_q_implementation": str(
+            experiment_metadata.get("actor_q_implementation", "retained_graph_v0")
+        ),
+        "initialization": str(
+            experiment_metadata.get("training_start", "unspecified")
+        ),
         "scene_cycle": [str(item) for item in configured_scenes],
         "effective_config_hashes": scene_hashes,
         "implementation_hash": _implementation_hash(),

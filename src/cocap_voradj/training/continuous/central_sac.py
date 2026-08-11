@@ -241,6 +241,80 @@ class CentralSACTrainer:
         q2 = self.critic2(central_obs, detached).gather(1, focal_agent_id[:, None]).squeeze(1)
         return torch.minimum(q1, q2)
 
+    def _all_agent_actor_backward_terms_reference(
+        self,
+        central_obs: Mapping[str, torch.Tensor],
+        actions: torch.Tensor,
+        log_prob: torch.Tensor,
+        active: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Pre-fix all-agent objective retained only as an equivalence oracle."""
+        actor_q = self._focal_actor_q(central_obs, actions, active)
+        return actor_q, masked_mean(
+            self.alpha.detach() * log_prob - actor_q,
+            active,
+        )
+
+    def _all_agent_actor_q_and_action_gradient(
+        self,
+        central_obs: Mapping[str, torch.Tensor],
+        actions: torch.Tensor,
+        active: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return exact focal Q values and ``d(-mean(Q))/d(actions)``.
+
+        The actor samples the joint action once. Each active slot then gets
+        its own critic VJP with only that slot differentiable; teammate action
+        branches stay detached. Releasing each critic graph immediately
+        avoids retaining all ``active_slots * twin_critics`` graphs until the
+        shared actor backward.
+        """
+        denominator = active.sum().clamp_min(1).to(dtype=actions.dtype)
+        actor_q = torch.zeros(
+            active.shape,
+            dtype=actions.dtype,
+            device=actions.device,
+        )
+        action_gradient = torch.zeros_like(actions)
+        active_slots = torch.nonzero(
+            active.any(dim=0), as_tuple=False
+        ).flatten().tolist()
+        for focal in active_slots:
+            focal_action = actions[:, focal].detach().requires_grad_(True)
+            focal_actions = actions.detach().clone()
+            focal_actions[:, focal] = focal_action
+            q1 = self.critic1(central_obs, focal_actions)[:, focal]
+            q2 = self.critic2(central_obs, focal_actions)[:, focal]
+            focal_q = torch.minimum(q1, q2)
+            focal_mask = active[:, focal].to(dtype=focal_q.dtype)
+            mean_focal_q = (focal_q * focal_mask).sum() / denominator
+            focal_gradient = torch.autograd.grad(
+                mean_focal_q,
+                focal_action,
+                retain_graph=False,
+                create_graph=False,
+            )[0]
+            actor_q[:, focal] = focal_q.detach() * focal_mask
+            action_gradient[:, focal] = -focal_gradient.detach()
+        return actor_q, action_gradient
+
+    def _all_agent_actor_backward_terms(
+        self,
+        central_obs: Mapping[str, torch.Tensor],
+        actions: torch.Tensor,
+        log_prob: torch.Tensor,
+        active: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Build an exact first-order actor objective with bounded critic graphs."""
+        actor_q, action_gradient = self._all_agent_actor_q_and_action_gradient(
+            central_obs,
+            actions,
+            active,
+        )
+        entropy_loss = masked_mean(self.alpha.detach() * log_prob, active)
+        backward_loss = entropy_loss + (actions * action_gradient).sum()
+        return actor_q, backward_loss
+
     def update(self, batch: Mapping[str, Any]) -> Dict[str, float]:
         if "focal_agent_id" in batch:
             return self._update_focal(batch)
@@ -287,6 +361,15 @@ class CentralSACTrainer:
             )
         else:
             critic_post_clip_grad_norm = critic_pre_clip_grad_norm
+        critic_clip_ratio = (
+            min(
+                1.0,
+                float(self.config.grad_clip_norm)
+                / max(critic_pre_clip_grad_norm, 1e-8),
+            )
+            if self.config.grad_clip_norm is not None
+            else 1.0
+        )
         self.critic_optimizer.step()
         profiler.mark("critic_done")
 
@@ -294,16 +377,24 @@ class CentralSACTrainer:
         flat_local_obs = flatten_joint_local_obs(local_obs)
         _, log_std = self.actor.distribution(flat_local_obs)
         log_std = log_std.reshape(log_prob.shape[0], log_prob.shape[1], -1)
-        profiler.mark("actor_q_start")
-        actor_q = self._focal_actor_q(central_obs, policy_actions, active)
-        profiler.mark("actor_q_done")
-        actor_loss = masked_mean(self.alpha.detach() * log_prob - actor_q, active)
         for critic in (self.critic1, self.critic2):
             for parameter in critic.parameters():
                 parameter.requires_grad_(False)
         try:
             self.actor_optimizer.zero_grad(set_to_none=True)
-            actor_loss.backward()
+            profiler.mark("actor_q_start")
+            actor_q, actor_backward_loss = self._all_agent_actor_backward_terms(
+                central_obs,
+                policy_actions,
+                log_prob,
+                active,
+            )
+            profiler.mark("actor_q_done")
+            actor_loss = masked_mean(
+                self.alpha.detach() * log_prob - actor_q,
+                active,
+            )
+            actor_backward_loss.backward()
             actor_pre_clip_grad_norm = grad_norm(self.actor.parameters())
             if self.config.grad_clip_norm is not None:
                 torch.nn.utils.clip_grad_norm_(
@@ -313,6 +404,15 @@ class CentralSACTrainer:
                 actor_post_clip_grad_norm = grad_norm(self.actor.parameters())
             else:
                 actor_post_clip_grad_norm = actor_pre_clip_grad_norm
+            actor_clip_ratio = (
+                min(
+                    1.0,
+                    float(self.config.grad_clip_norm)
+                    / max(actor_pre_clip_grad_norm, 1e-8),
+                )
+                if self.config.grad_clip_norm is not None
+                else 1.0
+            )
             self.actor_optimizer.step()
         finally:
             for critic in (self.critic1, self.critic2):
@@ -335,6 +435,15 @@ class CentralSACTrainer:
             alpha_post_clip_grad_norm = grad_norm([self.log_alpha])
         else:
             alpha_post_clip_grad_norm = alpha_pre_clip_grad_norm
+        alpha_clip_ratio = (
+            min(
+                1.0,
+                float(self.config.grad_clip_norm)
+                / max(alpha_pre_clip_grad_norm, 1e-8),
+            )
+            if self.config.grad_clip_norm is not None
+            else 1.0
+        )
         self.alpha_optimizer.step()
         self._soft_update(self.critic1, self.target_critic1)
         self._soft_update(self.critic2, self.target_critic2)
@@ -426,12 +535,15 @@ class CentralSACTrainer:
             "critic_grad_norm": critic_pre_clip_grad_norm,
             "critic_pre_clip_grad_norm": critic_pre_clip_grad_norm,
             "critic_post_clip_grad_norm": critic_post_clip_grad_norm,
+            "critic_clip_ratio": critic_clip_ratio,
             "actor_grad_norm": actor_pre_clip_grad_norm,
             "actor_pre_clip_grad_norm": actor_pre_clip_grad_norm,
             "actor_post_clip_grad_norm": actor_post_clip_grad_norm,
+            "actor_clip_ratio": actor_clip_ratio,
             "alpha_grad_norm": alpha_pre_clip_grad_norm,
             "alpha_pre_clip_grad_norm": alpha_pre_clip_grad_norm,
             "alpha_post_clip_grad_norm": alpha_post_clip_grad_norm,
+            "alpha_clip_ratio": alpha_clip_ratio,
             **timing,
             "finite": float(finite),
         }
