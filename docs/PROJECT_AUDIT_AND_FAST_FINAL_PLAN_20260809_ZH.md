@@ -5,7 +5,7 @@
 - Baseline B 已按用户决策在最新完整100k bundle定向停训，完成 Actor-Q exact VJP显存修复和严格零差异 gradient/Q/loss Gate；peak allocated约22.46 GiB→8.05 GiB，稳态update time未退化。commit `f19dac6`。
 - B从100k原位恢复为no-clip；此前 `<100k` 仍是clip=.5历史。101--102k均finite，显存稳定，早期critic spike已回落，故不启用5.0 fallback。B现在是 Standardized All-Agent Development Line，A只作 Historical Focal Reference。
 - P0显示旧clip对critic/actor触发率均100%，critic典型只保留约0.13% raw norm；critic counterfactual严格seek>policy>random仅21.9%，post-capture replay为0，entropy/Q约0.2%--0.4%。完整证据见 `docs/SAC_HEALTH_AUDIT_20260811_ZH.md`。
-- 独立P1 no-clip-from-scratch配置/CUDA32已完成，2k optimizer preflight进行中；稳定后在独立artifact启动200k。当前不启动Huber、UTD/LR sweep、MATD3、Formal Capture-Only或global visibility。
+- 独立P1 no-clip-from-scratch CUDA32与2k/469-update optimizer preflight均finite，peak约8.05 GiB；正式200k已于18:03从step 0启动（PID 1171022 / tmux `p1_allagent_noclip_scratch_200k` / cuda:0），无任何resume或warm start。当前不启动Huber、UTD/LR sweep、MATD3、Formal Capture-Only或global visibility。
 
 ## 2026-08-11 10:08 状态、信号与ETA更新
 

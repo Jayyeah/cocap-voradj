@@ -358,7 +358,15 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - formal config：`legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent_noclip_scratch.yaml`；seed `2026080902`；独立 artifact `artifacts/2026-08-11_allagent_noclip_scratch/`。
 - manifest明确 `optimizer_unit=joint_transition_all_active_agents`、`replay_sampling=uniform_joint`、`focal_training=false`、`grad_clip=none`、`initialization=scratch`、`actor_q_implementation=bounded_critic_vjp_v1`；没有 checkpoint warm start。
 - CUDA32 scratch smoke 已通过：32/32 transitions、all finite、0 updates（正式warmup仍为5k）、0 collision、无OOM，manifest合同正确。
-- 2k optimizer preflight 使用独立 preflight config 将 warmup临时缩到128，仅用于覆盖no-clip update安全 Gate；正式P1配置仍保持原5k warmup。当前 tmux `p1_noclip_scratch_preflight_2k` 正在执行，完成后再决定正式启动。
+- 2k optimizer preflight 使用独立 config 将 warmup临时缩到128，仅用于覆盖no-clip update安全 Gate；正式P1仍保持原5k warmup。2k/469 updates完成且 all finite，末次 critic/actor/alpha loss=`5.679/4.881/-2.860`、alpha=`0.1909`、TD=`0.929`；raw=post grad，peak allocated稳定`8045.14 MiB`，无OOM/leak。与B并行的端到端吞吐约`1.971 step/s`（约7.10k/h）。
+- P1正式200k已于 `2026-08-11 18:03:54+08:00` 从 scratch 启动；PID `1171022`、tmux `p1_allagent_noclip_scratch_200k`、cuda:0。命令没有任何 `--resume-*` 或 initialization checkpoint，独立run目录为 `artifacts/2026-08-11_allagent_noclip_scratch/legacy_voradj_oldmix_allagent_noclip_scratch_4p1e1obs_200k_aw_20260811/`。
+- 18:05实时：P1为1k/200k、update=0（原合同5k warmup），warmup吞吐22.78k step/s；ETA不使用该虚高值，而使用与B同卡且真实执行updates的P1 preflight `7.10k step/h` 与B双线窗口 `6.72k step/h`，保守取`6.7--7.1k step/h`。P1 25k ETA `2026-08-11 21:28--21:40+08:00`，200k ETA `2026-08-12 22:05--23:50+08:00`。
+
+### 10.6 双线实时资源与 ETA（2026-08-11 18:05+08:00）
+
+- Baseline B：104k/200k、PID `1138338`、tmux `allagent_oldmix_b_noclip_resume`、cuda:0；最近双 optimizer 线共存窗口 `1.866 step/s=6.72k/h`、finite、update wall `1.979 s`、peak allocated `8045 MiB`。按`6.7--7.1k/h`，125k ETA `2026-08-11 21:03--21:13+08:00`，200k ETA `2026-08-12 07:36--08:25+08:00`。
+- P1：1k/200k、PID `1171022`、tmux `p1_allagent_noclip_scratch_200k`、cuda:0；真实update稳态以上述2k preflight为准。25k / 200k ETA 如10.5。
+- 当前P1仍在warmup，因此两进程显存约`8.66+0.40 GiB`；2k并行optimizer smoke已验证steady约`8.66+8.05=16.71 GiB`，远低于A6000 48 GiB。系统RAM约20/125 GiB、swap 0.15/8 GiB，根盘余35 GiB；不使用高温cuda:1上的其他用户进程。
 
 <!-- AUTO_ALLAGENT_STEP_100000 -->
 ### Baseline B 自动里程碑 100,000

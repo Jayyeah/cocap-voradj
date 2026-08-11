@@ -61,8 +61,8 @@
 ## 6. Post-switch safety 状态与当前判断
 
 - exact switch：`step < 100000` 为 pre-fix Actor-Q + clip `.5`；`step >= 100000` 从同一 100k state 恢复为 `bounded_critic_vjp_v1` + no clip。
-- 首个 post-switch 1k 窗口（101k）仍全部 finite，peak allocated `8045 MiB`，没有显存增长；raw/post grad 完全相同，证明 no-clip 生效。
-- 但 101k 的 critic loss `355.84`、abs TD `4.69`、critic grad `4073.66`，相对 pre-switch 100k 窗口的 `31.23 / 1.37 / 711.25` 明显上升。它尚不是 NaN/Inf，但属于需要继续观察到 102k 的 no-clip 风险信号，不能把“finite”误写成“已经证明长期稳定”。
+- 101k/102k 两个 post-switch 1k窗口均全部 finite，peak allocated 连续保持 `8045 MiB`，没有显存增长；raw/post grad 完全相同，证明 no-clip 生效。
+- 101k 的 critic loss `355.84`、abs TD `4.69`、critic grad `4073.66` 相对 pre-switch 100k 的 `31.23 / 1.37 / 711.25` 明显上升；102k 已回落到 `82.96 / 2.37 / 1641.45`。这是早期 overshoot 风险而非持续数值爆炸，故正式保留 no-clip，但后续里程碑仍需观察 tail。
 
 当前最可疑瓶颈排序：
 
