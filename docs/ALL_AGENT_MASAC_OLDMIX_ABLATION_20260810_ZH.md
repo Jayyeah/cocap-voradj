@@ -313,6 +313,53 @@ for a_id in sorted(set(
 
 修复后 Actor update 降至 ~2–3 GB，总峰值降至 ~12–14 GB，Pure-CE（~10 GB）可与其更舒适地共存于 48 GB A6000。
 
+## 10. 2026-08-11 All-Agent 修复、no-clip 切换与 P0/P1
+
+### 10.1 Baseline B 定向停训与恢复点
+
+- 17:15 只向 Baseline B tmux `allagent_oldmix_ablation_200k` 发送正常 Ctrl-C；pre-stop PID `666602` 随后退出，B supervisor 自然报停并退出。其他用户 PID `589205` / cuda:1 和其他项目均未处理。
+- 停训前最后完整 metrics 是 104k / update 24,751；runner 无 signal checkpoint，所以 100k 后约4k只是不可恢复观察，不计入续训进度。最新原子完整 bundle 是 `resume_latest @100000` / update 23,751。
+- CPU 严格加载确认 trainer/replay/runtime 均为 100k、uniform joint、all active-agent、含 runner/replay/model RNG 与 optimizer/target/alpha state。原 bundle 以 hardlink 冻结为 `resume_frozen_pre_fix_step_000100000`。
+
+### 10.2 Actor-Q root cause 与修复 Gate
+
+- root cause：旧 all-agent Actor update 在一次 shared stochastic Actor forward 后，为4个 active slots 各保留 twin critic 完整 autograd graph，直到最终 `actor_loss.backward()`；约8个 central Transformer graph 同时驻留。数学语义正确，但显存冗余。
+- fix `bounded_critic_vjp_v1`：joint policy action只采样一次；逐 active slot 计算 `Q_i(S,a_i,a_-i.detach)` 对 `a_i` 的精确 VJP并立即释放 critic graph，再将汇总 `d(-mean Q)/da` 与 entropy term一次回传共享 Actor。focal path不变、teammates detach不变、inactive slots为零。
+- 同 checkpoint、同固定 replay batch、同 checkpoint torch/CUDA RNG：critic/actor/alpha loss abs diff 均 `0`；per-agent Q max abs diff `0`；全 Actor parameters gradient max abs/relative-L2 diff `0`，direction一致；inactive action gradient nonzero=`0`。
+- 单次实测 peak allocated `22462.04 → 8045.24 MiB`，reserved `22828 → 8324 MiB`。5次稳态同批次中位数（排除1次warmup）peak allocated `17770.38 → 8217.79 MiB`、reserved `18100 → 8538 MiB`，update wall `0.9517 → 0.9476 s`，active terms/s约`1.004×`，没有时间退化。
+- 等价/benchmark：`artifacts/2026-08-11_allagent_actorq_fix/equivalence/`。相关回归 47/47；全仓 178 passed、2 failures，两个 failure 都是本 worktree 未复制历史 `runs/...` checkpoint/effective-config，和本补丁无关。
+- 修复/no-clip commit：`f19dac6cc3cd505415985a745e784cb9f84e10e8`。
+
+### 10.3 no-clip bundle migration 与 exact switch
+
+```text
+step < 100000:
+all-agent + pre-fix retained Actor-Q graphs + grad_clip_norm=0.5
+
+step >= 100000:
+all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
+```
+
+- migration只允许3个 effective-config diff：`training.grad_clip_norm 0.5→null`，以及新增 Actor-Q implementation / gradient-clipping 两个审计标记；所有模型结构、LR、MSE、tau、UTD、batch、reward、action、scene cycle、optimizer/replay unit均相同。
+- 新 `resume_latest` 重新绑定当前 manifest；再次严格加载确认 trainer/replay/runtime 100k、update 23,751，Actor/critics/targets/alpha、三个optimizer、全部 RNG 均保留。迁移证据为 `resume_latest/resume_contract_migration.json`。
+- 原位续训于 17:34 启动：PID `1138338`、tmux `allagent_oldmix_b_noclip_resume`、cuda:0、从 100k继续200k预算；没有 reset seed/replay/optimizer/alpha/targets/schedule。
+- no-clip safety：101k/102k均 finite，peak allocated稳定 `8045.25 MiB`；update wall `1.055/0.961 s`，吞吐 `3.37/3.78 step/s`。101k critic loss/TD/grad一度升至 `355.84/4.69/4073.66`，102k回落至 `82.96/2.37/1641.45`；无NaN/OOM/持续显存增长，因此保留 no-clip，不启用5.0 fallback。
+
+### 10.4 P0 Health Audit
+
+- 独立文档：`docs/SAC_HEALTH_AUDIT_20260811_ZH.md`。
+- 固定100k/32×128 batch下，旧`.5`对critic和actor触发率均100%；critic norm p50/p95/p99=`381/2511/3246`、典型clip scale `0.00131`，actor=`1.53/2.87/4.86`、scale `0.327`；alpha从不触发。
+- pursuing TD p50/p95/p99=`1.94/9.19/23.12`，collision小样本 TD p50=`66.69`；post-capture样本为0。
+- `|alpha log pi|/|Q|` p50约0.2%--0.4%、p99约1%，entropy相对Q偏弱。
+- Q ranking 800 agent-state items中，严格 `Qseek>Qpolicy>Qrandom` 仅21.9%；visible 21.3%、invisible 24.5%。当前最直接瓶颈是critic没有稳定学出seek/policy/random动作排序，而非已证实的observability问题。
+
+### 10.5 P1 no-clip scratch
+
+- formal config：`legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent_noclip_scratch.yaml`；seed `2026080902`；独立 artifact `artifacts/2026-08-11_allagent_noclip_scratch/`。
+- manifest明确 `optimizer_unit=joint_transition_all_active_agents`、`replay_sampling=uniform_joint`、`focal_training=false`、`grad_clip=none`、`initialization=scratch`、`actor_q_implementation=bounded_critic_vjp_v1`；没有 checkpoint warm start。
+- CUDA32 scratch smoke 已通过：32/32 transitions、all finite、0 updates（正式warmup仍为5k）、0 collision、无OOM，manifest合同正确。
+- 2k optimizer preflight 使用独立 preflight config 将 warmup临时缩到128，仅用于覆盖no-clip update安全 Gate；正式P1配置仍保持原5k warmup。当前 tmux `p1_noclip_scratch_preflight_2k` 正在执行，完成后再决定正式启动。
+
 <!-- AUTO_ALLAGENT_STEP_100000 -->
 ### Baseline B 自动里程碑 100,000
 
