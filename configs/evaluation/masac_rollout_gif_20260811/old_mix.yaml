@@ -1,0 +1,30 @@
+preset_schema_version: 1
+profile: old_mix
+description: Legacy-VorAdj capture, Pure-CE, and direct capture-to-coverage mixed evaluation.
+
+episodes: 20
+gif_count: 5
+seed: 2026081201
+workers: 4
+
+display:
+  frame_duration_ms: 100
+  max_gif_frames: 300
+  trail_window: 70
+  draw_trails: false
+  draw_neighbor_edges: true
+  draw_sensing_circles: false
+
+scenarios:
+  - scene: capture
+    output_name: capture
+    max_steps: 1000
+    draw_ce_targets: false
+  - scene: pure_ce
+    output_name: coverage
+    max_steps: 1500
+    draw_ce_targets: true
+  - scene: mixed_crms
+    output_name: mix
+    max_steps: 1500
+    draw_ce_targets: true
