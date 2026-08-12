@@ -1,0 +1,41 @@
+extends: ./legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent_noclip_scratch.yaml
+
+run_name: legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw_20260813
+seed: 2026081301
+device: cuda:0
+
+env:
+  episode_max_length: 1000
+  pre_capture_max_length: 1000
+
+perception:
+  global_evader_visibility: false
+
+reward:
+  legacy_capture_reward_fallback_all_active: false
+
+training:
+  total_env_steps: 100000
+  scene_cycle: [capture]
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+  periodic_checkpoint_replay_mode: rolling_latest
+  update_every_env_steps: 4
+  gradient_steps: 1
+  grad_clip_norm: null
+  optimizer_unit: joint_transition_all_active_agents
+  replay_sampling: uniform_joint
+  focal_training: false
+  focal_quota: null
+
+evaluation:
+  diagnostic_scenes: [capture]
+  episodes_per_scene: 4
+  deterministic: true
+  diagnostic_rollout_cap: 400
+
+experiment_metadata:
+  stage: cf0_formal_capture_first_local_100k_aw
+  training_start: scratch_new_replay
+  episode_mix: capture_only; no pure_ce and no post_capture transitions
+  observability: legacy_voradj local enemy sensing; no oracle reward for invisible agents

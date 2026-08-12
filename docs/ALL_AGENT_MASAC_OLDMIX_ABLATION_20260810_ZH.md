@@ -486,3 +486,37 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 最近五个1k窗口约`1.257--1.265 step/s=4.53--4.55k step/h`，全部finite；215k critic/actor loss=`26.33/35.85`、alpha=`0.03794`、TD abs mean=`1.250`、peak allocated=`8045.25 MiB`，无NaN/OOM或显存增长。
 - C1的post-capture index仍为`2000`，最近窗口无2+/3+ ring；目前没有新capture或优于C0的行为证据。当前只能确认更高UTD数值稳定，不能确认性能更好。
 - GPU1同时有非本项目PID `1258417`和新出现的PID `1876168`，总显存约`21405/49140 MiB`、利用率95%、温度92°C；C1吞吐显著低于独占GPU的C0。系统RAM available约65 GiB、swap618 MiB/8 GiB，仍安全但资源压力上升；未处理其他进程。
+
+
+### 10.14 C0完成、CF0/CF1主线启动与补丁工具故障审计（2026-08-13 00:35+08:00）
+
+#### C0 300k最终状态与旁路评估
+
+- C0于2026-08-13 00:01前后完成300000/300000，update=73751、replay=250000（ring容量封顶）、all_finite=true；final bundle为checkpoints/step_000300000。
+- final replay的post_capture_coverage仍为2000，与P1-200k冻结点完全相同，说明200k→300k没有第二个distinct real capture证据。runner final formal 20-rollout中capture/mixed capture rate均为0、collision rate均为1.0；capture mean minimum distance=14.43 m、distance progress=+2.79 m，mixed分别17.13 m/-1.34 m。Pure-CE strict/CV.15/CV.20=0.40/0.70/0.95，collision=0.10。结论：C0没有支持“只需更多step即可放大capture”的解释，但coverage能力仍在。
+- 独立低优先级CPU旁路于00:32:25启动：PID 1980214、tmux eval_c0_300k_representative_cpu。它先对capture/Pure-CE/mixed各做20个deterministic rollout，再按成功或最接近capture、代表性collision、典型失败几何、最好/最差distance progress选择5个GIF；不占GPU，不阻塞CF0。
+- C1完成300k后的同合同CPU旁路已挂起：PID 1980568、tmux eval_c1_300k_autostart_cpu。只有在C1 report满足transition_count=300000、all_finite=true且final trainer/effective config齐全后才启动20-rollout+代表性GIF。
+
+#### C1 UTD=.5实时状态
+
+- C1继续在cuda:1运行，PID 1853291、tmux c1_p1_utd05_300k_gpu1；00:33最新223000/300000、update=60251、replay=223000，最近窗口1.421 step/s≈5.12k step/h，mean_finite=1、critic/actor loss=26.92/36.18、alpha=0.03955、TD abs mean=1.137、peak allocated=8045.25 MiB。
+- post_capture_coverage仍为2000，尚无第二个capture证据。GPU1同时承载其他正式进程，总显存约16038 MiB/49140 MiB、100%利用率、90°C；未停止或改动其他进程。
+- 按最近1.33--1.42 step/s：250k ETA约2026-08-13 05:50--06:15+08:00；300k step ETA约15:40--16:40，final eval/replay写盘完成预计16:00--17:20。
+
+#### CF0 Formal Capture-First / Local正式线
+
+- 新config为configs/experiments/parallel_ce_legacy_voradj_20260809/legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml；scratch seed=2026081301，新replay，只训练capture scene，episode/pre-capture horizon=1000，capture成功终止，不含独立Pure-CE和post-capture coverage。SAC冻结为all-agent、(a,w)、no clip、MSE、UTD=.25、LR=1e-4、tau=.005、batch128。
+- 代码显式增加legacy_capture_reward_fallback_all_active=false：Legacy-VorAdj中没有敌人邻接观测的agent不再退回所有active target获取oracle capture shaping。该开关默认仍为true，故不改变历史配置/正在运行的C1语义。
+- CF1独立config为legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw.yaml，除global_evader_visibility=true和run审计元数据外继承CF0。环境新增Legacy分支的diagnostic broadcast：每个active pursuer observation都含敌人robot-frame相对位置与相对速度；奖励候选仍保持CF0局部合同，没有随广播引入oracle reward。
+- 合同回归tests/test_capture_first_cf_contract.py + tests/test_all_agent_oldmix_ablation_contract.py为14 passed；覆盖CF0冻结合同、CF1唯一变量、所有active pursuer敌人位置/速度token、CF0不可见槽位及all-agent既有回归。CF0 32-step CUDA scratch smoke此前通过。
+- 正式CF0于00:26:03在空闲GPU0启动：PID 1976538、tmux cf0_capture_first_local_100k_gpu0、artifact artifacts/2026-08-13_capture_first_controls/cf0_local/。00:33最新6000/100000、update=251、replay=6000；首个warmup后训练窗口3.806 step/s≈13.70k step/h，mean_finite=1、critic/actor loss=2.44/1.92、alpha=0.1975、TD abs mean=0.307、peak allocated=8045.14 MiB，无NaN/OOM/leak。该6k窗口terminated=2且collision=2，不计作capture；2+/3+ ring均为0。
+- 当前GPU0约8685 MiB、99%利用率、85°C；系统RAM available约86 GiB、swap1.1/8 GiB，资源安全。按首个真实update窗口吞吐并计入25k诊断/落盘开销：75k ETA约2026-08-13 05:45--06:15+08:00；100k ETA约07:30--08:15；自动Gate预计07:45--08:30执行。
+- 自动Gate supervisor已稳定挂起：PID 1981431、tmux cf_capture_first_gate。强信号为frozen replay真实capture event、3+ ring、重复2+ ring；否则要求至少两项持续中等改善。PASS原位resume CF0 100k→150k，FAIL等待GPU0释放后从scratch启动CF1 100k。
+- Gate最初实现曾错误使用terminated_count近似capture；6k出现terminated=2且collision=2后立即纠正。当前实现直接反序列化100k frozen replay并统计metadata.event_ids中的capture，碰撞终止反例与真实capture正例合成测试均通过，运行中的supervisor已重启加载修正版。
+
+#### apply_patch / git apply故障与绕过记录
+
+- 本会话首次使用apply_patch修改测试时，sandbox helper失败，原始错误为：bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted。随后普通git apply -也遭遇同一bwrap错误。
+- 切换到已授权的非sandbox执行后，git apply可以启动，但较长补丁先报error: corrupt patch at line 19；拆成精确小hunk后又反复报patch failed ... patch does not apply，即使rg/sed确认目标文本和行号存在。该问题发生在补丁传输/匹配层，不是训练代码、CUDA或GitHub网络故障。
+- 按用户指令不再死磕git apply：已有文件采用精确perl/sed字符串替换；新文件仍在可工作的非sandbox git apply路径创建；文档采用只追加tee。所有绕过修改之后均用git diff人工复核、py_compile、14项pytest、合成Gate测试和实际CUDA smoke兜底，因此没有降低合同验证标准。
+- 截至本节写入时GitHub尚未执行push；下一步为git diff --check、聚焦测试、提交并推送。此处明确记录：本次卡点不是GitHub网络不通。

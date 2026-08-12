@@ -1039,7 +1039,12 @@ class VorAdjEnv(CoCapEnv):
                 key=lambda j: float(np.linalg.norm(self._position(self.evaders[j]) - self._position(pursuer))),
             )
         else:
-            enemy_id_set = {nk[1] for nk in adjacency if nk[0] == "evader" and not self.evaders[nk[1]].deactivated}
+            if bool(self.per_cfg.get("global_evader_visibility", False)):
+                enemy_id_set = {j for j, evader in enumerate(self.evaders) if not evader.deactivated}
+            else:
+                enemy_id_set = {
+                    nk[1] for nk in adjacency if nk[0] == "evader" and not self.evaders[nk[1]].deactivated
+                }
             enemy_id_set.update(self._zone_extra_evader_ids_for_pursuer(idx, data))
             enemy_ids = sorted(
                 enemy_id_set,
@@ -1809,7 +1814,11 @@ class VorAdjEnv(CoCapEnv):
                 if nk[0] == "evader" and not self.evaders[nk[1]].deactivated
             ]
             adjacent_targets = sorted(set(adjacent_targets).union(self._zone_extra_evader_ids_for_pursuer(index, before_data)))
-            return adjacent_targets or list(active_targets)
+            if adjacent_targets:
+                return adjacent_targets
+            if bool(self.reward_cfg.get("legacy_capture_reward_fallback_all_active", True)):
+                return list(active_targets)
+            return []
 
         def capture_task_reward(index: int, candidates: List[int]) -> float:
             if self._ring_importance_ms_enabled():
