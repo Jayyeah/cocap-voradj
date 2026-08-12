@@ -424,3 +424,14 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - B final `step_000200000`已通过 `old_mix` preset dry-run合同验证：精确checkpoint/effective-config hash匹配，deterministic Actor，capture/Pure-CE/mixed各20 rollout、各前5条GIF，seed `2026081201`。
 - 正式后台评估于 `2026-08-12 15:23:31+08:00` 启动：PID `1732563`、tmux `rollout_baseline_b_200k_20r5g`、CPU、2 workers、`nice=10`；输出目录 `artifacts/2026-08-12_allagent_completed_20rollout5gif/baseline_b_allagent/last_step200000/`，日志 `artifacts/2026-08-12_allagent_completed_20rollout5gif/logs/baseline_b_last200_20r5g.log`。
 - 启动验证通过：父进程和两个spawn workers存活，run args/effective config/preset已写出，GIF开始生成；RAM available约92 GiB、swap约148 MiB，未占用额外GPU显存，P1窗口吞吐未见下降。按用户指令本轮不等待、不汇总rollout结果；下次GitHub状态更新时统一同步。
+
+### 10.10 P1 200k冻结、旁路诊断与C0启动（2026-08-12 17:24+08:00）
+
+- P1于 `2026-08-12 16:09:34+08:00` 正常完成 `200000/200000`，update `48751`、replay `200000`、`all_finite=true`。final window critic/actor loss=`24.37/35.41`、alpha=`0.03803`、TD abs mean=`1.093`，peak allocated=`8045.14 MiB`。
+- 完整200k trainer/replay/runtime以hardlink冻结为 `resume_frozen_p1_step_000200000`；trainer约145 MB、replay约6.71 GB、runtime约825 KB，保留optimizer、target critics、alpha、replay ring与全部runtime/RNG状态。C0/C1均以此同一冻结bundle为起点。
+- 训练replay最终仍只有一次明确mixed capture窗口：`post_capture_coverage=2000`，即500个post-capture joint transitions×4 active agents；未出现第二次capture证据。因此积极信号真实但稀有。
+- P1 200k formal deterministic 20-rollout已完成：capture/mixed均`capture_rate=0`、`collision_rate=1.0`；capture mean minimum distance=`14.61 m`、distance progress=`+8.61 m`。Pure-CE strict/CV.15/CV.20=`0.45/0.80/0.95`、collision=`0`、mean area CV=`0.1052`、CE progress=`+0.1111`。相较B，P1的coverage明显更好，但formal capture仍未复现。
+- P1 200k Q-ranking（800 agent-state items）已完成：严格`Qseek>Qpolicy>Qrandom=7.75%`，`Qseek>Qpolicy=22.5%`，`Qpolicy>Qrandom=53.5%`，mean seek-policy=`-3.09`。visible严格排序仅`5.66%`，far visible仅`3.51%`；critic动作排序在200k仍是主要疑点，且较100k审计没有改善。
+- Baseline B 200k formal 20-rollout也已完成：capture/mixed capture=`0`、collision=`1.0`；Pure-CE strict/CV.15/CV.20=`0.05/0.50/0.70`、collision=`0.10`。P1相对B提升了Pure-CE coverage，但没有提升deterministic capture。
+- C0按step-extension control合同于 `2026-08-12 16:18:04+08:00` 从P1冻结bundle启动：PID `1748359`、tmux `c0_p1_extension_utd025_300k`、cuda:0，UTD=.25、update_every=4，其余保持P1不变。17:24已到`214000/300000`、update`52251`、replay`214000`，最近窗口`3.767 step/s≈13.56k step/h`、全部finite、peak allocated=`8045.25 MiB`，无OOM/显存增长。
+- C0按当前稳态吞吐：225k训练step ETA约 `2026-08-12 18:12+08:00`（另计checkpoint/eval写盘），300k训练step ETA约 `2026-08-12 23:45--2026-08-13 00:15+08:00`。
