@@ -386,3 +386,25 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 行为信号只能给出谨慎的“已有单机接敌”：P1 12k窗口曾有 `d1_min=9.15 m`、`max_num_in_ring=1`、`fraction_closing=0.611`；B 108k窗口也曾有单机入ring。但两线 `fraction_steps_2plus_in_ring=0`、`fraction_steps_3plus_in_ring=0`，且截至本快照 replay的 `post_capture_coverage=0`，因此**没有 formal k=3 capture 突破证据**。P1出现过非碰撞 termination，但在无post-capture转移的前提下不将其误报为capture，更可能是Pure-CE结束。
 - 资源：GPU0 `17355/49140 MiB`、85°C、100% utilization；两条正式线各占约 `8662--8664 MiB`。系统RAM available `94 GiB`、swap `149 MiB/8 GiB`、根盘available `179 GiB`；无OOM、无持续VRAM/RAM泄漏证据。cuda:1的其他用户训练未处理。
 - 按两线最近真实optimizer稳态约 `6.7k step/h`，并为同时25k checkpoint/eval保留写盘波动：B 125k预计 `2026-08-11 21:05--21:20+08:00`，artifact完成预计 `21:15--21:35`；B 200k预计 `2026-08-12 08:20--09:20`。P1 25k预计 `2026-08-11 21:05--21:20`，artifact完成预计 `21:15--21:35`；P1 200k预计 `2026-08-12 23:15--2026-08-13 01:00`。
+
+### 10.8 Baseline B 200k完成与P1 125k里程碑（2026-08-12 10:24+08:00）
+
+#### Baseline B：fixed/no-clip continuation已完整结束
+
+- B于 `2026-08-12 08:45:30+08:00` 完成 `200000/200000`，进程和tmux已正常退出。final bundle为 `checkpoints/step_000200000`，同时完整写出 `resume_latest/{trainer.pt,replay.pkl,runtime_state.pkl}`；trainer约145 MB，replay约6.73 GB。
+- final contract：replay=`200000`、updates=`48751`、`all_finite=true`，final window critic/actor loss=`46.86/40.52`、alpha=`0.04676`、TD abs mean=`1.529`，raw critic/actor grad norm=`821.47/2.61`，peak allocated=`8045.25 MiB`。从100k切换至200k无NaN/OOM/显存增长，证明fixed Actor-Q + no-clip continuation工程与数值稳定。
+- 负面主结论：全线replay `post_capture_coverage=0`，200k diagnostic eval的capture/mixed均 `capture_rate=0`，capture/mixed collision rate均 `1.0`；strict coverage rate也均为0。因此B没有学出formal moving/local/obstacle/k=3 capture，去掉`.5` clip并继续100k steps没有带来capture突破。
+- 有限正面信号：200k Pure-CE eval的 `coverage_cv020/loose=0.75`，但strict=0；capture/mixed的mean minimum distance分别 `14.68/12.06 m`，但collision=1且capture=0。这只支持“relaxed coverage与接敌几何存在”，不支持真正多机围捕。
+
+#### P1：no-clip from scratch仍在运行
+
+- P1正式125k checkpoint/eval已于 `10:18+08:00` 完整落盘，随后训练已继续到 `126000/200000`、update `30251`；PID `1171022`、tmux `p1_allagent_noclip_scratch_200k`、cuda:0。B结束后普通训练窗口吞吐稳定为 `3.71--3.80 step/s`，约 `13.4--13.7k step/h`，相比双线并行阶段提高约2倍；126k窗口因刚完成checkpoint/eval仅为2.56 step/s，不用于稳态ETA。
+- 125k window `finite=1`，critic/actor loss=`24.15/34.15`、alpha=`0.03884`、TD abs mean=`1.090`，raw critic/actor grad norm=`339.39/1.70`，peak allocated=`8045.14 MiB`；无NaN/OOM/leak。
+- 几何上最明显的新信号是反复单机深度接敌：114k--117k窗口 `d1_min=5.93/9.02/8.41/6.26 m`，122k/124k达 `3.63/4.24 m`；但 `max_num_in_ring<=1`、`fraction_steps_2plus_in_ring=0`、`fraction_steps_3plus_in_ring=0`，replay `post_capture_coverage=0`。接近evader还没有转化为多机同时围捕。
+- 125k diagnostic eval仍为 capture/mixed `capture_rate=0`；capture/mixed collision rate=`1.0/0.5`，Pure-CE `coverage_cv020/loose=0.5`、strict=0。capture/mixed mean minimum distance=`19.52/9.99 m`，mixed有接敌但未capture。P1 50k曾有capture/mixed collision rate同时降至`0.25`和Pure-CE loose coverage=`1.0`，后续未稳定保持，不能视为稳健改善。
+- 按最近独占GPU0的真实吞吐：150k预计 `2026-08-12 12:08--12:20+08:00`；175k预计 `13:58--14:15`；200k训练step预计 `15:48--16:10`，包含final eval与6+ GB replay落盘的完整artifact预计 `16:00--16:30`。
+
+#### 当前证据解读
+
+- fixed Actor-Q显存修复与no-clip路径已通过工程稳定性验证；B 200k证明“单纯取消强clip + 多训100k”不足以解决formal capture。
+- P1从step 0 no-clip的干净线仍有75k预算，但到125k的中期证据也只到“单机接敌”，未出现多机ring或capture。如200k仍为0 capture，应按既定路线基于P0 Q-ranking结果讨论UTD或Formal Capture-Only，而不继续将“训练步数不足”作为主解释。

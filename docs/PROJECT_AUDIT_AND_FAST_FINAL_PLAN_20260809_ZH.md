@@ -336,3 +336,10 @@ nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --
 - 4v1 Stage4D→5B 在所有 gate 首次通过的理想情况下约 1–2 天；任何失败归因、snapshot curriculum 或 8v2/12v3 扩展会增加时间。
 
 以上是容量计划，不是成功保证。每 25k 只做三类决策：继续、选优并晋级、或停止并定位；不再让无方向性长训机械跑满。
+
+## 7. 2026-08-12 All-Agent old-mix路线同步
+
+- 详细证据以 `ALL_AGENT_MASAC_OLDMIX_ABLATION_20260810_ZH.md` 和 `SAC_HEALTH_AUDIT_20260811_ZH.md` 为准。
+- Baseline B已于 `2026-08-12 08:45+08:00` 完整达到200k；100k后fixed Actor-Q + no-clip续训全程finite、peak VRAM约8.05 GiB，但final capture/mixed eval的capture rate仍为0，replay中无post-capture transition。工程修复成功，formal capture研究问题未解决。
+- P1 no-clip from scratch的125k checkpoint/eval已于 `2026-08-12 10:18+08:00` 完整落盘，随后继续到126k；数值稳定且出现多次单机3.6--9m接敌，但125k capture/mixed eval仍为0 capture，亦无双机/三机ring或post-capture样本。B结束后普通训练窗口吞吐约13.4--13.7k step/h，预计当日16:00--16:30完成200k final artifact。
+- 当前不将MASAC/CTDE/reward/MSE任一单点提前定性为根因；但B结果已降低了“只要取消`.5` clip并延长训练就会capture”的可信度。P1完成后应与P0 critic Q-ranking合并决策UTD或Formal Capture-Only诊断。
