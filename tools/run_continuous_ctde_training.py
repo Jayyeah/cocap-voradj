@@ -1047,6 +1047,100 @@ def _verify_resume_steps(trainer: CentralSACTrainer, replay: JointReplayBuffer) 
         )
 
 
+def _config_leaf_diffs(
+    before: Any,
+    after: Any,
+    prefix: str = "",
+) -> List[Dict[str, Any]]:
+    """Return deterministic leaf-level differences between two resolved configs."""
+    if isinstance(before, Mapping) and isinstance(after, Mapping):
+        rows: List[Dict[str, Any]] = []
+        for key in sorted(set(before) | set(after)):
+            path = f"{prefix}.{key}" if prefix else str(key)
+            if key not in before:
+                rows.append({"path": path, "before": None, "after": after[key]})
+            elif key not in after:
+                rows.append({"path": path, "before": before[key], "after": None})
+            else:
+                rows.extend(_config_leaf_diffs(before[key], after[key], path))
+        return rows
+    if before != after:
+        return [{"path": prefix, "before": before, "after": after}]
+    return []
+
+
+def _load_resume_manifest(
+    checkpoint: str | Path,
+    replay_path: str | Path,
+) -> Dict[str, Any]:
+    checkpoint_payload = torch.load(Path(checkpoint), map_location="cpu", weights_only=False)
+    checkpoint_manifest = dict(checkpoint_payload.get("contract", {}) or {})
+    with Path(replay_path).open("rb") as handle:
+        replay_payload = pickle.load(handle)
+    replay_manifest = dict(replay_payload.get("manifest", {}) or {})
+    if checkpoint_manifest != replay_manifest:
+        raise ValueError("checkpoint/replay manifests differ; refusing unsafe resume fork")
+    return checkpoint_manifest
+
+
+def _validate_utd_only_resume_fork(
+    resume_manifest: Mapping[str, Any],
+    target_manifest: Mapping[str, Any],
+    target_config: Mapping[str, Any],
+) -> Dict[str, Any]:
+    source_config_path = ROOT / str(resume_manifest.get("config", ""))
+    if not source_config_path.is_file():
+        raise ValueError(f"resume manifest config does not exist: {source_config_path}")
+    source_config = resolve_ladder_config(source_config_path)
+    diffs = _config_leaf_diffs(source_config, target_config)
+    allowed_paths = {
+        "run_name",
+        "training.update_every_env_steps",
+        "training.total_env_steps",
+        "experiment_metadata.stage",
+        "experiment_metadata.training_start",
+        "experiment_metadata.resource_placement",
+    }
+    unexpected = [item for item in diffs if item["path"] not in allowed_paths]
+    if unexpected:
+        raise ValueError(f"UTD-only resume fork has unexpected config changes: {unexpected}")
+    update_diff = next(
+        (item for item in diffs if item["path"] == "training.update_every_env_steps"),
+        None,
+    )
+    if update_diff != {
+        "path": "training.update_every_env_steps",
+        "before": 4,
+        "after": 2,
+    }:
+        raise ValueError(
+            "UTD-only resume fork requires training.update_every_env_steps 4 -> 2"
+        )
+    protected_manifest_keys = set(resume_manifest) - {
+        "config",
+        "config_hash",
+        "effective_config_hashes",
+        "implementation_hash",
+        "initialization",
+    }
+    manifest_mismatches = {
+        key: {"before": resume_manifest.get(key), "after": target_manifest.get(key)}
+        for key in sorted(protected_manifest_keys)
+        if resume_manifest.get(key) != target_manifest.get(key)
+    }
+    if manifest_mismatches:
+        raise ValueError(
+            f"UTD-only resume fork changed protected manifest fields: {manifest_mismatches}"
+        )
+    return {
+        "kind": "utd_only_resume_fork",
+        "source_manifest_hash": _stable_hash(dict(resume_manifest)),
+        "target_manifest_hash": _stable_hash(dict(target_manifest)),
+        "config_diffs": diffs,
+        "allowed_paths": sorted(allowed_paths),
+    }
+
+
 def _reset_pure_recovery(
     config: Dict[str, Any],
     recovery_pool: Deque[Dict[str, Any]],
@@ -1176,9 +1270,25 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("--resume-checkpoint and --resume-replay must be supplied together")
     resume_info = None
     runtime_state: Dict[str, Any] = {}
+    resume_fork_audit: Optional[Dict[str, Any]] = None
     if args.resume_checkpoint:
-        trainer.load_checkpoint(args.resume_checkpoint, manifest)
-        replay = JointReplayBuffer.load(args.resume_replay, manifest)
+        load_manifest = manifest
+        if getattr(args, "resume_fork", "none") == "utd_only":
+            load_manifest = _load_resume_manifest(
+                args.resume_checkpoint,
+                args.resume_replay,
+            )
+            resume_fork_audit = _validate_utd_only_resume_fork(
+                load_manifest,
+                manifest,
+                root_config,
+            )
+            _write_text_atomic(
+                artifact_dir / "resume_fork_audit.json",
+                json.dumps(resume_fork_audit, indent=2, ensure_ascii=False) + "\n",
+            )
+        trainer.load_checkpoint(args.resume_checkpoint, load_manifest)
+        replay = JointReplayBuffer.load(args.resume_replay, load_manifest)
         _verify_resume_steps(trainer, replay)
         runtime_state = dict(getattr(trainer, "resume_runtime_state", {}) or {})
         runtime_state.update(getattr(replay, "runtime_state", {}) or {})
@@ -1193,6 +1303,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             "step": transition_count,
             "next_scene_index": scene_index,
         }
+        resume_info["fork"] = resume_fork_audit
     else:
         replay = JointReplayBuffer(
             capacity=int(root_config["replay"]["capacity_joint"]),
@@ -1895,6 +2006,11 @@ def main() -> int:
     parser.add_argument("--resume-checkpoint", default="")
     parser.add_argument("--resume-replay", default="")
     parser.add_argument("--resume-step", type=int, default=-1)
+    parser.add_argument(
+        "--resume-fork",
+        choices=("none", "utd_only"),
+        default="none",
+    )
     args = parser.parse_args()
     report = run(args)
     print(json.dumps(report, indent=2, ensure_ascii=False))

@@ -1,0 +1,16 @@
+extends: ./legacy_voradj_oldmix_4p1e1obs_200k_aw_allagent_noclip_scratch.yaml
+
+run_name: legacy_voradj_oldmix_allagent_noclip_c1_utd05_300k_aw_20260812
+
+training:
+  total_env_steps: 300000
+  update_every_env_steps: 2
+  gradient_steps: 1
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+  periodic_checkpoint_replay_mode: rolling_latest
+
+experiment_metadata:
+  stage: legacy_voradj_oldmix_allagent_noclip_c1_utd05_300k_aw
+  training_start: continuation_from_p1_200k_frozen_bundle
+  resource_placement: cuda:0 after C0 completion; never concurrent with C0
