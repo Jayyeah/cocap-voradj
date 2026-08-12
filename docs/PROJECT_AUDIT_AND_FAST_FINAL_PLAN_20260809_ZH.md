@@ -359,3 +359,11 @@ C1 UTD=.5已在完整225k checkpoint/replay/4-episode diagnostic后停止：200k
 ### 2026-08-13 06:45+08:00 CF0/CF1中期证据
 
 CF1 Global在50k rolling replay中首次确认1个real stationary-fallback capture（transition 44892），28k出现3+ ring且多个独立窗口重复2+ ring；50k deterministic 4-episode仍为0 capture，但collision从25k的1.0降至0.5、distance progress由+7.35提高到+14.38 m。CF0 Local截至90k无capture/3+ ring，75k deterministic capture=0且distance progress退化到-1.33 m。当前证据支持global enemy information带来更强的多机几何与一次真实探索capture，但尚不足以宣称策略已稳定学会。两线合同不变并继续到既定100k/200k，详细数值见专用台账第10.18节。
+
+
+### 2026-08-13 07:40+08:00 CF2 support-credit单变量启动
+
+CF0 Local已按最新决策在完整100k trainer/replay/runtime冻结后停止，不再续200k；final formal 20-rollout capture=0且collision=1.0。GPU0随即从scratch启动CF2：完全继承CF1 Global合同，只以Legacy实际邻接定义capture/support/coverage，并让support获得`1.0*full capture + 1.0*full coverage`；global observation与任务角色明确解耦，CF1行为回归不变。人工邻接角色/reward测试、CUDA smoke及首个正式update均通过。CF1到68k再次出现3+ ring窗口，当前仍为1次stationary capture、无normal capture。详细实现、在线角色reward分量、PID、资源和ETA见专用台账第10.19节。
+
+
+07:41稳态复核：CF2已到6k/251 updates，`3.782 step/s`、finite=1、peak allocated约8.05 GiB，support capture/coverage两分量持续非零；CF1到69k、`2.675 step/s`、finite=1。两条正式线与GPU/RAM正常。

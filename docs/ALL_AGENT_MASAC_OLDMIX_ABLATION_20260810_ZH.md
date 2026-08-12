@@ -600,3 +600,38 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 主机RAM available约`95 GiB`，swap=`1.4/8 GiB`；无RAM/VRAM leak迹象。两条训练PID/tmux及CF0 100k->200k supervisor PID `1992290`均正常。
 - CF0：100k train-step ETA `2026-08-13 07:25--07:40+08:00`；含100k diagnostic、完整replay冻结和自动resume预计`07:45--08:10`。125k ETA `09:35--10:00`；200k ETA `15:30--16:30`。
 - CF1：75k ETA `2026-08-13 08:15--08:35+08:00`；100k ETA `10:55--11:25`。当前合同止于100k，未安排200k ETA。
+
+
+### 10.19 CF0在100k冻结停止、CF2角色强化启动（2026-08-13 07:40+08:00）
+
+#### CF0 Local最终冻结
+
+- 按最新决策取消CF0 `100k->200k`续训。旧supervisor PID `1992290`在不影响trainer的情况下正常停止，替换为“等待100k完整落盘、冻结、释放GPU0、启动CF2”的一次性接力器；没有让旧逻辑抢跑。
+- CF0于`2026-08-13 07:31:22+08:00`完成100k bundle：trainer、replay、runtime、manifest、effective config、metrics及diagnostic均完整。冻结目录为`resume_frozen_cf0_step_000100000`，使用hardlink保留同一份完整trainer/replay/runtime，replay约3.35 GB。CF0 PID `1976538`及原tmux已退出，GPU0显存已释放；没有继续到100001。
+- final训练状态：`step=100000`、`update=23751`、`replay=100000`、`all_finite=true`，critic/actor loss=`127.63/102.81`、alpha=`0.12945`、TD abs mean=`3.772`、末窗吞吐=`3.732 step/s`。100k窗`max ring=2`、2+ ring fraction=`2.9%`、3+=0、collision=`5/1000`、`d1_min=3.94 m`；全程无real capture或3+ ring，但2+ ring在40/43/61/72/75/77/81/83/100k多个窗口重复出现。
+- final deterministic 20-rollout：capture=`0/20`、collision=`20/20`、mean min-min distance=`17.18 m`、distance progress=`+3.55 m`。因此CF0 Local只保留接敌/双机几何信号，未打通K3；本线正式止于100k。
+
+#### CF2最小单变量实现与强制Gate
+
+- 新config：`configs/experiments/parallel_ce_legacy_voradj_20260809/legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw.yaml`；run=`legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw_20260813`，seed=`2026081303`，scratch + new replay。它继承CF1的verified global enemy broadcast、moving APF、1 obstacle、Legacy-VorAdj、normal K3、stationary fallback、K10、capture-first horizon1000和稳定SAC合同；唯一研究变量是support reward credit。
+- 新增独立显式开关`legacy_voradj_support_reward_blend_enabled=true`，没有打开或借用VCT-LS模式。global broadcast只进入Actor observation；reward角色从实际Legacy邻接原始标签计算：直接enemy adjacency=`capture`，非直接但有friendly capture邻居=`support`，其余=`coverage`。
+- reward合同：capture拿原完整legacy capture task；support拿`1.0*full capture_task + 1.0*full coverage_task`；pure coverage只拿coverage task。approach、mean-shift、front、timestep、terminal和既有safety规则未改。CF1没有显式Legacy开关，因而旧行为保持不变。
+- 人工邻接链`P0-enemy, P1-P0, P2-P1`通过：即使global broadcast让每个active Actor都收到enemy position/velocity token，角色仍精确为`P0=capture/P1=support/P2=coverage`。实际reward分量检查为：capture槽capture非零且coverage=0；support槽capture与coverage都非零、权重均1.0；coverage槽capture=0且coverage非零。CF1同图中support blend保持关闭。
+- 回归与启动Gate：聚焦合同最终`37 passed`，`py_compile`及`git diff --check`通过；CF2 CUDA 1k scratch smoke完成、无OOM。capture event额外区分`normal_capture_count`和`stationary_capture_count`，metrics新增三角色占比及各角色capture/coverage/terminal/total平均reward。
+- 本次追加台账时`apply_patch`再次被同一宿主sandbox故障阻断：`bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`；按用户既有授权改用精确只追加的Perl绕过，随后以diff/check/test复核。该错误仍不是训练异常或GitHub网络错误。
+
+#### CF1 vs CF2实时状态与信号
+
+- CF1 Global：PID `1992295`、tmux `c1_stop225_cf1_gpu1_autostart`、cuda:1。07:35前最新`68000/100000`、update=`15751`、replay=`68000`，最近吞吐`2.661 step/s=9.58k/h`，finite=1，critic/actor loss=`126.93/76.75`、alpha=`0.18154`、TD abs mean=`4.293`、peak allocated=`8045.14 MiB`。68k窗口出现`max ring=3`、2+/3+ fraction=`1.1%/0.2%`；结合28k的3+与多个重复2+窗口，这是新的积极几何证据。rolling replay目前仍只有50k前确认的1次stationary-fallback capture，没有normal capture证据。
+- CF1里程碑4-rollout：25k capture=`0/4`、collision=`4/4`、mean min distance=`21.80 m`、distance progress=`+7.35 m`；50k capture=`0/4`、collision=`2/4`、mean min distance=`20.57 m`、distance progress=`+14.38 m`。训练内几何/capture信号尚未转化为deterministic可重复成功。
+- CF2 Global+Support：`2026-08-13 07:32:17+08:00`在GPU0从step0启动，PID `2120473`、tmux `cf0_stop100_cf2_gpu0_autostart`。step1 manifest明确`initialization=scratch_new_replay`、seed=`2026081303`、uniform joint replay、all-active-agent update、no clip，且命令没有任何resume参数。
+- CF2首个正式update已在5k通过：`step=5000/update=1/replay=5000`、`mean_finite=1`、critic/actor loss=`117.05/1.899`、alpha=`0.19998`、Q1/Q2/targetQ=`-0.759/0.226/-1.093`、TD abs mean=`2.012`、peak allocated=`8019.93 MiB`，无NaN/OOM。5k角色占比capture/support/coverage=`70.25%/29.30%/0.45%`；capture槽capture/coverage/total=`-0.967/0/-1.142`，support=`-1.039/-0.163/-1.535`，coverage=`0/-0.0685/-0.0685`，证明在线support确实同时收到两类task gradient。尚无capture/2+/3+ ring；这只是warmup边界安全证据，不作学习结论。
+- 资源快照：GPU0约`8685/49140 MiB`、100%、84°C；GPU1约`16036/49140 MiB`、其中CF1约8662 MiB且另有未触碰的PID `1258417`约7342 MiB、93°C。RAM available约98 GiB、swap1.5/8 GiB；根盘可用145 GiB。两条正式训练均存活，无显存/RAM增长或OOM。
+- ETA按各自最新真实稳态吞吐并计入25k diagnostic/checkpoint波动：CF1的25k/50k已于03:05/05:41完成，75k约`2026-08-13 08:20--08:40+08:00`，100k约`11:00--11:35`；CF2首批update wall-time推算约`12.5--13.0k step/h`，25/50/75/100k约`09:05--09:25`、`11:05--11:35`、`13:05--13:45`、`15:05--16:00`。CF2到75/100k后再按相对CF1的repeated 3+ ring、normal capture、capture数量与2+频率决定是否延长150/200k，不提前自动扩步。
+
+
+#### 07:41稳态复核（覆盖上方warmup边界估算）
+
+- CF2已完成首个完整250-update窗口：`6000/100000`、update=`251`、`3.782 step/s=13.61k/h`、finite=1，critic/actor loss=`29.66/3.959`、alpha=`0.19746`、TD abs mean=`0.865`、peak allocated=`8045.14 MiB`。角色占比capture/support/coverage=`65.48%/29.23%/5.30%`；对应task分量capture槽=`-0.967/0`、support=`-0.961/-0.363`、coverage=`0/-0.189`，再次确认三角色在线分流和support双分量稳定工作。
+- CF1最新`69000/100000`、update=`16001`、`2.675 step/s=9.63k/h`、finite=1；本窗无2+/3+，但不撤销68k及28k已落盘的3+证据。
+- 以实际稳态吞吐和checkpoint诊断开销更新：CF1 75k约`2026-08-13 08:20--08:40+08:00`，100k约`11:05--11:35`；CF2 25/50/75/100k约`09:05--09:25`、`10:55--11:25`、`12:50--13:25`、`14:45--15:30`。
