@@ -457,3 +457,14 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 随后以 `PYTHONPATH=src:. timeout 3 python3 tools/supervise_p1_extension_c1.py` 做3秒前台诊断，未产生stderr/traceback输出；这没有证明长期等待循环正常，只说明没有捕获到可见的即时Python异常。
 - 第二次尝试去掉文件重定向并加 `PYTHONUNBUFFERED=1`，仍在约5秒后发现tmux会话和supervisor PID消失；`tmux capture-pane -pt c1_p1_utd05_autostart` 返回 `can't find pane: c1_p1_utd05_autostart`。
 - 因两次均为“tmux会话瞬退且无Python traceback/日志”，当前**不能把根因归为C1合同、GPU gate或GitHub网络**；只确认自动挂起没有成功，具体退出原因未捕获。按用户要求停止重复尝试，未直接启动C1，也未影响C0。
+
+### 10.12 用户指令下C1改为GPU1直接启动（2026-08-12 19:41+08:00）
+
+- 用户明确要求不再等待C0，立即在GPU1启动C1。启动前GPU1已有其他正式进程PID `1258417`、显存约7342 MiB；GPU1总显存49140 MiB，仍有约41.8 GiB空闲，因此没有停止或修改该进程。
+- C1 config的resource审计元数据更新为 `cuda:1 concurrent with C0 by explicit user decision on 2026-08-12`；训练合同不变：从同一个P1-200k frozen bundle继续、UTD=.5、update_every=2、gradient_steps=1、总预算300k，其他保持P1。
+- C1于 `2026-08-12 19:39:10+08:00` 直接启动：PID `1853291`、tmux `c1_p1_utd05_300k_gpu1`、device `cuda:1`。artifact为 `artifacts/2026-08-12_p1_extension_controls/c1_utd05/legacy_voradj_oldmix_allagent_noclip_c1_utd05_300k_aw_20260812/`，日志为相邻的 `c1_utd05_300k_gpu1.log`。
+- 启动命令显式使用 `--resume-checkpoint/--resume-replay` 指向 `resume_frozen_p1_step_000200000`、`--resume-step 200000`、`--resume-fork utd_only`，没有从C0 bundle启动，也没有reset replay/optimizer/alpha/targets/RNG/runtime。
+- `resume_fork_audit.json` 于19:39:47成功落盘，证明source P1 manifest加载和UTD-only白名单校验通过；没有合同拒绝或Python traceback。
+- 19:41复查时C1 PID/tmux持续存在，C1在GPU1占用约8664 MiB且GPU利用率100%，说明已完成6.7 GB replay/optimizer反序列化并进入计算，不再是此前supervisor tmux瞬退状态。
+- 并行资源：C0仍在GPU0约8664 MiB；GPU1原进程约7342 MiB+C1约8664 MiB，总约16038 MiB/49140 MiB。系统RAM available约77 GiB、swap148 MiB。无OOM，但GPU1温度已到92°C、风扇100%，这是明确热风险；后续优先观察温度、throttle和两进程吞吐，不得误停原PID。
+- 当前尚未出现C1首个新1k metrics落盘，因此不能报告稳定steps/hour或行为信号；本次只确认合同加载、GPU更新和进程存活。C1 225k/300k ETA应在首个真实窗口后计算，不沿用C0吞吐。
