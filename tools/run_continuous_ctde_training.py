@@ -952,6 +952,7 @@ def _metrics_record(
     action_w: Sequence[float] = (),
     geometry: Sequence[Dict[str, Any]] = (),
     role_rewards: Sequence[Dict[str, Any]] = (),
+    capture_types: Sequence[str] = (),
     window_wall_time_s: float = 0.0,
     window_env_steps: int = 0,
 ) -> Dict[str, Any]:
@@ -1028,6 +1029,15 @@ def _metrics_record(
         if lp_means:
             # normalized entropy = physical entropy + log(a_max) + log(w_max) (BoxActor affine scale)
             record["normalized_entropy_mean"] = float(np.mean(lp_means) + np.log(0.4) + np.log(np.pi / 6.0))
+    if capture_types:
+        record["normal_capture_count"] = int(sum(str(value) != "stationary" for value in capture_types))
+        record["stationary_capture_count"] = int(sum(str(value) == "stationary" for value in capture_types))
+        record["capture_count"] = int(len(capture_types))
+    else:
+        record["normal_capture_count"] = 0
+        record["stationary_capture_count"] = 0
+        record["capture_count"] = 0
+
     if role_rewards:
         active_role_rows = [row for row in role_rewards if str(row.get("role", "")) in {"capture", "support", "coverage"}]
         total_role_rows = max(len(active_role_rows), 1)
@@ -1398,6 +1408,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     window_action_w: List[float] = []
     window_geometry: List[Dict[str, Any]] = []
     window_role_rewards: List[Dict[str, Any]] = []
+    window_capture_types: List[str] = []
     speed_limited_count = 0
     action_sample_count = 0
     terminated_count = 0
@@ -1476,6 +1487,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     if _geom is not None:
                         window_geometry.append(_geom)
                 window_role_rewards.extend(_role_reward_rows(outcome.infos, before_active))
+                window_capture_types.extend(
+                    str(event.get("capture_type", "unknown"))
+                    for event in getattr(env, "last_capture_events", [])
+                )
                 for info in outcome.infos:
                     diagnostics = info.get("action_diagnostics", {})
                     speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1498,8 +1513,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     for before, after in zip(before_labels, after_labels)
                 ):
                     event_ids.append("discovery")
-                if getattr(env, "last_capture_events", []):
+                capture_events = list(getattr(env, "last_capture_events", []))
+                if capture_events:
                     event_ids.append("capture")
+                    if any(str(event.get("capture_type", "")) == "stationary" for event in capture_events):
+                        event_ids.append("capture_stationary")
+                    if any(str(event.get("capture_type", "")) != "stationary" for event in capture_events):
+                        event_ids.append("capture_normal")
                 collision_states = {"collision", "deactivated after collision", "evader collision", "zone breach"}
                 if any(str(info.get("state", "")) in collision_states for info in outcome.infos):
                     event_ids.append("collision")
@@ -1574,6 +1594,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         action_w=window_action_w,
                         geometry=window_geometry,
                         role_rewards=window_role_rewards,
+                        capture_types=window_capture_types,
                         window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                         window_env_steps=transition_count - window_start_step,
                     )
@@ -1586,6 +1607,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_action_w = []
                     window_geometry = []
                     window_role_rewards = []
+                    window_capture_types = []
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
@@ -1715,6 +1737,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 if _geom is not None:
                     window_geometry.append(_geom)
             window_role_rewards.extend(_role_reward_rows(outcome.infos, before_active))
+            window_capture_types.extend(
+                str(event.get("capture_type", "unknown"))
+                for event in getattr(env, "last_capture_events", [])
+            )
             for info in outcome.infos:
                 diagnostics = info.get("action_diagnostics", {})
                 speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1737,8 +1763,13 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 for before, after in zip(before_labels, after_labels)
             ):
                 event_ids.append("discovery")
-            if getattr(env, "last_capture_events", []):
+            capture_events = list(getattr(env, "last_capture_events", []))
+            if capture_events:
                 event_ids.append("capture")
+                if any(str(event.get("capture_type", "")) == "stationary" for event in capture_events):
+                    event_ids.append("capture_stationary")
+                if any(str(event.get("capture_type", "")) != "stationary" for event in capture_events):
+                    event_ids.append("capture_normal")
             collision_states = {"collision", "deactivated after collision", "evader collision", "zone breach"}
             if any(str(info.get("state", "")) in collision_states for info in outcome.infos):
                 event_ids.append("collision")
@@ -1813,6 +1844,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     action_w=window_action_w,
                     geometry=window_geometry,
                     role_rewards=window_role_rewards,
+                    capture_types=window_capture_types,
                     window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                     window_env_steps=transition_count - window_start_step,
                 )
@@ -1825,6 +1857,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_action_w = []
                 window_geometry = []
                 window_role_rewards = []
+                window_capture_types = []
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
