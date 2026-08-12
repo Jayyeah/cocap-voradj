@@ -343,3 +343,9 @@ nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --
 - Baseline B已于 `2026-08-12 08:45+08:00` 完整达到200k；100k后fixed Actor-Q + no-clip续训全程finite、peak VRAM约8.05 GiB，但final capture/mixed eval的capture rate仍为0，replay中无post-capture transition。工程修复成功，formal capture研究问题未解决。
 - P1 no-clip from scratch的125k checkpoint/eval已于 `2026-08-12 10:18+08:00` 完整落盘，随后继续到126k；数值稳定且出现多次单机3.6--9m接敌，但125k capture/mixed eval仍为0 capture，亦无双机/三机ring或post-capture样本。B结束后普通训练窗口吞吐约13.4--13.7k step/h，预计当日16:00--16:30完成200k final artifact。
 - 当前不将MASAC/CTDE/reward/MSE任一单点提前定性为根因；但B结果已降低了“只要取消`.5` clip并延长训练就会capture”的可信度。P1完成后应与P0 critic Q-ranking合并决策UTD或Formal Capture-Only诊断。
+
+### 7.1 193k新证据（2026-08-12 15:25+08:00）
+
+- P1在180k首次产生一个完整真实capture→post-capture coverage window：replay `post_capture_coverage=2000`，对应500 joint transitions×4 active agents，并伴随双机同时入ring；这是formal old-mix中此前未出现的明确正信号。
+- 该信号仍然稀有：150k/175k deterministic diagnostic capture rate为0，尚无3+ ring或重复评估capture。P1已到193k，预计16:10--16:35完成200k final artifact，随后用final diagnostic和正式20-rollout判断可复现性。
+- Baseline B 200k final的old-mix deterministic 20-rollout/5-GIF已在CPU后台启动；本轮不等待结果，下次状态更新再同步。

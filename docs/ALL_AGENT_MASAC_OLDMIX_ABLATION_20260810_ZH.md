@@ -408,3 +408,19 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 
 - fixed Actor-Q显存修复与no-clip路径已通过工程稳定性验证；B 200k证明“单纯取消强clip + 多训100k”不足以解决formal capture。
 - P1从step 0 no-clip的干净线仍有75k预算，但到125k的中期证据也只到“单机接敌”，未出现多机ring或capture。如200k仍为0 capture，应按既定路线基于P0 Q-ranking结果讨论UTD或Formal Capture-Only，而不继续将“训练步数不足”作为主解释。
+
+### 10.9 P1首次真实capture→post-capture信号与B正式rollout启动（2026-08-12 15:25+08:00）
+
+#### P1 193k实时状态
+
+- P1最新落盘 `193000/200000`、update `47001`、replay `193000`；PID `1171022`、tmux `p1_allagent_noclip_scratch_200k`、cuda:0。最近普通窗口吞吐 `3.71--3.75 step/s`（约 `13.36--13.50k step/h`），`finite=1`、critic/actor loss=`25.58/35.62`、alpha=`0.03931`、TD abs mean=`1.081`、raw critic/actor grad norm=`354.71/1.63`、peak allocated=`8045.14 MiB`，无NaN/OOM/leak。
+- **首次真正积极的formal phase信号**：replay的 `post_capture_coverage` index在180k窗口从0跳到 `2000` 并保持。合同的post-capture coverage window为500 joint transitions，4个active agents对应 `500×4=2000` active-agent index entries；`pure_recovery_coverage`另行计数，因此这不是Pure-CE/recovery样本冒充，而是至少一次真实mixed episode完成capture并进入完整post-capture coverage window。
+- 同一180k窗口无collision，`d1_min=3.60 m`、`max_num_within_8m=2`、`max_num_in_ring=2`、`fraction_steps_2plus_in_ring=1.81%`；182k也出现 `max_num_in_ring=2`、2+ ring=`2.09%`。这是此前“只有单机接敌”之后首次出现双机同步接敌并实际进入post-capture phase，属于明确但稀有的正信号。
+- 证据边界：150k/175k deterministic 4-episode diagnostic capture/mixed `capture_rate`仍为0；训练replay目前只支持至少一次capture，尚不能证明稳定capture，且没有3+ ring窗口信号。是否能在200k deterministic eval和20-rollout中复现，需等待P1 final artifact后判断。
+- 以193k和最近真实吞吐计算：剩余7k训练约31--32分钟，P1 200k step ETA `2026-08-12 15:56--16:02+08:00`；考虑final diagnostic eval和约6.7 GB replay写盘，完整final artifact ETA `16:10--16:35`。
+
+#### Baseline B final 20-rollout/5-GIF
+
+- B final `step_000200000`已通过 `old_mix` preset dry-run合同验证：精确checkpoint/effective-config hash匹配，deterministic Actor，capture/Pure-CE/mixed各20 rollout、各前5条GIF，seed `2026081201`。
+- 正式后台评估于 `2026-08-12 15:23:31+08:00` 启动：PID `1732563`、tmux `rollout_baseline_b_200k_20r5g`、CPU、2 workers、`nice=10`；输出目录 `artifacts/2026-08-12_allagent_completed_20rollout5gif/baseline_b_allagent/last_step200000/`，日志 `artifacts/2026-08-12_allagent_completed_20rollout5gif/logs/baseline_b_last200_20r5g.log`。
+- 启动验证通过：父进程和两个spawn workers存活，run args/effective config/preset已写出，GIF开始生成；RAM available约92 GiB、swap约148 MiB，未占用额外GPU显存，P1窗口吞吐未见下降。按用户指令本轮不等待、不汇总rollout结果；下次GitHub状态更新时统一同步。
