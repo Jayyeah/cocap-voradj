@@ -354,3 +354,8 @@ nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --
 ### 2026-08-13 01:00+08:00 自动线方向更新
 
 C1 UTD=.5已在完整225k checkpoint/replay/4-episode diagnostic后停止：200k后无新real capture、无2+/3+ ring，不再扩到300k。GPU1已立即从scratch启动CF1 Global Enemy Broadcast 100k；GPU0的CF0 Local不再受100k Gate分支控制，100k冻结后固定原位续到200k。当前只比较local vs verified global enemy information，不改reward/horizon/LR/UTD/tau/action/network。详细合同、PID与证据见docs/ALL_AGENT_MASAC_OLDMIX_ABLATION_20260810_ZH.md第10.16节。
+
+
+### 2026-08-13 06:45+08:00 CF0/CF1中期证据
+
+CF1 Global在50k rolling replay中首次确认1个real stationary-fallback capture（transition 44892），28k出现3+ ring且多个独立窗口重复2+ ring；50k deterministic 4-episode仍为0 capture，但collision从25k的1.0降至0.5、distance progress由+7.35提高到+14.38 m。CF0 Local截至90k无capture/3+ ring，75k deterministic capture=0且distance progress退化到-1.33 m。当前证据支持global enemy information带来更强的多机几何与一次真实探索capture，但尚不足以宣称策略已稳定学会。两线合同不变并继续到既定100k/200k，详细数值见专用台账第10.18节。

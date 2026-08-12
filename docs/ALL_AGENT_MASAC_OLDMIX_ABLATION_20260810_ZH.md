@@ -563,3 +563,40 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - CF0 Local当前PID `1976538`、tmux `cf0_capture_first_local_100k_gpu0`、cuda:0；最新完整窗口`13000/100000`、update=`2001`、replay=`13000`。最近稳态约`3.78--3.80 step/s`（约`13.6k step/h`），`mean_finite=1`、peak allocated=`8045.14 MiB`，尚无2+/3+ ring或real capture新信号。按当前吞吐并计入25k诊断、100k冻结/重启和完整replay落盘：25k ETA约`2026-08-13 01:55--02:10+08:00`，100k约`07:40--08:20`，200k约`15:20--16:15`。
 - CF1 Global当前PID `1992295`、tmux `c1_stop225_cf1_gpu1_autostart`、cuda:1；已完成`5000` warmup并执行首个真实update，replay=`5000`，critic/actor/alpha/TD均finite，peak allocated=`8019.93 MiB`，无OOM/NaN。首个update wall-time=`1.488 s`；结合约25.6秒/1k的环境采样成本，GPU1共享条件下保守预计稳态`2.3--2.7 step/s`（`8.3--9.7k step/h`）。因此25k ETA暂估`03:10--03:35+08:00`，100k ETA暂估`11:00--13:00+08:00`，待首个完整post-warmup 1k窗口自动校准。CF1当前合同只到100k，未安排200k，故无200k ETA。
 - 资源核验：GPU0约`8685/49140 MiB`、100%利用率、85°C；GPU1约`16036/49140 MiB`、100%利用率、92°C，其中约7342 MiB属于既有PID `1258417`，未触碰。主机RAM available约`98 GiB`，swap使用`576 MiB/8 GiB`。两条正式训练及CF0续训supervisor均存活，当前无显存/RAM增长异常。
+
+
+### 10.18 CF0 90k / CF1 60k详细状态（2026-08-13 06:45+08:00）
+
+#### 结论先行
+
+- CF1 Global出现当前capture-first主线的首个明确强信号：50k rolling replay精确包含1个real capture event（transition ID `44892`）；28k窗口达到`max_num_in_ring=3`、3+ ring fraction=`0.8%`，并在28/29/36/45/55/56/58k共7个独立窗口出现2+ ring。45k窗口`terminated=7`、`collision=6`，唯一非碰撞终止与replay capture ID相符。
+- 该capture符合stationary fallback而非normal loose capture：capture所在45k窗口全程`max_num_within_8m=2`，normal合同要求至少3机进入8m；当前fallback允许敌速<=0.2时2机保持10步。因此这是有效formal stationary capture，但尚不是normal k=3 capture。
+- CF1的50k deterministic 4-episode诊断仍为0/4 capture，故积极信号目前是“训练探索中真实出现一次并伴随重复多机几何”，尚未证明策略可重复capture。
+- CF0 Local截至90k没有real capture或3+ ring。75k frozen replay精确capture count=0；76--90k所有terminated均与collision一一对应，没有新增非碰撞终止。CF0虽有8个2+ ring窗口，但信号稀疏且最近5k没有2+ ring；75k deterministic distance progress相对25k明显退化。
+
+#### CF0 Local：90k
+
+- 进程/资源：PID `1976538`、tmux `cf0_capture_first_local_100k_gpu0`、cuda:0；最新`90000`、update `21251`、replay `90000`。最近5窗吞吐中位数`3.753 step/s=13.51k step/h`，范围`3.738--3.778 step/s`；`finite=1`，peak allocated=`8045.14 MiB`。
+- 最新训练数值：critic loss=`128.714`，actor loss=`95.240`，alpha loss=`0.0295`，alpha=`0.12367`；Q1/Q2=`-94.609/-94.593`，twin gap=`4.014`，target Q=`-94.081`，TD abs mean=`3.729`。
+- 无clip梯度/效率：critic/actor/alpha grad norm=`1452.23/4.548/0.0780`；update wall=`0.944 s`，updates/s=`1.059`。最近5窗critic/actor loss均值=`136.47/94.07`，TD abs=`3.916`；全部finite，但critic/Q/gradient尺度较早期显著增大，后续100k checkpoint必须继续监控。
+- 最新几何：d1/d2/d3/d4 mean=`27.84/45.63/57.95/73.10 m`，d1 min=`12.72 m`，fraction closing=`42.45%`；本窗max ring=0。最近5窗最近接敌`4.29 m`、max ring=1，无2+/3+。
+- 全程几何：2+ ring窗口为40/43/61/72/75/77/81/83k，共8个；最高2+ fraction=`1.6%`（43k），max ring=2，3+从未出现。最佳d1 min=`2.24 m`（72k），未转化为capture。
+- rolling审计：75k replay完整、75000 records、capture event=0、collision event=237；75k rolling bundle约2.5 GiB。25/50/75k checkpoint均完整。
+- deterministic 4-episode：25/50/75k capture均`0/4`；collision rate=`0.75/1.00/0.75`；mean min-min distance=`15.68/20.11/17.94 m`；distance progress=`+16.88/+10.56/-1.33 m`。因此75k没有形成稳定正向趋势。
+
+#### CF1 Global：60k
+
+- 进程/资源：PID `1992295`、tmux `c1_stop225_cf1_gpu1_autostart`、cuda:1；最新`60000`、update `13751`、replay `60000`。最近5窗吞吐中位数`2.681 step/s=9.65k step/h`，范围`2.666--2.684 step/s`；`finite=1`，peak allocated=`8045.14 MiB`。
+- 最新训练数值：critic loss=`98.792`，actor loss=`69.725`，alpha loss=`0.2669`，alpha=`0.16177`；Q1/Q2=`-69.152/-69.162`，twin gap=`3.851`，target Q=`-68.345`，TD abs mean=`3.479`。
+- 无clip梯度/效率：critic/actor/alpha grad norm=`1118.69/4.339/0.1636`；update wall=`1.356 s`，updates/s=`0.738`。最近5窗critic/actor loss均值=`110.53/68.19`，TD abs=`3.774`；全部finite。共享GPU导致其update慢于CF0，但无OOM/显存增长。
+- 最新几何：d1/d2/d3/d4 mean=`23.00/41.00/66.91/77.71 m`，d1 min=`6.97 m`，fraction closing=`55.81%`，any-ring fraction=`6.2%`，max ring=1。本窗无2+/3+。
+- 全程强信号：28k `max ring=3`、2+/3+ fraction=`2.6%/0.8%`；2+ ring还出现在29/36/45/55/56/58k。最高2+ fraction=`2.6%`，最近5窗中的56k/58k仍有2+，表明多机几何不是只出现一次。
+- rolling replay精确审计：50k replay共50000 records，real capture event=1（ID `44892`），collision event=246；50--60k无额外非碰撞终止，因此当前仍为1个distinct capture。50k rolling bundle约1.7 GiB；25/50k checkpoint完整。
+- deterministic 4-episode：25k与50k capture均`0/4`；collision rate从`1.00`降到`0.50`；mean min-min distance从`21.80`改善到`20.57 m`；distance progress从`+7.35`提高到`+14.38 m`；episode length从`117.75`升至`243.25`。这是组合中等改善，但样本仅4集，不能替代75/100k验证。
+
+#### 资源与ETA
+
+- GPU0约`8685/49140 MiB`、100%、85°C；GPU1约`16036/49140 MiB`，其中既有PID `1258417`约7342 MiB，当前瞬时利用率32%、93°C。GPU1温度仍是主要运行风险，但显存余量充足，未触碰其他项目。
+- 主机RAM available约`95 GiB`，swap=`1.4/8 GiB`；无RAM/VRAM leak迹象。两条训练PID/tmux及CF0 100k->200k supervisor PID `1992290`均正常。
+- CF0：100k train-step ETA `2026-08-13 07:25--07:40+08:00`；含100k diagnostic、完整replay冻结和自动resume预计`07:45--08:10`。125k ETA `09:35--10:00`；200k ETA `15:30--16:30`。
+- CF1：75k ETA `2026-08-13 08:15--08:35+08:00`；100k ETA `10:55--11:25`。当前合同止于100k，未安排200k ETA。
