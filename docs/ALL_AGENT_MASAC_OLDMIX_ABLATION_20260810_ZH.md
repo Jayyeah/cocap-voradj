@@ -435,3 +435,25 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - Baseline B 200k formal 20-rollout也已完成：capture/mixed capture=`0`、collision=`1.0`；Pure-CE strict/CV.15/CV.20=`0.05/0.50/0.70`、collision=`0.10`。P1相对B提升了Pure-CE coverage，但没有提升deterministic capture。
 - C0按step-extension control合同于 `2026-08-12 16:18:04+08:00` 从P1冻结bundle启动：PID `1748359`、tmux `c0_p1_extension_utd025_300k`、cuda:0，UTD=.25、update_every=4，其余保持P1不变。17:24已到`214000/300000`、update`52251`、replay`214000`，最近窗口`3.767 step/s≈13.56k step/h`、全部finite、peak allocated=`8045.25 MiB`，无OOM/显存增长。
 - C0按当前稳态吞吐：225k训练step ETA约 `2026-08-12 18:12+08:00`（另计checkpoint/eval写盘），300k训练step ETA约 `2026-08-12 23:45--2026-08-13 00:15+08:00`。
+
+### 10.11 C0实时状态与C1自动挂起失败审计（2026-08-12 19:22+08:00）
+
+#### C0仍正常
+
+- C0 PID `1748359`、tmux `c0_p1_extension_utd025_300k`、cuda:0仍存活；最新落盘 `240000/300000`、update `58751`、replay `240000`。
+- 最近1k窗口 `3.732 step/s≈13.44k step/h`，`finite=1`，critic/actor loss=`23.62/35.46`、alpha=`0.03688`、TD abs mean=`1.068`、peak allocated=`8045.25 MiB`。GPU0约`8687 MiB`、84°C、100% utilization；系统RAM available约90 GiB、swap 148 MiB/8 GiB，无OOM或持续内存增长。
+- 240k窗口再次出现双机几何接敌：`max_num_in_ring=2`、2+ ring fraction=`1.21%`，但3+ ring fraction仍为0，且replay `post_capture_coverage=2000`没有超过P1 200k冻结时的值。因此截至240k仍没有第二个distinct real capture episode证据。
+- 按最近真实吞吐，250k训练step ETA约 `2026-08-12 20:07+08:00`；300k训练step ETA约 `2026-08-12 23:50+08:00`，完整final eval与约8 GB replay落盘预计再增加15--30分钟。
+
+#### C1准备已经完成
+
+- commit `bee406a`已经包含独立C1 config、runner的`--resume-fork utd_only`严格白名单校验、回归测试及`tools/supervise_p1_extension_c1.py`。
+- 真实P1-200k manifest与C1 resolved config的只读preflight通过：唯一训练规则变化为`training.update_every_env_steps 4→2`（UTD .25→.5）；另有总预算200k→300k和run/stage/resource审计元数据变化。LR、tau、batch、MSE、reward、action、replay、gradient_steps=1、no-clip均不变。
+- C1/all-agent合同回归为`12 passed`；supervisor prerequisite检查为true，GPU0检测正确返回C0 PID `1748359`。代码/config已推送GitHub。
+
+#### 自动挂起两次均失败，当前没有C1 supervisor
+
+- 第一次尝试：tmux `c1_p1_utd05_autostart` 中以 `nice -n 5 env PYTHONPATH=src:. python3 tools/supervise_p1_extension_c1.py` 启动，并把stdout/stderr追加到 `artifacts/2026-08-12_p1_extension_controls/c1_autostart.log`。约2秒后复查时tmux会话与supervisor PID均已消失；日志文件存在但大小为0。
+- 随后以 `PYTHONPATH=src:. timeout 3 python3 tools/supervise_p1_extension_c1.py` 做3秒前台诊断，未产生stderr/traceback输出；这没有证明长期等待循环正常，只说明没有捕获到可见的即时Python异常。
+- 第二次尝试去掉文件重定向并加 `PYTHONUNBUFFERED=1`，仍在约5秒后发现tmux会话和supervisor PID消失；`tmux capture-pane -pt c1_p1_utd05_autostart` 返回 `can't find pane: c1_p1_utd05_autostart`。
+- 因两次均为“tmux会话瞬退且无Python traceback/日志”，当前**不能把根因归为C1合同、GPU gate或GitHub网络**；只确认自动挂起没有成功，具体退出原因未捕获。按用户要求停止重复尝试，未直接启动C1，也未影响C0。
