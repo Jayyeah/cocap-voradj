@@ -638,11 +638,12 @@ def _derive_roles(
         if idx >= max_agents or not bool(active_mask[idx]):
             continue
         meta = info.get("replay_metadata", {}) or {}
+        reward_role = str(meta.get("reward_role", "")).strip().lower()
         task_label = str(meta.get("task_label", ""))
         support = bool(meta.get("support_candidate", False))
-        if task_label == "capture":
+        if reward_role == "capture" or (not reward_role and task_label == "capture"):
             roles[idx] = 1
-        elif support:
+        elif reward_role == "support" or (not reward_role and support):
             roles[idx] = 2
         else:
             roles[idx] = 3
@@ -915,6 +916,25 @@ def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Di
     }
 
 
+def _role_reward_rows(
+    infos: Sequence[Mapping[str, Any]],
+    active_mask: np.ndarray,
+) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for idx, info in enumerate(infos):
+        if idx >= len(active_mask) or not bool(active_mask[idx]):
+            continue
+        meta = info.get("replay_metadata", {}) or {}
+        rows.append({
+            "role": str(meta.get("reward_role", "")).strip().lower(),
+            "capture": float(meta.get("reward_capture", 0.0)),
+            "coverage": float(meta.get("reward_coverage", 0.0)),
+            "terminal": float(meta.get("reward_terminal", 0.0)),
+            "total": float(meta.get("reward_total", 0.0)),
+        })
+    return rows
+
+
 def _metrics_record(
     step: int,
     update_count: int,
@@ -931,6 +951,7 @@ def _metrics_record(
     action_a: Sequence[float] = (),
     action_w: Sequence[float] = (),
     geometry: Sequence[Dict[str, Any]] = (),
+    role_rewards: Sequence[Dict[str, Any]] = (),
     window_wall_time_s: float = 0.0,
     window_env_steps: int = 0,
 ) -> Dict[str, Any]:
@@ -1007,6 +1028,17 @@ def _metrics_record(
         if lp_means:
             # normalized entropy = physical entropy + log(a_max) + log(w_max) (BoxActor affine scale)
             record["normalized_entropy_mean"] = float(np.mean(lp_means) + np.log(0.4) + np.log(np.pi / 6.0))
+    if role_rewards:
+        active_role_rows = [row for row in role_rewards if str(row.get("role", "")) in {"capture", "support", "coverage"}]
+        total_role_rows = max(len(active_role_rows), 1)
+        for role_name in ("capture", "support", "coverage"):
+            rows = [row for row in active_role_rows if row.get("role") == role_name]
+            record[f"role_{role_name}_agent_steps"] = int(len(rows))
+            record[f"role_{role_name}_fraction"] = float(len(rows) / total_role_rows)
+            for component in ("capture", "coverage", "terminal", "total"):
+                values = [float(row.get(component, 0.0)) for row in rows]
+                record[f"role_{role_name}_reward_{component}_mean"] = float(np.mean(values)) if values else 0.0
+
     if geometry:
         record.update({
             "d1_mean": float(np.mean([g["d1"] for g in geometry])),
@@ -1365,6 +1397,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     window_action_a: List[float] = []
     window_action_w: List[float] = []
     window_geometry: List[Dict[str, Any]] = []
+    window_role_rewards: List[Dict[str, Any]] = []
     speed_limited_count = 0
     action_sample_count = 0
     terminated_count = 0
@@ -1442,6 +1475,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     _geom = _pursuit_step_geometry(env, actions)
                     if _geom is not None:
                         window_geometry.append(_geom)
+                window_role_rewards.extend(_role_reward_rows(outcome.infos, before_active))
                 for info in outcome.infos:
                     diagnostics = info.get("action_diagnostics", {})
                     speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1539,6 +1573,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         action_a=window_action_a,
                         action_w=window_action_w,
                         geometry=window_geometry,
+                        role_rewards=window_role_rewards,
                         window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                         window_env_steps=transition_count - window_start_step,
                     )
@@ -1550,6 +1585,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_action_a = []
                     window_action_w = []
                     window_geometry = []
+                    window_role_rewards = []
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
@@ -1678,6 +1714,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 _geom = _pursuit_step_geometry(env, actions)
                 if _geom is not None:
                     window_geometry.append(_geom)
+            window_role_rewards.extend(_role_reward_rows(outcome.infos, before_active))
             for info in outcome.infos:
                 diagnostics = info.get("action_diagnostics", {})
                 speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1775,6 +1812,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     action_a=window_action_a,
                     action_w=window_action_w,
                     geometry=window_geometry,
+                    role_rewards=window_role_rewards,
                     window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                     window_env_steps=transition_count - window_start_step,
                 )
@@ -1786,6 +1824,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_action_a = []
                 window_action_w = []
                 window_geometry = []
+                window_role_rewards = []
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0

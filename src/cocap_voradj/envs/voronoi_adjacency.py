@@ -184,14 +184,24 @@ class VorAdjEnv(CoCapEnv):
         cfg = self.config.get("voradj", {}) or {}
         return bool(cfg.get("vct_ls_apply_release_delay", False))
 
-    def _vct_ls_support_reward_blend_enabled(self) -> bool:
+    def _legacy_voradj_support_reward_blend_enabled(self) -> bool:
         cfg = self.config.get("voradj", {}) or {}
         return bool(
-            self._vct_ls_enabled()
-            and cfg.get(
+            self._perception_topology_version() == "legacy_voradj"
+            and cfg.get("legacy_voradj_support_reward_blend_enabled", False)
+        )
+
+    def _vct_ls_support_reward_blend_enabled(self) -> bool:
+        cfg = self.config.get("voradj", {}) or {}
+        enabled = bool(
+            cfg.get(
                 "support_reward_blend_enabled",
                 cfg.get("vct_ls_support_reward_blend_enabled", False),
             )
+        )
+        return bool(
+            enabled
+            and (self._vct_ls_enabled() or self._legacy_voradj_support_reward_blend_enabled())
         )
 
     def _vct_ls_support_reward_weights(self) -> Tuple[float, float]:
@@ -224,6 +234,20 @@ class VorAdjEnv(CoCapEnv):
             if nk[0] == "pursuer" and 0 <= int(nk[1]) < len(labels) and labels[int(nk[1])] == "capture"
         ]
         return sorted(set(neighbor_ids))
+
+    def _task_reward_role(
+        self,
+        idx: int,
+        labels: List[str],
+        data: Dict[str, Any],
+    ) -> str:
+        if idx < 0 or idx >= len(labels) or labels[idx] == "inactive":
+            return "inactive"
+        if labels[idx] == "capture":
+            return "capture"
+        if self._support_pursuing_friend_ids(idx, labels, data):
+            return "support"
+        return "coverage"
 
     def _support_reward_capture_target_mode(self) -> str:
         cfg = self.config.get("voradj", {}) or {}
@@ -1757,6 +1781,14 @@ class VorAdjEnv(CoCapEnv):
         support_reward_blend_flags = np.zeros(len(self.pursuers), dtype=bool)
         ce_reward_applied = np.zeros(len(self.pursuers), dtype=bool)
         ce_pbrs_reset_reasons = ["none"] * len(self.pursuers)
+        support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
+        support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
+        legacy_support_mode = self._legacy_voradj_support_reward_blend_enabled()
+        reward_role_labels = before_raw_labels if legacy_support_mode else before_labels
+        reward_roles = [
+            self._task_reward_role(i, reward_role_labels, before_data)
+            for i in range(len(self.pursuers))
+        ]
 
         def apply_ce_pbrs_reset(index: int, center_cost: float, reason: str) -> None:
             if not ce_reward_applied[index] or ce_pbrs_reset_reasons[index] != "none":
@@ -1772,6 +1804,7 @@ class VorAdjEnv(CoCapEnv):
                 "state": "normal",
                 "task_label": before_labels[i],
                 "next_task_label": next_labels[i],
+                "reward_role": reward_roles[i],
             }
             for i in range(len(self.pursuers))
         ]
@@ -1782,15 +1815,11 @@ class VorAdjEnv(CoCapEnv):
         timestep_penalty = float(self.env_cfg.get("timestep_penalty", -1.0))
         emergency_penalties = self._emergency_proximity_penalties()
 
-        support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
-        support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
-
         def support_reward_blend_active(index: int) -> bool:
             return bool(
                 support_reward_blend_enabled
                 and active_targets
-                and before_labels[index] == "coverage"
-                and self._support_pursuing_friend_ids(index, before_labels, before_data)
+                and reward_roles[index] == "support"
             )
 
         def capture_reward_candidates(index: int, support_mode: bool = False) -> List[int]:
@@ -1816,6 +1845,19 @@ class VorAdjEnv(CoCapEnv):
             adjacent_targets = sorted(set(adjacent_targets).union(self._zone_extra_evader_ids_for_pursuer(index, before_data)))
             if adjacent_targets:
                 return adjacent_targets
+            if support_mode and legacy_support_mode:
+                neighbor_targets: List[int] = []
+                for neighbor_idx in self._support_pursuing_friend_ids(index, reward_role_labels, before_data):
+                    neighbor_targets.extend(
+                        int(nk[1])
+                        for nk in before_data.get("adjacency", {}).get(("pursuer", neighbor_idx), set())
+                        if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
+                    )
+                    neighbor_targets.extend(
+                        self._zone_extra_evader_ids_for_pursuer(neighbor_idx, before_data)
+                    )
+                if neighbor_targets:
+                    return sorted(set(neighbor_targets))
             if bool(self.reward_cfg.get("legacy_capture_reward_fallback_all_active", True)):
                 return list(active_targets)
             return []
@@ -1929,7 +1971,7 @@ class VorAdjEnv(CoCapEnv):
         for i, p in enumerate(self.pursuers):
             if p.deactivated:
                 continue
-            if before_labels[i] == "capture" and active_targets:
+            if reward_roles[i] == "capture" and active_targets:
                 task_reward = capture_task_reward(i, capture_reward_candidates(i, support_mode=False))
                 rewards[i] += task_reward
                 reward_capture_component[i] += task_reward
@@ -1972,15 +2014,8 @@ class VorAdjEnv(CoCapEnv):
         normal_coverage_metrics = dict(self.last_distribution_metrics)
         active_pursuers = [i for i, p in enumerate(self.pursuers) if not p.deactivated]
         hold_phase = "pure_coverage" if pure_coverage_scene else ("pre_capture" if active_targets else "post_capture")
-        hold_eligible = [i for i in active_pursuers if before_labels[i] == "coverage"]
-        hold_support_candidates = [
-            i
-            for i in hold_eligible
-            if any(
-                nk[0] == "pursuer" and before_labels[nk[1]] == "capture"
-                for nk in before_data.get("adjacency", {}).get(("pursuer", i), set())
-            )
-        ]
+        hold_eligible = [i for i in active_pursuers if reward_roles[i] in {"support", "coverage"}]
+        hold_support_candidates = [i for i in hold_eligible if reward_roles[i] == "support"]
         if hold_phase == "pre_capture":
             hold_geometry_metrics = self._voradj_coverage_geometry(
                 coverage_data,
@@ -2386,6 +2421,7 @@ class VorAdjEnv(CoCapEnv):
                 "raw_task_label": before_raw_labels[i],
                 "next_raw_task_label": next_raw_labels[i],
                 "phase": phase_label,
+                "reward_role": reward_roles[i],
                 "reward_coverage": float(reward_coverage_component[i]),
                 "reward_capture": float(reward_capture_component[i]),
                 "reward_safety": float(reward_safety_component[i]),
@@ -2416,8 +2452,8 @@ class VorAdjEnv(CoCapEnv):
                 "enemy_neighbor_count": int(before_raw_labels[i] == "capture"),
                 "effective_pursuing": bool(before_labels[i] == "capture"),
                 "friend_neighbor_count": int(sum(1 for nk in before_data.get("adjacency", {}).get(("pursuer", i), set()) if nk[0] == "pursuer")) if before_labels[i] != "inactive" else 0,
-                "support_candidate": bool(self._support_pursuing_friend_ids(i, before_labels, before_data)),
-                "support_pursuing_friend_count": int(len(self._support_pursuing_friend_ids(i, before_labels, before_data))),
+                "support_candidate": bool(reward_roles[i] == "support"),
+                "support_pursuing_friend_count": int(len(self._support_pursuing_friend_ids(i, reward_role_labels, before_data))),
                 "support_reward_blend_active": bool(support_reward_blend_flags[i]),
                 "support_reward_capture_weight": float(support_capture_weight if support_reward_blend_flags[i] else 0.0),
                 "support_reward_coverage_weight": float(support_coverage_weight if support_reward_blend_flags[i] else 0.0),
@@ -2453,7 +2489,15 @@ class VorAdjEnv(CoCapEnv):
                     if not any(nk[0] == "pursuer" for nk in data.get("adjacency", {}).get(ev_key, set())):
                         miss_evader = True
                         break
-        support_count = int(sum(1 for i, label in enumerate(next_labels) if label == "coverage" and any(nk[0] == "pursuer" and next_labels[nk[1]] == "capture" for nk in data.get("adjacency", {}).get(("pursuer", i), set()))))
+        support_count = int(sum(1 for role in reward_roles if role == "support"))
+        role_reward_metrics: Dict[str, float] = {}
+        for role_name in ("capture", "support", "coverage"):
+            role_ids = [i for i, role in enumerate(reward_roles) if role == role_name]
+            role_reward_metrics[f"reward_role_{role_name}_agent_count"] = int(len(role_ids))
+            role_reward_metrics[f"reward_role_{role_name}_capture_sum"] = float(np.sum(reward_capture_component[role_ids])) if role_ids else 0.0
+            role_reward_metrics[f"reward_role_{role_name}_coverage_sum"] = float(np.sum(reward_coverage_component[role_ids])) if role_ids else 0.0
+            role_reward_metrics[f"reward_role_{role_name}_terminal_sum"] = float(np.sum(reward_terminal_component[role_ids])) if role_ids else 0.0
+            role_reward_metrics[f"reward_role_{role_name}_total_sum"] = float(np.sum(rewards[role_ids])) if role_ids else 0.0
         self.last_voradj_metrics = {
             "coverage_objective_version": str(self.reward_cfg.get("coverage_objective_version", "legacy")),
             "coverage_ce_pbrs_reset_mode": self._ce_pbrs_reset_mode(),
@@ -2496,6 +2540,8 @@ class VorAdjEnv(CoCapEnv):
             "miss_evader_step": bool(miss_evader),
             "support_candidate_count": support_count,
             "support_candidate_ratio": float(support_count / active_count),
+            "legacy_voradj_support_reward_blend_enabled": bool(legacy_support_mode),
+            **role_reward_metrics,
             "support_reward_blend_enabled": bool(support_reward_blend_enabled),
             "support_reward_blend_active_count": int(np.count_nonzero(support_reward_blend_flags)),
             "support_reward_blend_active_ratio": float(np.count_nonzero(support_reward_blend_flags) / active_count),

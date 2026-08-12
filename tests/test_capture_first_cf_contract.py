@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
 CF0 = CONFIG_DIR / "legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml"
 CF1 = CONFIG_DIR / "legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw.yaml"
+CF2 = CONFIG_DIR / "legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw.yaml"
 
 
 def test_cf0_is_formal_capture_only_with_stable_sac_contract() -> None:
@@ -152,16 +153,20 @@ def test_representative_rollout_selection_is_unique_and_bounded() -> None:
 
 
 
-def test_cf0_gate_is_diagnostic_only_and_always_continues_to_200k() -> None:
+def test_cf0_gate_is_diagnostic_only_and_always_starts_cf2_scratch() -> None:
     from tools.supervise_capture_first_cf import evaluate_gate, training_command
 
     fail = evaluate_gate([], capture_events=0)
     assert fail["controls_training_branch"] is False
-    assert fail["next_action"] == "CF0_CONTINUES_TO_200K_REGARDLESS_OF_GATE"
-    assert "--total-steps" in training_command(fail)
-    assert training_command(fail)[training_command(fail).index("--total-steps") + 1] == "200000"
+    assert fail["next_action"] == "CF0_STOPS_AT_100K_AND_CF2_STARTS_FROM_SCRATCH"
+    command = training_command(fail)
+    assert command[command.index("--total-steps") + 1] == "100000"
+    assert command[command.index("--device") + 1] == "cuda:0"
+    assert str(CF2) == command[command.index("--config") + 1]
+    assert "--resume-checkpoint" not in command
+    assert "--resume-replay" not in command
     passed = evaluate_gate([], capture_events=1)
-    assert training_command(passed) == training_command(fail)
+    assert training_command(passed) == command
 
 
 def test_c1_225k_handoff_starts_cf1_from_scratch_on_gpu1() -> None:
@@ -173,3 +178,108 @@ def test_c1_225k_handoff_starts_cf1_from_scratch_on_gpu1() -> None:
     assert "--resume-checkpoint" not in command
     assert "--resume-replay" not in command
     assert "--resume-step" not in command
+
+
+def _place_legacy_chain(env: VorAdjEnv) -> tuple[dict, list[str]]:
+    for robot, xy in zip(
+        env.pursuers,
+        [(28.0, 30.0), (40.0, 30.0), (55.0, 30.0), (70.0, 30.0)],
+    ):
+        env._reset_robot(robot, np.asarray(xy, dtype=float), theta=0.0)
+    env._reset_robot(env.evaders[0], np.asarray((20.0, 30.0), dtype=float), theta=0.0)
+    env.obstacles = []
+    env._invalidate_voronoi_cache()
+    data = env._capture_voronoi_map()
+    raw_labels = env._raw_task_labels_from_map(data)
+    env.last_task_labels = env._task_labels_from_map(
+        data,
+        update_effective=True,
+        raw_labels=raw_labels,
+    )
+    return data, raw_labels
+
+
+def test_cf2_contract_is_cf1_plus_legacy_support_full_capture_and_coverage() -> None:
+    cf1 = resolve_ladder_config(CF1)
+    cf2 = resolve_ladder_config(CF2)
+    assert cf2["perception"]["global_evader_visibility"] is True
+    assert cf2["voradj"]["perception_topology_version"] == "legacy_voradj"
+    assert cf2["voradj"]["support_reward_blend_enabled"] is True
+    assert cf2["voradj"]["legacy_voradj_support_reward_blend_enabled"] is True
+    assert cf2["voradj"]["support_reward_capture_weight"] == 1.0
+    assert cf2["voradj"]["support_reward_coverage_weight"] == 1.0
+    assert cf2["voradj"]["support_reward_capture_component_mode"] == "capture_task"
+    assert cf2["training"]["scene_cycle"] == ["capture"]
+    assert cf2["training"]["total_env_steps"] == 100000
+    for key in ("update_every_env_steps", "gradient_steps", "batch_size", "grad_clip_norm"):
+        assert cf2["training"][key] == cf1["training"][key]
+    for key in ("actor_lr", "critic_lr", "alpha_lr", "tau"):
+        assert cf2["masac"][key] == cf1["masac"][key]
+    assert cf1["voradj"].get("support_reward_blend_enabled", False) is False
+    assert cf1["voradj"].get("legacy_voradj_support_reward_blend_enabled", False) is False
+
+
+def test_cf2_global_broadcast_does_not_change_legacy_adjacency_roles_or_rewards() -> None:
+    config = scene_config(resolve_ladder_config(CF2), "capture")
+    set_global_config(config)
+    env = VorAdjEnv(copy.deepcopy(config), seed=2026081303)
+    env.reset()
+    data, raw_labels = _place_legacy_chain(env)
+
+    assert data["adjacency"][("pursuer", 0)] >= {("evader", 0), ("pursuer", 1)}
+    assert data["adjacency"][("pursuer", 1)] >= {("pursuer", 0), ("pursuer", 2)}
+    assert data["adjacency"][("pursuer", 2)] >= {("pursuer", 1)}
+    assert raw_labels[:3] == ["capture", "coverage", "coverage"]
+    assert [env._task_reward_role(i, raw_labels, data) for i in range(3)] == [
+        "capture",
+        "support",
+        "coverage",
+    ]
+
+    evader_offset = 1 + env.per_cfg["max_pursuer_num"]
+    assert all(bool(obs["masks"][evader_offset]) for obs in env.get_observations() if obs is not None)
+
+    result = env.step([[0.0, 0.0]] * 4, [None])
+    capture = result.infos[0]["replay_metadata"]
+    support = result.infos[1]["replay_metadata"]
+    coverage = result.infos[2]["replay_metadata"]
+
+    assert capture["reward_role"] == "capture"
+    assert capture["reward_capture"] != 0.0
+    assert capture["reward_coverage"] == 0.0
+    assert capture["reward_total"] == capture["reward_capture"]
+
+    assert support["reward_role"] == "support"
+    assert support["support_reward_blend_active"] is True
+    assert support["support_reward_capture_weight"] == 1.0
+    assert support["support_reward_coverage_weight"] == 1.0
+    assert support["reward_capture"] == support["reward_support_blend_capture"]
+    assert support["reward_coverage"] == support["reward_support_blend_coverage"]
+    assert support["reward_capture"] != 0.0
+    assert support["reward_coverage"] != 0.0
+    assert np.isclose(
+        support["reward_total"],
+        support["reward_capture"] + support["reward_coverage"] + support["reward_safety"],
+    )
+
+    assert coverage["reward_role"] == "coverage"
+    assert coverage["support_reward_blend_active"] is False
+    assert coverage["reward_capture"] == 0.0
+    assert coverage["reward_coverage"] != 0.0
+    assert coverage["reward_total"] == coverage["reward_coverage"]
+
+
+def test_cf1_legacy_support_mode_remains_disabled() -> None:
+    config = scene_config(resolve_ladder_config(CF1), "capture")
+    set_global_config(config)
+    env = VorAdjEnv(copy.deepcopy(config), seed=2026081302)
+    env.reset()
+    _place_legacy_chain(env)
+    result = env.step([[0.0, 0.0]] * 4, [None])
+    support_slot = result.infos[1]["replay_metadata"]
+
+    assert env._legacy_voradj_support_reward_blend_enabled() is False
+    assert env._vct_ls_support_reward_blend_enabled() is False
+    assert support_slot["support_reward_blend_active"] is False
+    assert support_slot["reward_capture"] == 0.0
+    assert support_slot["reward_coverage"] != 0.0

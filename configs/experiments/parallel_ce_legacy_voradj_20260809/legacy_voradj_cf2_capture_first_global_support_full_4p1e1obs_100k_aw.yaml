@@ -1,0 +1,22 @@
+extends: ./legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml
+
+run_name: legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw_20260813
+seed: 2026081303
+
+perception:
+  global_evader_visibility: true
+
+voradj:
+  support_reward_blend_enabled: true
+  legacy_voradj_support_reward_blend_enabled: true
+  support_reward_capture_weight: 1.0
+  support_reward_coverage_weight: 1.0
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: capture_task
+
+experiment_metadata:
+  stage: cf2_formal_capture_first_global_enemy_support_full_100k_aw
+  training_start: scratch_new_replay
+  observability: legacy_voradj diagnostic global enemy broadcast; every active pursuer receives relative enemy position and velocity
+  sole_cf1_delta: Legacy adjacency support agents receive 1.0 capture_task + 1.0 coverage; observation unchanged
+  role_contract: global broadcast is information only; capture-support-coverage roles derive from Legacy-VorAdj adjacency

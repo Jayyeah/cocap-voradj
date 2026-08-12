@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gate CF0 at 100k and continue CF0 or start CF1 without user intervention."""
+"""Freeze CF0 at 100k and launch CF2 scratch on released GPU0."""
 from __future__ import annotations
 
 import json
@@ -16,13 +16,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
 CF0_CONFIG = CONFIG_DIR / "legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml"
-CF1_CONFIG = CONFIG_DIR / "legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw.yaml"
+CF2_CONFIG = CONFIG_DIR / "legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw.yaml"
 ARTIFACT_ROOT = ROOT / "artifacts/2026-08-13_capture_first_controls"
 CF0_ROOT = ARTIFACT_ROOT / "cf0_local"
-CF1_ROOT = ARTIFACT_ROOT / "cf1_global"
+CF2_ROOT = ARTIFACT_ROOT / "cf2_global_support_full"
 CONTROL_ROOT = ARTIFACT_ROOT / "control"
 CF0_TAG = "legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw_20260813"
-CF1_TAG = "legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw_20260813"
+CF2_TAG = "legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw_20260813"
 CF0_DIR = CF0_ROOT / CF0_TAG
 CF0_REPORT = CF0_DIR / f"{CF0_TAG}_report.json"
 CF0_METRICS = CF0_DIR / "metrics.jsonl"
@@ -119,7 +119,7 @@ def evaluate_gate(rows: list[dict[str, Any]], capture_events: int = 0) -> dict[s
         "schema_version": 1,
         "decision": "DIAGNOSTIC_PASS" if passed else "DIAGNOSTIC_FAIL",
         "controls_training_branch": False,
-        "next_action": "CF0_CONTINUES_TO_200K_REGARDLESS_OF_GATE",
+        "next_action": "CF0_STOPS_AT_100K_AND_CF2_STARTS_FROM_SCRATCH",
         "passed": passed,
         "rule": "any strong signal OR at least two sustained medium signals",
         "distinct_real_capture_events_from_replay": captures,
@@ -196,17 +196,15 @@ def gpu0_compute_pids() -> list[int]:
 def training_command(_gate: dict[str, Any]) -> list[str]:
     return [
         sys.executable, str(ROOT / "tools/run_continuous_ctde_training.py"),
-        "--config", str(CF0_CONFIG), "--seed", "2026081301", "--device", "cuda:0",
-        "--total-steps", "200000", "--screen-episodes", "20",
+        "--config", str(CF2_CONFIG), "--seed", "2026081303", "--device", "cuda:0",
+        "--total-steps", "100000", "--screen-episodes", "20",
         "--diagnostic-eval-episodes", "4",
-        "--resume-checkpoint", str(CF0_FROZEN / "trainer.pt"),
-        "--resume-replay", str(CF0_FROZEN / "replay.pkl"),
-        "--resume-step", "100000", "--tag", CF0_TAG, "--artifact-root", str(CF0_ROOT),
+        "--tag", CF2_TAG, "--artifact-root", str(CF2_ROOT),
     ]
 
 
 def main() -> int:
-    for path in (CF0_CONFIG,):
+    for path in (CF0_CONFIG, CF2_CONFIG):
         if not path.is_file():
             raise FileNotFoundError(path)
     CONTROL_ROOT.mkdir(parents=True, exist_ok=True)
@@ -227,19 +225,19 @@ def main() -> int:
     frozen = freeze_resume_bundle()
     gate["frozen_bundle"] = str(frozen)
     GATE_REPORT.write_text(json.dumps(gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    log(f"diagnostic gate: {gate['decision']}; frozen={frozen}; CF0 always continues to 200k")
+    log(f"diagnostic gate: {gate['decision']}; frozen={frozen}; CF0 stops at 100k; CF2 scratch is selected")
     while gpu0_compute_pids():
         log(f"waiting for GPU0 release: {gpu0_compute_pids()}")
         time.sleep(30)
     command = training_command(gate)
-    (CONTROL_ROOT / "cf0_gate_selected_command.json").write_text(
+    (CONTROL_ROOT / "cf0_stop100_cf2_selected_command.json").write_text(
         json.dumps(command, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     env = dict(os.environ)
     env["PYTHONPATH"] = f"{ROOT / 'src'}:{ROOT}"
     env["PYTHONUNBUFFERED"] = "1"
     os.chdir(ROOT)
-    log("GPU0 free; exec CF0 100k -> 200k continuation")
+    log("GPU0 free; exec CF2 scratch 0 -> 100k")
     os.execvpe(command[0], command, env)
 
 
