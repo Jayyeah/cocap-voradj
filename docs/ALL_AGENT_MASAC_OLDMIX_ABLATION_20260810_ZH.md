@@ -468,3 +468,21 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 19:41复查时C1 PID/tmux持续存在，C1在GPU1占用约8664 MiB且GPU利用率100%，说明已完成6.7 GB replay/optimizer反序列化并进入计算，不再是此前supervisor tmux瞬退状态。
 - 并行资源：C0仍在GPU0约8664 MiB；GPU1原进程约7342 MiB+C1约8664 MiB，总约16038 MiB/49140 MiB。系统RAM available约77 GiB、swap148 MiB。无OOM，但GPU1温度已到92°C、风扇100%，这是明确热风险；后续优先观察温度、throttle和两进程吞吐，不得误停原PID。
 - 当前尚未出现C1首个新1k metrics落盘，因此不能报告稳定steps/hour或行为信号；本次只确认合同加载、GPU更新和进程存活。C1 225k/300k ETA应在首个真实窗口后计算，不沿用C0吞吐。
+
+### 10.13 C0 287k / C1 215k并行状态（2026-08-12 22:54+08:00）
+
+#### C0 — UTD .25 extension
+
+- PID `1748359`、tmux `c0_p1_extension_utd025_300k`、cuda:0持续正常；最新 `287000/300000`、update `70501`。replay显示`250000`是合同容量`capacity_joint=250000`下的正常ring封顶，不是停写或丢失runtime。
+- 最近五个普通1k窗口吞吐约`3.46--3.77 step/s`，最近为`3.756 step/s≈13.52k step/h`；全部finite，末窗critic/actor loss=`23.18/34.22`、alpha=`0.03000`、TD abs mean=`1.002`、peak allocated=`8045.25 MiB`。
+- 250k与275k model-only里程碑均完整落盘；275k对应rolling `resume_latest`也已完整写出trainer/replay/runtime，replay约8.41 GB。
+- capture核心结论仍为负：post-capture index保持`2000`，原P1 capture窗口在250k ring内仍未被覆盖，因此截至287k没有第二个distinct capture。最近五窗没有2+或3+ ring；285k虽有单机深入`d1_min=4.91m`，仍未转化为多机capture。
+- 275k 4-episode diagnostic：capture/mixed capture均0、collision均1.0，mean minimum distance=`21.76/12.64m`，distance progress=`-6.33/-2.29m`；比250k没有capture改善。Pure-CE仍有正面但不稳定的coverage信号：CV.15/CV.20=`1.0/1.0`、collision=0、area CV=`0.0724`，但strict=0。
+- 按最近真实吞吐，300k训练step ETA约 `2026-08-12 23:52--23:58+08:00`；含final eval和完整replay落盘预计 `2026-08-13 00:10--00:30+08:00`。
+
+#### C1 — UTD .5 fork
+
+- PID `1853291`、tmux `c1_p1_utd05_300k_gpu1`、cuda:1持续正常；最新 `215000/300000`、update `56251`、replay `215000`。相对P1-200k的15k新steps增加7500 updates，精确符合UTD=.5。
+- 最近五个1k窗口约`1.257--1.265 step/s=4.53--4.55k step/h`，全部finite；215k critic/actor loss=`26.33/35.85`、alpha=`0.03794`、TD abs mean=`1.250`、peak allocated=`8045.25 MiB`，无NaN/OOM或显存增长。
+- C1的post-capture index仍为`2000`，最近窗口无2+/3+ ring；目前没有新capture或优于C0的行为证据。当前只能确认更高UTD数值稳定，不能确认性能更好。
+- GPU1同时有非本项目PID `1258417`和新出现的PID `1876168`，总显存约`21405/49140 MiB`、利用率95%、温度92°C；C1吞吐显著低于独占GPU的C0。系统RAM available约65 GiB、swap618 MiB/8 GiB，仍安全但资源压力上升；未处理其他进程。
