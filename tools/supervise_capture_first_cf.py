@@ -6,6 +6,7 @@ import json
 import math
 import os
 import pickle
+import shutil
 import subprocess
 import sys
 import time
@@ -26,6 +27,7 @@ CF0_DIR = CF0_ROOT / CF0_TAG
 CF0_REPORT = CF0_DIR / f"{CF0_TAG}_report.json"
 CF0_METRICS = CF0_DIR / "metrics.jsonl"
 CF0_RESUME = CF0_DIR / "resume_latest"
+CF0_FROZEN = CF0_DIR / "resume_frozen_cf0_step_000100000"
 GATE_REPORT = CONTROL_ROOT / "cf0_gate_100k.json"
 
 
@@ -115,7 +117,9 @@ def evaluate_gate(rows: list[dict[str, Any]], capture_events: int = 0) -> dict[s
     passed = bool(strong_names or len(medium_names) >= 2)
     return {
         "schema_version": 1,
-        "decision": "PASS_CONTINUE_CF0_TO_150K" if passed else "FAIL_START_CF1_FROM_SCRATCH",
+        "decision": "DIAGNOSTIC_PASS" if passed else "DIAGNOSTIC_FAIL",
+        "controls_training_branch": False,
+        "next_action": "CF0_CONTINUES_TO_200K_REGARDLESS_OF_GATE",
         "passed": passed,
         "rule": "any strong signal OR at least two sustained medium signals",
         "distinct_real_capture_events_from_replay": captures,
@@ -151,6 +155,27 @@ def replay_capture_event_count() -> int:
     )
 
 
+def freeze_resume_bundle() -> Path:
+    required = ("trainer.pt", "replay.pkl", "runtime_state.pkl", "manifest.json", "effective_config.yaml")
+    missing = [name for name in required if not (CF0_RESUME / name).is_file()]
+    if missing:
+        raise FileNotFoundError(f"CF0 resume bundle missing: {missing}")
+    if CF0_FROZEN.is_dir():
+        for name in required:
+            if not (CF0_FROZEN / name).is_file():
+                raise RuntimeError(f"existing CF0 frozen bundle incomplete: {name}")
+        return CF0_FROZEN
+    temporary = CF0_FROZEN.with_name(CF0_FROZEN.name + ".tmp")
+    if temporary.exists():
+        shutil.rmtree(temporary)
+    temporary.mkdir(parents=True)
+    for source in CF0_RESUME.iterdir():
+        if source.is_file():
+            os.link(source, temporary / source.name)
+    temporary.rename(CF0_FROZEN)
+    return CF0_FROZEN
+
+
 def gpu0_compute_pids() -> list[int]:
     gpu_uuid = subprocess.run(
         ["nvidia-smi", "-i", "0", "--query-gpu=uuid", "--format=csv,noheader"],
@@ -168,26 +193,20 @@ def gpu0_compute_pids() -> list[int]:
     return pids
 
 
-def training_command(gate: dict[str, Any]) -> list[str]:
-    base = [sys.executable, str(ROOT / "tools/run_continuous_ctde_training.py")]
-    if bool(gate["passed"]):
-        return base + [
-            "--config", str(CF0_CONFIG), "--seed", "2026081301", "--device", "cuda:0",
-            "--total-steps", "150000", "--screen-episodes", "20",
-            "--diagnostic-eval-episodes", "4",
-            "--resume-checkpoint", str(CF0_RESUME / "trainer.pt"),
-            "--resume-replay", str(CF0_RESUME / "replay.pkl"),
-            "--resume-step", "100000", "--tag", CF0_TAG, "--artifact-root", str(CF0_ROOT),
-        ]
-    return base + [
-        "--config", str(CF1_CONFIG), "--seed", "2026081302", "--device", "cuda:0",
-        "--total-steps", "100000", "--screen-episodes", "20",
-        "--diagnostic-eval-episodes", "4", "--tag", CF1_TAG, "--artifact-root", str(CF1_ROOT),
+def training_command(_gate: dict[str, Any]) -> list[str]:
+    return [
+        sys.executable, str(ROOT / "tools/run_continuous_ctde_training.py"),
+        "--config", str(CF0_CONFIG), "--seed", "2026081301", "--device", "cuda:0",
+        "--total-steps", "200000", "--screen-episodes", "20",
+        "--diagnostic-eval-episodes", "4",
+        "--resume-checkpoint", str(CF0_FROZEN / "trainer.pt"),
+        "--resume-replay", str(CF0_FROZEN / "replay.pkl"),
+        "--resume-step", "100000", "--tag", CF0_TAG, "--artifact-root", str(CF0_ROOT),
     ]
 
 
 def main() -> int:
-    for path in (CF0_CONFIG, CF1_CONFIG):
+    for path in (CF0_CONFIG,):
         if not path.is_file():
             raise FileNotFoundError(path)
     CONTROL_ROOT.mkdir(parents=True, exist_ok=True)
@@ -205,8 +224,10 @@ def main() -> int:
     gate = evaluate_gate(load_metrics(), replay_capture_event_count())
     gate["evaluated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     gate["cf0_report"] = str(CF0_REPORT)
+    frozen = freeze_resume_bundle()
+    gate["frozen_bundle"] = str(frozen)
     GATE_REPORT.write_text(json.dumps(gate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    log(f"gate decision: {gate['decision']}")
+    log(f"diagnostic gate: {gate['decision']}; frozen={frozen}; CF0 always continues to 200k")
     while gpu0_compute_pids():
         log(f"waiting for GPU0 release: {gpu0_compute_pids()}")
         time.sleep(30)
@@ -218,7 +239,7 @@ def main() -> int:
     env["PYTHONPATH"] = f"{ROOT / 'src'}:{ROOT}"
     env["PYTHONUNBUFFERED"] = "1"
     os.chdir(ROOT)
-    log("GPU0 free; exec selected branch")
+    log("GPU0 free; exec CF0 100k -> 200k continuation")
     os.execvpe(command[0], command, env)
 
 

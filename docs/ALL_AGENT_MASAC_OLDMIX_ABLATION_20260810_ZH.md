@@ -532,3 +532,34 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 主机RAM available约85 GiB、swap1.1/8 GiB；根分区可用158 GiB。当前无OOM、NaN、显存增长或RAM/swap危险。
 - C0 300k独立formal评估的三场景各20 rollout已于00:43完成：capture/mixed capture rate=0、collision rate=1.0，二者mean minimum distance均12.87 m、distance progress=+7.49 m；Pure-CE strict/CV.15/CV.20=0.35/0.75/0.90、collision=0.05、mean area CV=0.1034、CE progress=+0.1102。结论仍是coverage可学而formal capture不可复现。
 - C0代表性GIF旁路PID=1980214、tmux=eval_c0_300k_representative_cpu；截至00:47已完成7个GIF（capture 5个、coverage 2个），继续CPU低优先级渲染coverage/mixed。按既定要求不等待旁路完成，本次只同步已完成的20-rollout汇总。
+
+
+### 10.16 自动线重排：C1停于225k、CF1接力、CF0固定续到200k（2026-08-13 01:00+08:00）
+
+#### C1 UTD=.5在225k冻结停止
+
+- 用户将C1预算上限改为225k。step_000225000的trainer/runtime/manifest/effective_config/metrics/diagnostic_eval完整落盘，rolling resume_latest额外包含完整replay.pkl；随后以hardlink原子冻结为resume_frozen_c1_step_000225000。frozen trainer约145 MB、replay约7.55 GB，未删除任何C1 artifact。
+- 自动接力于2026-08-13 00:58:29确认上述文件完整后向唯一匹配C1 tag的PID 1853291发送SIGINT。PID随后正常消失，GPU1显存从约16.0 GiB降至约7.37 GiB，证明C1 allocation已释放；没有触碰GPU1原有PID 1258417。
+- 对冻结replay逐条检查transition_id>=200000的metadata.event_ids：新real capture=0；200k--225k训练窗口没有任何2+ ring或3+ ring，更不存在repeated 2+ ring。结论为：UTD=.5数值稳定，但没有新的capture收益，C1正式停止于225k，不再运行250/275/300k。
+- 225k轻量4-episode diagnostic：capture capture=0/4、collision=4/4、mean min distance=20.14 m、distance progress=-17.53 m；mixed capture=0/4、collision=2/4、mean min distance=11.28 m、distance progress=-5.23 m。Pure-CE CV.15/CV.20=4/4但strict=0/4。训练224k曾有单机ring 6.98%和d1_min=6.52 m，只是弱接敌信号，不满足多机Gate。
+- 旧的C1-300k formal20+GIF tmux waiter已停止，仓库中的tools/supervise_c1_final_eval.py已删除；225k不启动昂贵20-rollout。完整审计写入artifacts/2026-08-13_capture_first_controls/control/c1_stop_225k.json。
+
+#### CF1 Global Broadcast从scratch在GPU1启动
+
+- C1释放显存并完成replay审计后，原接力supervisor进程于00:59:17 exec为CF1训练；当前PID 1992295、tmux c1_stop225_cf1_gpu1_autostart、cuda:1，artifact为artifacts/2026-08-13_capture_first_controls/cf1_global/legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw_20260813/。
+- 启动命令没有任何resume checkpoint/replay/step参数。manifest明确initialization=scratch_new_replay、seed=2026081302、optimizer_unit=joint_transition_all_active_agents、replay_sampling=uniform_joint、focal_training=false、grad_clip=null、action=(a,w)。
+- CF1继承CF0的stationary fallback：enabled=true、speed threshold=0.2、hold=10、min pursuers=2；Legacy K10 release delay=10。唯一核心信息变量是global enemy broadcast。聚焦回归显式构造远距离敌人并验证每个active pursuer Actor observation均含robot-frame relative position和relative velocity，不是只检查YAML布尔值。
+- 01:00已出现CF1首个1k metrics文件，进程持续推进、scene仅capture、replay从0新建；当前仍在5k warmup前，暂不据此报告稳态训练吞吐或行为结论。
+
+#### CF0 Local固定100k→200k
+
+- 旧PASS→150k / FAIL→CF1分支已删除。CF0仍按原合同跑完0→100k；100k diagnostic Gate继续统计真实normal/stationary capture、3+ ring、repeated 2+ ring、2+ fraction、collision和distance，但controls_training_branch=false。
+- 100k report与rolling bundle完整后，supervisor将用hardlink原子冻结resume_frozen_cf0_step_000100000；无论Gate PASS/FAIL均以相同trainer/replay/runtime/RNG原位resume到200k。125/150/175/200k仍按25k间隔保存和诊断。
+- 新supervisor PID 1992290、tmux cf0_continue_200k_autostart；旧cf_capture_first_gate已停止。CF0和CF1现在完全互不等待。
+
+
+### 10.17 CF0/CF1并行运行核验与ETA（2026-08-13 01:04+08:00）
+
+- CF0 Local当前PID `1976538`、tmux `cf0_capture_first_local_100k_gpu0`、cuda:0；最新完整窗口`13000/100000`、update=`2001`、replay=`13000`。最近稳态约`3.78--3.80 step/s`（约`13.6k step/h`），`mean_finite=1`、peak allocated=`8045.14 MiB`，尚无2+/3+ ring或real capture新信号。按当前吞吐并计入25k诊断、100k冻结/重启和完整replay落盘：25k ETA约`2026-08-13 01:55--02:10+08:00`，100k约`07:40--08:20`，200k约`15:20--16:15`。
+- CF1 Global当前PID `1992295`、tmux `c1_stop225_cf1_gpu1_autostart`、cuda:1；已完成`5000` warmup并执行首个真实update，replay=`5000`，critic/actor/alpha/TD均finite，peak allocated=`8019.93 MiB`，无OOM/NaN。首个update wall-time=`1.488 s`；结合约25.6秒/1k的环境采样成本，GPU1共享条件下保守预计稳态`2.3--2.7 step/s`（`8.3--9.7k step/h`）。因此25k ETA暂估`03:10--03:35+08:00`，100k ETA暂估`11:00--13:00+08:00`，待首个完整post-warmup 1k窗口自动校准。CF1当前合同只到100k，未安排200k，故无200k ETA。
+- 资源核验：GPU0约`8685/49140 MiB`、100%利用率、85°C；GPU1约`16036/49140 MiB`、100%利用率、92°C，其中约7342 MiB属于既有PID `1258417`，未触碰。主机RAM available约`98 GiB`，swap使用`576 MiB/8 GiB`。两条正式训练及CF0续训supervisor均存活，当前无显存/RAM增长异常。

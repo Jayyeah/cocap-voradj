@@ -36,6 +36,11 @@ def test_cf0_is_formal_capture_only_with_stable_sac_contract() -> None:
     assert config["reward"]["capture_reward_mode"] == "legacy"
     assert config["reward"]["k_required"] == 3
     assert config["reward"]["legacy_capture_reward_fallback_all_active"] is False
+    assert config["reward"]["capture_stationary_enabled"] is True
+    assert config["reward"]["capture_stationary_speed_threshold"] == 0.2
+    assert config["reward"]["capture_stationary_hold_steps"] == 10
+    assert config["reward"]["capture_stationary_min_pursuers"] == 2
+    assert config["voradj"]["is_pursuing_release_delay_steps"] == 10
     assert capture["env"]["num_pursuers"] == 4
     assert capture["env"]["num_evaders"] == 1
     assert capture["env"]["num_obstacles"] == 1
@@ -144,3 +149,27 @@ def test_representative_rollout_selection_is_unique_and_bounded() -> None:
     selected = choose(rows, 5)
     assert len(selected) == 5
     assert len({int(row["seed"]) for row, _reason in selected}) == 5
+
+
+
+def test_cf0_gate_is_diagnostic_only_and_always_continues_to_200k() -> None:
+    from tools.supervise_capture_first_cf import evaluate_gate, training_command
+
+    fail = evaluate_gate([], capture_events=0)
+    assert fail["controls_training_branch"] is False
+    assert fail["next_action"] == "CF0_CONTINUES_TO_200K_REGARDLESS_OF_GATE"
+    assert "--total-steps" in training_command(fail)
+    assert training_command(fail)[training_command(fail).index("--total-steps") + 1] == "200000"
+    passed = evaluate_gate([], capture_events=1)
+    assert training_command(passed) == training_command(fail)
+
+
+def test_c1_225k_handoff_starts_cf1_from_scratch_on_gpu1() -> None:
+    from tools.supervise_c1_225k_to_cf1 import cf1_command
+
+    command = cf1_command()
+    assert command[command.index("--device") + 1] == "cuda:1"
+    assert command[command.index("--total-steps") + 1] == "100000"
+    assert "--resume-checkpoint" not in command
+    assert "--resume-replay" not in command
+    assert "--resume-step" not in command

@@ -349,3 +349,8 @@ nice -n 10 env PYTHONPATH=src:. python3 tools/run_continuous_ctde_training.py --
 - P1在180k首次产生一个完整真实capture→post-capture coverage window：replay `post_capture_coverage=2000`，对应500 joint transitions×4 active agents，并伴随双机同时入ring；这是formal old-mix中此前未出现的明确正信号。
 - 该信号仍然稀有：150k/175k deterministic diagnostic capture rate为0，尚无3+ ring或重复评估capture。P1已到193k，预计16:10--16:35完成200k final artifact，随后用final diagnostic和正式20-rollout判断可复现性。
 - Baseline B 200k final的old-mix deterministic 20-rollout/5-GIF已在CPU后台启动；本轮不等待结果，下次状态更新再同步。
+
+
+### 2026-08-13 01:00+08:00 自动线方向更新
+
+C1 UTD=.5已在完整225k checkpoint/replay/4-episode diagnostic后停止：200k后无新real capture、无2+/3+ ring，不再扩到300k。GPU1已立即从scratch启动CF1 Global Enemy Broadcast 100k；GPU0的CF0 Local不再受100k Gate分支控制，100k冻结后固定原位续到200k。当前只比较local vs verified global enemy information，不改reward/horizon/LR/UTD/tau/action/network。详细合同、PID与证据见docs/ALL_AGENT_MASAC_OLDMIX_ABLATION_20260810_ZH.md第10.16节。
