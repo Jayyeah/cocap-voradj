@@ -520,3 +520,15 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 切换到已授权的非sandbox执行后，git apply可以启动，但较长补丁先报error: corrupt patch at line 19；拆成精确小hunk后又反复报patch failed ... patch does not apply，即使rg/sed确认目标文本和行号存在。该问题发生在补丁传输/匹配层，不是训练代码、CUDA或GitHub网络故障。
 - 按用户指令不再死磕git apply：已有文件采用精确perl/sed字符串替换；新文件仍在可工作的非sandbox git apply路径创建；文档采用只追加tee。所有绕过修改之后均用git diff人工复核、py_compile、14项pytest、合成Gate测试和实际CUDA smoke兜底，因此没有降低合同验证标准。
 - 截至本节写入时GitHub尚未执行push；下一步为git diff --check、聚焦测试、提交并推送。此处明确记录：本次卡点不是GitHub网络不通。
+
+
+### 10.15 CF0 9k / C1 224k与C0代表性评估进度（2026-08-13 00:47+08:00）
+
+- 重新审计确认后台没有卡住：CF0、C1训练PID/tmux均存在，CF0 100k Gate supervisor与C1 final-eval waiter均存活；C0 CPU旁路评估继续渲染GIF。Git分支仍为ablation/all-agent-oldmix-20260810，审计前本地/远端均在a5dd045。
+- CF0当前9000/100000、update=1001、replay=9000；最近5个真实1k窗口吞吐中位数3.791 step/s=13.65k step/h，末窗mean_finite=1、critic/actor loss=9.67/5.96、alpha=0.1832、TD abs mean=0.424、peak allocated=8045.14 MiB。末窗terminated=2且collision=2，不是capture；至今2+/3+ ring窗口均为空，当前没有新的多机capture积极信号。
+- CF0 PID=1976538、tmux=cf0_capture_first_local_100k_gpu0、cuda:0；GPU0约8685 MiB/49140 MiB、99%利用率、85°C。按最近5窗稳态吞吐并为25k diagnostic/checkpoint留出波动：25k ETA约2026-08-13 02:00--02:15+08:00，50k约03:55--04:20，75k约05:45--06:15，100k训练step约07:30--08:00，自动Gate约07:50--08:30执行。
+- C1当前224000/300000、update=60751、replay=224000；最近5窗吞吐中位数1.398 step/s=5.03k step/h，末窗mean_finite=1、critic/actor loss=22.58/36.11、alpha=0.03851、TD abs mean=1.058、peak allocated=8045.25 MiB。224k出现弱接敌信号：d1_min=6.52 m、max ring=1、any-ring fraction=6.98%；但2+/3+ ring仍为0，post_capture_coverage仍为2000，没有第二个distinct capture证据。
+- C1 PID=1853291、tmux=c1_p1_utd05_300k_gpu1、cuda:1；GPU1另有非本项目PID 1258417，总显存约16038 MiB、100%利用率、93°C，未操作其他进程。按最近5窗：225k step约00:59，含里程碑诊断/落盘约01:10--01:30；250k ETA约06:00--06:30；300k step ETA约15:50--16:30，final report/replay与runner eval预计16:15--17:10。
+- 主机RAM available约85 GiB、swap1.1/8 GiB；根分区可用158 GiB。当前无OOM、NaN、显存增长或RAM/swap危险。
+- C0 300k独立formal评估的三场景各20 rollout已于00:43完成：capture/mixed capture rate=0、collision rate=1.0，二者mean minimum distance均12.87 m、distance progress=+7.49 m；Pure-CE strict/CV.15/CV.20=0.35/0.75/0.90、collision=0.05、mean area CV=0.1034、CE progress=+0.1102。结论仍是coverage可学而formal capture不可复现。
+- C0代表性GIF旁路PID=1980214、tmux=eval_c0_300k_representative_cpu；截至00:47已完成7个GIF（capture 5个、coverage 2个），继续CPU低优先级渲染coverage/mixed。按既定要求不等待旁路完成，本次只同步已完成的20-rollout汇总。
