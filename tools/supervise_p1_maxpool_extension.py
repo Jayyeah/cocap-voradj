@@ -97,7 +97,7 @@ def freeze() -> Path:
 def continuation_command() -> list[str]:
     return [
         sys.executable, str(ROOT / "tools/run_continuous_ctde_training.py"),
-        "--config", str(CONFIG), "--seed", "2026081305", "--device", "cuda:1",
+        "--config", str(CONFIG), "--seed", "2026081305", "--device", "cuda:0",
         "--total-steps", "200000", "--screen-episodes", "0",
         "--diagnostic-eval-episodes", "4", "--tag", TAG,
         "--artifact-root", str(ARTIFACT_ROOT),
@@ -143,7 +143,7 @@ def main() -> int:
     env["PYTHONPATH"] = f"{ROOT / 'src'}:{ROOT}"
     env["PYTHONUNBUFFERED"] = "1"
     command = continuation_command()
-    log("exec P1 exact continuation 100k -> 200k on cuda:1")
+    log("exec P1 exact continuation 100k -> 200k on cuda:0")
     os.chdir(ROOT)
     os.execvpe(command[0], command, env)
 

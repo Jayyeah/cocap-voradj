@@ -391,3 +391,13 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - 当前固定路线：P0代码修复→正信号CF continuation→Local CF reference→P1 Local-Max→capture稳定Gate通过后恢复post-capture coverage→capture reward ablation→`(a,w)` vs `vx,vy`。当前仍不启动新reward、post-capture混训、UTD1、LR sweep或MATD3。详细切换点、测试、PID、性能与ETA见专用台账第10.22节。
 
 15:05状态补充：CF3已完整冻结pre-P0 25k bundle并成功以严格`p0_semantics`从25k续训，真实audit只有两个min-active 4→2差异；新PID 2280607在GPU1正常运行。pre-P0 25k为0 capture、6个2+窗口、0个3+。CF2 P0-fixed已到79k且finite。GitHub远端当前提交为`84ff743`，本补充将以后续仅文档提交同步；完整数值见专用台账10.22末尾。
+
+
+### 2026-08-13 16:45+08:00 CF2提前收口、CF3扩200k与P1改接
+
+- CF3 local-support在pre-P0 0--25k已有6个2+窗口；P0-fixed 26--33k又有5个2+窗口，support在100%无enemy token、100%有pursuing friend条件下，平均向friend和enemy同时靠近并持续升级capture role。尚无normal capture/3+，故这是local信息足以产生方向性双机协同的证据，而不是K3已训通。
+- 据此CF2 Global-Support不再机械跑200k；到完整100k冻结后停止，保留25k P0-fixed global reference。GPU0随后立即开P1 Local-Max scratch；P1及其100k PASS extension均固定GPU0。
+- CF3 local corrected reference改为100k后自动原位续200k，固定占GPU1。重接旧父supervisor时tmux HUP连带结束了33k CF3 trainer；最近完整bundle为25k，已从该完整trainer/replay/runtime/RNG以严格P0 fork在独立recovery artifact恢复。旧26--33k metrics保留作证据，但模型从25k重放，台账不重复累计。
+- 当前优先级更新为：CF2 100k收口→P1 Local-Max；CF3 Local-Support corrected 200k→与P1比较mean vs mean+max；达到稳定normal capture Gate后才恢复post-capture coverage。详细PID、指标、故障和ETA见专用台账10.23。
+
+17:15实际交接：CF2 100k frozen trainer/replay/runtime完整且finite，100k diagnostic仍0/4 capture、4/4 collision，已按决策停止；P1 Local-Max smoke通过并在GPU0 scratch启动，6k首update窗口finite、10.74k step/h。CF3 recovery在GPU1到27k，finite且再次出现0.9%的2+ ring与support同时靠近friend/enemy，100k后自动续200k。两卡资源正常，详见专用台账10.23末尾。

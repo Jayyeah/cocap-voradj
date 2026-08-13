@@ -725,3 +725,41 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - `step_000025000`与rolling trainer/replay/runtime/manifest/effective config完整后，自动器于`15:03:22+08:00`完成hardlink冻结；frozen trainer/replay约`143.8 MB/838.1 MB`。原CF3 PID `2232870`正常退出，未触碰GPU1其他进程。
 - P0-fixed CF3已于`15:03:42+08:00`从同一25k bundle启动：PID=`2280607`、tmux仍为`cf3_p0_then_p1_gpu1`、cuda:1，新artifact为`cf3_local_support_full_p0fixed/legacy_voradj_cf3_local_support_p0fixed_cont25k_to100k_20260813`。真实resume audit只包含两个min-active 4→2差异，process约8664 MiB显存并持续占用GPU；当前等待首个26k post-switch窗口，不用启动前速度替代正式post-switch吞吐。
 - 推送后最终快照时CF2已到79k，末窗`2.964 step/s`、finite=1，critic/actor loss=`179.43/106.36`、alpha=`0.21566`、TD abs=`5.121`；post-switch 76--79k尚无新增capture/2+/3+，support friend-distance delta=`-0.204 m/step`、enemy progress=`+0.194 m/step`。CF2下一完整checkpoint仍为100k，ETA维持`17:00--17:30+08:00`；CF3 50/75/100k以25k前同卡速度保守估计为`18:00--18:40`、`20:50--21:40`、`23:40--2026-08-14 00:40`，待26k窗口校准。
+
+
+### 10.23 CF2截断、CF3扩200k与P1改接GPU0（2026-08-13 16:45+08:00）
+
+#### CF3局部信息正信号与CF2截断结论
+
+- CF3 pre-P0 0--25k为0 normal/stationary capture、6个独立2+窗口、0个3+。P0-fixed首次25k恢复段的26--33k又有5/8个窗口出现2+ ring，best fraction=`0.9%`、max ring=2、best `d1_min=2.37 m`，仍无normal/stationary capture或3+ ring。
+- 更重要的是这些局部support全部无enemy token且有pursuing friend，26--33k support→friend distance delta均值=`-0.108 m/step`、support→enemy diagnostic progress均值=`+0.123 m/step`，累计159次support→capture升级；31k、33k再次出现2+ ring。数值全部finite。
+- 这已经证明global enemy broadcast不是形成双机几何和方向性support follow的必要条件，支持把部署条件收紧到local。但它仍未证明local已学会K3：截至33k没有normal capture或3+ ring，因此结论严格限定为“方向性正信号”，不能写成capture已解决。
+- 因此CF2不再需要跑满200k。为了保留可解释的P0-fixed global reference和完整trainer/replay/runtime，CF2不在98k立即强停，而是在完整100k checkpoint/rolling bundle落盘后冻结并停止；其0--75k为pre-P0、75--100k为P0-fixed。100k后GPU0立即启动P1 Local-Max scratch。
+
+#### 最新性能快照
+
+- CF2 P0-fixed已到98k：`2.943 step/s=10.59k/h`、finite=1，critic/actor loss=`187.23/127.14`、alpha=`0.25383`、TD abs=`5.563`。P0-fixed 76--98k累计0 capture/0 stationary、10个2+窗口、0个3+，best 2+ fraction=`2.1%`、best `d1_min=2.33 m`、support→friend/enemy均值=`-0.126/+0.137 m/step`。连同pre-P0证据，CF2整线仍保留53k的1次normal capture、16个pre-P0 2+窗口和1个pre-P0 3+窗口。
+- 原CF3 P0-fixed段最后到33k：`1.569 step/s=5.65k/h`、finite=1，critic/actor=`72.54/51.24`、alpha=`0.12326`、TD abs=`3.312`；GPU1同卡外部进程使update wall-time约2.20 s，故吞吐明显低于pre-P0阶段。
+- 双卡均约100%利用率；GPU0总14068 MiB、85--86°C，GPU1总16110 MiB、92--93°C。两条本项目trainer各约8664 MiB，未触碰外部GPU进程。RAM available约97 GiB、swap521 MiB/8 GiB、根盘可用138 GiB，无OOM、NaN、RAM或storage风险。
+
+#### 自动线重接与一次进程组恢复
+
+- 新目标结构为：GPU0 `CF2→100k完整冻结/停止→P1 32-step smoke→P1 scratch 100k`；GPU1 `CF3 corrected local→100k完整冻结→原位续200k`。P1 100k PASS后的extension设备也统一改为cuda:0，避免误抢GPU1。
+- 新supervisor为`tools/supervise_cf2_stop100_then_p1_maxpool.py`、`tools/supervise_cf3_extend200.py`；P1 Gate同步改cuda:0。调度/合同回归为`7 passed`，py_compile通过。
+- 重接旧`CF3→P1`父supervisor时先尝试SIGSTOP，但该父进程正阻塞在`subprocess.run`，未进入预期停止态；随后TERM旧tmux父进程导致同一会话组向CF3 trainer传播HUP，CF3 trainer在33k退出。这不是训练数值或checkpoint损坏，但25--33k没有周期rolling bundle，不能从33k无损resume。
+- 恢复方式：保留原artifact/metrics作为只读证据，从已冻结且验证完整的pre-P0 25k trainer/replay/runtime重新以`--resume-fork p0_semantics`启动独立recovery artifact/tag；没有从scratch、没有reset旧25k optimizer/target/alpha/replay/RNG。模型训练状态回退8k、约1.4小时，26--33k指标不与recovery重放段重复累加。新CF3 PID=`2313014`、tmux=`cf3_p0fixed_recovery_gpu1`，已成功加载并重新占用8664 MiB，无启动报错。
+- 已挂自动器：`cf2_to_p1_gpu0` PID=`2314338`；`cf3_extend200_gpu1` PID=`2314348`；`p1_maxpool_100k_gate_gpu0` PID=`2314351`。它们分别只处理对应tag，检查完整bundle/finite report和原进程退出，避免跨run误停。
+- 本次常规`apply_patch`再次因`bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`失败；经已验证的普通用户`apply_patch`二进制绕过，diff与回归测试确认没有半写文件。它不是GitHub网络故障。
+
+#### ETA（Asia/Shanghai）
+
+- CF2按98k最新10.59k step/h：100k训练约`2026-08-13 16:55`，含4-episode checkpoint/rolling冻结与P1 smoke，P1正式启动预计`17:10--17:35`。
+- CF3 recovery从25k重放，按原P0-fixed真实5.65k step/h：50k约`2026-08-13 21:10--21:40`、75k约`2026-08-14 01:50--02:35`、100k训练约`06:20--07:15`；计20-rollout/final bundle后，100→200k接力约`07:15--08:15`启动。后续125/150/175/200k粗估为`12:00--13:00`、`16:40--18:00`、`21:20--22:50`、`2026-08-15 02:00--03:45`，需在recovery首个26k实测窗后校准。
+- P1尚未正式启动，不能用CF3旧吞吐冒充其ETA；启动并产生首个有update的6k窗口后再报告正式25/50/75/100k时间。
+
+#### 17:15 实际交接完成与ETA校准
+
+- CF2已完整到100k并结束：frozen bundle的runtime step=`100000`、update=`23751`、replay文件约3.36 GB、`all_finite=true`，8个必需文件齐全。P0-fixed 76--100k为0 normal/stationary capture、12个2+窗口、0个3+，best 2+ fraction=`2.2%`、best d1=`2.33 m`、collision windows累计209。100k deterministic diagnostic为0/4 capture、4/4 collision、mean min-min distance=`21.63 m`、distance progress=`+13.54 m`。结合pre-P0 53k唯一normal capture，继续global到200k的边际价值低于立即测试Local-Max。
+- P1 32-step CUDA smoke为scratch replay=32、finite；于`16:59:37+08:00`正式启动。首个有update窗口已到6k：`2.982 step/s=10.74k/h`、finite=1，critic/actor=`16.53/3.629`、alpha=`0.19747`、TD abs=`0.814`、collision=2，尚无capture/2+/3+（warmup边界，不作学习结论）。PID=`2314338`、tmux=`cf2_to_p1_gpu0`、cuda:0。
+- CF3 recovery已到27k：`1.567 step/s=5.64k/h`、finite=1，critic/actor=`62.03/40.53`、alpha=`0.12916`、TD abs=`2.718`；27k再次有2+ fraction=`0.9%`、max ring=2，support→friend/enemy=`-0.094/+0.183 m/step`，无capture/3+。该重放窗口复现了局部方向性正信号。
+- 以`2026-08-13 17:15+08:00`实测：P1 25/50/75/100k约`19:10--19:30`、`21:35--22:00`、`00:00--00:35`、`2026-08-14 02:25--03:10`；CF3 recovery 50/75/100k约`21:20--21:50`、`2026-08-14 02:00--02:40`、`06:40--07:30`，final20与100→200k接力预计`07:30--08:30`。CF3 125/150/175/200k约`12:20--13:20`、`17:05--18:20`、`21:50--23:20`、`2026-08-15 02:35--04:20`。

@@ -109,24 +109,29 @@ def test_p1_local_max_is_cf3_plus_max_pool_only() -> None:
     assert p1 == cf3
 
 
-def test_cf3_p0_and_p1_schedule_commands_are_strict() -> None:
-    from tools.supervise_cf3_p0_then_p1_maxpool import (
-        cf3_continuation_command,
-        p1_command,
-    )
-
-    cf3 = cf3_continuation_command()
-    assert cf3[cf3.index("--resume-step") + 1] == "25000"
-    assert cf3[cf3.index("--resume-fork") + 1] == "p0_semantics"
-    assert cf3[cf3.index("--total-steps") + 1] == "100000"
-    assert cf3[cf3.index("--device") + 1] == "cuda:1"
+def test_cf2_to_p1_and_cf3_extension_commands_are_strict() -> None:
+    from tools.supervise_cf2_stop100_then_p1_maxpool import p1_command
+    from tools.supervise_cf3_extend200 import continuation_command
 
     smoke = p1_command(smoke=True)
     formal = p1_command(smoke=False)
     assert smoke[smoke.index("--total-steps") + 1] == "32"
     assert formal[formal.index("--total-steps") + 1] == "100000"
+    assert formal[formal.index("--device") + 1] == "cuda:0"
     assert "--resume-checkpoint" not in formal
     assert "--resume-replay" not in formal
+
+    cf3 = continuation_command()
+    assert cf3[cf3.index("--resume-step") + 1] == "100000"
+    assert cf3[cf3.index("--total-steps") + 1] == "200000"
+    assert cf3[cf3.index("--device") + 1] == "cuda:1"
+
+
+def test_p1_gate_extension_remains_on_gpu0() -> None:
+    from tools.supervise_p1_maxpool_extension import continuation_command
+
+    command = continuation_command()
+    assert command[command.index("--device") + 1] == "cuda:0"
 
 
 def test_p1_100k_gate_requires_sustained_positive_geometry() -> None:
