@@ -432,3 +432,5 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 ### 2026-08-14 02:30+08:00 Host restart恢复
 
 服务器停机导致全部trainer/supervisor退出。CF3停机前metrics到89k但最新完整bundle为75k，故76--89k只归档metrics并从75k重跑；P1最新metrics与完整bundle均为75k。两条75k trainer/replay/runtime/manifest已逐文件hash冻结，CF3在GPU0继续200k、P1在GPU1继续100k，P1/CF3 Gate supervisor也已重挂。双方恢复后首个76k窗口均严格连续为`replay=76000/update=17751/finite=1`，断电审计已达到100% complete。P1在71k新增1次normal capture但仍无3+；CF3可恢复75k仍为1 normal和4个3+窗口。详细恢复点、SHA、PID、资源与新ETA见专用台账10.27。
+
+06:20更新：P1 Local-Max已完整100k并由严格Gate自动`FAIL_STOP_100K`，其matched 25--100k只有1 normal、14个2+、0个3+，显著弱于CF3的2 normal、43个2+、4个3+，GPU1已安全释放。CF3 Local-Mean在97k出现第2个normal且stationary仍为0，当前127k/200k、125k完整bundle已保存；Stable-Gate supervisor正常等待第3个normal或200k formal20，不会提前误开PC0。完整趋势与ETA见专用台账10.28。
