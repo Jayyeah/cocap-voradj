@@ -717,3 +717,11 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - CF2按P0-fixed首窗10.72k step/h并计里程碑诊断/落盘：100k约`2026-08-13 17:00--17:30+08:00`，125k约`19:25--20:00`，150k约`21:50--22:30`，175k约`2026-08-14 00:15--01:00`，200k约`02:40--03:30`。
 - CF3按最近9.22k step/h：25k完整切换约`2026-08-13 15:10--15:30+08:00`；P0-fixed 50/75/100k约`18:00--18:40`、`20:50--21:40`、`23:40--2026-08-14 00:40`。P1只有在CF3 100k完成后才启动，启动前不以旧线吞吐伪造正式ETA。
 - 本次`apply_patch`包装器再次在读取阶段报`bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`，权限自动审查也两次超时；补丁未触及仓库。绕过方式为先用严格Perl小替换，随后定位并直接调用普通用户环境中的`apply_patch`二进制完成新supervisor/测试和文档hunk；所有改动以diff、compile和pytest复核。该故障仍不是GitHub网络或训练故障。
+
+
+#### 15:05 CF3 25k实际切换完成（覆盖上方“等待切换”状态）
+
+- CF3 pre-P0已完整达到25k：0 normal/stationary capture、6个2+ ring窗口、0个3+，best 2+ fraction=`1.4%`、best min distance=`2.31 m`、累计collision=`143`、support→capture upgrades=`402`。25k末窗`2.823 step/s`、finite=1，critic/actor loss=`62.30/36.80`、alpha=`0.13250`、TD abs=`2.565`；support无enemy token/有pursuing friend比例仍为1.0/1.0。
+- `step_000025000`与rolling trainer/replay/runtime/manifest/effective config完整后，自动器于`15:03:22+08:00`完成hardlink冻结；frozen trainer/replay约`143.8 MB/838.1 MB`。原CF3 PID `2232870`正常退出，未触碰GPU1其他进程。
+- P0-fixed CF3已于`15:03:42+08:00`从同一25k bundle启动：PID=`2280607`、tmux仍为`cf3_p0_then_p1_gpu1`、cuda:1，新artifact为`cf3_local_support_full_p0fixed/legacy_voradj_cf3_local_support_p0fixed_cont25k_to100k_20260813`。真实resume audit只包含两个min-active 4→2差异，process约8664 MiB显存并持续占用GPU；当前等待首个26k post-switch窗口，不用启动前速度替代正式post-switch吞吐。
+- 推送后最终快照时CF2已到79k，末窗`2.964 step/s`、finite=1，critic/actor loss=`179.43/106.36`、alpha=`0.21566`、TD abs=`5.121`；post-switch 76--79k尚无新增capture/2+/3+，support friend-distance delta=`-0.204 m/step`、enemy progress=`+0.194 m/step`。CF2下一完整checkpoint仍为100k，ETA维持`17:00--17:30+08:00`；CF3 50/75/100k以25k前同卡速度保守估计为`18:00--18:40`、`20:50--21:40`、`23:40--2026-08-14 00:40`，待26k窗口校准。

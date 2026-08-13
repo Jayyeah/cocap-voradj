@@ -389,3 +389,5 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - 局部CF3保留为主reference：pre-P0到25k后自动冻结并以P0-fixed续到100k。当前22k已有5个2+窗口，support无enemy token但持续看到pursuing friend，friend-distance delta与enemy progress均为正向；尚无capture/3+，不提前定性。
 - CF3 100k完成后自动启动scratch P1 Local-Max。任务合同完整继承corrected Local CF，唯一网络变化是Actor从`self+mean`变为`self+mean+max`；hidden256/heads8/layers4和central critic不变，不恢复residual/attention/role embedding。P1先100k，只有normal capture或持续2+/3+几何Gate通过才续200k。
 - 当前固定路线：P0代码修复→正信号CF continuation→Local CF reference→P1 Local-Max→capture稳定Gate通过后恢复post-capture coverage→capture reward ablation→`(a,w)` vs `vx,vy`。当前仍不启动新reward、post-capture混训、UTD1、LR sweep或MATD3。详细切换点、测试、PID、性能与ETA见专用台账第10.22节。
+
+15:05状态补充：CF3已完整冻结pre-P0 25k bundle并成功以严格`p0_semantics`从25k续训，真实audit只有两个min-active 4→2差异；新PID 2280607在GPU1正常运行。pre-P0 25k为0 capture、6个2+窗口、0个3+。CF2 P0-fixed已到79k且finite。GitHub远端当前提交为`84ff743`，本补充将以后续仅文档提交同步；完整数值见专用台账10.22末尾。
