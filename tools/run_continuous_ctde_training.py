@@ -931,6 +931,15 @@ def _role_reward_rows(
             "coverage": float(meta.get("reward_coverage", 0.0)),
             "terminal": float(meta.get("reward_terminal", 0.0)),
             "total": float(meta.get("reward_total", 0.0)),
+            "support_enemy_token_visible": bool(meta.get("support_enemy_token_visible", False)),
+            "support_has_pursuing_friend": bool(meta.get("support_has_pursuing_friend", False)),
+            "support_pursuing_friend_distance": float(meta.get("support_pursuing_friend_distance", 0.0)),
+            "support_pursuing_friend_distance_delta": float(meta.get("support_pursuing_friend_distance_delta", 0.0)),
+            "support_enemy_distance": float(meta.get("support_enemy_distance", 0.0)),
+            "support_enemy_distance_progress": float(meta.get("support_enemy_distance_progress", 0.0)),
+            "support_in_ring": bool(meta.get("support_in_ring", False)),
+            "support_entered_ring": bool(meta.get("support_entered_ring", False)),
+            "support_upgraded_to_capture": bool(meta.get("support_upgraded_to_capture", False)),
         })
     return rows
 
@@ -1037,6 +1046,9 @@ def _metrics_record(
         record["normal_capture_count"] = 0
         record["stationary_capture_count"] = 0
         record["capture_count"] = 0
+    record["distinct_normal_capture_episodes"] = int(record["normal_capture_count"])
+    record["distinct_stationary_capture_episodes"] = int(record["stationary_capture_count"])
+    record["distinct_capture_episodes"] = int(record["capture_count"])
 
     if role_rewards:
         active_role_rows = [row for row in role_rewards if str(row.get("role", "")) in {"capture", "support", "coverage"}]
@@ -1048,6 +1060,36 @@ def _metrics_record(
             for component in ("capture", "coverage", "terminal", "total"):
                 values = [float(row.get(component, 0.0)) for row in rows]
                 record[f"role_{role_name}_reward_{component}_mean"] = float(np.mean(values)) if values else 0.0
+                record[f"role_{role_name}_reward_{component}_p50"] = _percentile(values, 50) if values else 0.0
+                record[f"role_{role_name}_reward_{component}_p95"] = _percentile(values, 95) if values else 0.0
+        support_rows = [row for row in active_role_rows if row.get("role") == "support"]
+        support_steps = len(support_rows)
+        support_without_enemy = sum(not bool(row.get("support_enemy_token_visible", False)) for row in support_rows)
+        support_with_friend = sum(bool(row.get("support_has_pursuing_friend", False)) for row in support_rows)
+        record["support_steps_without_enemy_token"] = int(support_without_enemy)
+        record["support_steps_without_enemy_token_ratio"] = float(support_without_enemy / max(support_steps, 1))
+        record["support_steps_with_pursuing_friend"] = int(support_with_friend)
+        record["support_steps_with_pursuing_friend_ratio"] = float(support_with_friend / max(support_steps, 1))
+        support_scalar_fields = (
+            "support_pursuing_friend_distance",
+            "support_pursuing_friend_distance_delta",
+            "support_enemy_distance",
+            "support_enemy_distance_progress",
+        )
+        for field in support_scalar_fields:
+            values = [float(row.get(field, 0.0)) for row in support_rows]
+            record[f"{field}_mean"] = float(np.mean(values)) if values else 0.0
+            record[f"{field}_p50"] = _percentile(values, 50) if values else 0.0
+            record[f"{field}_p95"] = _percentile(values, 95) if values else 0.0
+        record["support_friend_distance_decreased_fraction"] = float(
+            np.mean([float(row.get("support_pursuing_friend_distance_delta", 0.0)) < 0.0 for row in support_rows])
+        ) if support_rows else 0.0
+        record["support_enemy_distance_progress_positive_fraction"] = float(
+            np.mean([float(row.get("support_enemy_distance_progress", 0.0)) > 0.0 for row in support_rows])
+        ) if support_rows else 0.0
+        record["support_in_ring_agent_steps"] = int(sum(bool(row.get("support_in_ring", False)) for row in support_rows))
+        record["support_entered_ring_count"] = int(sum(bool(row.get("support_entered_ring", False)) for row in support_rows))
+        record["support_upgraded_to_capture_count"] = int(sum(bool(row.get("support_upgraded_to_capture", False)) for row in support_rows))
 
     if geometry:
         record.update({
@@ -1071,6 +1113,18 @@ def _metrics_record(
             "fraction_steps_2plus_in_ring": float(np.mean([g["num_in_ring_8_10_5"] >= 2 for g in geometry])),
             "fraction_steps_3plus_in_ring": float(np.mean([g["num_in_ring_8_10_5"] >= 3 for g in geometry])),
         })
+        ring_counts = [int(g["num_in_ring_8_10_5"]) for g in geometry]
+        def max_hold(minimum: int) -> int:
+            best = current = 0
+            for count in ring_counts:
+                current = current + 1 if count >= minimum else 0
+                best = max(best, current)
+            return best
+        record["two_plus_ring_independent_window"] = bool(record["fraction_steps_2plus_in_ring"] > 0.0)
+        record["three_plus_ring_independent_window"] = bool(record["fraction_steps_3plus_in_ring"] > 0.0)
+        record["max_any_ring_hold_steps"] = int(max_hold(1))
+        record["max_2plus_ring_hold_steps"] = int(max_hold(2))
+        record["max_3plus_ring_hold_steps"] = int(max_hold(3))
     return record
 
 

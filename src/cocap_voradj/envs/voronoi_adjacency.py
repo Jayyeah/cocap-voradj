@@ -1789,6 +1789,58 @@ class VorAdjEnv(CoCapEnv):
             self._task_reward_role(i, reward_role_labels, before_data)
             for i in range(len(self.pursuers))
         ]
+        support_behavior_diagnostics: List[Dict[str, Any]] = []
+        for i, role in enumerate(reward_roles):
+            diagnostic: Dict[str, Any] = {
+                "support_enemy_token_visible": False,
+                "support_has_pursuing_friend": False,
+                "support_pursuing_friend_distance": 0.0,
+                "support_pursuing_friend_distance_delta": 0.0,
+                "support_enemy_distance": 0.0,
+                "support_enemy_distance_progress": 0.0,
+                "support_in_ring": False,
+                "support_entered_ring": False,
+                "support_upgraded_to_capture": False,
+            }
+            if role == "support":
+                friend_ids = self._support_pursuing_friend_ids(i, reward_role_labels, before_data)
+                diagnostic["support_has_pursuing_friend"] = bool(friend_ids)
+                if self._vct_ls_enabled():
+                    visible_enemy_ids = set(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))
+                elif bool(self.per_cfg.get("global_evader_visibility", False)):
+                    visible_enemy_ids = {j for j, evader in enumerate(self.evaders) if not evader.deactivated}
+                else:
+                    visible_enemy_ids = {
+                        int(nk[1])
+                        for nk in before_data.get("adjacency", {}).get(("pursuer", i), set())
+                        if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
+                    }
+                    visible_enemy_ids.update(self._zone_extra_evader_ids_for_pursuer(i, before_data))
+                diagnostic["support_enemy_token_visible"] = bool(visible_enemy_ids)
+                if friend_ids:
+                    before_friend_distance = min(float(np.linalg.norm(before_p[i] - before_p[j])) for j in friend_ids)
+                    after_friend_distance = min(float(np.linalg.norm(after_p[i] - after_p[j])) for j in friend_ids)
+                    diagnostic["support_pursuing_friend_distance"] = before_friend_distance
+                    diagnostic["support_pursuing_friend_distance_delta"] = after_friend_distance - before_friend_distance
+                target_ids: set[int] = set()
+                for friend_idx in friend_ids:
+                    target_ids.update(
+                        int(nk[1])
+                        for nk in before_data.get("adjacency", {}).get(("pursuer", friend_idx), set())
+                        if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
+                    )
+                    target_ids.update(self._zone_extra_evader_ids_for_pursuer(friend_idx, before_data))
+                if target_ids:
+                    before_enemy_distance = min(float(np.linalg.norm(before_p[i] - before_e[j])) for j in target_ids)
+                    after_enemy_distance = min(float(np.linalg.norm(after_p[i] - after_e[j])) for j in target_ids)
+                    before_in_ring = 8.0 <= before_enemy_distance < 10.5
+                    after_in_ring = 8.0 <= after_enemy_distance < 10.5
+                    diagnostic["support_enemy_distance"] = before_enemy_distance
+                    diagnostic["support_enemy_distance_progress"] = before_enemy_distance - after_enemy_distance
+                    diagnostic["support_in_ring"] = after_in_ring
+                    diagnostic["support_entered_ring"] = bool(after_in_ring and not before_in_ring)
+                diagnostic["support_upgraded_to_capture"] = bool(next_raw_labels[i] == "capture")
+            support_behavior_diagnostics.append(diagnostic)
 
         def apply_ce_pbrs_reset(index: int, center_cost: float, reason: str) -> None:
             if not ce_reward_applied[index] or ce_pbrs_reset_reasons[index] != "none":
@@ -2459,6 +2511,7 @@ class VorAdjEnv(CoCapEnv):
                 "support_reward_coverage_weight": float(support_coverage_weight if support_reward_blend_flags[i] else 0.0),
                 "support_reward_capture_target_mode": self._support_reward_capture_target_mode(),
                 "support_reward_capture_component_mode": self._support_reward_capture_component_mode(),
+                **support_behavior_diagnostics[i],
                 "perception_topology_version": self._perception_topology_version(),
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,

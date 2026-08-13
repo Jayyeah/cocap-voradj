@@ -15,6 +15,7 @@ CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
 CF0 = CONFIG_DIR / "legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml"
 CF1 = CONFIG_DIR / "legacy_voradj_cf1_capture_first_global_enemy_4p1e1obs_100k_aw.yaml"
 CF2 = CONFIG_DIR / "legacy_voradj_cf2_capture_first_global_support_full_4p1e1obs_100k_aw.yaml"
+CF3 = CONFIG_DIR / "legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml"
 
 
 def test_cf0_is_formal_capture_only_with_stable_sac_contract() -> None:
@@ -283,3 +284,87 @@ def test_cf1_legacy_support_mode_remains_disabled() -> None:
     assert support_slot["support_reward_blend_active"] is False
     assert support_slot["reward_capture"] == 0.0
     assert support_slot["reward_coverage"] != 0.0
+
+
+
+def test_cf3_contract_differs_from_cf2_only_by_local_enemy_observation_and_audit() -> None:
+    cf2 = resolve_ladder_config(CF2)
+    cf3 = resolve_ladder_config(CF3)
+    for config in (cf2, cf3):
+        config.pop("run_name", None)
+        config.pop("seed", None)
+        config.pop("experiment_metadata", None)
+    assert cf2["perception"]["global_evader_visibility"] is True
+    assert cf3["perception"]["global_evader_visibility"] is False
+    cf2["perception"]["global_evader_visibility"] = False
+    assert cf2 == cf3
+    assert cf3["voradj"]["legacy_voradj_support_reward_blend_enabled"] is True
+    assert cf3["voradj"]["support_reward_capture_weight"] == 1.0
+    assert cf3["voradj"]["support_reward_coverage_weight"] == 1.0
+
+
+def test_cf3_local_support_observes_pursuing_friend_without_enemy_oracle() -> None:
+    config = scene_config(resolve_ladder_config(CF3), "capture")
+    set_global_config(config)
+    env = VorAdjEnv(copy.deepcopy(config), seed=2026081304)
+    env.reset()
+    data, raw_labels = _place_legacy_chain(env)
+    env.pursuers[0].velocity = np.asarray([0.7, -0.2], dtype=float)
+    env.pursuers[1].velocity = np.asarray([-0.1, 0.3], dtype=float)
+    env._invalidate_voronoi_cache()
+    data = env._capture_voronoi_map()
+    raw_labels = env._raw_task_labels_from_map(data)
+    env.last_task_labels = env._task_labels_from_map(data, update_effective=True, raw_labels=raw_labels)
+    assert [env._task_reward_role(i, raw_labels, data) for i in range(3)] == [
+        "capture", "support", "coverage",
+    ]
+
+    observations = env.get_observations()
+    capture_obs, support_obs, coverage_obs = observations[:3]
+    assert capture_obs is not None and support_obs is not None and coverage_obs is not None
+    evader_offset = 1 + env.per_cfg["max_pursuer_num"]
+    assert bool(capture_obs["masks"][evader_offset])
+    assert not bool(support_obs["masks"][evader_offset])
+    assert not bool(coverage_obs["masks"][evader_offset])
+
+    # P0 is the first friendly token for P1 because pursuing friends sort first.
+    assert bool(support_obs["masks"][1])
+    distance_scale = env._distance_scale()
+    expected_position = env._robot_frame(env.pursuers[1], env._position(env.pursuers[0]), False) / distance_scale
+    expected_velocity = env._robot_frame(env.pursuers[1], env.pursuers[0].velocity, True)
+    np.testing.assert_allclose(support_obs["pursuers"][0, :2], expected_position, atol=1e-6)
+    np.testing.assert_allclose(support_obs["pursuers"][0, 2:4], expected_velocity, atol=1e-6)
+    assert support_obs["pursuers"][0, 6] == 1.0
+
+    capture_friend_ids = env._support_pursuing_friend_ids(2, raw_labels, data)
+    assert capture_friend_ids == []
+    result = env.step([[0.0, 0.0]] * 4, [None])
+    capture_meta, support_meta, coverage_meta = [info["replay_metadata"] for info in result.infos[:3]]
+    assert capture_meta["reward_role"] == "capture"
+    assert capture_meta["reward_capture"] != 0.0 and capture_meta["reward_coverage"] == 0.0
+    assert support_meta["reward_role"] == "support"
+    assert support_meta["support_enemy_token_visible"] is False
+    assert support_meta["support_has_pursuing_friend"] is True
+    assert support_meta["support_reward_capture_weight"] == 1.0
+    assert support_meta["support_reward_coverage_weight"] == 1.0
+    assert support_meta["reward_capture"] != 0.0
+    assert support_meta["reward_coverage"] != 0.0
+    assert coverage_meta["reward_role"] == "coverage"
+    assert coverage_meta["support_enemy_token_visible"] is False
+    assert coverage_meta["support_has_pursuing_friend"] is False
+    assert coverage_meta["reward_capture"] == 0.0
+    assert coverage_meta["reward_coverage"] != 0.0
+
+
+
+def test_cf2_100k_supervisor_freezes_and_resumes_exactly_to_200k() -> None:
+    from tools.supervise_cf2_continue200 import CONFIG, FROZEN, continuation_command
+
+    command = continuation_command()
+    assert command[command.index("--config") + 1] == str(CONFIG)
+    assert command[command.index("--device") + 1] == "cuda:0"
+    assert command[command.index("--total-steps") + 1] == "200000"
+    assert command[command.index("--resume-step") + 1] == "100000"
+    assert command[command.index("--resume-checkpoint") + 1] == str(FROZEN / "trainer.pt")
+    assert command[command.index("--resume-replay") + 1] == str(FROZEN / "replay.pkl")
+    assert "--resume-fork" not in command
