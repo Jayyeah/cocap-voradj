@@ -649,3 +649,36 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - CF2 support credit持续按合同工作。55k窗口角色占比capture/support/coverage=`56.83%/33.40%/9.78%`；support capture/coverage component=`-0.866/-0.633`，两类梯度继续同时非零；capture槽coverage=0、coverage槽capture=0。
 - CF2 25k/50k checkpoint及rolling bundle完整，分别于`09:20:45/11:40:42+08:00`落盘。GPU0新增未触碰的外部PID `2133267`占约5316 MiB，CF2约8662 MiB，总显存约14066/49140 MiB；吞吐因此由独占时约13.6k/h降至约10.7k/h。GPU0 85°C，GPU1 85°C；RAM available约103 GiB、swap1.4/8 GiB、根盘可用140 GiB，无OOM/NaN/RAM风险。
 - 新ETA：CF2 75k约`2026-08-13 14:00--14:20+08:00`，100k约`16:35--17:05`（含75k diagnostic/checkpoint开销）。75/100k继续重点判断normal capture是否重复、3+ ring是否持续；当前不提前扩到150/200k。
+
+
+### 10.21 CF2自动扩至200k、CF3 Local-Support启动（2026-08-13 13:00+08:00）
+
+#### CF2 100k→200k自动接力
+
+- CF2不再在100k等待人工Gate。新增`tools/supervise_cf2_continue200.py`，PID=`2232220`、tmux=`cf2_extend200_supervisor`，已于12:42挂起并持续等待完整finite 100k report与rolling bundle。
+- 接力合同：100k完成后hardlink原子冻结到`resume_frozen_cf2_step_000100000`；确认原100k进程正常退出后，以同一config/seed/tag/artifact、trainer、replay、runtime/RNG和`resume_step=100000`原位续到200k。没有`resume_fork`、不reset optimizer/targets/alpha/replay/RNG；125/150/175k继续周期checkpoint+4-episode diagnostic，200k做final 20-rollout。
+- supervisor命令合同测试明确目标`total_steps=200000`、cuda:0及frozen trainer/replay路径；100k final的diagnostic和完整bundle先落盘、冻结，续训不覆盖冻结副本。
+
+#### CF3 Local-Support严格单变量
+
+- 新config：`configs/experiments/parallel_ce_legacy_voradj_20260809/legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml`；run=`legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw_20260813`、seed=`2026081304`、scratch + new replay、cuda:1。
+- resolved config与CF2的唯一训练语义差异是`global_evader_visibility: true→false`。Legacy邻接角色、capture full reward、support `1.0*full capture + 1.0*full coverage`、pure coverage only、K3/K10/stationary fallback、moving APF、obstacle、horizon1000、all-agent/no-clip/MSE/UTD=.25/LR/tau/batch/action/network均完全相同。
+- 人工Legacy链测试通过：capture agent有enemy token；support自身非enemy-adjacent且无enemy token，但第一friendly token精确包含capture友邻的robot-frame relative position/velocity及`is_pursuing=1`；pure coverage无enemy token且没有capture友邻。CF3 support reward仍通过capture友邻邻接target计算完整capture shaping，没有降级成coverage。CF2/CF1既有行为回归保持通过。
+- 新增的只读diagnostic只写`info/replay_metadata`和metrics，不进入Actor observation或reward：角色step/比例；support无enemy token/有pursuing friend比例；support→friend距离及delta；support→enemy距离及progress；进入ring、升级capture次数；各角色capture/coverage/terminal/total的mean/p50/p95；normal/stationary/distinct capture；2+/3+独立窗口及最大连续hold steps。
+- 该诊断从CF3 step0以及CF2 100k resume段开始生效；CF2 0--100k保持原进程已加载的既有指标，不能事后伪造新增support行为字段。
+- 强制回归为`48 passed`，`py_compile`和`git diff --check`通过。CF3 6k CUDA smoke完成251 updates：`finite=1`、critic/actor loss=`4.02/2.24`、alpha=`0.19747`、TD abs mean=`0.455`、peak allocated=`8045.14 MiB`、吞吐=`2.614 step/s`；support无enemy token和有pursuing friend比例均=`1.0`，support capture/coverage mean=`-0.994/-0.237`，证明局部观测与双reward分量同时成立。
+- 正式CF3已于`12:52:07+08:00`由smoke安全链自动启动：PID=`2232870`、tmux=`cf3_smoke_to_formal_gpu1`、cuda:1。step1 manifest为`initialization=scratch_new_replay`、seed=`2026081304`、uniform joint、all-active-agent、no clip，无resume/warm start。
+
+#### 当前研究Gate与冻结路线
+
+- 当前双P0：CF2 Global-Support固定续到200k；CF3 Local-Support固定跑到100k，不因25/50k无capture提前停。75/100k重点比较normal capture重复性、2+/3+几何与support follow行为。
+- winner只有满足“replay中至少3个独立normal capture episode”或“formal deterministic 20-rollout normal capture至少20%”，且成功不主要依赖stationary fallback，才进入`winner + post-capture coverage`闭环。
+- 后续固定顺序：选CF2/CF3 winner→恢复post-capture coverage→capture reward ablation→`(a,w)` vs `vx,vy`。当前不启动新capture reward、post-capture mixed、动作空间改动、UTD=1、LR sweep或MATD3。
+
+
+#### 12:55正式双线状态与ETA
+
+- CF2当前`63000/100000`、update=`14501`、replay=`63000`，末窗`2.986 step/s=10.75k/h`、finite=1，critic/actor loss=`151.09/90.52`、alpha=`0.16711`、TD abs mean=`4.445`、peak allocated=`8045.14 MiB`。累计积极证据仍包含53k一次normal capture、19k一次3+ ring和多个2+窗口；本63k窗无新增capture/2+/3+。
+- CF3正式run当前`5000/100000`、update=`1`、replay=`5000`，首个optimizer update finite=1，critic/actor loss=`13.69/1.911`、alpha=`0.19998`、TD abs mean=`2.118`、peak allocated=`8019.93 MiB`。本窗support无enemy token/有pursuing friend比例=`1.0/1.0`，friend-distance下降比例=`61.5%`、enemy-distance正progress比例=`64.0%`，support capture/coverage mean=`-0.819/-0.455`；max 2+ ring hold=`4` steps。这是启动安全/诊断证据，不是学习结论。
+- GPU0/1均100%利用率、`86/92°C`；CF2/CF3各约8662 MiB，连同两卡既有外部进程后总显存=`14066/16036 MiB`，仍有大幅余量。RAM available约102 GiB、swap1.4/8 GiB、根盘可用139 GiB；replay、metrics和step1 rolling bundle均正常，无OOM/NaN/leak。
+- ETA按CF2最近`10.75k/h`与CF3同卡6k smoke稳态`9.41k/h`并计checkpoint/eval波动：CF2 125/150/175/200k约`2026-08-13 18:45--19:15`、`21:10--21:45`、`23:35--2026-08-14 00:15`、`02:00--02:45+08:00`；CF3 25/50/75/100k约`2026-08-13 15:05--15:25`、`17:50--18:20`、`20:35--21:15`、`23:20--2026-08-14 00:10+08:00`。

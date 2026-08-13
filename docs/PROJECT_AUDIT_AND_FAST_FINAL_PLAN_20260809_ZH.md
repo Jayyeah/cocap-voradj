@@ -372,3 +372,11 @@ CF0 Local已按最新决策在完整100k trainer/replay/runtime冻结后停止�
 ### 2026-08-13 12:15+08:00 CF1 final与CF2 normal capture
 
 CF1 Global已clean完成100k：训练内仅1次stationary-fallback capture，formal 20-rollout仍0 capture/20且collision 20/20；但全程19个2+及3个3+ ring窗口确认global信息改善多机几何。CF2 Global+Support到53k产生1次明确normal K3 capture（非stationary、非collision），截至55k已有9个2+和1个3+窗口；同55k下几何频率与capture类型优于CF1，但累计collision更高。CF2继续到75/100k验证能否重复normal capture，暂不提前扩步。详细指标与ETA见专用台账第10.20节。
+
+
+### 2026-08-13 13:00+08:00 双P0更新：CF2扩200k、CF3 Local-Support
+
+CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自动接力，125/150/175/200k继续诊断。CF3从scratch在GPU1启动：严格继承CF2角色/reward和全部SAC/环境合同，唯一核心变量是关闭global enemy broadcast；强制测试确认support无enemy token但正确看到capture友邻position/velocity/`is_pursuing=1`，仍拿完整capture+coverage。新增support observability/follow、角色reward分位数、distinct capture和ring hold只读诊断。当前优先级为CF2 Global-Support 200k与CF3 Local-Support 100k并行；winner达到至少3次独立normal capture或formal20 normal capture≥20%且不依赖stationary后，才恢复post-capture coverage；其后依次做capture reward与动作空间ablation。暂不启动新reward、post-capture、`vx,vy`、UTD1、LR sweep或MATD3。详见专用台账第10.21节。
+
+
+12:55正式状态：CF2为63k、10.75k step/h、finite；CF3正式scratch为5k且首update finite，support无enemy token/有pursuing friend比例均100%，双reward分量与新增follow/ring-hold诊断正常。双GPU显存/RAM/storage安全，CF2自动扩200k监督器健康挂起。
