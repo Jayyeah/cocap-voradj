@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
 CF3 = CONFIG_DIR / "legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml"
 P1 = CONFIG_DIR / "legacy_voradj_p1_capture_first_local_support_maxpool_4p1e1obs_100k_aw.yaml"
+PC0 = CONFIG_DIR / "legacy_voradj_pc0_cf3_actor_warmstart_postcapture300_4p1e1obs_100k_aw.yaml"
 
 
 
@@ -127,11 +128,11 @@ def test_cf2_to_p1_and_cf3_extension_commands_are_strict() -> None:
     assert cf3[cf3.index("--device") + 1] == "cuda:1"
 
 
-def test_p1_gate_extension_remains_on_gpu0() -> None:
+def test_p1_gate_extension_remains_on_gpu1_after_swap() -> None:
     from tools.supervise_p1_maxpool_extension import continuation_command
 
     command = continuation_command()
-    assert command[command.index("--device") + 1] == "cuda:0"
+    assert command[command.index("--device") + 1] == "cuda:1"
 
 
 def test_p1_100k_gate_requires_sustained_positive_geometry() -> None:
@@ -142,13 +143,110 @@ def test_p1_100k_gate_requires_sustained_positive_geometry() -> None:
          "fraction_steps_2plus_in_ring": 0.0, "fraction_steps_3plus_in_ring": 0.0}
         for step in range(76000, 100001, 1000)
     ]
-    assert evaluate_gate(weak)["passed"] is False
+    cf3 = copy.deepcopy(weak)
+    for step in (78000, 80000, 82000, 84000):
+        row = next(row for row in cf3 if row["step"] == step)
+        row["fraction_steps_2plus_in_ring"] = 0.001
+    for step in (80000, 84000):
+        row = next(row for row in cf3 if row["step"] == step)
+        row["max_num_in_ring"] = 3
+        row["fraction_steps_3plus_in_ring"] = 0.001
+
+    assert evaluate_gate(weak, cf3)["passed"] is False
 
     repeated_two = copy.deepcopy(weak)
     for step in (80000, 90000, 100000):
         next(row for row in repeated_two if row["step"] == step)["fraction_steps_2plus_in_ring"] = 0.001
-    assert evaluate_gate(repeated_two)["passed"] is True
+    # Geometry without a normal capture is now explicitly insufficient.
+    assert evaluate_gate(repeated_two, cf3)["passed"] is False
 
     capture = copy.deepcopy(weak)
     capture[-1]["normal_capture_count"] = 1
-    assert evaluate_gate(capture)["passed"] is True
+    capture[-1]["distinct_normal_capture_episodes"] = 1
+    # One capture without matched repeated geometry remains a failure.
+    assert evaluate_gate(capture, cf3)["passed"] is False
+
+    matched = copy.deepcopy(capture)
+    for step in (78000, 80000, 82000):
+        next(row for row in matched if row["step"] == step)["fraction_steps_2plus_in_ring"] = 0.001
+    for step in (80000, 82000):
+        row = next(row for row in matched if row["step"] == step)
+        row["max_num_in_ring"] = 3
+        row["fraction_steps_3plus_in_ring"] = 0.001
+    assert evaluate_gate(matched, cf3)["passed"] is True
+
+    multiple_capture = copy.deepcopy(weak)
+    for row in multiple_capture[-2:]:
+        row["normal_capture_count"] = 1
+        row["distinct_normal_capture_episodes"] = 1
+    assert evaluate_gate(multiple_capture, cf3)["passed"] is True
+
+
+def test_pc0_transition_semantics_forbid_cf3_replay_inheritance() -> None:
+    from tools.prepare_pc0_actor_warmstart_bundle import transition_semantics_audit
+
+    audit = transition_semantics_audit(CF3, PC0)
+    assert audit["source_capture_transition_terminal"] is True
+    assert audit["target_capture_transition_terminal"] is False
+    assert audit["target_post_capture_window_steps"] == 300
+    assert audit["terminal_semantics_changed"] is True
+    assert audit["bootstrap_target_semantics_changed"] is True
+    assert audit["old_replay_inheritance_allowed"] is False
+    assert audit["required_initialization"].startswith("actor_only_warmstart")
+
+
+def test_pc0_is_cf3_plus_post_capture_window_only() -> None:
+    cf3 = resolve_ladder_config(CF3)
+    pc0 = resolve_ladder_config(PC0)
+    assert scene_config(cf3, "capture")["voradj"]["capture_episode_ends_on_capture"] is True
+    assert scene_config(pc0, "capture")["voradj"]["capture_episode_ends_on_capture"] is False
+    assert scene_config(pc0, "capture")["reward"]["post_capture_coverage_window_steps"] == 300
+    for config in (cf3, pc0):
+        config.pop("run_name", None)
+        config.pop("seed", None)
+        config.pop("device", None)
+        config.pop("experiment_metadata", None)
+    pc0["reward"]["post_capture_coverage_window_steps"] = cf3["reward"]["post_capture_coverage_window_steps"]
+    pc0["tasks"]["capture"].pop("reward", None)
+    pc0["tasks"]["capture"]["voradj"] = copy.deepcopy(cf3["tasks"]["capture"]["voradj"])
+    assert pc0 == cf3
+
+
+def test_50k_gpu_swap_commands_keep_line_state_separate() -> None:
+    from tools.supervise_cf3_p1_gpu_swap_50k import LINES, continuation_command
+
+    cf3 = continuation_command(LINES["cf3"])
+    p1 = continuation_command(LINES["p1"])
+    assert cf3[cf3.index("--device") + 1] == "cuda:0"
+    assert cf3[cf3.index("--total-steps") + 1] == "200000"
+    assert p1[p1.index("--device") + 1] == "cuda:1"
+    assert p1[p1.index("--total-steps") + 1] == "100000"
+    for name, command in (("cf3", cf3), ("p1", p1)):
+        checkpoint = command[command.index("--resume-checkpoint") + 1]
+        replay = command[command.index("--resume-replay") + 1]
+        assert f"/{LINES[name]['tag']}/" in checkpoint
+        assert f"/{LINES[name]['tag']}/" in replay
+        assert "resume_frozen_gpu_swap_step_000050000" in checkpoint
+        assert command[command.index("--resume-step") + 1] == "50000"
+    assert LINES["p1"]["tag"] not in cf3[cf3.index("--resume-checkpoint") + 1]
+    assert LINES["cf3"]["tag"] not in p1[p1.index("--resume-checkpoint") + 1]
+
+
+def test_cf3_stable_gate_needs_three_normal_and_not_mainly_stationary() -> None:
+    from tools.supervise_cf3_stable_gate_pc0 import gate_summary
+
+    rows = [
+        {"step": 50000 + 1000 * index, "distinct_normal_capture_episodes": normal,
+         "distinct_stationary_capture_episodes": stationary,
+         "fraction_steps_2plus_in_ring": 0.01, "fraction_steps_3plus_in_ring": 0.001,
+         "max_2plus_ring_hold_steps": 4, "max_3plus_ring_hold_steps": 2}
+        for index, (normal, stationary) in enumerate(((1, 0), (1, 0), (0, 1)), start=1)
+    ]
+    assert gate_summary(rows)["training_gate_passed"] is False
+    rows.append({"step": 54000, "distinct_normal_capture_episodes": 1,
+                 "distinct_stationary_capture_episodes": 0,
+                 "fraction_steps_2plus_in_ring": 0.0, "fraction_steps_3plus_in_ring": 0.0})
+    summary = gate_summary(rows)
+    assert summary["distinct_normal_capture_episodes"] == 3
+    assert summary["distinct_stationary_capture_episodes"] == 1
+    assert summary["training_gate_passed"] is True

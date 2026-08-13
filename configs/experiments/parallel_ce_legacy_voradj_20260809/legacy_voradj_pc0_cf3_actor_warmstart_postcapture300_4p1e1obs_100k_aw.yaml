@@ -1,0 +1,29 @@
+extends: ./legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml
+
+run_name: legacy_voradj_pc0_cf3_actor_warmstart_postcapture300_4p1e1obs_100k_aw_20260813
+seed: 2026081306
+device: cuda:1
+
+reward:
+  post_capture_coverage_window_steps: 300
+
+tasks:
+  capture:
+    reward:
+      post_capture_coverage_window_steps: 300
+    voradj:
+      capture_episode_ends_on_capture: false
+      capture_episode_success_on_capture: false
+
+training:
+  total_env_steps: 100000
+  scene_cycle: [capture]
+
+experiment_metadata:
+  stage: pc0_cf3_actor_warmstart_post_capture_coverage300
+  training_start: actor_only_warmstart_fresh_value_and_replay
+  initialization: CF3 Actor only; fresh replay, critics, target critics, optimizers, alpha, RNG and runtime
+  transition_semantics_audit: capture transition changes terminal to non-terminal; old CF3 replay inheritance forbidden
+  sole_task_delta: restore a 300-step post-capture coverage window
+  observability: corrected-contract local Legacy-VorAdj sensing
+  role_contract: corrected K10 effective capture/support/coverage roles; support gets full capture plus full coverage

@@ -417,3 +417,13 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - 该证据仍不稳定：只有1个独立normal episode，42--47k仍有54次collision；尚未满足至少3个normal episodes或deterministic20≥20%的post-capture Gate。CF3保持合同继续100k并自动续200k，验证capture能否被replay放大。
 - P1 Local-Max到42k只有13k、40k两次2+，无3+/capture；support follow为正但any-ring和接敌深度明显弱于CF3。当前没有MaxPool优于mean pooling的证据，仍按合同跑满100k。
 - 两线均finite、VRAM稳定；Q/TD/grad尺度上升但twin Q贴合，无数值爆炸，不改clip/LR/UTD/reward。CF3 100k预计8月14日06:05--06:40并于07:00--08:00自动续200k；P1 100k预计02:20--02:50。完整数据见专用台账10.25。
+
+
+### 2026-08-13 21:20+08:00 双50k换卡、MaxPool收紧Gate与PC0安全路线
+
+- CF3/P1均已冻结完整50k trainer/replay/runtime/RNG/manifest；逐文件hash和trainer字段审计确认各自optimizer、alpha、target critics与RNG完整。旧waiter已取消，两条trainer从本线50k bundle换卡：CF3→GPU0并直达200k，P1→GPU1并到100k；CF3冻结后旧GPU多出的未checkpoint 51k窗口仅归档、不冒充可恢复状态。新51k窗口通过后才把恢复标记为100%完整。
+- matched 50k下CF3有1 normal、20个2+、3个3+窗口；P1为0 capture、4个2+、0个3+。P1的100k Gate已收紧：必须至少2个独立normal，或1个normal且2+/3+频率均近似达到CF3 matched-step；单次2+或distance改善不续200k。
+- CF3稳定Gate仍为至少3个独立normal，或formal deterministic 20-rollout normal capture≥20%，且不主要依赖stationary。P1释放GPU1后supervisor自动检查CF3；未满足则继续等CF3至200k。若200k仍不稳定，进入capture consolidation/collision audit，禁止post-capture、vx-vy、MATD3或UTD1。
+- PC0的transition audit已确认capture-only的capture transition为terminal，而恢复300步post-capture会令其成为non-terminal并改变bootstrap。因此禁止继承旧CF3 replay/critics；Gate通过后只warm-start CF3 Actor，使用fresh replay、critics/targets、optimizer、alpha、RNG和runtime。详细hash、PID、资源与ETA见专用台账10.26。
+
+21:27最终核验：CF3/P1换卡后均严格连续到51k/replay51k/update11501且finite，审计状态为100% complete。新实测吞吐为CF3 GPU0 `10.62k step/h`、P1 GPU1 `5.71k step/h`；P1 100k Gate约8月14日06:20--06:50执行，CF3 200k final artifact约12:30--13:30完成。PC0 Actor-only/fresh-value初始化bundle已用真实CF3 50k Actor完成hash审计和1-step strict-load smoke。

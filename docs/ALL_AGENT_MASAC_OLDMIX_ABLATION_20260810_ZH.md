@@ -828,3 +828,43 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - **稳定Gate仍未通过**：当前只有1个独立normal capture，低于进入post-capture coverage所需的至少3个独立normal episodes；也没有deterministic 20-rollout成功证据。CF3按计划继续100k并自动续200k，重点看capture能否被replay放大。
 - 按20:31真实吞吐并计checkpoint/diagnostic：P1 50/75/100k约`2026-08-13 21:20--21:40`、`23:50--2026-08-14 00:10`、`02:20--02:50`。CF3 50/75/100k约`2026-08-13 21:10--21:30`、`2026-08-14 01:35--02:00`、`06:05--06:40`；final20和自动续200k约`07:00--08:00`。125/150/175/200k粗估为`12:00--13:00`、`16:40--17:50`、`21:20--22:40`、`2026-08-15 01:50--03:30`。
 - 本次常规`apply_patch`临时路径在调用间被CLI清理两次并返回`No such file or directory`；重新`command -v apply_patch`定位后成功落盘。这不是GitHub网络、训练或仓库故障。
+
+
+### 10.26 CF3/P1双50k无损换卡与后续Stable-Gate（2026-08-13 21:20+08:00）
+
+#### matched 50k性能结论
+
+- CF3 corrected Local-Support的50k rolling bundle已完整落盘：step/replay=`50000/50000`、update=`11251`、1个独立normal capture、0 stationary；26--50k共有20/25个2+窗口、3个3+窗口，best 2+/3+ fraction=`3.5%/0.5%`、最长hold=`20/3`、best `d1_min=2.26 m`。25个窗口平均any-ring=`8.70%`、平均d1=`21.93 m`，support→friend delta=`-0.0886 m/step`、support→enemy progress=`+0.1020 m/step`。collision=`229/25k`；50k末窗critic/actor=`110.99/81.67`、alpha=`0.16916`、TD abs=`4.572`、critic/actor grad=`1291/5.70`、peak allocated=`8045 MiB`、finite=1。
+- P1 Local-Max的50k rolling bundle同样完整：step/replay=`50000/50000`、update=`11251`、0 normal/stationary capture；6--50k只有4/45个2+窗口、0个3+，best 2+=`1.8%`、最长2+ hold=15、best `d1_min=2.93 m`。平均any-ring=`1.52%`、平均d1=`27.44 m`，support→friend/enemy=`-0.0968/+0.0663 m/step`；collision=`323/45k`。50k末窗critic/actor=`83.48/84.72`、alpha=`0.13826`、TD abs=`3.645`、critic/actor grad=`1167/4.18`、peak allocated=`8056 MiB`、finite=1。
+- 结论：CF3 self+mean已经在matched 50k出现normal K3、重复3+以及约5.7倍的平均any-ring占比；P1 self+mean+max仍只有稀疏2+，没有normal/3+。目前MaxPool明显落后，但仍按合同跑到100k并执行收紧Gate；不会因distance或单次2+续到200k。
+
+#### 50k冻结、旧waiter清理与GPU交换
+
+- 原`cf3_extend200_gpu1`和旧宽松`p1_maxpool_100k_gate_gpu0`已在两条trainer仍运行时单独停止；没有向其他项目或两卡外部PID发送信号。新控制器`tools/supervise_cf3_p1_gpu_swap_50k.py`只在双方rolling bundle的runtime/metrics都精确等于50k后才动作，并对trainer/replay/runtime/manifest/effective-config逐项SHA256。
+- CF3冻结为`resume_frozen_gpu_swap_step_000050000`：Actor/双critic/双target/log-alpha均在trainer，optimizer state entries=`73/150/1`，RNG含torch/CUDA/Python/NumPy/runner，log-alpha=`-1.76505`；trainer/replay/runtime SHA256前缀=`7655c093/e463e199/2df04a7c`。P1对应条目=`73/150/1`、log-alpha=`-1.96881`、SHA256前缀=`246b7119/c920dd43/e35e8401`。两条manifest/config hash不同且resume命令均断言只引用本线tag，未交叉误用。
+- CF3旧GPU1在冻结后多完成了一个未checkpoint的51k metrics窗；它不能构成可恢复训练状态，已原样归档到`metrics_pre_gpu_swap_uncheckpointed_tail.jsonl`，活动metrics恢复为冻结50k历史，避免重复step和伪连续。P1无未checkpoint尾部。
+- 旧PID `2313014/2314338`在冻结/hash通过后才收到SIGINT并退出。新结构为CF3 PID=`2414774`、tmux=`cf3_gpu0_50k_to200k`、GPU0、目标200k；P1 PID=`2414778`、tmux=`p1_gpu1_50k_to100k`、GPU1、目标100k。两者命令都用本线frozen trainer+replay、`resume_step=50000`，strict manifest通过并正常占用约8664 MiB；无重新warmup、replay清空、optimizer/alpha/target/RNG重置。最终100%连续性状态以控制器验证新51k `step/replay/update=51000/51000/11501`后写入`cf3_p1_gpu_swap_50k_audit.json`；本段初写时状态为`RESUME_LAUNCHED`，不是提前伪写已验证。
+
+#### P1收紧Gate与CF3 Stable-Gate
+
+- `tools/supervise_p1_maxpool_extension.py`已改为matched-step严格比较。P1只有满足以下之一才续200k：至少2个独立normal capture；或至少1个normal且25--100k的2+/3+窗口分别达到CF3 matched区间的75%（2+至少2窗）。单次2+、distance略升、只有重复geometry但没有normal均FAIL。无论PASS/FAIL都先冻结完整100k；FAIL即释放GPU1，PASS则仍在GPU1续200k。
+- `tools/supervise_cf3_stable_gate_pc0.py`已挂起，但必须同时看到：换卡审计100%完成、P1 Gate已写、GPU1确实释放，才可启动下一线。训练Gate保持“累计至少3个独立normal且normal多于stationary”；若CF3到200k仍未满足，则用独立20-rollout工具严格区分normal/stationary，只有normal deterministic capture rate≥20%且成功不主要依赖stationary才PASS。
+- 若CF3到200k仍只有1--2次偶发normal且formal20不足20%，supervisor不启动post-capture/vx-vy/MATD3/UTD1，而生成`capture consolidation / collision audit`：提取最强near-success窗口、2+→3+缺口、3+ hold、collision占terminal比例及后续逐trajectory审计清单。
+
+#### PC0 transition-semantics audit与安全初始化
+
+- 代码级审计确认CF3 capture-only为`capture_episode_ends_on_capture=true`，成功capture transition是terminal/done；PC0恢复300步post-capture必须改为false，因此同一capture transition变为non-terminal，Bellman bootstrap target语义改变。结论固定为：**禁止继承CF3 replay和value state**。
+- PC0独立config为`legacy_voradj_pc0_cf3_actor_warmstart_postcapture300_4p1e1obs_100k_aw.yaml`，任务上只恢复300-step post-capture window。`prepare_pc0_actor_warmstart_bundle.py`在Gate PASS时创建严格step0 bundle：只复制CF3 Actor；replay size=0，critics/targets/optimizer/alpha/RNG/runtime全部fresh，并输出各state hash与互斥审计。runner仍走既有strict resume接口加载这个同manifest step0初始化bundle，不增加或修改当前CF3/P1训练核心源码，故不会破坏进行中line的implementation hash。
+- 聚焦合同/换卡/Gate/PC0语义回归=`11 passed`，全部supervisor与工具`py_compile`、`git diff --check`通过。
+
+#### 资源与换卡后ETA基线
+
+- 换卡刚启动时GPU0/1显存=`14068/16110 MiB`，本项目两进程各约8664 MiB，外部PID `2133267/2278947`未触碰；温度约`86/92°C`。RAM available约97 GiB、swap=`517 MiB/8 GiB`，根盘可用130 GiB。两runner已通过strict load并持续计算，无OOM/manifest/replay报错。
+- GPU0此前同模型稳态约`10.7k step/h`，GPU1约`5.7k step/h`；换卡后的正式ETA必须以新51k窗口实测重新计算。按该基线保守估算：CF3 75/100/125/150/175/200k约`2026-08-13 23:45--2026-08-14 00:15`、`02:15--03:00`、`04:45--05:45`、`07:15--08:30`、`09:45--11:15`、`12:15--14:00+08:00`；P1 75/100k约`2026-08-14 01:35--02:15`、`06:00--07:15`。待首个post-swap 51k完成后替换为实测区间。
+
+#### 21:27最终恢复核验与实测ETA（覆盖上方基线）
+
+- 换卡审计已于`2026-08-13 21:26:20+08:00`达到`VERIFIED_100_PERCENT_COMPLETE`。CF3首个新窗=`step/replay/update 51000/51000/11501`、finite=1、PID=`2414774`、cuda:0、tmux=`cf3_gpu0_50k_to200k`；P1完全相同的连续计数、finite=1、PID=`2414778`、cuda:1、tmux=`p1_gpu1_50k_to100k`。两条均严格从各自50k hash冻结bundle恢复，确认没有replay reset、warmup重启、seed/RNG、optimizer、alpha或target critic丢失。
+- CF3 post-swap 51k实测=`2.9505 step/s=10.62k step/h`，peak allocated=`8045 MiB`；该窗仍有2+ ring fraction=`0.3%`，无新capture/3+。P1实测=`1.5874 step/s=5.71k step/h`，peak allocated=`8056 MiB`；该窗无2+/3+/capture。GPU/显存、RAM和finite均正常。
+- PC0实际50k Actor dry-run通过：Actor state hash与CF3源完全相同；新replay=0，三组optimizer state entries均0，fresh critics/targets，fresh alpha=`0.2`，不继承RNG/runtime。随后step0 bundle被现有runner strict-load并完成1-step CPU smoke：`transition/replay=1/1`、updates=0、finite=true、manifest initialization=`actor_only_warmstart_fresh_value_and_replay`。因此Gate未来PASS时的最小warm-start路径已实际验证，不只是纸面设计。
+- 以post-swap实测并计每25k diagnostic/checkpoint开销：CF3完整75/100/125/150/175k约`2026-08-13 23:45--2026-08-14 00:00`、`02:10--02:30`、`04:35--05:00`、`07:00--07:30`、`09:25--10:00`；200k训练到点约`11:40--12:20`，含formal20/final bundle预计`12:30--13:30+08:00`。P1完整75k约`2026-08-14 01:45--02:05`，100k训练到点约`06:05--06:20`，含final diagnostic/freeze和严格Gate预计`06:20--06:50+08:00`。
