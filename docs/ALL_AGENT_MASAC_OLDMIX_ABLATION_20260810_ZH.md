@@ -796,3 +796,35 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - **但formal目标尚未达成**：两线均0 capture，CF3的3+只维持1 step，collision仍接近或达到每episode终止主因。当前最可疑瓶颈从“support完全拿不到局部方向”进一步收窄为“如何把已有双机/瞬时三机几何稳定维持到capture条件，同时避免碰撞”。
 - **P1尚未证明MaxPool有效**：matched 25k下P1 deterministic距离/progress弱于CF3 mean reference，31k前也只有一次2+；但support follow和any-ring持续上升，按既定合同继续到100k，不因早期落后提前终止。
 - 按19:31最新真实吞吐并计checkpoint/diagnostic：P1 50/75/100k约`2026-08-13 21:20--21:40`、`23:50--2026-08-14 00:10`、`02:20--02:50`。CF3 50/75/100k约`2026-08-13 21:15--21:35`、`2026-08-14 01:40--02:05`、`06:10--06:45`；final20与100→200k自动接力约`07:00--08:00`。CF3续训125/150/175/200k粗估为`12:00--13:00`、`16:40--17:50`、`21:20--22:40`、`2026-08-15 01:50--03:30`。
+
+
+### 10.25 CF3首次corrected-local normal capture（2026-08-13 20:31+08:00）
+
+#### 当前运行状态
+
+- P1 Local-Max PID=`2314338`、tmux=`cf2_to_p1_gpu0`、cuda:0，当前`42000/100000`、update=`9251`、replay=`42000`；末窗`2.975 step/s=10.71k/h`、finite=1。25k checkpoint/rolling bundle继续完整，50k尚未到点；100k Gate PID=`2314351`正常。
+- CF3 Local-Support recovery PID=`2313014`、tmux=`cf3_p0fixed_recovery_gpu1`、cuda:1，当前`47000/100000`、update=`10501`、replay=`47000`；末窗`1.585 step/s=5.71k/h`、finite=1。50k将是recovery artifact首个周期checkpoint；100→200k supervisor PID=`2314348`正常。
+- GPU0/1均100%利用，显存仍为`14068/16110 MiB`，本项目trainer各约8664 MiB；温度`85/93°C`。RAM available约99 GiB、swap521 MiB/8 GiB、根盘可用133 GiB。无OOM、NaN、replay/storage异常，未触碰外部进程。
+
+#### CF3：从多机几何跨到首次真实normal capture
+
+- 42k窗口出现`normal_capture_count=1`、`stationary_capture_count=0`、`distinct_normal_capture_episodes=1`。该窗1000 transitions内`terminated=10`、collision=9，且capture agent terminal reward mean非零；因此是独立normal K3 capture，不是stationary fallback或碰撞误计。
+- recovery 26--47k累计为：1个独立normal capture、0 stationary capture、17个2+窗口、2个3+窗口；best 2+/3+ fraction=`3.5%/0.3%`，2+/3+最长hold=`20/3`，best min enemy distance=`2.26 m`。这是当前corrected local合同最强的正式探索证据。
+- 42--47k的几何信号没有在capture后消失：6个窗口中5个有2+，42/43/45/46/47k的2+ fraction约`1.10%/0.2%/3.5%/0.3%/2.0%`；47k再次出现3+，fraction=`0.3%`、hold=3。45k的2+ hold达到20步，47k的3+ hold由38k的1步提高到3步。
+- 42--47k平均any-ring约`9.42%`、平均d1=`21.86 m`、best min distance=`2.27 m`；support→friend/enemy均值=`-0.079/+0.111 m/step`，累计110次support→capture升级。local support继续在无enemy token、有pursuing friend比例均100%的条件下提供补位。
+- collision仍是主要失败模式：42--47k合计54次，约9.0次/1k；42k的10次终止中9次collision、1次normal capture。当前capture:collision仍极不平衡，不能以一次capture宣称稳定学会。
+- 数值稳定但尺度继续增大：47k末窗critic/actor loss=`102.45/76.33`、alpha=`0.15833`、TD abs=`4.282`，Q1/Q2/target约`-75.40/-75.40/-74.24`、twin gap=`4.445`；42--47k critic/actor grad均值约`1085/4.88`、最大约`1140/5.23`，peak allocated约8045 MiB，全程finite。当前继续观察50k checkpoint，不改clip/LR/UTD/reward。
+
+#### P1：出现第二个2+窗口，但仍明显落后CF3
+
+- 32--42k新增40k一个2+窗口，fraction=`0.8%`、hold=8；因此P1全程截至42k共有2个2+窗口（13k、40k），仍为0个3+、0 capture。
+- 32--42k support follow继续稳定：平均friend delta=`-0.148 m/step`、enemy progress=`+0.079 m/step`，累计153次升级；但平均any-ring仅`1.27%`、平均d1=`28.05 m`、best min distance=`5.63 m`。这说明MaxPool Actor在跟随friend，但多机几何频率和接敌深度仍弱于CF3 mean reference。
+- collision为93次/11k≈8.45次/1k，仍高；42k末窗critic/actor loss=`89.21/69.93`、alpha=`0.12237`、TD abs=`3.982`，Q1/Q2/target约`-69.08/-69.07/-67.59`、twin gap=`4.044`；critic/actor grad=`1275/3.31`、peak allocated约8056 MiB、finite=1。
+- 当前对照结论变强：corrected Local mean已在42k出现normal capture并两次3+，而Local-Max同阶段只有两次2+。尚不能排除P1晚学，但截至42k没有MaxPool改善mean pooling的证据。
+
+#### 研究判断与ETA（Asia/Shanghai）
+
+- **积极信号明确升级**：CF3已经同时满足“1个真实normal capture”“重复2+”“重复3+”“3+ hold从1到3步”。这直接支持local sensing + support full capture/full coverage能够打通至少一次K3协调，global enemy broadcast并非必要。
+- **稳定Gate仍未通过**：当前只有1个独立normal capture，低于进入post-capture coverage所需的至少3个独立normal episodes；也没有deterministic 20-rollout成功证据。CF3按计划继续100k并自动续200k，重点看capture能否被replay放大。
+- 按20:31真实吞吐并计checkpoint/diagnostic：P1 50/75/100k约`2026-08-13 21:20--21:40`、`23:50--2026-08-14 00:10`、`02:20--02:50`。CF3 50/75/100k约`2026-08-13 21:10--21:30`、`2026-08-14 01:35--02:00`、`06:05--06:40`；final20和自动续200k约`07:00--08:00`。125/150/175/200k粗估为`12:00--13:00`、`16:40--17:50`、`21:20--22:40`、`2026-08-15 01:50--03:30`。
+- 本次常规`apply_patch`临时路径在调用间被CLI清理两次并返回`No such file or directory`；重新`command -v apply_patch`定位后成功落盘。这不是GitHub网络、训练或仓库故障。

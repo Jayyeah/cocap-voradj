@@ -409,3 +409,11 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - P1 Local-Max到31k，仅13k出现一次2+、无3+/capture；any-ring由6--10k的0升到26--31k的2.88%，support→friend delta由-0.008增强到-0.117m/step，表明有方向性学习但尚未形成重复多机几何。25k deterministic的min-min/progress=`18.29m/+3.26m`，弱于CF3 mean reference的`10.02m/+12.63m`，当前没有MaxPool优于mean的证据，仍按合同跑满100k。
 - 两线critic/Q/TD/grad尺度随训练上升，但均finite、twin Q贴合、peak VRAM约8.05GiB且无增长；不改变clip、LR、UTD或reward。当前瓶颈进一步收窄为“把重复2+和瞬时3+稳定维持到capture，并降低碰撞”，而非support完全缺少局部方向。
 - P1约`10.71k step/h`，预计100k于8月14日02:20--02:50完成；CF3约`5.77k step/h`，预计100k于06:10--06:45、final评估后07:00--08:00自动续200k，200k预计8月15日01:50--03:30。完整分段指标见专用台账10.24。
+
+
+### 2026-08-13 20:31+08:00 CF3 corrected-local首次normal capture
+
+- CF3 recovery在42k出现1个独立normal K3 capture，stationary=0；该窗10次终止中9次collision，另1次为带非零terminal reward的normal capture，排除fallback或碰撞误计。26--47k累计17个2+、2个3+窗口；45k 2+ hold=20，47k再次3+且hold=3。这是local sensing + pursuing-friend support credit首次打通真实K3的证据。
+- 该证据仍不稳定：只有1个独立normal episode，42--47k仍有54次collision；尚未满足至少3个normal episodes或deterministic20≥20%的post-capture Gate。CF3保持合同继续100k并自动续200k，验证capture能否被replay放大。
+- P1 Local-Max到42k只有13k、40k两次2+，无3+/capture；support follow为正但any-ring和接敌深度明显弱于CF3。当前没有MaxPool优于mean pooling的证据，仍按合同跑满100k。
+- 两线均finite、VRAM稳定；Q/TD/grad尺度上升但twin Q贴合，无数值爆炸，不改clip/LR/UTD/reward。CF3 100k预计8月14日06:05--06:40并于07:00--08:00自动续200k；P1 100k预计02:20--02:50。完整数据见专用台账10.25。
