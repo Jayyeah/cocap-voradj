@@ -232,6 +232,26 @@ def test_50k_gpu_swap_commands_keep_line_state_separate() -> None:
     assert LINES["cf3"]["tag"] not in p1[p1.index("--resume-checkpoint") + 1]
 
 
+def test_power_loss_recovery_commands_keep_75k_line_state_separate() -> None:
+    from tools.recover_cf3_p1_after_power_loss_20260814 import LINES, command
+
+    cf3 = command(LINES["cf3"])
+    p1 = command(LINES["p1"])
+    assert cf3[cf3.index("--device") + 1] == "cuda:0"
+    assert cf3[cf3.index("--total-steps") + 1] == "200000"
+    assert p1[p1.index("--device") + 1] == "cuda:1"
+    assert p1[p1.index("--total-steps") + 1] == "100000"
+    for name, recovery_command in (("cf3", cf3), ("p1", p1)):
+        checkpoint = recovery_command[recovery_command.index("--resume-checkpoint") + 1]
+        replay = recovery_command[recovery_command.index("--resume-replay") + 1]
+        assert f"/{LINES[name]['tag']}/" in checkpoint
+        assert f"/{LINES[name]['tag']}/" in replay
+        assert "resume_frozen_power_loss_step_000075000" in checkpoint
+        assert recovery_command[recovery_command.index("--resume-step") + 1] == "75000"
+    assert LINES["p1"]["tag"] not in cf3[cf3.index("--resume-checkpoint") + 1]
+    assert LINES["cf3"]["tag"] not in p1[p1.index("--resume-checkpoint") + 1]
+
+
 def test_cf3_stable_gate_needs_three_normal_and_not_mainly_stationary() -> None:
     from tools.supervise_cf3_stable_gate_pc0 import gate_summary
 

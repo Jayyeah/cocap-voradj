@@ -427,3 +427,8 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - PC0的transition audit已确认capture-only的capture transition为terminal，而恢复300步post-capture会令其成为non-terminal并改变bootstrap。因此禁止继承旧CF3 replay/critics；Gate通过后只warm-start CF3 Actor，使用fresh replay、critics/targets、optimizer、alpha、RNG和runtime。详细hash、PID、资源与ETA见专用台账10.26。
 
 21:27最终核验：CF3/P1换卡后均严格连续到51k/replay51k/update11501且finite，审计状态为100% complete。新实测吞吐为CF3 GPU0 `10.62k step/h`、P1 GPU1 `5.71k step/h`；P1 100k Gate约8月14日06:20--06:50执行，CF3 200k final artifact约12:30--13:30完成。PC0 Actor-only/fresh-value初始化bundle已用真实CF3 50k Actor完成hash审计和1-step strict-load smoke。
+
+
+### 2026-08-14 02:30+08:00 Host restart恢复
+
+服务器停机导致全部trainer/supervisor退出。CF3停机前metrics到89k但最新完整bundle为75k，故76--89k只归档metrics并从75k重跑；P1最新metrics与完整bundle均为75k。两条75k trainer/replay/runtime/manifest已逐文件hash冻结，CF3在GPU0继续200k、P1在GPU1继续100k，P1/CF3 Gate supervisor也已重挂。双方恢复后首个76k窗口均严格连续为`replay=76000/update=17751/finite=1`，断电审计已达到100% complete。P1在71k新增1次normal capture但仍无3+；CF3可恢复75k仍为1 normal和4个3+窗口。详细恢复点、SHA、PID、资源与新ETA见专用台账10.27。
