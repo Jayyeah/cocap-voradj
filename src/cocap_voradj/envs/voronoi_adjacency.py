@@ -1784,7 +1784,12 @@ class VorAdjEnv(CoCapEnv):
         support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
         support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
         legacy_support_mode = self._legacy_voradj_support_reward_blend_enabled()
-        reward_role_labels = before_raw_labels if legacy_support_mode else before_labels
+        # K10 effective pursuit state is the single role source for actor
+        # observations, rewards, replay metadata, and coverage-hold eligibility.
+        # Raw adjacency remains diagnostic-only (raw_task_label and enemy token
+        # visibility); using it here made a K10-held capture agent receive
+        # support/coverage reward while observation and replay still said capture.
+        reward_role_labels = before_labels
         reward_roles = [
             self._task_reward_role(i, reward_role_labels, before_data)
             for i in range(len(self.pursuers))

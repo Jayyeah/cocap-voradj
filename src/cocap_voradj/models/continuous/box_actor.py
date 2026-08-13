@@ -22,6 +22,7 @@ class BoxActorConfig:
     log_std_min: float = -5.0
     log_std_max: float = 1.0
     dropout: float = 0.0
+    context_pooling: str = "mean"
 
 
 class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
@@ -42,8 +43,13 @@ class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
         self.encoder = encoder
         self.config = config or BoxActorConfig(hidden_dim=encoder.config.hidden_dim)
         h = int(self.config.hidden_dim)
+        pooling = str(self.config.context_pooling).strip().lower()
+        if pooling not in {"mean", "mean_max"}:
+            raise ValueError(f"unsupported actor context_pooling: {self.config.context_pooling!r}")
+        self.context_pooling = pooling
+        input_dim = (3 if pooling == "mean_max" else 2) * h
         self.policy = nn.Sequential(
-            nn.Linear(2 * h, h),
+            nn.Linear(input_dim, h),
             nn.LayerNorm(h),
             nn.ReLU(),
             nn.Dropout(float(self.config.dropout)),
@@ -58,7 +64,10 @@ class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
 
     def distribution(self, obs: Mapping[str, torch.Tensor]) -> Tuple[Normal, torch.Tensor]:
         features = self.encoder(obs)
-        hidden = self.policy(torch.cat([features["self_token"], features["mean_context"]], dim=-1))
+        context = [features["self_token"], features["mean_context"]]
+        if self.context_pooling == "mean_max":
+            context.append(features["max_context"])
+        hidden = self.policy(torch.cat(context, dim=-1))
         mean = self.mean_head(hidden)
         log_std = self.log_std_head(hidden).clamp(self.config.log_std_min, self.config.log_std_max)
         return Normal(mean, log_std.exp()), log_std

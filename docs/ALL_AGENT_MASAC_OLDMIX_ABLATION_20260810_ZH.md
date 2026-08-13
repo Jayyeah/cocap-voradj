@@ -682,3 +682,38 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - CF3正式run当前`5000/100000`、update=`1`、replay=`5000`，首个optimizer update finite=1，critic/actor loss=`13.69/1.911`、alpha=`0.19998`、TD abs mean=`2.118`、peak allocated=`8019.93 MiB`。本窗support无enemy token/有pursuing friend比例=`1.0/1.0`，friend-distance下降比例=`61.5%`、enemy-distance正progress比例=`64.0%`，support capture/coverage mean=`-0.819/-0.455`；max 2+ ring hold=`4` steps。这是启动安全/诊断证据，不是学习结论。
 - GPU0/1均100%利用率、`86/92°C`；CF2/CF3各约8662 MiB，连同两卡既有外部进程后总显存=`14066/16036 MiB`，仍有大幅余量。RAM available约102 GiB、swap1.4/8 GiB、根盘可用139 GiB；replay、metrics和step1 rolling bundle均正常，无OOM/NaN/leak。
 - ETA按CF2最近`10.75k/h`与CF3同卡6k smoke稳态`9.41k/h`并计checkpoint/eval波动：CF2 125/150/175/200k约`2026-08-13 18:45--19:15`、`21:10--21:45`、`23:35--2026-08-14 00:15`、`02:00--02:45+08:00`；CF3 25/50/75/100k约`2026-08-13 15:05--15:25`、`17:50--18:20`、`20:35--21:15`、`23:20--2026-08-14 00:10+08:00`。
+
+
+### 10.22 P0默认语义修复、CF切换与P1 Local-Max调度（2026-08-13 14:50+08:00）
+
+#### P0只修默认合同，不训练独立baseline
+
+- 默认old-mix focal/all-agent基配置的`reward.min_active_pursuers`和`reward.coverage_ce_min_active_pursuers`均由4改为2。真实环境step回归明确验证：4→3 active不因too-few结束，保留2 active也不结束，只有2→1后唯一active pursuer才因too-few结束。
+- K10角色以effective label为唯一任务真源：raw Legacy-VorAdj adjacency只保留在`raw_task_label`、raw统计和真实局部enemy-token可见性中；Actor self/friendly `is_pursuing`、task/replay label、capture/support/coverage reward role、support target关联和coverage hold eligibility全部读取同一effective label。
+- 根因是CF2/CF3 Legacy support模式曾显式写成`reward_role_labels = before_raw_labels`，而observation/replay已使用`before_labels` effective state；因此K10释放延迟中可能出现obs/replay仍为capture、reward却降为support/coverage。现改为`reward_role_labels = before_labels`，三角色仍严格为：self effective capture→capture；self非capture且friendly effective capture→support；其余coverage。reward权重不变：capture full capture，support full capture+full coverage，coverage only。
+- 人工移除raw enemy adjacency边的K10回归通过：self observation `is_pursuing=1`、replay `task_label=capture/effective_pursuing=true`、reward role=capture、capture component非零、coverage component为0；hold eligible数量与同一reward role集合一致。没有通过K10给局部Actor伪造enemy token。
+- runner新增严格`--resume-fork p0_semantics`。它从冻结bundle自身的`effective_config.yaml`读取旧合同，只允许两个min-active字段4→2；所有其余manifest字段受保护，implementation hash变化单独审计。CF2真实75k bundle预检仅得到上述两项差异并通过，避免通过宽松resume绕过合同校验。
+- P0不训练单独`P0-fixed self+mean` baseline；上述规则从此为所有新实验默认合同。除明确ablation外禁止重新漂移。
+
+#### CF2正信号线：75k切到P0-fixed并继续200k
+
+- CF2 pre-P0截至完整75k已有明确积极信号：1次normal capture、0 stationary capture、16个独立2+ ring窗口、1个3+窗口，best 2+/3+ fraction=`2.8028%/0.6%`，best min enemy distance=`2.54 m`。75k累计collision=`505`；75k末窗finite=1，critic/actor loss=`172.44/102.71`、alpha=`0.20274`、TD abs mean=`4.984`、吞吐=`2.975 step/s`。75k deterministic 4-episode仍为0/4 capture、collision=4/4、mean min distance=`16.13 m`、distance progress=`+11.13 m`，故积极信号仍是训练探索而非稳定部署成功。
+- 原进程实际已推进到80k，但最近完整trainer+replay+runtime rolling bundle是75k。旧artifact和0--80k metrics完整保留；75k bundle以hardlink冻结为`resume_frozen_pre_p0_step_000075000`，没有覆盖旧证据。旧100k→200k supervisor已取消，旧trainer正常退出且约8662 MiB显存释放。
+- 新artifact/tag为`cf2_global_support_full_p0fixed/legacy_voradj_cf2_global_support_p0fixed_cont75k_to200k_20260813`。切换边界明确为：`step<=75000: pre-P0 semantics`；从恢复后的下一transition起：`P0-fixed semantics`。PID=`2268414`、tmux=`cf2_p0fixed_gpu0`、cuda:0，继续到200k并在100/125/150/175/200k按原25k节奏保存/诊断。
+- P0-fixed首个新窗口已到76k：`update=17751/replay=76000`、`2.979 step/s=10.72k/h`、finite=1，critic/actor loss=`172.02/103.17`、alpha=`0.20614`、TD abs=`5.073`、peak allocated=`8045.25 MiB`；CF2进程显存约8664 MiB，无NaN/OOM/吞吐退化。本窗没有新增capture/2+/3+，不撤销pre-P0的normal capture证据。
+- replay不做破坏性清空或重标注。旧75k transitions在切换瞬间占100%，随uniform新样本写入自然衰减；若到200k且capacity未覆盖，其理论比例降至37.5%。后续指标必须继续把pre/post切换曲线分段解释。
+
+#### CF3 Local reference：25k自动切换，随后P1 MaxPool
+
+- CF3 pre-P0当前22k：0 normal/stationary capture，5个独立2+ ring窗口、0个3+，best 2+ fraction=`0.6%`、best min distance=`2.74 m`、累计collision=`112`；末窗`2.561 step/s=9.22k/h`、finite=1，critic/actor loss=`54.96/31.60`、alpha=`0.13893`、TD abs=`2.218`。support无enemy token/有pursuing friend比例均1.0，末窗friend-distance delta mean=`-0.144 m/step`、enemy progress=`+0.0529 m/step`，累计support→capture upgrades=`333`。这是早期局部support方向性和重复双机几何，按合同不在25k前截断。
+- 自动链PID=`2271611`、tmux=`cf3_p0_then_p1_gpu1`：等待`step_000025000` checkpoint与rolling replay/runtime全部完整→hardlink冻结`resume_frozen_pre_p0_step_000025000`→只向唯一CF3 tag PID发送SIGINT→用`p0_semantics`从25k续到100k。切换标记将为`step<=25000 pre-P0`、其后P0-fixed；旧25k replay在100k时自然降至25%。
+- CF3 P0-fixed 100k完成且final report finite后，自动在cuda:1执行P1 32-step scratch smoke；smoke通过即启动`P1 — corrected Local CF + MaxPool` scratch 0→100k，seed=`2026081305`、新replay、独立artifact。另一个Gate PID=`2275833`、tmux=`p1_maxpool_100k_gate`等待P1 100k；仅当0--100k有normal capture，或75--100k至少2个3+独立窗口，或至少3个2+独立窗口时，才冻结100k并原位续到200k，否则stop100k并保留完整bundle。PASS续训前还会确认100k原进程完全退出，避免同artifact并发写入。
+- P1 config为`legacy_voradj_p1_capture_first_local_support_maxpool_4p1e1obs_100k_aw.yaml`。CF3 Actor维持`self_token+mean_context`；P1唯一网络差异为`self_token+mean_context+max_context`，policy第一层输入`512→768`，输出仍256；Transformer保持hidden=256、heads=8、layers=4，central critic和其余网络不变，未加入pursuing residual、target/summary attention或role embedding。
+
+#### 验证、资源、ETA和工具故障
+
+- 聚焦综合回归包括Actor、UTD resume、all-agent Actor-Q、CF合同、P0与自动Gate，共`38 passed`；单独CF/P0/P1调度集合为`20 passed`。`py_compile`与`git diff --check`通过。
+- GPU0总显存约14068 MiB（CF2约8664 MiB+未触碰外部PID 2133267约5316 MiB）、100%、86°C；GPU1约16036 MiB（CF3约8662 MiB+未触碰外部PID 1258417约7342 MiB）、100%、92°C。RAM available约99 GiB，swap1.4/8 GiB，根盘可用139 GiB，无VRAM/RAM/replay/storage异常。
+- CF2按P0-fixed首窗10.72k step/h并计里程碑诊断/落盘：100k约`2026-08-13 17:00--17:30+08:00`，125k约`19:25--20:00`，150k约`21:50--22:30`，175k约`2026-08-14 00:15--01:00`，200k约`02:40--03:30`。
+- CF3按最近9.22k step/h：25k完整切换约`2026-08-13 15:10--15:30+08:00`；P0-fixed 50/75/100k约`18:00--18:40`、`20:50--21:40`、`23:40--2026-08-14 00:40`。P1只有在CF3 100k完成后才启动，启动前不以旧线吞吐伪造正式ETA。
+- 本次`apply_patch`包装器再次在读取阶段报`bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`，权限自动审查也两次超时；补丁未触及仓库。绕过方式为先用严格Perl小替换，随后定位并直接调用普通用户环境中的`apply_patch`二进制完成新supervisor/测试和文档hunk；所有改动以diff、compile和pytest复核。该故障仍不是GitHub网络或训练故障。

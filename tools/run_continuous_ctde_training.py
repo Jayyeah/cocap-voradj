@@ -458,6 +458,7 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
             log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
             log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
             dropout=float(actor_cfg.get("dropout", 0.0)),
+            context_pooling=str(actor_cfg.get("context_pooling", "mean")),
         )
     else:
         actor = RadialActorConfig(
@@ -467,6 +468,7 @@ def _make_trainer(config: Dict[str, Any], device: str) -> CentralSACTrainer:
             log_std_min=float(actor_cfg.get("log_std_min", -5.0)),
             log_std_max=float(actor_cfg.get("log_std_max", 1.0)),
             dropout=float(actor_cfg.get("dropout", 0.0)),
+            context_pooling=str(actor_cfg.get("context_pooling", "mean")),
         )
     critic = CentralCriticConfig(
         hidden_dim=int(critic_cfg["hidden_dim"]),
@@ -1237,6 +1239,61 @@ def _validate_utd_only_resume_fork(
     }
 
 
+def _validate_p0_semantics_resume_fork(
+    resume_manifest: Mapping[str, Any],
+    target_manifest: Mapping[str, Any],
+    target_config: Mapping[str, Any],
+    resume_checkpoint: str | Path,
+) -> Dict[str, Any]:
+    source_effective_path = Path(resume_checkpoint).resolve().parent / "effective_config.yaml"
+    if not source_effective_path.is_file():
+        raise ValueError(f"P0 resume fork source effective config does not exist: {source_effective_path}")
+    source_config = load_config(str(source_effective_path))
+    diffs = _config_leaf_diffs(source_config, target_config)
+    required_diffs = {
+        "reward.min_active_pursuers": {"before": 4, "after": 2},
+        "reward.coverage_ce_min_active_pursuers": {"before": 4, "after": 2},
+    }
+    observed = {item["path"]: item for item in diffs}
+    unexpected = [item for item in diffs if item["path"] not in required_diffs]
+    if unexpected:
+        raise ValueError(f"P0 semantics resume fork has unexpected config changes: {unexpected}")
+    for path, expected in required_diffs.items():
+        actual = observed.get(path)
+        if actual != {"path": path, **expected}:
+            raise ValueError(
+                f"P0 semantics resume fork requires {path} 4 -> 2; got {actual}"
+            )
+    protected_manifest_keys = set(resume_manifest) - {
+        "config",
+        "config_hash",
+        "effective_config_hashes",
+        "implementation_hash",
+    }
+    manifest_mismatches = {
+        key: {"before": resume_manifest.get(key), "after": target_manifest.get(key)}
+        for key in sorted(protected_manifest_keys)
+        if resume_manifest.get(key) != target_manifest.get(key)
+    }
+    if manifest_mismatches:
+        raise ValueError(
+            f"P0 semantics resume fork changed protected manifest fields: {manifest_mismatches}"
+        )
+    return {
+        "kind": "p0_semantics_resume_fork",
+        "source_manifest_hash": _stable_hash(dict(resume_manifest)),
+        "target_manifest_hash": _stable_hash(dict(target_manifest)),
+        "source_effective_config": str(source_effective_path),
+        "config_diffs": diffs,
+        "allowed_paths": sorted(required_diffs),
+        "semantic_changes": [
+            "unified_k10_effective_roles_for_observation_reward_replay_hold",
+            "min_active_pursuers_2",
+            "coverage_ce_min_active_pursuers_2",
+        ],
+    }
+
+
 def _reset_pure_recovery(
     config: Dict[str, Any],
     recovery_pool: Deque[Dict[str, Any]],
@@ -1369,16 +1426,25 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     resume_fork_audit: Optional[Dict[str, Any]] = None
     if args.resume_checkpoint:
         load_manifest = manifest
-        if getattr(args, "resume_fork", "none") == "utd_only":
+        resume_fork = getattr(args, "resume_fork", "none")
+        if resume_fork in {"utd_only", "p0_semantics"}:
             load_manifest = _load_resume_manifest(
                 args.resume_checkpoint,
                 args.resume_replay,
             )
-            resume_fork_audit = _validate_utd_only_resume_fork(
-                load_manifest,
-                manifest,
-                root_config,
-            )
+            if resume_fork == "utd_only":
+                resume_fork_audit = _validate_utd_only_resume_fork(
+                    load_manifest,
+                    manifest,
+                    root_config,
+                )
+            else:
+                resume_fork_audit = _validate_p0_semantics_resume_fork(
+                    load_manifest,
+                    manifest,
+                    root_config,
+                    args.resume_checkpoint,
+                )
             _write_text_atomic(
                 artifact_dir / "resume_fork_audit.json",
                 json.dumps(resume_fork_audit, indent=2, ensure_ascii=False) + "\n",
@@ -2134,7 +2200,7 @@ def main() -> int:
     parser.add_argument("--resume-step", type=int, default=-1)
     parser.add_argument(
         "--resume-fork",
-        choices=("none", "utd_only"),
+        choices=("none", "utd_only", "p0_semantics"),
         default="none",
     )
     args = parser.parse_args()

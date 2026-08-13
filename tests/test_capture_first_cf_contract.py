@@ -42,6 +42,8 @@ def test_cf0_is_formal_capture_only_with_stable_sac_contract() -> None:
     assert config["reward"]["capture_stationary_speed_threshold"] == 0.2
     assert config["reward"]["capture_stationary_hold_steps"] == 10
     assert config["reward"]["capture_stationary_min_pursuers"] == 2
+    assert config["reward"]["min_active_pursuers"] == 2
+    assert config["reward"]["coverage_ce_min_active_pursuers"] == 2
     assert config["voradj"]["is_pursuing_release_delay_steps"] == 10
     assert capture["env"]["num_pursuers"] == 4
     assert capture["env"]["num_evaders"] == 1

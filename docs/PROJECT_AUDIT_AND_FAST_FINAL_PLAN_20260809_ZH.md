@@ -380,3 +380,12 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 
 
 12:55正式状态：CF2为63k、10.75k step/h、finite；CF3正式scratch为5k且首update finite，support无enemy token/有pursuing friend比例均100%，双reward分量与新增follow/ring-hold诊断正常。双GPU显存/RAM/storage安全，CF2自动扩200k监督器健康挂起。
+
+
+### 2026-08-13 14:50+08:00 P0默认修复与Local-Max路线
+
+- P0定位改为默认代码/语义修复，不单独训练baseline：old-mix默认`min_active_pursuers=2`、`coverage_ce_min_active_pursuers=2`；raw adjacency只作诊断/真实token可见性，K10 effective role统一驱动Actor role bit、reward三角色、replay label与coverage hold。回归验证3 active和2 active不因too-few结束，只有1 active结束；K10期间不再出现obs/replay=capture而reward降为support/coverage。
+- 有normal capture与重复多机几何的CF2不重训：完整75k bundle冻结后切到P0-fixed并继续200k。CF2 0--75k标记pre-P0，75k后的新transition标记P0-fixed；首个post-switch 76k窗口finite且2.98 step/s，无OOM或吞吐退化。旧75k replay保留并随uniform新样本自然衰减。
+- 局部CF3保留为主reference：pre-P0到25k后自动冻结并以P0-fixed续到100k。当前22k已有5个2+窗口，support无enemy token但持续看到pursuing friend，friend-distance delta与enemy progress均为正向；尚无capture/3+，不提前定性。
+- CF3 100k完成后自动启动scratch P1 Local-Max。任务合同完整继承corrected Local CF，唯一网络变化是Actor从`self+mean`变为`self+mean+max`；hidden256/heads8/layers4和central critic不变，不恢复residual/attention/role embedding。P1先100k，只有normal capture或持续2+/3+几何Gate通过才续200k。
+- 当前固定路线：P0代码修复→正信号CF continuation→Local CF reference→P1 Local-Max→capture稳定Gate通过后恢复post-capture coverage→capture reward ablation→`(a,w)` vs `vx,vy`。当前仍不启动新reward、post-capture混训、UTD1、LR sweep或MATD3。详细切换点、测试、PID、性能与ETA见专用台账第10.22节。

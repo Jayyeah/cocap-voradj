@@ -1,0 +1,149 @@
+from __future__ import annotations
+
+import copy
+from pathlib import Path
+
+import numpy as np
+import yaml
+
+from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
+from cocap_voradj.training.continuous.formal_config import resolve_ladder_config, scene_config
+from cocap_voradj.training.trainer import set_global_config
+
+ROOT = Path(__file__).resolve().parents[1]
+CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
+CF3 = CONFIG_DIR / "legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml"
+P1 = CONFIG_DIR / "legacy_voradj_p1_capture_first_local_support_maxpool_4p1e1obs_100k_aw.yaml"
+
+
+
+def _safe_cf_env(seed: int) -> VorAdjEnv:
+    config = scene_config(resolve_ladder_config(CF3), "capture")
+    set_global_config(config)
+    env = VorAdjEnv(copy.deepcopy(config), seed=seed)
+    env.reset()
+    env.obstacles = []
+    for index, pursuer in enumerate(env.pursuers):
+        env._reset_robot(pursuer, np.asarray((25.0 + 15.0 * index, 30.0), dtype=float), theta=0.0)
+        pursuer.deactivated = False
+    env._reset_robot(env.evaders[0], np.asarray((15.0, 70.0), dtype=float), theta=0.0)
+    env.evaders[0].velocity = np.zeros(2, dtype=float)
+    env._invalidate_voronoi_cache()
+    data = env._capture_voronoi_map()
+    raw = env._raw_task_labels_from_map(data)
+    env.last_task_labels = env._task_labels_from_map(data, update_effective=True, raw_labels=raw)
+    return env
+
+
+def test_min_active_keeps_three_and_two_but_terminates_at_one() -> None:
+    for active_count, should_end in ((3, False), (2, False), (1, True)):
+        env = _safe_cf_env(2026081310 + active_count)
+        for pursuer in env.pursuers[active_count:]:
+            pursuer.deactivated = True
+        result = env.step([[0.0, 0.0]] * 4, [None])
+        assert bool(result.dones[0]) is should_end
+
+
+def test_k10_effective_role_matches_obs_reward_replay_and_hold() -> None:
+    env = _safe_cf_env(2026081314)
+    env._reset_robot(env.pursuers[0], np.asarray((28.0, 30.0), dtype=float), theta=0.0)
+    env._reset_robot(env.pursuers[1], np.asarray((40.0, 30.0), dtype=float), theta=0.0)
+    env._reset_robot(env.evaders[0], np.asarray((20.0, 30.0), dtype=float), theta=0.0)
+    env._invalidate_voronoi_cache()
+    data = env._capture_voronoi_map()
+    raw = env._raw_task_labels_from_map(data)
+    assert raw[0] == "capture"
+    env.last_task_labels = env._task_labels_from_map(data, update_effective=True, raw_labels=raw)
+    assert env._pursuing_release_counters[0] == 10
+    moved = copy.deepcopy(data)
+    moved["adjacency"][("pursuer", 0)].discard(("evader", 0))
+    moved["adjacency"][("evader", 0)].discard(("pursuer", 0))
+    env._capture_voronoi_map = lambda *_args, **_kwargs: moved
+    moved_raw = env._raw_task_labels_from_map(moved)
+    assert moved_raw[0] == "coverage"
+    assert env._effective_task_labels(moved_raw)[0] == "capture"
+    obs = env.get_observations()[0]
+    assert obs is not None and obs["self"][8] == 1.0
+    result = env.step([[0.0, 0.0]] * 4, [None])
+    meta = result.infos[0]["replay_metadata"]
+    assert meta["raw_task_label"] == "coverage"
+    assert meta["task_label"] == "capture"
+    assert meta["effective_pursuing"] is True
+    assert meta["reward_role"] == "capture"
+    assert meta["reward_capture"] != 0.0
+    assert meta["reward_coverage"] == 0.0
+    expected_hold = sum(info["replay_metadata"]["reward_role"] in {"support", "coverage"} for info in result.infos)
+    assert env.last_reward_terms["hold_reward_eligible_count"] == expected_hold
+
+
+def test_p0_resume_fork_accepts_only_two_contract_changes(tmp_path: Path) -> None:
+    from tools.run_continuous_ctde_training import _validate_p0_semantics_resume_fork
+    target = resolve_ladder_config(CF3)
+    source = copy.deepcopy(target)
+    source["reward"]["min_active_pursuers"] = 4
+    source["reward"]["coverage_ce_min_active_pursuers"] = 4
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "effective_config.yaml").write_text(yaml.safe_dump(source, sort_keys=False), encoding="utf-8")
+    source_manifest = {"algorithm": "masac_ctde", "config": "old.yaml", "config_hash": "old", "effective_config_hashes": {"capture": "old"}, "implementation_hash": "old"}
+    target_manifest = {**source_manifest, "config": "new.yaml", "config_hash": "new", "effective_config_hashes": {"capture": "new"}, "implementation_hash": "new"}
+    audit = _validate_p0_semantics_resume_fork(source_manifest, target_manifest, target, bundle / "trainer.pt")
+    assert audit["kind"] == "p0_semantics_resume_fork"
+    assert {row["path"] for row in audit["config_diffs"]} == {"reward.min_active_pursuers", "reward.coverage_ce_min_active_pursuers"}
+
+
+def test_p1_local_max_is_cf3_plus_max_pool_only() -> None:
+    from tools.run_continuous_ctde_training import _make_trainer
+    cf3 = resolve_ladder_config(CF3)
+    p1 = resolve_ladder_config(P1)
+    assert (p1["actor"]["hidden_dim"], p1["actor"]["num_heads"], p1["actor"]["num_layers"]) == (256, 8, 4)
+    assert p1["actor"]["context_pooling"] == "mean_max"
+    trainer = _make_trainer(p1, "cpu")
+    assert trainer.actor.context_pooling == "mean_max"
+    assert trainer.actor.policy[0].in_features == 3 * 256
+    for config in (cf3, p1):
+        config.pop("run_name", None)
+        config.pop("seed", None)
+        config.pop("experiment_metadata", None)
+    p1["actor"].pop("context_pooling")
+    assert p1 == cf3
+
+
+def test_cf3_p0_and_p1_schedule_commands_are_strict() -> None:
+    from tools.supervise_cf3_p0_then_p1_maxpool import (
+        cf3_continuation_command,
+        p1_command,
+    )
+
+    cf3 = cf3_continuation_command()
+    assert cf3[cf3.index("--resume-step") + 1] == "25000"
+    assert cf3[cf3.index("--resume-fork") + 1] == "p0_semantics"
+    assert cf3[cf3.index("--total-steps") + 1] == "100000"
+    assert cf3[cf3.index("--device") + 1] == "cuda:1"
+
+    smoke = p1_command(smoke=True)
+    formal = p1_command(smoke=False)
+    assert smoke[smoke.index("--total-steps") + 1] == "32"
+    assert formal[formal.index("--total-steps") + 1] == "100000"
+    assert "--resume-checkpoint" not in formal
+    assert "--resume-replay" not in formal
+
+
+def test_p1_100k_gate_requires_sustained_positive_geometry() -> None:
+    from tools.supervise_p1_maxpool_extension import evaluate_gate
+
+    weak = [
+        {"step": step, "normal_capture_count": 0, "max_num_in_ring": 1,
+         "fraction_steps_2plus_in_ring": 0.0, "fraction_steps_3plus_in_ring": 0.0}
+        for step in range(76000, 100001, 1000)
+    ]
+    assert evaluate_gate(weak)["passed"] is False
+
+    repeated_two = copy.deepcopy(weak)
+    for step in (80000, 90000, 100000):
+        next(row for row in repeated_two if row["step"] == step)["fraction_steps_2plus_in_ring"] = 0.001
+    assert evaluate_gate(repeated_two)["passed"] is True
+
+    capture = copy.deepcopy(weak)
+    capture[-1]["normal_capture_count"] = 1
+    assert evaluate_gate(capture)["passed"] is True

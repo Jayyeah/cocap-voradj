@@ -1,0 +1,26 @@
+extends: ./legacy_voradj_cf0_capture_first_local_4p1e1obs_100k_aw.yaml
+
+run_name: legacy_voradj_p1_capture_first_local_support_maxpool_4p1e1obs_100k_aw_20260813
+seed: 2026081305
+
+perception:
+  global_evader_visibility: false
+
+voradj:
+  support_reward_blend_enabled: true
+  legacy_voradj_support_reward_blend_enabled: true
+  support_reward_capture_weight: 1.0
+  support_reward_coverage_weight: 1.0
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: capture_task
+
+actor:
+  context_pooling: mean_max
+
+experiment_metadata:
+  stage: p1_corrected_local_support_self_mean_max_100k_aw
+  training_start: scratch_new_replay
+  observability: legacy_voradj local enemy observation; support sees pursuing friendly token but no oracle enemy token
+  sole_network_delta: self_token + mean_context -> self_token + mean_context + max_context
+  role_contract: corrected P0 K10 effective roles; min_active=2; CE min_active=2; local sensing unchanged
+  architecture_exclusions: no pursuing residual, target attention, summary attention, or role embedding
