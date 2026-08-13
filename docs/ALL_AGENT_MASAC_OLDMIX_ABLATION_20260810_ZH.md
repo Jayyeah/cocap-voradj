@@ -763,3 +763,36 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - P1 32-step CUDA smoke为scratch replay=32、finite；于`16:59:37+08:00`正式启动。首个有update窗口已到6k：`2.982 step/s=10.74k/h`、finite=1，critic/actor=`16.53/3.629`、alpha=`0.19747`、TD abs=`0.814`、collision=2，尚无capture/2+/3+（warmup边界，不作学习结论）。PID=`2314338`、tmux=`cf2_to_p1_gpu0`、cuda:0。
 - CF3 recovery已到27k：`1.567 step/s=5.64k/h`、finite=1，critic/actor=`62.03/40.53`、alpha=`0.12916`、TD abs=`2.718`；27k再次有2+ fraction=`0.9%`、max ring=2，support→friend/enemy=`-0.094/+0.183 m/step`，无capture/3+。该重放窗口复现了局部方向性正信号。
 - 以`2026-08-13 17:15+08:00`实测：P1 25/50/75/100k约`19:10--19:30`、`21:35--22:00`、`00:00--00:35`、`2026-08-14 02:25--03:10`；CF3 recovery 50/75/100k约`21:20--21:50`、`2026-08-14 02:00--02:40`、`06:40--07:30`，final20与100→200k接力预计`07:30--08:30`。CF3 125/150/175/200k约`12:20--13:20`、`17:05--18:20`、`21:50--23:20`、`2026-08-15 02:35--04:20`。
+
+
+### 10.24 P1 31k / CF3 41k趋势复核（2026-08-13 19:31+08:00）
+
+#### 运行、checkpoint与资源
+
+- P1 Local-Max正式线PID=`2314338`、tmux=`cf2_to_p1_gpu0`、cuda:0，当前`31000/100000`、update=`6501`、replay=`31000`。25k checkpoint与rolling trainer/replay/runtime完整，runtime=`25000`、finite=true；100k Gate supervisor PID=`2314351`仍正常等待。
+- CF3 Local-Support recovery PID=`2313014`、tmux=`cf3_p0fixed_recovery_gpu1`、cuda:1，当前`41000/100000`、update=`9001`、replay=`41000`；50k是该recovery artifact的首个新周期checkpoint，当前尚未到点。100k→200k supervisor PID=`2314348`正常等待。
+- GPU0/1均100%利用，显存分别`14068/49140 MiB`和`16110/49140 MiB`，其中本项目两trainer各约8664 MiB；温度`85/93°C`。RAM available约100 GiB、swap=`521 MiB/8 GiB`、根盘可用133 GiB。未触碰两卡外部进程；无OOM、NaN、replay或storage异常。
+
+#### P1 Local-Max：方向性改善，但MaxPool尚未显出多机优势
+
+- post-warmup 6--31k累计0 normal/stationary capture、仅13k一个2+窗口、0个3+；13k的2+ fraction=`1.3%`、hold=5、min distance=`5.64 m`。26--31k没有重复2+，但best min distance进一步到`4.63 m`。
+- 单机接敌比例在提升：五个阶段6--10/11--15/16--20/21--25/26--31k的平均any-ring fraction依次为`0/0.70%/0.98%/2.02%/2.88%`。support→friend distance delta也由`-0.008`逐步增强到`-0.117 m/step`；support→enemy progress保持正值，阶段均值约`+0.037/+0.074/+0.102/+0.042/+0.056 m/step`。说明MaxPool Actor至少在学习局部support跟随，但尚未转化为重复双机/三机几何。
+- collision随策略更积极而上升：上述阶段每5--6k的collision window总数为`13/22/37/36/51`，约从2.6次/1k升到8.5次/1k。25k deterministic 4-episode为0/4 capture、4/4 collision、mean min-min distance=`18.29 m`、distance progress仅`+3.26 m`。
+- support双reward合同在线成立：26--31k平均capture/coverage component=`-0.932/-0.583`，两者均非零；角色占比约capture/support/coverage=`67.12%/30.96%/1.93%`，support无enemy token、有pursuing friend比例均为100%。
+- 数值仍稳定：31k末窗`2.975 step/s=10.71k/h`、finite=1，critic/actor loss=`60.57/49.75`、alpha=`0.12357`、TD abs=`2.974`。26--31k critic grad均值/最大约`621/771`、actor grad约`1.83/2.25`、twin gap均值`2.64`、peak allocated约8056 MiB；Q1/target从约`-40.0/-38.5`移到`-49.1/-47.6`，TD上升但无非finite或显存增长。
+
+#### CF3 Local-Support：出现新的3+ ring强信号
+
+- recovery 26--41k仍为0 normal/stationary capture，但多机几何呈持续增强：26--30k有3/5个2+窗口；31--35k有4/5；36--41k有5/6，并在38k首次出现P0-fixed local合同下的`max ring=3`。
+- 38k窗口为当前最强证据：any/2+/3+ ring fraction=`16.4%/2.4%/0.1%`，2+最长hold=12、3+ hold=1，min enemy distance=`2.26 m`。37--41k连续五个窗口均有2+，对应fraction=`1.7%/2.4%/1.1%/0.9%/1.7%`；这已超过此前“偶发单个2+”水平，但3+仍只有1 step，不能等同formal K3 capture。
+- 分段趋势同步改善：26--30/31--35/36--41k平均any-ring fraction=`5.26%/6.64%/11.98%`；平均d1由`22.76→22.47→20.90 m`；best min distance=`2.37/2.70/2.26 m`。support→friend delta始终约`-0.09 m/step`，support→enemy progress约`+0.131/+0.056/+0.106 m/step`，说明没有enemy token的support确实持续向capture友邻/敌人方向补位。
+- 代价仍是collision偏高并略增：三个阶段分别41/46/59次，约8.2/9.2/9.8次每1k。25k旧reference deterministic同为0/4 capture、4/4 collision，但min-min distance=`10.02 m`、progress=`+12.63 m`，明显好于P1同25k的`18.29 m/+3.26 m`。
+- reward分流正常：36--41k support capture/coverage component均值=`-0.799/-0.571`；角色占比capture/support/coverage约`76.62%/22.84%/0.54%`，support无enemy token、有pursuing friend均为100%。
+- 41k末窗`1.602 step/s=5.77k/h`、finite=1，critic/actor loss=`92.95/65.63`、alpha=`0.13615`、TD abs=`4.051`。26--41k critic grad均值/最大约`691/1022`、actor grad约`3.11/4.27`、twin gap均值`3.17`、peak allocated约8045 MiB；Q1/target由`-37.9/-36.7`移到`-64.7/-63.5`。Q/TD/grad尺度继续上升但全程finite、双Q仍贴合，当前定性为“需监控、尚无数值爆炸证据”，不回加clip或改超参。
+
+#### 当前判断与ETA（Asia/Shanghai）
+
+- **明确积极信号在CF3**：重复2+频率、hold、any-ring和平均距离同时改善，并首次出现3+ ring；这进一步支持local enemy sensing + pursuing-friend token足以驱动support几何，global broadcast不是必要部署条件。
+- **但formal目标尚未达成**：两线均0 capture，CF3的3+只维持1 step，collision仍接近或达到每episode终止主因。当前最可疑瓶颈从“support完全拿不到局部方向”进一步收窄为“如何把已有双机/瞬时三机几何稳定维持到capture条件，同时避免碰撞”。
+- **P1尚未证明MaxPool有效**：matched 25k下P1 deterministic距离/progress弱于CF3 mean reference，31k前也只有一次2+；但support follow和any-ring持续上升，按既定合同继续到100k，不因早期落后提前终止。
+- 按19:31最新真实吞吐并计checkpoint/diagnostic：P1 50/75/100k约`2026-08-13 21:20--21:40`、`23:50--2026-08-14 00:10`、`02:20--02:50`。CF3 50/75/100k约`2026-08-13 21:15--21:35`、`2026-08-14 01:40--02:05`、`06:10--06:45`；final20与100→200k自动接力约`07:00--08:00`。CF3续训125/150/175/200k粗估为`12:00--13:00`、`16:40--17:50`、`21:20--22:40`、`2026-08-15 01:50--03:30`。

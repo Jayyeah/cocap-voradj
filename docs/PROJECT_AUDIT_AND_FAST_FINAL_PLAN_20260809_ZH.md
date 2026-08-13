@@ -401,3 +401,11 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - 当前优先级更新为：CF2 100k收口→P1 Local-Max；CF3 Local-Support corrected 200k→与P1比较mean vs mean+max；达到稳定normal capture Gate后才恢复post-capture coverage。详细PID、指标、故障和ETA见专用台账10.23。
 
 17:15实际交接：CF2 100k frozen trainer/replay/runtime完整且finite，100k diagnostic仍0/4 capture、4/4 collision，已按决策停止；P1 Local-Max smoke通过并在GPU0 scratch启动，6k首update窗口finite、10.74k step/h。CF3 recovery在GPU1到27k，finite且再次出现0.9%的2+ ring与support同时靠近friend/enemy，100k后自动续200k。两卡资源正常，详见专用台账10.23末尾。
+
+
+### 2026-08-13 19:31+08:00 Local mean vs mean+max中期趋势
+
+- CF3 corrected Local-Support已到41k并出现本阶段首个明确3+ ring：38k的any/2+/3+ fraction=`16.4%/2.4%/0.1%`、2+ hold=12、3+ hold=1；36--41k有5/6窗口重复2+，平均any-ring由26--30k的5.26%升到11.98%，平均d1由22.76降到20.90m。support在无enemy token下持续同时靠近pursuing friend和enemy。尚无capture，3+只持续1 step，collision约由8.2升到9.8次/1k，所以结论是“局部多机几何明显转强、K3闭合仍未完成”。
+- P1 Local-Max到31k，仅13k出现一次2+、无3+/capture；any-ring由6--10k的0升到26--31k的2.88%，support→friend delta由-0.008增强到-0.117m/step，表明有方向性学习但尚未形成重复多机几何。25k deterministic的min-min/progress=`18.29m/+3.26m`，弱于CF3 mean reference的`10.02m/+12.63m`，当前没有MaxPool优于mean的证据，仍按合同跑满100k。
+- 两线critic/Q/TD/grad尺度随训练上升，但均finite、twin Q贴合、peak VRAM约8.05GiB且无增长；不改变clip、LR、UTD或reward。当前瓶颈进一步收窄为“把重复2+和瞬时3+稳定维持到capture，并降低碰撞”，而非support完全缺少局部方向。
+- P1约`10.71k step/h`，预计100k于8月14日02:20--02:50完成；CF3约`5.77k step/h`，预计100k于06:10--06:45、final评估后07:00--08:00自动续200k，200k预计8月15日01:50--03:30。完整分段指标见专用台账10.24。
