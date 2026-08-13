@@ -367,3 +367,8 @@ CF0 Local已按最新决策在完整100k trainer/replay/runtime冻结后停止�
 
 
 07:41稳态复核：CF2已到6k/251 updates，`3.782 step/s`、finite=1、peak allocated约8.05 GiB，support capture/coverage两分量持续非零；CF1到69k、`2.675 step/s`、finite=1。两条正式线与GPU/RAM正常。
+
+
+### 2026-08-13 12:15+08:00 CF1 final与CF2 normal capture
+
+CF1 Global已clean完成100k：训练内仅1次stationary-fallback capture，formal 20-rollout仍0 capture/20且collision 20/20；但全程19个2+及3个3+ ring窗口确认global信息改善多机几何。CF2 Global+Support到53k产生1次明确normal K3 capture（非stationary、非collision），截至55k已有9个2+和1个3+窗口；同55k下几何频率与capture类型优于CF1，但累计collision更高。CF2继续到75/100k验证能否重复normal capture，暂不提前扩步。详细指标与ETA见专用台账第10.20节。

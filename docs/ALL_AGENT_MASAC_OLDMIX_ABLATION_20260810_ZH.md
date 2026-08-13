@@ -635,3 +635,17 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - CF2已完成首个完整250-update窗口：`6000/100000`、update=`251`、`3.782 step/s=13.61k/h`、finite=1，critic/actor loss=`29.66/3.959`、alpha=`0.19746`、TD abs mean=`0.865`、peak allocated=`8045.14 MiB`。角色占比capture/support/coverage=`65.48%/29.23%/5.30%`；对应task分量capture槽=`-0.967/0`、support=`-0.961/-0.363`、coverage=`0/-0.189`，再次确认三角色在线分流和support双分量稳定工作。
 - CF1最新`69000/100000`、update=`16001`、`2.675 step/s=9.63k/h`、finite=1；本窗无2+/3+，但不撤销68k及28k已落盘的3+证据。
 - 以实际稳态吞吐和checkpoint诊断开销更新：CF1 75k约`2026-08-13 08:20--08:40+08:00`，100k约`11:05--11:35`；CF2 25/50/75/100k约`09:05--09:25`、`10:55--11:25`、`12:50--13:25`、`14:45--15:30`。
+
+
+### 10.20 CF1完成100k、CF2首次normal capture（2026-08-13 12:15+08:00）
+
+- CF1 Global于`11:00:09+08:00` clean完成100k，完整trainer/replay/runtime/manifest/metrics/diagnostic均已落盘；训练进程和tmux已退出、GPU1显存释放。final为`23751` updates、replay=`100000`、`all_finite=true`。
+- CF1全程精确证据仍为1次stationary-fallback capture、0次normal capture；100k formal 20-rollout capture=`0/20`、collision=`20/20`、mean min-min distance=`12.32 m`、distance progress=`+11.93 m`。4-episode diagnostic在25/50/75/100k均为0 capture；collision=`1.00/0.50/0.75/0.75`，distance progress=`+7.35/+14.38/+15.80/+14.99 m`。
+- CF1全100个1k窗口共有19个2+ ring窗口、3个3+ ring窗口，best 2+/3+ fraction=`2.6%/0.8%`。说明global信息明显改善多机几何，但截至100k没有形成deterministic稳定capture。
+- CF2 Global+Support最新`55000/100000`、update=`12501`、replay=`55000`，PID `2120473`、tmux `cf0_stop100_cf2_gpu0_autostart`、cuda:0继续正常。最近5窗吞吐=`2.706--2.979 step/s`，末窗`2.979 step/s=10.72k/h`；finite=1、critic/actor loss=`143.08/80.31`、alpha=`0.14336`、TD abs mean=`4.224`、peak allocated=`8045.14 MiB`。
+- **CF2在53k出现本主线首次明确normal K3 capture**：新诊断字段为`normal_capture_count=1`、`stationary_capture_count=0`，同窗`terminated=9/collision=8`，排除碰撞终止；2+ ring fraction=`2.803%`。这是比CF1的stationary fallback更强的新信号，但目前仍只有1次，不能提前宣称稳定学会。
+- CF2截至55k共有9个2+ ring窗口、1个3+ ring窗口；19k `max ring=3`、best 3+ fraction=`0.6%`，累计normal/stationary capture=`1/0`。同55k比较：CF1为5个2+、1个3+、1次stationary capture；CF2为9个2+、1个3+、1次normal capture。CF2几何频率和capture类型当前占优，但collision累计为`346 vs 272`，安全性更差。
+- 50k 4-episode直接比较：CF1/CF2均0 capture；CF1 collision=`0.50`、min-min distance=`20.57 m`、progress=`+14.38 m`；CF2 collision=`1.00`、min-min distance=`15.58 m`、progress=`+16.02 m`。即CF2接敌更深，但碰撞更严重。
+- CF2 support credit持续按合同工作。55k窗口角色占比capture/support/coverage=`56.83%/33.40%/9.78%`；support capture/coverage component=`-0.866/-0.633`，两类梯度继续同时非零；capture槽coverage=0、coverage槽capture=0。
+- CF2 25k/50k checkpoint及rolling bundle完整，分别于`09:20:45/11:40:42+08:00`落盘。GPU0新增未触碰的外部PID `2133267`占约5316 MiB，CF2约8662 MiB，总显存约14066/49140 MiB；吞吐因此由独占时约13.6k/h降至约10.7k/h。GPU0 85°C，GPU1 85°C；RAM available约103 GiB、swap1.4/8 GiB、根盘可用140 GiB，无OOM/NaN/RAM风险。
+- 新ETA：CF2 75k约`2026-08-13 14:00--14:20+08:00`，100k约`16:35--17:05`（含75k diagnostic/checkpoint开销）。75/100k继续重点判断normal capture是否重复、3+ ring是否持续；当前不提前扩到150/200k。
