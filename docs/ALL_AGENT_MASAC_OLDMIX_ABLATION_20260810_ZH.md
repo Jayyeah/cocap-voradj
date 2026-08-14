@@ -941,3 +941,25 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - `cf3_stable_gate_pc0_status.json`当前写为`FAILED_CLOSED: PC0 first training window non-finite`，但这是自动器判定语义错误，不是训练数值失败：它在1k warmup窗口（update=0、按设计没有`mean_finite`字段）就要求finite=1，而真实首个update在5k。PC0 trainer未退出且5--12k均finite。该supervisor已完成启动职责并退出，假失败不影响两条trainer；后续应将启动验证改为等待`update_count>0`后的首窗再判断，当前不停止或重启PC0。
 - 双卡两条正式线均运行：CF3 GPU0约8687 MiB/100%/85°C，PC0 GPU1约8685 MiB/99%/92°C；RAM available约103 GiB、swap 0/8 GiB，根盘可用105 GiB。CF3最近8窗`3.635 step/s=13.09k step/h`；PC0 6--12k稳态约`3.27 step/s=11.77k step/h`。无RAM/VRAM/replay异常，但根盘已88%使用，继续监控25k checkpoint增长。
 - ETA（Asia/Shanghai，以10:35实测）：CF3 200k训练约`11:50--12:10`，完整bundle/formal20约`12:30--13:30`；PC0 25k约`11:40--12:10`，50k约`14:00--14:30`，75k约`16:15--16:50`，100k训练约`18:20--18:50`，含final20约`19:00--19:45`。CF3 final评估与PC0 25k诊断若同时占CPU，ETA取区间上沿。
+
+
+### 10.31 CF3 200k结果、400k consolidation续训与capture 20-rollout/5GIF（2026-08-14 12:15+08:00）
+
+#### 200k最终证据与续训判断
+
+- CF3已于11:51完整达到200k：`transition/replay/update=200000/200000/48751`、all-finite，`step_000200000`、rolling trainer/replay/runtime/manifest完整；trainer约145 MB、replay约6.745 GB。全程累计4个独立normal capture（42/97/173/186k）、0 stationary，113个2+、13个3+窗口，最大2+/3+ hold=`29/11`。175--200k仍新增1个normal、18个2+、3个3+窗口，证明175k Gate后并未完全失去探索capture能力。
+- 175--200k阶段平均any/2+ ring=`8.07%/0.584%`，collision=156/25k=6.24次/1k，平均d1=21.73 m、best d1-min=2.36 m；support→friend/enemy=`+0.032/+0.037 m/step`，friend-follow在该段出现退化/波动。SAC仍finite且Q/target贴合，但阶段均值Q1/target=`-211.88/-212.09`、TD=5.98、critic/actor grad=`2147/10.11`，尺度继续上行。
+- runner自带的200k正式deterministic capture 20-rollout为`0/20 capture`、`20/20 collision`，mean min-min distance=10.97 m、distance progress=+18.21 m、mean length=117.25；独立4-episode cap400诊断同为0/4 capture、collision=1.0。故“训练探索出现4次normal”仍没有转化为稳定确定性策略。
+- **决策：CF3从200k原位续到400k，定位为capture consolidation control。** 支持续训的证据不是单纯distance，而是4个分散在42/97/173/186k的normal capture、持续重复的2+/3+及hold增强；反对无限扩步的证据是formal20仍0。GPU0空闲且PC0独占GPU1，因此本次扩展具有明确问题和低资源冲突：判断稀有capture是否能在额外200k uniform replay中被放大。400k为硬判断点；若capture数量/频率不增长且formal20仍0，不再继续盲目扩步，转入collision/2+→3+时序与observability consolidation audit。
+
+#### 200k冻结、400k启动与正式GIF旁路
+
+- 200k rolling bundle已hardlink冻结到`resume_frozen_cf3_extension_step_000200000`；trainer/replay源与冻结副本inode分别完全一致（`22551537/22551538`），不会被后续rolling覆盖。GPU0续训PID=`174772`、tmux=`cf3_gpu0_200k_to400k`，仍用同config/seed/tag、完整optimizer/targets/alpha/replay/runtime/RNG，`resume_step=200000`、total=400000；未reset或fork。首个新窗严格连续为`step/replay/update=201000/201000/49001`、finite=1、`3.716 step/s=13.38k step/h`，2+ fraction=1.7%，确认不是只加载成功而未推进。
+- 为避免old_mix preset额外跑Pure-CE/mixed，新建严格capture-only preset `configs/evaluation/masac_rollout_gif_20260811/legacy_capture.yaml`：20 episodes、5 representative GIF、seed 2026081201、1000-step、deterministic Actor、Legacy邻接线开启、oracle感知圈/尾迹关闭。checkpoint/config/root/scene/action hash dry-run通过，合同回归`5 passed`。
+- CPU旁路使用`tools/run_representative_masac_rollouts.py`、2 workers、nice15，输出`artifacts/2026-08-14_cf3_200k_capture_20rollout5gif/step_000200000_results/`。第一次尝试把`run.log`预先放进output root，触发工具的`refusing to mix outputs into non-empty directory`保护并正常退出；没有覆盖/混写结果。失败日志保留，v2改为独立`logs/`和全新results目录，tmux=`cf3_200k_capture_20r5g_cpu_v2`。固定seed 20-rollout已完成：0/20 capture、20/20 collision、mean min-min distance=3.84 m、distance progress=+15.92 m、mean length=652.15；它与runner内置20回合的capture=0结论一致，但该seed组更接近K3。代表性5 GIF正在按closest/collision/typical failure/best/worst progress逐张渲染，统计不再等待GIF。
+
+#### PC0闭环信号、资源与ETA
+
+- PC0当前32k、finite，已在27/30/32k出现3个normal capture、0 stationary，累计22个2+、3个3+窗口。replay focal index已增至380条`post_capture_coverage`样本，证明capture→non-terminal post-capture window持续真实进入replay；当前metrics窗口的uniform batch仍未抽到这些稀疏样本（sampled post-capture累计0），闭环已开始产生数据但coverage学习效果仍需看后续采样与CV/CE趋势。
+- 双训练均独占GPU：CF3 GPU0约8687 MiB，PC0 GPU1约8685 MiB；CPU rollout固定2个单线程worker。RAM available约98 GiB、swap 0/8 GiB，根盘可用97 GiB；冻结使用hardlink不额外复制6.7GB，400k增量与GIF空间仍可承受但磁盘89%需持续监控。
+- ETA（Asia/Shanghai，以201k/32k实测）：CF3 225/250/275/300k约`14:05--14:25 / 16:05--16:30 / 18:10--18:40 / 20:15--20:50`；325/350/375/400k约`22:20--23:00 / 2026-08-15 00:25--01:10 / 02:30--03:20 / 04:35--05:45`。PC0 50k约`13:55--14:15`、75k约`16:20--16:55`、100k/final约`18:40--19:40`。20-rollout统计已完成，5 GIF预计本日13:00--14:00完成。

@@ -27,7 +27,7 @@ def _args(**overrides):
 
 
 def test_presets_freeze_20_rollout_5_gif_and_10_fps() -> None:
-    for filename in ("pure_coverage.yaml", "old_mix.yaml", "vct_ls_capture.yaml"):
+    for filename in ("pure_coverage.yaml", "old_mix.yaml", "vct_ls_capture.yaml", "legacy_capture.yaml"):
         preset = load_preset(PRESETS / filename)
         assert preset["episodes"] == 20
         assert preset["gif_count"] == 5
@@ -53,6 +53,13 @@ def test_scene_specific_display_and_horizon_contracts() -> None:
     assert old_mix["display"]["draw_neighbor_edges"] is True
     assert old_mix["display"]["draw_sensing_circles"] is False
 
+    legacy_capture = load_preset(PRESETS / "legacy_capture.yaml")
+    assert [(item["scene"], item["max_steps"]) for item in legacy_capture["scenarios"]] == [("capture", 1000)]
+    assert legacy_capture["seed"] == 2026081201
+    assert legacy_capture["display"]["draw_neighbor_edges"] is True
+    assert legacy_capture["display"]["draw_sensing_circles"] is False
+    assert legacy_capture["scenarios"][0]["draw_ce_targets"] is False
+
     vct_ls = load_preset(PRESETS / "vct_ls_capture.yaml")
     assert [(item["scene"], item["max_steps"]) for item in vct_ls["scenarios"]] == [("capture", 1000)]
     assert vct_ls["display"]["draw_neighbor_edges"] is True
@@ -70,6 +77,11 @@ def test_presets_match_their_source_task_horizons_and_topologies() -> None:
         (
             "old_mix.yaml",
             ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809/legacy_voradj_oldmix_4p1e1obs_200k_aw.yaml",
+            "legacy_voradj",
+        ),
+        (
+            "legacy_capture.yaml",
+            ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809/legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml",
             "legacy_voradj",
         ),
         (
