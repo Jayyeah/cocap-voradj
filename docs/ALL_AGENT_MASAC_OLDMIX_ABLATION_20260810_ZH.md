@@ -920,3 +920,24 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 数值全程finite、peak allocated稳定约8045 MiB、无显存增长。分段均值从25--50k到150--169k：Q1/target约`-59.39/-58.21 → -196.80/-196.82`，TD abs `3.62→5.82`，critic/actor grad `852/3.82→1992/10.00`，alpha `0.137→0.285`。Q与target继续紧密跟踪且无NaN，但绝对尺度和gradient持续上升，属于需要在175/200k继续审计的慢性漂移信号；当前证据不足以中途改变clip/LR/reward。
 - 最近19个窗口平均`3.691 step/s=13.29k step/h`；GPU0约8687 MiB、100%、86°C，GPU1空闲18 MiB/51°C。RAM available约106 GiB、swap 0/8 GiB；根盘可用111 GiB，150k rolling replay约4.8 GiB，完成200k空间仍足够但继续监控。
 - ETA（Asia/Shanghai，以09:30稳态吞吐）：175k训练到点约`09:58`，含checkpoint/4-episode诊断约`10:05--10:20`；200k训练到点约`11:50--12:10`，含完整bundle、formal20与自动Gate/审计约`12:30--13:30`。
+
+
+### 10.30 CF3训练Gate通过并启动PC0；首窗自动判定假失败（2026-08-14 10:35+08:00）
+
+#### CF3第三次normal capture与175k Gate
+
+- CF3在173k出现第3个独立normal capture，累计normal/stationary=`3/0`，成功不依赖stationary fallback；175k完整checkpoint/rolling bundle于09:56落盘，Gate summary为95个2+、10个3+窗口，最大2+/3+ hold=`25/11`，因此满足既定“至少3个独立normal且normal多于stationary”训练Gate。supervisor按合同冻结`resume_frozen_cf3_stable_gate_step_000175000`并于09:57在GPU1启动PC0，没有等待CF3 200k或formal20。
+- CF3本身没有被截断，继续在GPU0到200k；当前183k、`replay/update=183000/44501`、finite=1。累计3 normal/0 stationary、103个2+、11个3+窗口；177k将2+ hold再提高到29步，183k再次出现3+。150--183k共有22个2+、4个3+窗口，说明第3次capture附近和之后仍有重复几何，不是单一无上下文事件。
+- 175k deterministic 4-episode仍为0/4 capture、4/4 collision，但mean min-min distance=`5.69 m`、distance progress=`+16.09 m`，较150k的`11.78 m/+13.38 m`恢复。训练探索Gate已通过不等于确定性20-rollout Gate通过；CF3 200k formal20仍需保留，评估稳定成功率。
+
+#### PC0安全初始化与早期信号
+
+- PC0配置只恢复300步post-capture coverage window；由于capture transition由terminal改为non-terminal，实际初始化严格为`Actor-only + fresh replay/value/optimizer/alpha/RNG/runtime`。175k源trainer SHA256为`21df1ff4...`，Actor state hash=`a4cf535b...`；初始化审计确认replay=0、critic/target/optimizer/alpha/RNG/runtime均未继承，fresh alpha=0.2、target critics等于fresh critics。PID=`141026`、tmux=`pc0_gpu1`、cuda:1，独立seed=`2026081306`。
+- PC0当前12k、replay=12k、update=1751。1--4k处于合同规定的5k warmup，update=0；继承Actor在2/3/4k形成2+，4k出现一次3+，5k首个update窗口2+ fraction=2.1%，说明capture Actor几何没有在初始化时被抹掉。累计至12k为5个2+、1个3+窗口，但0 normal/stationary capture；因此post-capture replay/sample仍为0，当前尚不能评价coverage恢复是否成功。
+- 5k首个真实update到12k全部finite，VRAM约8045 MiB。5k→12k critic loss约`17.4→88.6`、actor loss`1.08→15.81`、alpha`0.200→0.172`、TD abs约`1.75→1.76`；没有NaN/OOM。7--12k未再出现2+/3+，collision累计约91/12k，故早期几何保持可能正在fresh critic适应期减弱，需要至少25/50k趋势后判断，不能凭4k单窗宣布PC0成功。
+
+#### 自动器假失败、资源与ETA
+
+- `cf3_stable_gate_pc0_status.json`当前写为`FAILED_CLOSED: PC0 first training window non-finite`，但这是自动器判定语义错误，不是训练数值失败：它在1k warmup窗口（update=0、按设计没有`mean_finite`字段）就要求finite=1，而真实首个update在5k。PC0 trainer未退出且5--12k均finite。该supervisor已完成启动职责并退出，假失败不影响两条trainer；后续应将启动验证改为等待`update_count>0`后的首窗再判断，当前不停止或重启PC0。
+- 双卡两条正式线均运行：CF3 GPU0约8687 MiB/100%/85°C，PC0 GPU1约8685 MiB/99%/92°C；RAM available约103 GiB、swap 0/8 GiB，根盘可用105 GiB。CF3最近8窗`3.635 step/s=13.09k step/h`；PC0 6--12k稳态约`3.27 step/s=11.77k step/h`。无RAM/VRAM/replay异常，但根盘已88%使用，继续监控25k checkpoint增长。
+- ETA（Asia/Shanghai，以10:35实测）：CF3 200k训练约`11:50--12:10`，完整bundle/formal20约`12:30--13:30`；PC0 25k约`11:40--12:10`，50k约`14:00--14:30`，75k约`16:15--16:50`，100k训练约`18:20--18:50`，含final20约`19:00--19:45`。CF3 final评估与PC0 25k诊断若同时占CPU，ETA取区间上沿。
