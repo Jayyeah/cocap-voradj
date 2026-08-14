@@ -434,3 +434,5 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 服务器停机导致全部trainer/supervisor退出。CF3停机前metrics到89k但最新完整bundle为75k，故76--89k只归档metrics并从75k重跑；P1最新metrics与完整bundle均为75k。两条75k trainer/replay/runtime/manifest已逐文件hash冻结，CF3在GPU0继续200k、P1在GPU1继续100k，P1/CF3 Gate supervisor也已重挂。双方恢复后首个76k窗口均严格连续为`replay=76000/update=17751/finite=1`，断电审计已达到100% complete。P1在71k新增1次normal capture但仍无3+；CF3可恢复75k仍为1 normal和4个3+窗口。详细恢复点、SHA、PID、资源与新ETA见专用台账10.27。
 
 06:20更新：P1 Local-Max已完整100k并由严格Gate自动`FAIL_STOP_100K`，其matched 25--100k只有1 normal、14个2+、0个3+，显著弱于CF3的2 normal、43个2+、4个3+，GPU1已安全释放。CF3 Local-Mean在97k出现第2个normal且stationary仍为0，当前127k/200k、125k完整bundle已保存；Stable-Gate supervisor正常等待第3个normal或200k formal20，不会提前误开PC0。完整趋势与ETA见专用台账10.28。
+
+09:30更新：CF3 Local-Mean已到169k，150k完整bundle已保存；累计2 normal/0 stationary、90个2+、9个3+窗口。149k将3+ hold提高到11步、2+ hold提高到25步，collision由早期9.16次/1k降至约5.4--5.7次/1k，属于明确的多机几何与安全性改善。但100/125/150k deterministic 4-episode仍全为0 capture/100% collision，且150k distance progress回落，稳定capture Gate仍未通过。当前继续原合同到200k；若完整175k bundle前出现第3个normal，自动器最早在175k后安全启动Actor-only/fresh-value PC0，否则200k执行formal20或capture-consolidation/collision audit。详细阶段表、SAC尺度趋势、资源与ETA见专用台账10.29。

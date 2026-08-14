@@ -891,3 +891,32 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - 自动链已完成断电后恢复：P1 Gate报告已写且GPU1释放；CF3 Stable-Gate/PC0 supervisor PID=`30831`、tmux=`cf3_stable_gate_pc0_gpu1`实时识别到CF3 127k、P1无进程、P1 FAIL报告。当前CF3只有2个normal，低于训练Gate的3个，因此状态为`WAITING_GATE_OR_P1_RELEASE`且不会误开PC0；若后续完整25k bundle累计达到3 normal且normal多于stationary，则自动走已审计的Actor-only/fresh-value PC0路径，否则继续CF3到200k后执行formal20 Gate或collision audit。
 - 最新十个CF3窗口平均`3.680 step/s=13.25k step/h`、finite=1；GPU0约8687 MiB、98--100%、85°C，GPU1空闲18 MiB/49°C。RAM available约108 GiB、swap 0/8 GiB；根盘可用116 GiB（87% used），当前足以保存150/175/200k，但继续监控artifact增长。
 - ETA（Asia/Shanghai，以06:20稳态吞吐并计checkpoint/diagnostic）：150k约`08:05--08:25`，175k约`10:00--10:25`，200k训练到点约`11:55--12:20`，formal20/final artifact或Stable-Gate分支预计`12:30--13:30`。
+
+
+### 10.29 CF3 169k多机几何增强、稳定capture仍未过Gate（2026-08-14 09:30+08:00）
+
+#### 各线与自动分支
+
+- 当前唯一正式trainer为CF3 Local-Mean：PID=`30314`、tmux=`cf3_gpu0_power_recovery75k_to200k`、cuda:0，已到`169000/200000`，`replay/update=169000/41001`、finite=1。150k checkpoint和rolling full-resume完整；P1 Local-Max保持100k frozen/FAIL，不再运行，GPU1空闲。
+- CF3 Stable-Gate/PC0 supervisor PID=`30831`、tmux=`cf3_stable_gate_pc0_gpu1`持续刷新，已正确读取P1 Gate、确认P1无进程，并看到CF3 live=169k、latest complete bundle=150k。累计normal/stationary=`2/0`，仍低于训练Gate的3个normal，故维持`WAITING_GATE_OR_P1_RELEASE`且未误开PC0。若175k完整bundle前出现第3个normal，最早在175k checkpoint落盘后自动走Actor-only/fresh-value PC0；否则继续到200k formal20或collision audit。
+
+#### 25k阶段性能趋势
+
+| 区间 | normal/stationary | 2+窗口 | 3+窗口 | any/2+/3+平均占比 | 2+/3+最长hold | collision | 平均d1 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 25--50k | 1/0 | 20/25 | 3/25 | 8.70% / 0.916% / 0.036% | 20 / 3 | 229 | 21.93 m |
+| 50--75k | 0/0 | 9/25 | 1/25 | 4.70% / 0.320% / 0.008% | 15 / 2 | 177 | 24.04 m |
+| 75--100k | 1/0 | 14/25 | 0/25 | 7.84% / 0.640% / 0% | 21 / 0 | 147 | 22.00 m |
+| 100--125k | 0/0 | 16/25 | 1/25 | 6.81% / 0.616% / 0.004% | 20 / 1 | 142 | 21.56 m |
+| 125--150k | 0/0 | 16/25 | 2/25 | 6.76% / 0.552% / 0.056% | **25 / 11** | 135 | **21.34 m** |
+| 150--169k | 0/0 | 9/19 | 2/19 | 7.10% / 0.463% / 0.058% | 15 / 7 | 108 | 22.36 m |
+
+- 积极信号是明确且重复的：截至169k累计2个独立normal、0 stationary、90个2+和9个3+窗口；135/149/158/162k继续出现3+，其中149k把3+ hold从历史3步提高到11步，2+ hold提高到25步。collision由25--50k的9.16次/1k降到125--150k的5.40次/1k，150--169k约5.68次/1k；这说明几何保持和安全性均有真实改善，不是只有distance progress。
+- support机制仍实际工作：各阶段角色约70--73% capture、26--29% support、约1% pure coverage；support capture/coverage两类reward component始终同时非零。100--125k support→friend/enemy为`-0.028/+0.064 m/step`；150--169k为`-0.008/+0.061 m/step`，方向总体正确但friend-follow强度较25--75k约`-0.086~-0.089`明显减弱并有窗口波动。
+- 负面证据同样明确：normal capture仍停在42k/97k两次，最近72k没有第3次；100/125/150k deterministic 4-episode均0/4 capture且4/4 collision。mean min-min distance为`9.92/10.74/11.78 m`，distance progress为`+18.67/+17.63/+13.38 m`，150k确定性表现反而回落。因此当前不能写成“capture已稳定”，更准确的判断是：**探索策略已能重复形成更长3+几何，但尚未稳定转化为terminal capture或确定性成功，collision/末段闭合与策略稳定性仍是首要瓶颈。**
+
+#### SAC健康、资源与ETA
+
+- 数值全程finite、peak allocated稳定约8045 MiB、无显存增长。分段均值从25--50k到150--169k：Q1/target约`-59.39/-58.21 → -196.80/-196.82`，TD abs `3.62→5.82`，critic/actor grad `852/3.82→1992/10.00`，alpha `0.137→0.285`。Q与target继续紧密跟踪且无NaN，但绝对尺度和gradient持续上升，属于需要在175/200k继续审计的慢性漂移信号；当前证据不足以中途改变clip/LR/reward。
+- 最近19个窗口平均`3.691 step/s=13.29k step/h`；GPU0约8687 MiB、100%、86°C，GPU1空闲18 MiB/51°C。RAM available约106 GiB、swap 0/8 GiB；根盘可用111 GiB，150k rolling replay约4.8 GiB，完成200k空间仍足够但继续监控。
+- ETA（Asia/Shanghai，以09:30稳态吞吐）：175k训练到点约`09:58`，含checkpoint/4-episode诊断约`10:05--10:20`；200k训练到点约`11:50--12:10`，含完整bundle、formal20与自动Gate/审计约`12:30--13:30`。
