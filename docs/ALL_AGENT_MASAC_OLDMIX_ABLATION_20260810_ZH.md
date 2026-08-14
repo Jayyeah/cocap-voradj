@@ -963,3 +963,55 @@ all-agent + bounded_critic_vjp_v1 + grad_clip_norm=None
 - PC0当前32k、finite，已在27/30/32k出现3个normal capture、0 stationary，累计22个2+、3个3+窗口。replay focal index已增至380条`post_capture_coverage`样本，证明capture→non-terminal post-capture window持续真实进入replay；当前metrics窗口的uniform batch仍未抽到这些稀疏样本（sampled post-capture累计0），闭环已开始产生数据但coverage学习效果仍需看后续采样与CV/CE趋势。
 - 双训练均独占GPU：CF3 GPU0约8687 MiB，PC0 GPU1约8685 MiB；CPU rollout固定2个单线程worker。RAM available约98 GiB、swap 0/8 GiB，根盘可用97 GiB；冻结使用hardlink不额外复制6.7GB，400k增量与GIF空间仍可承受但磁盘89%需持续监控。
 - ETA（Asia/Shanghai，以201k/32k实测）：CF3 225/250/275/300k约`14:05--14:25 / 16:05--16:30 / 18:10--18:40 / 20:15--20:50`；325/350/375/400k约`22:20--23:00 / 2026-08-15 00:25--01:10 / 02:30--03:20 / 04:35--05:45`。PC0 50k约`13:55--14:15`、75k约`16:20--16:55`、100k/final约`18:40--19:40`。20-rollout统计已完成，5 GIF预计本日13:00--14:00完成。
+
+
+### 10.32 CF3 225k后实际capture审计、PC0 50k闭环与三场景评估合同（2026-08-14 14:43+08:00）
+
+#### 两条正式训练与资源快照
+
+- CF3 continuation仍为PID=`174772`、tmux=`cf3_gpu0_200k_to400k`、cuda:0；225k checkpoint/diagnostic和rolling full-resume均已完整落盘。14:43 metrics到`232000/400000`，replay/update=`232000/56751`、最近10窗平均`3.646 step/s=13.13k step/h`、finite=1。
+- PC0仍为PID=`141026`、tmux=`pc0_gpu1`、cuda:1；50k checkpoint/diagnostic与rolling bundle完整。14:43 metrics到`59000/100000`，replay/update=`59000/13501`、最近10窗平均`3.210 step/s=11.56k step/h`、finite=1。
+- GPU0/1项目进程显存约`8664/8662 MiB`，利用率约`97%/100%`，温度`86/92°C`；GPU1仍处机器既有高温区间，需继续监控但没有降速、OOM或显存增长证据。RAM available约96 GiB、swap 0/8 GiB；根盘可用88 GiB、使用率90%，训练空间仍够但已经是当前最需要持续监控的资源。
+
+#### CF3：几何信号继续增强，但200k后尚无新增实际capture
+
+- 0--232k累计仍为4个独立normal capture（42/97/173/186k）、0 stationary；200--232k新增normal/stationary=`0/0`。因此本轮开始把“实际capture数量和每25k capture频率”放到CF3首要指标，不能只用2+/3+ ring趋势替代成功事件。
+- 200--225k有21/25个窗口出现2+、2/25出现3+，平均any/2+/3+ ring=`9.04%/0.824%/0.016%`，平均d1=`20.14 m`；相较175--200k的18/25、3/25、`8.07%/0.584%/0.016%`、`21.73 m`，双机接近频率和平均最近距离有所改善，但没有转化为terminal capture。collision从`6.24`升到`6.68次/1k`，说明更频繁接近仍伴随末段碰撞。
+- 225--232k的7个新窗口继续有4个2+、0个3+、0 capture；平均any/2+=`10.30%/0.643%`，collision约`4.86次/1k`。窗口太短，暂只记为“2+几何仍活跃”，不能宣称capture趋势已上升。
+- 225k deterministic 4-episode仍为`0/4 capture`、`4/4 collision`，mean min-min distance=`12.12 m`、distance progress=`+17.04 m`。200k独立fixed-seed formal20最终仍为`0/20 capture`、`20/20 collision`；5个代表性GIF已全部完成，覆盖closest、typical failure、best/worst progress和diversity fill。结论保持：探索训练能稀有触发K3，但当前确定性实际capture能力仍未建立。
+
+后续CF3每25k必须同时列出：
+
+1. 新增与累计distinct normal/stationary capture；
+2. 每25k实际capture episode频率及距上次capture的step gap；
+3. 2+/3+窗口、fraction、hold和2+→3+转化；
+4. collision/terminal比例与capture前末段几何。
+
+400k正式rollout不再只跑capture-only。复用已验证的`configs/evaluation/masac_rollout_gif_20260811/old_mix.yaml`，用同一checkpoint、deterministic Actor和paired seeds分别报告：
+
+- `pure_ce`：coverage CV/CE、success threshold、collision和保持；
+- `capture`：normal/stationary capture、2+/3+ ring、hold、collision、distance；
+- `mixed_crms`：capture成功后coverage window、capture→coverage闭环成功率及两阶段各自失败原因。
+
+三类结果必须分表，禁止用一个aggregate success掩盖capture或coverage短板；`legacy_capture.yaml`仍可作为capture-only复核，但不能替代三场景正式结果。
+
+#### PC0：capture早期成簇、后段几何增强，coverage尚无充分学习证据
+
+- PC0 0--59k累计3个独立normal capture（27/30/32k）、0 stationary，47个2+、6个3+窗口，最长2+/3+ hold=`23/8`。三次capture均集中在25--32k；33--59k没有第4次，故“capture也一块提升”的当前结论是：**相较warm-start源Actor，早期确有连续真实成功，但尚未看到capture被持续放大。**
+- 分段几何继续增强：0--25k为0 capture、15个2+、2个3+，平均2+=`0.460%`；25--50k为3 capture、23个2+、2个3+，平均2+=`0.952%`；50--59k虽0 capture，但10/10窗口均有2+、3/10有3+，平均any/2+/3+=`14.28%/1.650%/0.100%`，collision由25--50k的`10.88`降到约`8.1次/1k`。这是明确几何积极信号，但仍需新的实际capture确认闭合能力。
+- replay当前`post_capture_coverage` focal index=380 agent-slot，严格对应`95`条joint post-capture transition，仅占59000 joint replay的`0.161%`。三次成功后的有效coverage延续合计远小于理论上限900步，说明post-capture阶段常被碰撞等终止提前截断；闭环数据已真实存在，但数量仍极稀疏。
+- 50k内置capture-scene 4-episode仍为0/4 capture、4/4 collision，故没有真正进入post-capture窗口。其coverage area CV由25k的`0.474`降到`0.416`、CE-center RMS由`0.222`降到`0.207`，但strict/CV015/CV020/loose success均为0，CE max约`0.278→0.277`近乎不变，且这些是capture失败终态的旁观量，**不能据此归因PC0 coverage已提升**。
+- 为获得可归因证据，已用现有`old_mix.yaml`对PC0 Actor初始化态（CF3@175k Actor）和PC0 50k完成同seed、deterministic、CPU nice15、每场景4回合、无GIF的配对旁路诊断；dry-run严格验证capture/pure_ce/mixed三个scene hash与checkpoint合同，tmux=`pc0_init_vs50k_tri4_cpu`于14:46启动、14:51正常结束。输出完整位于`artifacts/2026-08-14_pc0_triscene_diagnostics/`，全程未占训练GPU。
+- pure coverage呈现“CE几何改善、任务/安全退化”的混合结果：初始化态→PC0-50k的final CE energy=`0.0496→0.00451`、CE-center RMS/max=`0.302/0.335→0.134/0.134`，但collision仍为`4/4→4/4`，平均存活长度由`1283.75→588`，CV015/CV020 success由`1/4→0/4`，strict仍0/4。50k的area-CV因碰撞/active状态不足而为null。因此不能把低CE误差单独写成coverage成功，当前更像是覆盖目标收敛与安全保持之间的trade-off。
+- capture与mix没有共同提升：两者初始化态和50k均`0/4 capture`、`4/4 collision`；min-min distance=`5.45→5.95 m`、distance progress=`-1.21→-6.05 m`、平均长度=`744.75→446`。由于mix 0/4 capture，它从未进入post-capture coverage，故这组matched diagnostic没有证明capture→coverage闭环能力。结合训练内三次normal只集中在27/30/32k，当前PC0定性为“探索几何有积极信号，但50k确定性capture未提高，pure coverage CE局部改善被碰撞和成功率退化抵消”。
+
+PC0后续判断必须分成两条独立问题：
+
+1. **Capture是否保持或提高**：新增normal capture、2+/3+转化、deterministic capture rate不能明显弱于CF3源Actor；
+2. **Coverage是否提高**：pure-coverage的CV/CE与success、mixed中的capture后300步保持、实际post-capture长度和collision均需改善。只有coverage指标提高且capture不明显退化，才能称PC0闭环正收益。
+
+#### 更新ETA（Asia/Shanghai）
+
+- CF3以232k和最近10窗`13.13k step/h`估算：250/275/300k约`2026-08-14 16:05--16:15 / 18:00--18:15 / 19:55--20:15`；325/350k约`21:50--22:15 / 23:45--2026-08-15 00:10`；375/400k约`01:40--02:05 / 03:35--04:15`。400k后的三场景formal rollout另行计时，不阻塞训练bundle冻结。
+- PC0以59k和最近10窗`11.56k step/h`估算：75k约`2026-08-14 16:05--16:25`，100k训练/完整bundle约`18:20--18:50`。若100k后执行20-rollout三场景正式诊断，结果与GIF时间另计。
+- 本次内置`apply_patch`再次因`bwrap: loopback: Failed RTM_NEWADDR`在读文件阶段失败，未发生半写；随后定位并使用普通用户`/home/yjq/.codex/tmp/arg0/codex-arg0oT2bPH/apply_patch`一次完成追加，并以`git diff --check`复核。该故障与训练或GitHub网络无关。
