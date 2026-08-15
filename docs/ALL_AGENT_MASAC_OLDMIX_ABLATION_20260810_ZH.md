@@ -1061,7 +1061,7 @@ PC0后续判断必须分成两条独立问题：
 
 - 原自动链完整完成的只有CF3@200k capture20+5GIF，以及CF3@400k/PC0@100k runner内置capture20；原先没有final pure-coverage/mixed各20+5GIF，不能写成“全部rollout已跑完”。
 - 已按精确final checkpoint/config、paired seed、deterministic Actor完成两条最终old-mix三场景stats-only各20回合，输出在`artifacts/2026-08-15_final_triscene_20rollout5gif/`。CF3 capture/pure-CE/mix分别为：capture=`0/20/-`、strict=`-/0/20/0/20`、CV.15=`-/3/20/0`、collision=`20/20,7/20,20/20`；PC0对应为capture=`0/20/-`、strict=`-/0/20/0/20`、CV.15=`-/1/20/0`、collision=`20/20,19/20,20/20`。两条mix均因0 capture从未进入coverage phase。
-- paired pure-CE显示PC0没有相对CF3改善闭环能力：CE progress虽为`+0.0792 vs +0.0724`，但RMS=`0.2733 vs 0.2150`、collision=`95% vs 35%`且strict均0。visual版本中PC0 15/15 GIF已完整；CF3 capture/coverage已完整，mixed GIF仍在CPU低优先级正常渲染，无报错；统计结论不依赖GIF完成。
+- paired pure-CE显示PC0没有相对CF3改善闭环能力：CE progress虽为`+0.0792 vs +0.0724`，但RMS=`0.2733 vs 0.2150`、collision=`95% vs 35%`且strict均0。visual版本中PC0与CF3均已生成15/15 GIF；PC0 visual 60回合完整，CF3 wrapper仍在CPU低优先级完成剩余非渲染回合，无报错；独立stats-only 60回合和全部GIF均已齐，统计结论不依赖wrapper退出。
 - CF3@400k首5个capture GIF均0 capture且collision；14次pursuer失活中agent-agent=11（78.6%）、boundary=2、obstacle=1。反复出现多台追击者争抢同一点并贴撞，说明主要问题是capture slot/去冲突协调，不是所有场景都普遍不会运动；同期前5个pure-coverage回合仅1/5 collision并都跑满1500步。
 
 #### 决策与TODO

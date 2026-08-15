@@ -80,7 +80,7 @@
 | PC0@100 mixed | 0/20 | 0/20 | 0/20 / 0/20 | 20/20 | 436.95 | 因0 capture，从未进入coverage phase |
 
 - paired三场景进一步确认：两线的确定性capture与mixed均完全失败；PC0 pure-coverage虽有CE energy下降，但安全显著弱于CF3（collision 95% vs 35%），strict仍均为0。因此PC0没有同时提升capture和coverage。
-- visual版本也使用相同20 seeds，但每场景固定渲染前5个seed，并非事后挑选代表性episode。PC0已完成60回合和15/15 GIF；CF3的capture/coverage 10/15 GIF已完成，mixed 5 GIF仍在CPU低优先级正常渲染，主进程无错误。stats结论不再依赖GIF完成。
+- visual版本也使用相同20 seeds，但每场景固定渲染前5个seed，并非事后挑选代表性episode。PC0与CF3均已生成15/15 GIF；PC0 visual 60回合完整落盘，CF3 visual wrapper仍在CPU低优先级完成同批剩余非渲染回合，但独立stats-only 60回合与全部GIF已经齐全，主进程无错误，最终结论不再依赖wrapper退出。
 
 ## 4. 根因判断：当前真正缺的不是更多 SAC step
 
