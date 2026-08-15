@@ -1015,3 +1015,57 @@ PC0后续判断必须分成两条独立问题：
 - CF3以232k和最近10窗`13.13k step/h`估算：250/275/300k约`2026-08-14 16:05--16:15 / 18:00--18:15 / 19:55--20:15`；325/350k约`21:50--22:15 / 23:45--2026-08-15 00:10`；375/400k约`01:40--02:05 / 03:35--04:15`。400k后的三场景formal rollout另行计时，不阻塞训练bundle冻结。
 - PC0以59k和最近10窗`11.56k step/h`估算：75k约`2026-08-14 16:05--16:25`，100k训练/完整bundle约`18:20--18:50`。若100k后执行20-rollout三场景正式诊断，结果与GIF时间另计。
 - 本次内置`apply_patch`再次因`bwrap: loopback: Failed RTM_NEWADDR`在读文件阶段失败，未发生半写；随后定位并使用普通用户`/home/yjq/.codex/tmp/arg0/codex-arg0oT2bPH/apply_patch`一次完成追加，并以`git diff --check`复核。该故障与训练或GitHub网络无关。
+
+### 10.33 CF3/PC0 最新现场复核（2026-08-14 20:15+08:00）
+
+#### CF3：GPU0 仍在正常连续训练
+
+- `cf3_gpu0_200k_to400k` tmux 会话仍在，PID=`174772`，`cuda:0`，目标 `400000`；当前指标为 `306000/400000` steps、`update_count=75251`、`replay_size=250000`。最新窗口 `mean_finite=1`，速度约 `3.685 step/s`（`13.27k steps/h`），峰值显存约 `8045 MiB`，没有异常退出迹象。
+- 最新完整 bundle 为 `artifacts/2026-08-13_capture_first_controls/cf3_local_support_full_p0fixed_recovery/legacy_voradj_cf3_local_support_p0fixed_recovery25k_to200k_20260813/checkpoints/step_000300000/`，滚动恢复包为同目录 `resume_latest/`。
+- `300k` 诊断为 `success=0/4`、`capture=0/4`、`collision=4/4`，平均长度 `203.75`，distance progress `8.49`，最小距离 `7.67`。最新窗口无 normal/stationary capture；任一 agent 在环 `12.5%`、2+ `0.5%`、3+ `0%`，最大 hold=`23/5/0` steps。
+- 以当前吞吐估算：`325k` `21:40–21:55`，`350k` `23:30–23:50`，`375k` 于 `2026-08-15 01:20–01:45`，`400k` 训练完成约 `03:15–03:45`；最终 screening/三场景评估约 `03:45–05:00`。CF3判定为正常续训，继续跑到400k。
+
+#### PC0：自然完成，但未通过 capture/coverage 质量门
+
+- PC0 已无运行中的 tmux/process，GPU1 已释放；于 `2026-08-14 18:11` 自然完成 `100000/100000` transitions、`23751` updates、`all_finite=true`。完整 checkpoint/replay 在 `artifacts/2026-08-13_capture_first_controls/pc0_cf3_actor_postcapture300/legacy_voradj_pc0_cf3_actor_warmstart_postcapture300_4p1e1obs_100k_aw_20260813/checkpoints/step_000100000/`，含 `trainer.pt`、`replay.pkl`，`resume_latest/` 亦完整。
+- capture-only 正式20回合为 `success=0/20`、`capture=0/20`、`collision=20/20`；`coverage_cv015=1/20`、`coverage_cv020=2/20`，平均长度 `102.75`、CE energy progress `-0.0274`、area CV `0.5169`。最终4回合诊断同为 `capture=0/4`、`collision=4/4`。
+- replay 虽含 `post_capture_coverage=628` 个 focal slots，但最终均匀 joint batch 的 `post_capture=0`、`pure_ce=0`，且 `915` 次 termination 全为 collision；不能据此宣称已学会 post-capture coverage。
+- `control/cf3_stable_gate_pc0_status.json` 的 `FAILED_CLOSED` 是监管器把1k warmup的 `update=0` 缺失字段误判为 non-finite 的陈旧假失败；trainer实际从5k到100k全程 finite 并自然退出。PC0无需续训，是否重开由人工决定。
+
+### 10.34 CF3/PC0最终收口与高成功率路线切换（2026-08-15 20:45+08:00）
+
+完整审计、三场景rollout状态与后续实验设计见：
+
+`docs/CF3_PC0_FINAL_AUDIT_AND_HIGH_SUCCESS_PLAN_20260815_ZH.md`
+
+#### 两条训练均已自然完成、bundle完整
+
+- CF3 corrected Local-Support已自然完成400k：final `step/replay/update=400000/250000/98751`、all-finite；`step_000400000`与`resume_latest`均为完整full-resume，trainer/replay/runtime、optimizer、alpha、target critics、RNG齐全。全程8个normal+1个stationary capture；258个2+、24个3+窗口，最长hold=`31/11`，collision=2222。
+- PC0已自然完成100k：final `100000/100000/23751`、all-finite，100k milestone与rolling full-resume完整。初始化审计继续成立：只warm-start CF3@175k Actor，其余value/replay/optimizer/alpha/RNG/runtime为fresh。
+- 已无两条正式trainer；GPU0当前约13.3 GiB由非本项目Python占用，未触碰，GPU1空闲；RAM available约112 GiB、swap约667 MiB、根盘可用约84 GiB。最终rollout均放CPU低优先级，不争抢外部GPU0进程。
+
+#### CF3：更多step没有放大实际capture
+
+- 每100k normal capture精确为`2/2/2/2`，而collision/1k由`6.96→5.72→5.03→4.51`，2+窗口由`49→64→65→80`。这说明接敌/双机几何和安全在改善，但normal成功频率没有增长。
+- 3+窗口为`4→9→6→5`，3+ fraction=`0.011%→0.031%→0.024%→0.013%`；最后normal在331k，至400k有69k无capture。support→friend delta由负转正，support→enemy progress降至接近0，后段第三机补位反而退化。
+- 训练结束事件中normal约`8/2237=0.358%`，collision约`2222/2237=99.33%`。final replay只保留150--400k，最多含6个normal+1个stationary terminal；uniform batch128约每279次update才命中一个capture terminal，且成功前轨迹没有success标签。
+- final deterministic formal capture20已完整：`0/20 capture`、`20/20 collision`，mean min-min=`6.15 m`、progress=`+25.47 m`、mean length=`217.55`。因此不把训练随机探索中的8次capture写成可部署成功，也不再把CF3扩到500k。
+
+#### PC0：有真实post-capture transition，但远不足以学coverage
+
+- 训练内5个normal集中在27/30/32/72/75k，最后25k无新增；83个2+、12个3+窗口。后半collision下降和2+ fraction上升是积极几何信号，但没有转成稳定capture。
+- 五次capture只产生157条joint post-capture transition（628 active-agent slots），占100k replay的`0.157%`；每次capture后约只存活`7/5/83/6/56`步，全部因collision提前终止，远小于300步目标。batch128抽不到任何post-transition的概率约81.8%。
+- final deterministic capture20同样`0/20 capture`、`20/20 collision`。50k paired pure-coverage虽有CE energy/RMS改善，但4/4 collision不变、存活时间和CV成功退化；capture/mix均0/4，故尚无capture→coverage闭环成功证据。
+
+#### rollout完整性与首批collision forensic
+
+- 原自动链完整完成的只有CF3@200k capture20+5GIF，以及CF3@400k/PC0@100k runner内置capture20；原先没有final pure-coverage/mixed各20+5GIF，不能写成“全部rollout已跑完”。
+- 已按精确final checkpoint/config、paired seed、deterministic Actor完成两条最终old-mix三场景stats-only各20回合，输出在`artifacts/2026-08-15_final_triscene_20rollout5gif/`。CF3 capture/pure-CE/mix分别为：capture=`0/20/-`、strict=`-/0/20/0/20`、CV.15=`-/3/20/0`、collision=`20/20,7/20,20/20`；PC0对应为capture=`0/20/-`、strict=`-/0/20/0/20`、CV.15=`-/1/20/0`、collision=`20/20,19/20,20/20`。两条mix均因0 capture从未进入coverage phase。
+- paired pure-CE显示PC0没有相对CF3改善闭环能力：CE progress虽为`+0.0792 vs +0.0724`，但RMS=`0.2733 vs 0.2150`、collision=`95% vs 35%`且strict均0。visual版本中PC0 15/15 GIF已完整；CF3 capture/coverage已完整，mixed GIF仍在CPU低优先级正常渲染，无报错；统计结论不依赖GIF完成。
+- CF3@400k首5个capture GIF均0 capture且collision；14次pursuer失活中agent-agent=11（78.6%）、boundary=2、obstacle=1。反复出现多台追击者争抢同一点并贴撞，说明主要问题是capture slot/去冲突协调，不是所有场景都普遍不会运动；同期前5个pure-coverage回合仅1/5 collision并都跑满1500步。
+
+#### 决策与TODO
+
+- 当前停止“更多step/常规SAC超参”的默认路线。下一阶段先做paired stochastic-temperature、collision类型/同时碰撞语义、CF3+ORCA/CBF safety-only、历史IQN/解析slot teacher在精确corrected任务上的四个因果探针。
+- 高成功率主线改为：显式3个约120度capture slot+1 support slot、带hysteresis的assignment、训练一致的安全投影、teacher BC/AWR/continuous residual、success/near-success episodic replay+n-step；若仍失败，再做scalar team critic或centralized-value MAPPO与一跳message/GRU。
+- capture正式Gate固定为3 seeds×100 deterministic formal rollout，目标normal≥70--80%、置信区间下界≥60%、collision≤10--20%、stationary不占主导。只有通过后，才用capture/coverage双option FSM恢复post-capture；禁止再把0.157% post数据塞进单一uniform buffer期待自然学成。

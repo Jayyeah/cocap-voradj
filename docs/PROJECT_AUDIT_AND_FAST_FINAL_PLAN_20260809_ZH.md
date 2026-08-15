@@ -442,3 +442,28 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 12:18更新：CF3完整200k累计4 normal/0 stationary、113个2+和13个3+窗口，但正式deterministic capture 20-rollout仍0/20且20/20 collision。因normal在42/97/173/186k重复、175--200k几何仍活跃且GPU0空闲，已冻结200k完整bundle并原位续训到400k；201k连续性验证为replay201k/update49001/finite。若400k capture频率与formal20仍不改善，则停止扩步并转collision/observability audit。独立固定seed capture20也已完成为0/20、collision20/20、mean min distance3.84 m；5张代表性GIF仍在渲染。PC0到32k已累计3个normal capture及380条post-capture replay索引样本，闭环开始重复产生数据。详细合同、故障、资源和ETA见专用台账10.31。
 
 14:51更新：CF3到234k，225k full bundle完整；200--234k尚无新增normal capture，虽200--225k有21/25个2+窗口、2个3+窗口且平均2+ fraction升至0.824%，实际capture仍是首要未解决指标。225k deterministic仍0/4且全collision；200k fixed-seed formal20仍0/20且5 GIF已全部完成。PC0到61k累计3个normal（27/30/32k）、49个2+和6个3+，33k后无新增capture；post-capture replay只有95条joint transition（约0.16%）。Actor初始化态vs PC0-50k同seed三场景配对诊断已完成：pure coverage的CE误差明显下降，但4/4 collision不变、平均存活1284→588步且CV015/020成功1/4→0/4；capture/mix均0/4，distance progress -1.21→-6.05 m，mix未进入post-capture。因此尚不能宣称coverage或闭环整体提升。后续CF3 formal rollout固定分开报告pure coverage、pure capture、mixed；PC0必须同时满足coverage提高且capture不明显退化。完整指标与ETA见专用台账10.32。
+
+### 10.33 CF3/PC0 最新现场复核（2026-08-14 20:15+08:00）
+
+#### CF3：GPU0 仍在正常连续训练
+
+- `cf3_gpu0_200k_to400k` tmux 会话仍在，PID=`174772`，`cuda:0`，目标 `400000`；当前指标为 `306000/400000` steps、`update_count=75251`、`replay_size=250000`。最新窗口 `mean_finite=1`，速度约 `3.685 step/s`（`13.27k steps/h`），峰值显存约 `8045 MiB`，没有异常退出迹象。
+- 最新完整 bundle 为 `artifacts/2026-08-13_capture_first_controls/cf3_local_support_full_p0fixed_recovery/legacy_voradj_cf3_local_support_p0fixed_recovery25k_to200k_20260813/checkpoints/step_000300000/`，滚动恢复包为同目录 `resume_latest/`。
+- `300k` 诊断为 `success=0/4`、`capture=0/4`、`collision=4/4`，平均长度 `203.75`，distance progress `8.49`，最小距离 `7.67`。最新窗口无 normal/stationary capture；任一 agent 在环 `12.5%`、2+ `0.5%`、3+ `0%`，最大 hold=`23/5/0` steps。
+- 以当前吞吐估算：`325k` `21:40–21:55`，`350k` `23:30–23:50`，`375k` 于 `2026-08-15 01:20–01:45`，`400k` 训练完成约 `03:15–03:45`；最终 screening/三场景评估约 `03:45–05:00`。CF3判定为正常续训，继续跑到400k。
+
+#### PC0：自然完成，但未通过 capture/coverage 质量门
+
+- PC0 已无运行中的 tmux/process，GPU1 已释放；于 `2026-08-14 18:11` 自然完成 `100000/100000` transitions、`23751` updates、`all_finite=true`。完整 checkpoint/replay 在 `artifacts/2026-08-13_capture_first_controls/pc0_cf3_actor_postcapture300/legacy_voradj_pc0_cf3_actor_warmstart_postcapture300_4p1e1obs_100k_aw_20260813/checkpoints/step_000100000/`，含 `trainer.pt`、`replay.pkl`，`resume_latest/` 亦完整。
+- capture-only 正式20回合为 `success=0/20`、`capture=0/20`、`collision=20/20`；`coverage_cv015=1/20`、`coverage_cv020=2/20`，平均长度 `102.75`、CE energy progress `-0.0274`、area CV `0.5169`。最终4回合诊断同为 `capture=0/4`、`collision=4/4`。
+- replay 虽含 `post_capture_coverage=628` 个 focal slots，但最终均匀 joint batch 的 `post_capture=0`、`pure_ce=0`，且 `915` 次 termination 全为 collision；不能据此宣称已学会 post-capture coverage。
+- `control/cf3_stable_gate_pc0_status.json` 的 `FAILED_CLOSED` 是监管器把1k warmup的 `update=0` 缺失字段误判为 non-finite 的陈旧假失败；trainer实际从5k到100k全程 finite 并自然退出。PC0无需续训，是否重开由人工决定。
+
+### 10.34 CF3/PC0最终结论与路线切换（2026-08-15）
+
+- CF3 Local-Support已完整自然结束400k，累计8 normal+1 stationary，但normal按每100k恒为`2/2/2/2`；2+窗口增加、collision/1k从6.96降到4.51，而3+窗口后段回落。final deterministic formal20为`0/20 capture、20/20 collision`。结论是uniform replay下更多step没有把稀有随机成功固化为确定性策略，不再扩500k。
+- PC0 Actor-only warm-start+post-capture300已完整自然结束100k，训练内5个normal，但只生成157条joint post-capture transition（0.157% replay），每次capture后最多存活83/300步且均被collision终止；final deterministic capture20同为0/20且全collision。PC0证明transition plumbing，不证明coverage或闭环成功，不原样扩训。
+- CF3 final前5个capture GIF的14次追击者失活中11次为agent-agent，主要形态是多机争抢同一接敌点；这与共享单峰Gaussian Actor无持久slot、训练std较大而deterministic mean全失败、成功terminal在uniform replay中约每279次update才命中一次共同指向结构性瓶颈。
+- 原自动链缺少CF3@400k与PC0@100k的pure-coverage/mixed正式评估；已按精确checkpoint/config补完paired三场景各20统计。两线capture/mix均0/20且collision20/20；CF3/PC0 pure-CE strict均0/20，CV.15=`3/20 vs 1/20`、collision=`7/20 vs 19/20`。PC0没有同时提升capture和coverage。PC0 15/15 GIF已完整，CF3 mixed GIF仍正常渲染；输出位于`artifacts/2026-08-15_final_triscene_20rollout5gif/`，不把进行中的GIF伪写为完成。
+- 新优先级：先做temperature/stochastic mode、collision语义、ORCA/CBF safety-only、IQN/解析ring-slot teacher feasibility四个短探针；随后以显式slot/option+assignment、训练一致安全投影、teacher蒸馏、success episodic replay/n-step与必要时team critic/centralized-value MAPPO冲击formal deterministic高成功率。capture正式Gate建议3 seeds×100、normal≥70--80%、collision≤10--20%；过Gate后以capture/coverage双option FSM和phase-balanced fresh replay恢复post-capture。
+- 完整量化与执行Gate见`docs/CF3_PC0_FINAL_AUDIT_AND_HIGH_SUCCESS_PLAN_20260815_ZH.md`。当前不再优先CF3扩步、PC0原样重跑、global/maxpool复试或LR/UTD/Huber/batch/MATD3/动作空间盲扫。
