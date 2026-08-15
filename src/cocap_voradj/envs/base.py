@@ -164,6 +164,32 @@ class CoCapEnv:
         self.episode_out_of_bounds_pursuer_ids: List[int] = []
         self.episode_out_of_bounds_evader_ids: List[int] = []
         self.archived_evader_trajectories: List[List[List[float]]] = []
+        dynamics_cfg = self.config.get("dynamics", {}) or {}
+        default_collision_semantics = (
+            "synchronized_swept_v1"
+            if bool(dynamics_cfg.get("collision_check_each_substep", False))
+            else "legacy_end_step"
+        )
+        raw_collision_semantics = str(
+            self.env_cfg.get("collision_semantics", default_collision_semantics)
+        ).strip().lower()
+        collision_aliases = {
+            "legacy": "legacy_end_step",
+            "end_step": "legacy_end_step",
+            "legacy_end_step": "legacy_end_step",
+            "swept": "synchronized_swept_v1",
+            "swept_v1": "synchronized_swept_v1",
+            "synchronized_swept_v1": "synchronized_swept_v1",
+        }
+        if raw_collision_semantics not in collision_aliases:
+            raise ValueError(
+                "env.collision_semantics must be legacy_end_step or synchronized_swept_v1"
+            )
+        self.collision_semantics = collision_aliases[raw_collision_semantics]
+        self._collision_step_active = False
+        self.last_collision_events: List[Dict[str, Any]] = []
+        self.episode_collision_events: List[Dict[str, Any]] = []
+        self.episode_collision_type_counts: Dict[str, int] = {}
 
     @property
     def action_size(self) -> int:
@@ -234,6 +260,7 @@ class CoCapEnv:
         robot.collision = False
         robot.deactivated = False
         robot.boundary_collision = False
+        robot.collision_types = set()
         robot.last_action_diagnostics = {}
         if hasattr(robot, "captured_evaderId_list"):
             robot.captured_evaderId_list.clear()
@@ -261,6 +288,9 @@ class CoCapEnv:
         self.episode_out_of_bounds_pursuer_ids = []
         self.episode_out_of_bounds_evader_ids = []
         self.last_capture_events = []
+        self.last_collision_events = []
+        self.episode_collision_events = []
+        self.episode_collision_type_counts = {}
         self._stationary_capture_counters: Dict[str, int] = {}
         self.archived_evader_trajectories.clear()
         self.pursuers = [Pursuer(i) for i in range(self.num_pursuers)]
@@ -388,6 +418,147 @@ class CoCapEnv:
     def _center_out_of_bounds(self, robot) -> bool:
         return bool(robot.x < 0.0 or robot.x > self.width or robot.y < 0.0 or robot.y > self.height)
 
+    def _begin_collision_step(self) -> None:
+        """Start a synchronous trace interval for collision resolution."""
+        self._collision_step_active = True
+        self.last_collision_events = []
+        for robot in [*self.pursuers, *self.evaders]:
+            robot._collision_was_active = bool(not robot.deactivated)
+            robot._collision_trace = [self._position(robot)]
+
+    def _record_collision_substep(self, robot) -> None:
+        if not self._collision_step_active:
+            return
+        trace = getattr(robot, "_collision_trace", None)
+        if trace is None:
+            robot._collision_trace = [self._position(robot)]
+        else:
+            trace.append(self._position(robot))
+
+    def _end_collision_step(self) -> None:
+        self._collision_step_active = False
+
+    @staticmethod
+    def _segment_contact_fraction(
+        relative_start: np.ndarray,
+        relative_end: np.ndarray,
+        contact_radius: float,
+        tolerance: float = 1e-9,
+    ) -> Optional[float]:
+        """Return the first circular contact fraction on a relative segment."""
+        start = np.asarray(relative_start, dtype=float)
+        end = np.asarray(relative_end, dtype=float)
+        radius = float(contact_radius) + float(tolerance)
+        c = float(np.dot(start, start) - radius * radius)
+        if c <= 0.0:
+            return 0.0
+        delta = end - start
+        a = float(np.dot(delta, delta))
+        if a <= np.finfo(float).eps:
+            return None
+        b = 2.0 * float(np.dot(start, delta))
+        discriminant = b * b - 4.0 * a * c
+        if discriminant < 0.0:
+            return None
+        root = float(np.sqrt(max(discriminant, 0.0)))
+        for value in ((-b - root) / (2.0 * a), (-b + root) / (2.0 * a)):
+            if -tolerance <= value <= 1.0 + tolerance:
+                return float(np.clip(value, 0.0, 1.0))
+        return None
+
+    def _trace_points(self, robot) -> List[np.ndarray]:
+        raw = getattr(robot, "_collision_trace", None)
+        if not raw:
+            return [self._position(robot)]
+        return [np.asarray(point, dtype=float) for point in raw]
+
+    def _trace_pair_contact(self, first, second) -> Optional[float]:
+        first_trace = self._trace_points(first)
+        second_trace = self._trace_points(second)
+        first_stationary = len(first_trace) == 1 and bool(
+            getattr(first, "_collision_was_active", not first.deactivated)
+        )
+        second_stationary = len(second_trace) == 1 and bool(
+            getattr(second, "_collision_was_active", not second.deactivated)
+        )
+        if len(first_trace) == 1 and len(second_trace) == 1:
+            relative = first_trace[0] - second_trace[0]
+            return self._segment_contact_fraction(
+                relative,
+                relative,
+                float(first.r) + float(second.r),
+            )
+        if first_stationary:
+            intervals = len(second_trace) - 1
+        elif second_stationary:
+            intervals = len(first_trace) - 1
+        else:
+            intervals = min(len(first_trace), len(second_trace)) - 1
+        for index in range(max(intervals, 0)):
+            first_start = first_trace[0] if first_stationary else first_trace[index]
+            first_end = first_trace[0] if first_stationary else first_trace[index + 1]
+            second_start = second_trace[0] if second_stationary else second_trace[index]
+            second_end = second_trace[0] if second_stationary else second_trace[index + 1]
+            fraction = self._segment_contact_fraction(
+                first_start - second_start,
+                first_end - second_end,
+                float(first.r) + float(second.r),
+            )
+            if fraction is not None:
+                return float(index) + fraction
+        return None
+
+    def _trace_obstacle_contact(self, robot, obstacle: Obstacle) -> Optional[float]:
+        trace = self._trace_points(robot)
+        center = np.asarray([obstacle.x, obstacle.y], dtype=float)
+        radius = float(robot.r) + float(obstacle.r)
+        if len(trace) == 1:
+            relative = trace[0] - center
+            return self._segment_contact_fraction(relative, relative, radius)
+        for index in range(len(trace) - 1):
+            fraction = self._segment_contact_fraction(
+                trace[index] - center,
+                trace[index + 1] - center,
+                radius,
+            )
+            if fraction is not None:
+                return float(index) + fraction
+        return None
+
+    def _register_collision_type(self, robot, collision_type: str) -> None:
+        types = set(getattr(robot, "collision_types", set()) or set())
+        types.add(str(collision_type))
+        robot.collision_types = types
+        robot.collision = True
+
+    def _record_collision_event(
+        self,
+        collision_type: str,
+        *,
+        pursuer_ids: Optional[List[int]] = None,
+        evader_ids: Optional[List[int]] = None,
+        obstacle_id: Optional[int] = None,
+        contact_substep: Optional[float] = None,
+    ) -> None:
+        event = {
+            "type": str(collision_type),
+            "step": int(self.episode_step),
+            "pursuer_ids": sorted(int(value) for value in (pursuer_ids or [])),
+            "evader_ids": sorted(int(value) for value in (evader_ids or [])),
+            "obstacle_id": None if obstacle_id is None else int(obstacle_id),
+            "contact_substep": (
+                None if contact_substep is None else float(contact_substep)
+            ),
+        }
+        if event in self.last_collision_events:
+            return
+        self.last_collision_events.append(event)
+        self.episode_collision_events.append(dict(event))
+        key = str(collision_type)
+        self.episode_collision_type_counts[key] = int(
+            self.episode_collision_type_counts.get(key, 0)
+        ) + 1
+
     def _record_soft_boundary_out_of_bounds(self) -> None:
         if self.enforce_hard_boundary or self.boundary_collision_death:
             self.last_out_of_bounds_pursuers = []
@@ -421,8 +592,12 @@ class CoCapEnv:
         robot.y = float(np.clip(robot.y, r, self.height - r))
         robot.velocity = np.zeros(2, dtype=float)
         robot.speed = 0.0
-        robot.collision = True
+        self._register_collision_type(robot, "boundary")
         robot.boundary_collision = True
+        if isinstance(robot, Pursuer):
+            self._record_collision_event("boundary", pursuer_ids=[int(robot.id)])
+        else:
+            self._record_collision_event("boundary", evader_ids=[int(robot.id)])
         if self.boundary_collision_death:
             robot.deactivated = True
 
@@ -544,11 +719,8 @@ class CoCapEnv:
             previous_acceleration = float(previous_diagnostics.get("actual_acceleration", 0.0))
 
             def substep_checks() -> None:
-                # Legacy IQN semantics: boundary death is checked per substep,
-                # entity collision is refreshed after all robots move (once per
-                # decision step).  This keeps the bridge exactly aligned with
-                # the old discrete execution path.
                 self._clip_and_kill_boundary(robot)
+                self._record_collision_substep(robot)
 
             speed_limited = robot.update_state_acceleration_angular_velocity_body(
                 command,
@@ -597,7 +769,11 @@ class CoCapEnv:
 
             def substep_checks() -> None:
                 self._clip_and_kill_boundary(robot)
-                if not robot.deactivated:
+                self._record_collision_substep(robot)
+                if (
+                    self.collision_semantics == "legacy_end_step"
+                    and not robot.deactivated
+                ):
                     self._refresh_collisions()
 
             speed_limited = robot.update_state_acceleration_world(
@@ -641,7 +817,11 @@ class CoCapEnv:
 
             def substep_checks() -> None:
                 self._clip_and_kill_boundary(robot)
-                if not robot.deactivated:
+                self._record_collision_substep(robot)
+                if (
+                    self.collision_semantics == "legacy_end_step"
+                    and not robot.deactivated
+                ):
                     self._refresh_collisions()
 
             speed_limited = robot.update_state_acceleration_body(
@@ -687,6 +867,7 @@ class CoCapEnv:
         for _ in range(robot.N):
             robot.update_state(int(action), np.zeros(2, dtype=float))
             self._clip_and_kill_boundary(robot)
+            self._record_collision_substep(robot)
             if robot.deactivated:
                 break
         robot.trajectory.append([robot.x, robot.y, robot.theta, robot.speed, robot.velocity[0], robot.velocity[1]])
@@ -830,21 +1011,210 @@ class CoCapEnv:
             clearances.append(np.linalg.norm(pos - np.array([obs.x, obs.y])) - p.r - obs.r)
         return float(min(clearances) if clearances else np.inf)
 
-    def _refresh_collisions(self) -> None:
+    def _refresh_collisions_legacy(self) -> None:
+        """Historical sequential endpoint detector, retained for paired audits."""
         for i, p in enumerate(self.pursuers):
             if p.deactivated:
                 continue
-            if self._minimum_clearance(i) < 0.0:
-                p.collision = True
+            peer_ids = [
+                int(other.id)
+                for j, other in enumerate(self.pursuers)
+                if i != j
+                and not other.deactivated
+                and np.linalg.norm(self._position(p) - self._position(other))
+                < float(p.r) + float(other.r)
+            ]
+            evader_ids = [
+                int(evader.id)
+                for evader in self.evaders
+                if not evader.deactivated
+                and np.linalg.norm(self._position(p) - self._position(evader))
+                < float(p.r) + float(evader.r)
+            ]
+            obstacle_ids = [
+                int(getattr(obstacle, "id", obstacle_index))
+                for obstacle_index, obstacle in enumerate(self.obstacles)
+                if np.linalg.norm(
+                    self._position(p) - np.array([obstacle.x, obstacle.y], dtype=float)
+                )
+                < float(p.r) + float(obstacle.r)
+            ]
+            if peer_ids:
+                self._register_collision_type(p, "agent_agent")
+                for peer_id in peer_ids:
+                    self._record_collision_event(
+                        "agent_agent", pursuer_ids=[int(p.id), peer_id]
+                    )
+            if evader_ids:
+                self._register_collision_type(p, "evader_contact")
+                for evader_id in evader_ids:
+                    self._record_collision_event(
+                        "evader_contact",
+                        pursuer_ids=[int(p.id)],
+                        evader_ids=[evader_id],
+                    )
+            if obstacle_ids:
+                self._register_collision_type(p, "obstacle")
+                for obstacle_id in obstacle_ids:
+                    self._record_collision_event(
+                        "obstacle",
+                        pursuer_ids=[int(p.id)],
+                        obstacle_id=obstacle_id,
+                    )
+            if peer_ids or evader_ids or obstacle_ids:
                 p.deactivated = True
         for e in self.evaders:
             if e.deactivated:
                 continue
-            for obs in self.obstacles:
-                if np.linalg.norm(self._position(e) - np.array([obs.x, obs.y])) < e.r + obs.r:
-                    e.collision = True
+            for obstacle_index, obs in enumerate(self.obstacles):
+                if np.linalg.norm(self._position(e) - np.array([obs.x, obs.y])) < float(e.r) + float(obs.r):
+                    self._register_collision_type(e, "obstacle")
+                    self._record_collision_event(
+                        "obstacle",
+                        evader_ids=[int(e.id)],
+                        obstacle_id=int(getattr(obs, "id", obstacle_index)),
+                    )
                     e.deactivated = True
             self._clip_and_kill_boundary(e)
+
+    def _refresh_collisions_synchronized_swept(self) -> None:
+        """Detect on immutable synchronized traces, then deactivate atomically."""
+        pursuer_types: Dict[int, set[str]] = {}
+        evader_types: Dict[int, set[str]] = {}
+
+        def was_active(robot) -> bool:
+            return bool(getattr(robot, "_collision_was_active", not robot.deactivated))
+
+        def mark_pursuer(index: int, collision_type: str) -> None:
+            pursuer_types.setdefault(int(index), set()).add(str(collision_type))
+
+        def mark_evader(index: int, collision_type: str) -> None:
+            evader_types.setdefault(int(index), set()).add(str(collision_type))
+
+        for i, first in enumerate(self.pursuers):
+            if not was_active(first):
+                continue
+            for j in range(i + 1, len(self.pursuers)):
+                second = self.pursuers[j]
+                if not was_active(second):
+                    continue
+                contact = self._trace_pair_contact(first, second)
+                if contact is None:
+                    continue
+                mark_pursuer(i, "agent_agent")
+                mark_pursuer(j, "agent_agent")
+                self._record_collision_event(
+                    "agent_agent",
+                    pursuer_ids=[int(first.id), int(second.id)],
+                    contact_substep=contact,
+                )
+
+        for i, pursuer in enumerate(self.pursuers):
+            if not was_active(pursuer):
+                continue
+            for j, evader in enumerate(self.evaders):
+                if not was_active(evader):
+                    continue
+                contact = self._trace_pair_contact(pursuer, evader)
+                if contact is None:
+                    continue
+                # Preserve the historical task contract: evader contact removes
+                # the pursuer, but does not itself remove the active target.
+                mark_pursuer(i, "evader_contact")
+                self._record_collision_event(
+                    "evader_contact",
+                    pursuer_ids=[int(pursuer.id)],
+                    evader_ids=[int(evader.id)],
+                    contact_substep=contact,
+                )
+            for obstacle_index, obstacle in enumerate(self.obstacles):
+                contact = self._trace_obstacle_contact(pursuer, obstacle)
+                if contact is None:
+                    continue
+                mark_pursuer(i, "obstacle")
+                self._record_collision_event(
+                    "obstacle",
+                    pursuer_ids=[int(pursuer.id)],
+                    obstacle_id=int(getattr(obstacle, "id", obstacle_index)),
+                    contact_substep=contact,
+                )
+
+        for i, evader in enumerate(self.evaders):
+            if not was_active(evader):
+                continue
+            for obstacle_index, obstacle in enumerate(self.obstacles):
+                contact = self._trace_obstacle_contact(evader, obstacle)
+                if contact is None:
+                    continue
+                mark_evader(i, "obstacle")
+                self._record_collision_event(
+                    "obstacle",
+                    evader_ids=[int(evader.id)],
+                    obstacle_id=int(getattr(obstacle, "id", obstacle_index)),
+                    contact_substep=contact,
+                )
+
+        for index, collision_types in pursuer_types.items():
+            pursuer = self.pursuers[index]
+            for collision_type in sorted(collision_types):
+                self._register_collision_type(pursuer, collision_type)
+            pursuer.deactivated = True
+        for index, collision_types in evader_types.items():
+            evader = self.evaders[index]
+            for collision_type in sorted(collision_types):
+                self._register_collision_type(evader, collision_type)
+            evader.deactivated = True
+
+    def _refresh_collisions(self) -> None:
+        if self.collision_semantics == "synchronized_swept_v1":
+            self._refresh_collisions_synchronized_swept()
+        else:
+            self._refresh_collisions_legacy()
+
+    def _collision_episode_fields(self) -> Dict[str, Any]:
+        pursuer_collision = bool(any(p.collision for p in self.pursuers))
+        evader_collision = bool(any(e.collision for e in self.evaders))
+        agent_agent_ids = sorted({
+            int(value)
+            for event in self.episode_collision_events
+            if event.get("type") == "agent_agent"
+            for value in event.get("pursuer_ids", [])
+        })
+        return {
+            "collision_semantics": str(self.collision_semantics),
+            "collision_event": bool(pursuer_collision or evader_collision),
+            "pursuer_collision_event": pursuer_collision,
+            "evader_collision_event": evader_collision,
+            "collision_type_counts": {
+                str(key): int(value)
+                for key, value in sorted(self.episode_collision_type_counts.items())
+            },
+            "collision_events": [dict(event) for event in self.episode_collision_events],
+            "last_collision_events": [dict(event) for event in self.last_collision_events],
+            "agent_agent_collision_event": bool(
+                self.episode_collision_type_counts.get("agent_agent", 0)
+            ),
+            "agent_agent_collision_count": int(
+                self.episode_collision_type_counts.get("agent_agent", 0)
+            ),
+            "agent_agent_collision_pursuers": agent_agent_ids,
+            "obstacle_collision_event": bool(
+                self.episode_collision_type_counts.get("obstacle", 0)
+            ),
+            "evader_contact_collision_event": bool(
+                self.episode_collision_type_counts.get("evader_contact", 0)
+            ),
+            "pursuer_collision_types": {
+                str(int(p.id)): sorted(str(value) for value in getattr(p, "collision_types", set()))
+                for p in self.pursuers
+                if getattr(p, "collision_types", set())
+            },
+            "evader_collision_types": {
+                str(int(e.id)): sorted(str(value) for value in getattr(e, "collision_types", set()))
+                for e in self.evaders
+                if getattr(e, "collision_types", set())
+            },
+        }
 
     def _loose_capture_events(self) -> List[Dict[str, Any]]:
         events = []
@@ -1194,11 +1564,15 @@ class CoCapEnv:
         before_p = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
         before_e = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2))
         before_cov = self._coverage_potentials(before_p)
-        for p, action in zip(self.pursuers, pursuer_actions):
-            self._move_robot(p, action)
-        for e, action in zip(self.evaders, evader_actions):
-            self._move_robot(e, action)
-        self._refresh_collisions()
+        self._begin_collision_step()
+        try:
+            for p, action in zip(self.pursuers, pursuer_actions):
+                self._move_robot(p, action)
+            for e, action in zip(self.evaders, evader_actions):
+                self._move_robot(e, action)
+            self._refresh_collisions()
+        finally:
+            self._end_collision_step()
         self._record_soft_boundary_out_of_bounds()
         after_p = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
         after_e = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2))
@@ -1372,7 +1746,8 @@ class CoCapEnv:
 
     def episode_record(self, task: Optional[str] = None) -> Dict[str, Any]:
         captured = bool(self.evaders and all(e.deactivated and not e.collision for e in self.evaders))
-        collision_free = not any(p.collision for p in self.pursuers)
+        collision_fields = self._collision_episode_fields()
+        collision_free = not bool(collision_fields["collision_event"])
         all_active = all(not p.deactivated for p in self.pursuers)
         loose_metrics = dict(self.last_distribution_metrics) if self.task == "coverage" else {}
         loose = bool(loose_metrics.get("success_after_hold", False)) if self.task == "coverage" else False
@@ -1398,7 +1773,7 @@ class CoCapEnv:
             "captured": captured,
             "fully_capture": bool(captured and collision_free and all_active),
             "collision_free": collision_free,
-            "collision_event": not collision_free,
+            **collision_fields,
             "all_pursuers_active": all_active,
             "active_pursuers": int(sum(not p.deactivated for p in self.pursuers)),
             "coverage_success_requires_collision_free": bool(coverage_requires_collision_free) if self.task == "coverage" else None,

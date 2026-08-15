@@ -467,3 +467,9 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - 原自动链缺少CF3@400k与PC0@100k的pure-coverage/mixed正式评估；已按精确checkpoint/config补完paired三场景各20统计。两线capture/mix均0/20且collision20/20；CF3/PC0 pure-CE strict均0/20，CV.15=`3/20 vs 1/20`、collision=`7/20 vs 19/20`。PC0没有同时提升capture和coverage。两线15/15 GIF均已生成；PC0 visual完整退出，CF3 visual wrapper仍在正常完成剩余非渲染回合，但独立stats和GIF交付均完整。输出位于`artifacts/2026-08-15_final_triscene_20rollout5gif/`。
 - 新优先级：先做temperature/stochastic mode、collision语义、ORCA/CBF safety-only、IQN/解析ring-slot teacher feasibility四个短探针；随后以显式slot/option+assignment、训练一致安全投影、teacher蒸馏、success episodic replay/n-step与必要时team critic/centralized-value MAPPO冲击formal deterministic高成功率。capture正式Gate建议3 seeds×100、normal≥70--80%、collision≤10--20%；过Gate后以capture/coverage双option FSM和phase-balanced fresh replay恢复post-capture。
 - 完整量化与执行Gate见`docs/CF3_PC0_FINAL_AUDIT_AND_HIGH_SUCCESS_PLAN_20260815_ZH.md`。当前不再优先CF3扩步、PC0原样重跑、global/maxpool复试或LR/UTD/Huber/batch/MATD3/动作空间盲扫。
+
+### 2026-08-15 Capture Debug / Pure-Capture更新
+
+- simulator默认升级为同步substep swept collision与atomic多机失活；旧结果保留并标记legacy semantics。
+- A1--A4改为CPU-only有限自动队列；结果前不提前上success replay或其他算法。
+- B local Pure-Capture代码/测试/CPU smoke已完成，正式训练待GPU可用；当前无本项目GPU进程或GPU waiter。详见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。

@@ -70,6 +70,7 @@ class VorAdjEnv(CoCapEnv):
         self.zone_evader_targets: List[Optional[np.ndarray]] = []
         self.zone_evader_target_reached: List[bool] = []
         self.zone_pursuer_left_inner_event = False
+        self._validate_pure_capture_all_capture_contract()
 
     def reset(self, *args, **kwargs):
         self.coverage_hold_reward_claim_steps = 0
@@ -203,6 +204,113 @@ class VorAdjEnv(CoCapEnv):
             enabled
             and (self._vct_ls_enabled() or self._legacy_voradj_support_reward_blend_enabled())
         )
+
+    def _pure_capture_all_capture_enabled(self) -> bool:
+        """Return whether the capture-only task-level reward ablation is active.
+
+        This switch is deliberately independent of the historical support
+        capture/coverage blend. It is valid for the Legacy-VorAdj local-sensing
+        task and must never silently turn on for CF3 or another existing config.
+        """
+        return bool(
+            (self.config.get("voradj", {}) or {}).get(
+                "pure_capture_all_capture_enabled",
+                False,
+            )
+        )
+
+    def _validate_pure_capture_all_capture_contract(self) -> None:
+        if not self._pure_capture_all_capture_enabled():
+            return
+        cfg = self.config.get("voradj", {}) or {}
+        failures: List[str] = []
+        if self._perception_topology_version() != "legacy_voradj":
+            failures.append("voradj.perception_topology_version=legacy_voradj")
+        if bool(self.per_cfg.get("global_evader_visibility", False)):
+            failures.append("perception.global_evader_visibility=false")
+        if bool(cfg.get("support_reward_blend_enabled", False)):
+            failures.append("voradj.support_reward_blend_enabled=false")
+        if bool(cfg.get("legacy_voradj_support_reward_blend_enabled", False)):
+            failures.append("voradj.legacy_voradj_support_reward_blend_enabled=false")
+        if bool(self.reward_cfg.get("legacy_capture_reward_fallback_all_active", True)):
+            failures.append("reward.legacy_capture_reward_fallback_all_active=false")
+        if self._capture_reward_mode() != "legacy":
+            failures.append("reward.capture_reward_mode=legacy")
+        if self._support_reward_capture_component_mode() not in {
+            "approach_only",
+            "legacy_approach_only",
+            "attraction_only",
+        }:
+            failures.append("voradj.support_reward_capture_component_mode=approach_only")
+        if failures:
+            raise ValueError(
+                "pure_capture_all_capture contract requires: " + ", ".join(failures)
+            )
+
+    def _pure_capture_observable_partition(
+        self,
+        idx: int,
+        raw_labels: List[str],
+        effective_labels: List[str],
+        data: Dict[str, Any],
+    ) -> Tuple[str, List[int], List[int]]:
+        """Classify B reward observability without changing corrected K10 roles.
+
+        ``task_label`` and ``reward_role`` remain based on the K10 effective
+        state.  This separate task-ablation partition is deliberately stricter:
+        full dense capture reward requires a currently resolvable self-visible
+        enemy; one-hop attraction requires a friendly raw/effective pursuer
+        with a currently resolvable enemy; otherwise dense task reward is zero.
+        """
+        if (
+            idx < 0
+            or idx >= len(effective_labels)
+            or effective_labels[idx] == "inactive"
+        ):
+            return "inactive", [], []
+
+        def direct_targets(agent_idx: int) -> List[int]:
+            targets = {
+                int(neighbor[1])
+                for neighbor in data.get("adjacency", {}).get(("pursuer", agent_idx), set())
+                if (
+                    neighbor[0] == "evader"
+                    and 0 <= int(neighbor[1]) < len(self.evaders)
+                )
+            }
+            targets.update(self._zone_extra_evader_ids_for_pursuer(agent_idx, data))
+            return sorted(targets)
+
+        self_targets = direct_targets(idx)
+        if raw_labels[idx] == "capture" and self_targets:
+            return "direct_capture", self_targets, []
+
+        informed_targets: set[int] = set()
+        informed_friends: List[int] = []
+        for neighbor in data.get("adjacency", {}).get(("pursuer", idx), set()):
+            if neighbor[0] != "pursuer":
+                continue
+            friend_idx = int(neighbor[1])
+            if not (0 <= friend_idx < len(effective_labels)):
+                continue
+            if (
+                raw_labels[friend_idx] != "capture"
+                and effective_labels[friend_idx] != "capture"
+            ):
+                continue
+            friend_targets = direct_targets(friend_idx)
+            if not friend_targets:
+                # K10 is task-state memory, not permission for oracle geometry.
+                continue
+            informed_friends.append(friend_idx)
+            informed_targets.update(friend_targets)
+        if informed_targets:
+            return (
+                "one_hop_informed",
+                sorted(informed_targets),
+                sorted(set(informed_friends)),
+            )
+        return "uninformed", [], []
 
     def _vct_ls_support_reward_weights(self) -> Tuple[float, float]:
         cfg = self.config.get("voradj", {}) or {}
@@ -1739,12 +1847,16 @@ class VorAdjEnv(CoCapEnv):
             before_e,
             data=before_coverage_data,
         )
-        for p, action in zip(self.pursuers, pursuer_actions):
-            self._move_robot(p, action)
-        for e, action in zip(self.evaders, evader_actions):
-            self._move_robot(e, action)
-        self._invalidate_voronoi_cache()
-        self._refresh_collisions()
+        self._begin_collision_step()
+        try:
+            for p, action in zip(self.pursuers, pursuer_actions):
+                self._move_robot(p, action)
+            for e, action in zip(self.evaders, evader_actions):
+                self._move_robot(e, action)
+            self._invalidate_voronoi_cache()
+            self._refresh_collisions()
+        finally:
+            self._end_collision_step()
         self._record_soft_boundary_out_of_bounds()
         self._zone_update_metrics()
         after_p = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
@@ -1764,6 +1876,9 @@ class VorAdjEnv(CoCapEnv):
         rewards = np.zeros(len(self.pursuers), dtype=float)
         reward_coverage_component = np.zeros(len(self.pursuers), dtype=float)
         reward_capture_component = np.zeros(len(self.pursuers), dtype=float)
+        reward_capture_approach_component = np.zeros(len(self.pursuers), dtype=float)
+        reward_capture_mean_shift_component = np.zeros(len(self.pursuers), dtype=float)
+        reward_capture_front_component = np.zeros(len(self.pursuers), dtype=float)
         reward_safety_component = np.zeros(len(self.pursuers), dtype=float)
         reward_terminal_component = np.zeros(len(self.pursuers), dtype=float)
         reward_speed_repeat_component = np.zeros(len(self.pursuers), dtype=float)
@@ -1784,6 +1899,7 @@ class VorAdjEnv(CoCapEnv):
         support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
         support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
         legacy_support_mode = self._legacy_voradj_support_reward_blend_enabled()
+        pure_capture_mode = self._pure_capture_all_capture_enabled()
         # K10 effective pursuit state is the single role source for actor
         # observations, rewards, replay metadata, and coverage-hold eligibility.
         # Raw adjacency remains diagnostic-only (raw_task_label and enemy token
@@ -1794,6 +1910,22 @@ class VorAdjEnv(CoCapEnv):
             self._task_reward_role(i, reward_role_labels, before_data)
             for i in range(len(self.pursuers))
         ]
+        pure_capture_partitions = (
+            [
+                self._pure_capture_observable_partition(
+                    i,
+                    before_raw_labels,
+                    reward_role_labels,
+                    before_data,
+                )
+                for i in range(len(self.pursuers))
+            ]
+            if pure_capture_mode
+            else []
+        )
+        pure_capture_roles = [partition[0] for partition in pure_capture_partitions]
+        pure_capture_targets = [partition[1] for partition in pure_capture_partitions]
+        pure_capture_friend_ids = [partition[2] for partition in pure_capture_partitions]
         support_behavior_diagnostics: List[Dict[str, Any]] = []
         for i, role in enumerate(reward_roles):
             diagnostic: Dict[str, Any] = {
@@ -1807,8 +1939,16 @@ class VorAdjEnv(CoCapEnv):
                 "support_entered_ring": False,
                 "support_upgraded_to_capture": False,
             }
-            if role == "support":
-                friend_ids = self._support_pursuing_friend_ids(i, reward_role_labels, before_data)
+            observable_informed = bool(
+                pure_capture_mode
+                and pure_capture_roles[i] == "one_hop_informed"
+            )
+            if (role == "support" and not pure_capture_mode) or observable_informed:
+                friend_ids = (
+                    pure_capture_friend_ids[i]
+                    if observable_informed
+                    else self._support_pursuing_friend_ids(i, reward_role_labels, before_data)
+                )
                 diagnostic["support_has_pursuing_friend"] = bool(friend_ids)
                 if self._vct_ls_enabled():
                     visible_enemy_ids = set(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))
@@ -1827,14 +1967,19 @@ class VorAdjEnv(CoCapEnv):
                     after_friend_distance = min(float(np.linalg.norm(after_p[i] - after_p[j])) for j in friend_ids)
                     diagnostic["support_pursuing_friend_distance"] = before_friend_distance
                     diagnostic["support_pursuing_friend_distance_delta"] = after_friend_distance - before_friend_distance
-                target_ids: set[int] = set()
-                for friend_idx in friend_ids:
-                    target_ids.update(
-                        int(nk[1])
-                        for nk in before_data.get("adjacency", {}).get(("pursuer", friend_idx), set())
-                        if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
-                    )
-                    target_ids.update(self._zone_extra_evader_ids_for_pursuer(friend_idx, before_data))
+                target_ids: set[int] = (
+                    set(pure_capture_targets[i])
+                    if observable_informed
+                    else set()
+                )
+                if not observable_informed:
+                    for friend_idx in friend_ids:
+                        target_ids.update(
+                            int(nk[1])
+                            for nk in before_data.get("adjacency", {}).get(("pursuer", friend_idx), set())
+                            if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
+                        )
+                        target_ids.update(self._zone_extra_evader_ids_for_pursuer(friend_idx, before_data))
                 if target_ids:
                     before_enemy_distance = min(float(np.linalg.norm(before_p[i] - before_e[j])) for j in target_ids)
                     after_enemy_distance = min(float(np.linalg.norm(after_p[i] - after_e[j])) for j in target_ids)
@@ -1979,6 +2124,52 @@ class VorAdjEnv(CoCapEnv):
             )
             return float(weight * np.clip(d_before - d_after, -progress_clip, progress_clip))
 
+        def pure_capture_dense_reward(
+            index: int,
+            candidates: List[int],
+            *,
+            direct: bool,
+        ) -> Tuple[float, float, float, float]:
+            """Observable dense reward for the pure-capture ablation.
+
+            Currently self-observable direct agents receive the three legacy dense
+            components. One-hop informed agents receive attraction only.
+            Missing target resolution always means zero dense reward; in
+            particular, this function never falls back to an oracle active
+            enemy for an uninformed agent.
+            """
+            if not candidates:
+                return 0.0, 0.0, 0.0, 0.0
+            if self._capture_reward_mode() != "legacy":
+                raise ValueError(
+                    "pure_capture_all_capture_enabled requires "
+                    "reward.capture_reward_mode=legacy"
+                )
+            target_id = min(
+                candidates,
+                key=lambda j: np.linalg.norm(after_p[index] - after_e[j]),
+            )
+            d_before = float(np.linalg.norm(before_p[index] - before_e[target_id]))
+            d_after = float(np.linalg.norm(after_p[index] - after_e[target_id]))
+            approach = float(self.reward_cfg.get("omega_approach", 1.0)) * float(
+                np.clip(
+                    d_before - d_after,
+                    -float(self.reward_cfg.get("c_d", 3.0)),
+                    float(self.reward_cfg.get("c_d", 3.0)),
+                )
+            )
+            mean_shift = 0.0
+            front = 0.0
+            if direct:
+                mean_shift = float(self.reward_cfg.get("omega_mean_shift", 2.0)) * float(
+                    self._mean_shift_reward(index, target_id, before_p, before_e, after_p)
+                )
+                front = float(self.reward_cfg.get("omega_front", 0.5)) * float(
+                    self._front_reward(index, target_id, after_p, after_e)
+                )
+            total = approach + mean_shift + front
+            return float(total), float(approach), float(mean_shift), float(front)
+
         def coverage_task_reward(index: int) -> Tuple[float, Dict[str, float]]:
             if self._ce_coverage_enabled():
                 accel, turn = self._action_accel_turn(index, pursuer_actions)
@@ -2028,7 +2219,39 @@ class VorAdjEnv(CoCapEnv):
         for i, p in enumerate(self.pursuers):
             if p.deactivated:
                 continue
-            if reward_roles[i] == "capture" and active_targets:
+            if pure_capture_mode:
+                capture_reward = 0.0
+                approach_reward = 0.0
+                mean_shift_reward = 0.0
+                front_reward = 0.0
+                if pure_capture_roles[i] == "direct_capture" and active_targets:
+                    (
+                        capture_reward,
+                        approach_reward,
+                        mean_shift_reward,
+                        front_reward,
+                    ) = pure_capture_dense_reward(
+                        i,
+                        pure_capture_targets[i],
+                        direct=True,
+                    )
+                elif pure_capture_roles[i] == "one_hop_informed" and active_targets:
+                    (
+                        capture_reward,
+                        approach_reward,
+                        mean_shift_reward,
+                        front_reward,
+                    ) = pure_capture_dense_reward(
+                        i,
+                        pure_capture_targets[i],
+                        direct=False,
+                    )
+                rewards[i] += capture_reward
+                reward_capture_component[i] += capture_reward
+                reward_capture_approach_component[i] += approach_reward
+                reward_capture_mean_shift_component[i] += mean_shift_reward
+                reward_capture_front_component[i] += front_reward
+            elif reward_roles[i] == "capture" and active_targets:
                 task_reward = capture_task_reward(i, capture_reward_candidates(i, support_mode=False))
                 rewards[i] += task_reward
                 reward_capture_component[i] += task_reward
@@ -2071,7 +2294,11 @@ class VorAdjEnv(CoCapEnv):
         normal_coverage_metrics = dict(self.last_distribution_metrics)
         active_pursuers = [i for i, p in enumerate(self.pursuers) if not p.deactivated]
         hold_phase = "pure_coverage" if pure_coverage_scene else ("pre_capture" if active_targets else "post_capture")
-        hold_eligible = [i for i in active_pursuers if reward_roles[i] in {"support", "coverage"}]
+        hold_eligible = (
+            []
+            if pure_capture_mode
+            else [i for i in active_pursuers if reward_roles[i] in {"support", "coverage"}]
+        )
         hold_support_candidates = [i for i in hold_eligible if reward_roles[i] == "support"]
         if hold_phase == "pre_capture":
             hold_geometry_metrics = self._voradj_coverage_geometry(
@@ -2160,7 +2387,12 @@ class VorAdjEnv(CoCapEnv):
             for event in captured_events:
                 self.evaders[event["evader_id"]].deactivated = True
                 factor = 1.0 if event.get("capture_type") == "stationary" else (TWO_PI / max(len(event["participants"]), 1)) * np.exp(-float(np.std(event["angles"])))
-                for i in event["participants"]:
+                terminal_recipients = (
+                    active_pursuers
+                    if pure_capture_mode
+                    else event["participants"]
+                )
+                for i in terminal_recipients:
                     terminal_reward = float(self.env_cfg.get("goal_reward", 120.0)) * factor
                     rewards[i] += terminal_reward
                     reward_terminal_component[i] += terminal_reward
@@ -2506,6 +2738,10 @@ class VorAdjEnv(CoCapEnv):
                     self.reward_cfg.get("coverage_ce_angular_velocity_weight", 0.001)
                 ),
                 "reward_total": float(rewards[i]),
+                "collision_types": sorted(
+                    str(value)
+                    for value in (getattr(self.pursuers[i], "collision_types", set()) or set())
+                ),
                 "enemy_neighbor_count": int(before_raw_labels[i] == "capture"),
                 "effective_pursuing": bool(before_labels[i] == "capture"),
                 "friend_neighbor_count": int(sum(1 for nk in before_data.get("adjacency", {}).get(("pursuer", i), set()) if nk[0] == "pursuer")) if before_labels[i] != "inactive" else 0,
@@ -2521,6 +2757,22 @@ class VorAdjEnv(CoCapEnv):
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,
             }
+            if pure_capture_mode:
+                infos[i]["replay_metadata"].update(
+                    {
+                        "capture_objective_role": pure_capture_roles[i],
+                        "capture_objective_target_count": int(len(pure_capture_targets[i])),
+                        "capture_objective_friend_count": int(len(pure_capture_friend_ids[i])),
+                        "capture_objective_target_resolved": bool(pure_capture_targets[i]),
+                        "pure_capture_all_capture_enabled": True,
+                        "reward_capture_approach": float(reward_capture_approach_component[i]),
+                        "reward_capture_mean_shift": float(reward_capture_mean_shift_component[i]),
+                        "reward_capture_front": float(reward_capture_front_component[i]),
+                        "pure_capture_team_terminal_shared": bool(
+                            captured_events and i in active_pursuers
+                        ),
+                    }
+                )
             if self.continuous_control:
                 diagnostics = dict(getattr(self.pursuers[i], "last_action_diagnostics", {}) or {})
                 infos[i]["action_diagnostics"] = diagnostics
@@ -2556,6 +2808,33 @@ class VorAdjEnv(CoCapEnv):
             role_reward_metrics[f"reward_role_{role_name}_coverage_sum"] = float(np.sum(reward_coverage_component[role_ids])) if role_ids else 0.0
             role_reward_metrics[f"reward_role_{role_name}_terminal_sum"] = float(np.sum(reward_terminal_component[role_ids])) if role_ids else 0.0
             role_reward_metrics[f"reward_role_{role_name}_total_sum"] = float(np.sum(rewards[role_ids])) if role_ids else 0.0
+        pure_capture_role_metrics: Dict[str, float] = {}
+        if pure_capture_mode:
+            for role_name in ("direct_capture", "one_hop_informed", "uninformed"):
+                role_ids = [i for i, role in enumerate(pure_capture_roles) if role == role_name]
+                prefix = f"pure_capture_role_{role_name}"
+                pure_capture_role_metrics[f"{prefix}_agent_count"] = int(len(role_ids))
+                pure_capture_role_metrics[f"{prefix}_approach_sum"] = float(
+                    np.sum(reward_capture_approach_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_mean_shift_sum"] = float(
+                    np.sum(reward_capture_mean_shift_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_front_sum"] = float(
+                    np.sum(reward_capture_front_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_capture_sum"] = float(
+                    np.sum(reward_capture_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_coverage_sum"] = float(
+                    np.sum(reward_coverage_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_terminal_sum"] = float(
+                    np.sum(reward_terminal_component[role_ids])
+                ) if role_ids else 0.0
+                pure_capture_role_metrics[f"{prefix}_total_sum"] = float(
+                    np.sum(rewards[role_ids])
+                ) if role_ids else 0.0
         self.last_voradj_metrics = {
             "coverage_objective_version": str(self.reward_cfg.get("coverage_objective_version", "legacy")),
             "coverage_ce_pbrs_reset_mode": self._ce_pbrs_reset_mode(),
@@ -2600,6 +2879,17 @@ class VorAdjEnv(CoCapEnv):
             "support_candidate_ratio": float(support_count / active_count),
             "legacy_voradj_support_reward_blend_enabled": bool(legacy_support_mode),
             **role_reward_metrics,
+            **pure_capture_role_metrics,
+            **(
+                {
+                    "pure_capture_all_capture_enabled": True,
+                    "pure_capture_terminal_shared_recipient_count": int(
+                        len(active_pursuers) if captured_events else 0
+                    ),
+                }
+                if pure_capture_mode
+                else {}
+            ),
             "support_reward_blend_enabled": bool(support_reward_blend_enabled),
             "support_reward_blend_active_count": int(np.count_nonzero(support_reward_blend_flags)),
             "support_reward_blend_active_ratio": float(np.count_nonzero(support_reward_blend_flags) / active_count),
@@ -2724,7 +3014,8 @@ class VorAdjEnv(CoCapEnv):
 
     def episode_record(self, task: Optional[str] = None) -> Dict[str, Any]:
         captured = bool(self.evaders and all(e.deactivated and not e.collision for e in self.evaders))
-        collision_free = not any(p.collision for p in self.pursuers)
+        collision_fields = self._collision_episode_fields()
+        collision_free = not bool(collision_fields["collision_event"])
         all_active = all(not p.deactivated for p in self.pursuers)
         old_hold = int(self.distribution_hold_steps)
         old_metrics = dict(self.last_distribution_metrics)
@@ -2792,7 +3083,7 @@ class VorAdjEnv(CoCapEnv):
             "episode_success": episode_success,
             "episode_success_mode": episode_success_mode,
             "collision_free": collision_free,
-            "collision_event": not collision_free,
+            **collision_fields,
             "all_pursuers_active": all_active,
             "active_pursuers": int(sum(not p.deactivated for p in self.pursuers)),
             "coverage_loose_success": bool(loose),

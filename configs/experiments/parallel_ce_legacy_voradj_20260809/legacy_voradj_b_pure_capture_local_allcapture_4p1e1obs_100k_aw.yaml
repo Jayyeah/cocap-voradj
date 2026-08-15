@@ -1,0 +1,60 @@
+extends: ./legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml
+
+run_name: legacy_voradj_b_pure_capture_local_allcapture_4p1e1obs_100k_aw_20260816
+seed: 2026081304
+device: cuda:1
+
+env:
+  collision_semantics: synchronized_swept_v1
+
+perception:
+  global_evader_visibility: false
+
+reward:
+  min_active_pursuers: 2
+  coverage_ce_min_active_pursuers: 2
+  capture_reward_mode: legacy
+  legacy_capture_reward_fallback_all_active: false
+
+voradj:
+  perception_topology_version: legacy_voradj
+  is_pursuing_release_delay_steps: 10
+  support_reward_blend_enabled: false
+  legacy_voradj_support_reward_blend_enabled: false
+  pure_capture_all_capture_enabled: true
+  support_reward_capture_target_mode: neighbor_visible
+  support_reward_capture_component_mode: approach_only
+
+training:
+  total_env_steps: 100000
+  scene_cycle: [capture]
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+  periodic_checkpoint_replay_mode: rolling_latest
+  update_every_env_steps: 4
+  gradient_steps: 1
+  grad_clip_norm: null
+  optimizer_unit: joint_transition_all_active_agents
+  replay_sampling: uniform_joint
+  focal_training: false
+  focal_quota: null
+
+evaluation:
+  diagnostic_scenes: [capture]
+  episodes_per_scene: 20
+  deterministic: true
+  diagnostic_rollout_cap: 400
+  checkpoint_diagnostic_rollout_cap: 1000
+
+experiment_metadata:
+  stage: b_pure_capture_local_all_capture_100k_aw
+  training_start: scratch_new_replay
+  episode_mix: capture_only; no pure_ce and no post_capture transitions
+  observability: corrected Legacy-VorAdj local enemy sensing; no global enemy broadcast
+  collision_semantics: synchronized swept/substep collision v1
+  task_objective: CAPTURE only; role labels are reward-observability diagnostics, not separate tasks
+  role_contract: corrected K10 effective task_label/reward_role remain unchanged; B dense reward uses a separate current-observability direct/informed/uninformed partition
+  dense_reward_contract: direct capture gets approach+mean_shift+front; one-hop informed gets approach only; uninformed gets zero dense task reward
+  terminal_reward_contract: each formal normal/stationary capture reward is shared once with every active pursuer
+  forbidden_reward_paths: no coverage reward; no coverage PBRS; no oracle dense reward for uninformed pursuers
+  checkpoint_diagnostics: every 25k; deterministic 20-rollout capture probe plus geometry/collision/role/reward decomposition

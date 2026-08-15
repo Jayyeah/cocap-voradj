@@ -1069,3 +1069,9 @@ PC0后续判断必须分成两条独立问题：
 - 当前停止“更多step/常规SAC超参”的默认路线。下一阶段先做paired stochastic-temperature、collision类型/同时碰撞语义、CF3+ORCA/CBF safety-only、历史IQN/解析slot teacher在精确corrected任务上的四个因果探针。
 - 高成功率主线改为：显式3个约120度capture slot+1 support slot、带hysteresis的assignment、训练一致的安全投影、teacher BC/AWR/continuous residual、success/near-success episodic replay+n-step；若仍失败，再做scalar team critic或centralized-value MAPPO与一跳message/GRU。
 - capture正式Gate固定为3 seeds×100 deterministic formal rollout，目标normal≥70--80%、置信区间下界≥60%、collision≤10--20%、stationary不占主导。只有通过后，才用capture/coverage双option FSM恢复post-capture；禁止再把0.157% post数据塞进单一uniform buffer期待自然学成。
+
+### 10.35 Collision修复、CPU Debug与Pure-Capture B（2026-08-15）
+
+- A1确认旧AW存在decision末实体检测、swept漏检和遍历/deactivate顺序bug；已实现同步substep swept+atomic apply的新默认，并补collision provenance。旧CF3/PC0标记为legacy semantics。
+- A2 temperature、A3 corrected-IQN、A4 success-tail工具及CPU-only自结束队列已实现；不使用GPU、不挂GPU waiter。
+- B严格Pure-Capture合同、诊断和测试已完成；32-step CPU scratch smoke=`32/32 replay、finite`，正式100k因无可用GPU未启动。详见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。

@@ -686,6 +686,7 @@ def _screen(
         config = scene_config(root_config, scene)
         set_global_config(config)
         records = []
+        scene_role_rows: List[Dict[str, Any]] = []
         for episode in range(int(episodes)):
             env = VorAdjEnv(config, seed=seed + 10000 + scene_index * 100 + episode)
             env.reset()
@@ -715,6 +716,8 @@ def _screen(
             episode_speeds: List[float] = []
             discovery_seen = False
             discovery_step: Optional[int] = None
+            episode_geometry: List[Dict[str, Any]] = []
+            episode_capture_types: List[str] = []
             horizon = int(config["env"]["episode_max_length"])
             if max_steps is not None and int(max_steps) > 0:
                 horizon = min(horizon, int(max_steps))
@@ -722,6 +725,10 @@ def _screen(
                 observations = list(env.get_observations())
                 if any(item is None for item in observations):
                     break
+                before_active = np.asarray(
+                    [not p.deactivated for p in env.pursuers],
+                    dtype=bool,
+                )
                 padded = _pad_local_obs_tree(
                     observations,
                     int(config["training"]["max_agents"]),
@@ -736,6 +743,14 @@ def _screen(
                     deterministic=True,
                 )
                 outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
+                geometry = _pursuit_step_geometry(env, actions)
+                if geometry is not None:
+                    episode_geometry.append(geometry)
+                scene_role_rows.extend(_role_reward_rows(outcome.infos, before_active))
+                episode_capture_types.extend(
+                    str(event.get("capture_type", "unknown"))
+                    for event in getattr(env, "last_capture_events", [])
+                )
                 after_positions = np.asarray([[float(p.x), float(p.y)] for p in env.pursuers if not p.deactivated], dtype=float)
                 after_evader_positions = np.asarray(
                     [[float(e.x), float(e.y)] for e in env.evaders if not e.deactivated],
@@ -760,6 +775,17 @@ def _screen(
                 if all(outcome.dones):
                     break
             record = env.episode_record(task=scene)
+            ring_counts = [int(item["num_in_ring_8_10_5"]) for item in episode_geometry]
+            def max_hold(minimum: int) -> int:
+                best = current = 0
+                for count in ring_counts:
+                    current = current + 1 if count >= minimum else 0
+                    best = max(best, current)
+                return best
+            angular_frames = [
+                item for item in episode_geometry
+                if int(item["num_in_ring_8_10_5"]) >= 2
+            ]
             coverage_area_cv = float(record.get("coverage_strict_area_cv", float("inf")))
             coverage_cv_loose_threshold = float(
                 record.get(
@@ -778,7 +804,26 @@ def _screen(
                     "length": int(record["length"]),
                     "episode_success": bool(record["episode_success"]),
                     "captured": bool(record["captured"]),
+                    "normal_capture": bool(
+                        any(value != "stationary" for value in episode_capture_types)
+                    ),
+                    "stationary_capture": bool(
+                        any(value == "stationary" for value in episode_capture_types)
+                    ),
                     "collision_event": bool(record["collision_event"]),
+                    "agent_agent_collision_event": bool(record.get("agent_agent_collision_event", False)),
+                    "collision_type_counts": dict(record.get("collision_type_counts", {}) or {}),
+                    "max_num_in_ring": int(max(ring_counts, default=0)),
+                    "visited_2plus_ring": bool(any(value >= 2 for value in ring_counts)),
+                    "visited_3plus_ring": bool(any(value >= 3 for value in ring_counts)),
+                    "max_2plus_ring_hold_steps": int(max_hold(2)),
+                    "max_3plus_ring_hold_steps": int(max_hold(3)),
+                    "largest_angular_gap_rad_mean": float(np.mean([
+                        item["ring_largest_angular_gap_rad"] for item in angular_frames
+                    ])) if angular_frames else 0.0,
+                    "pairwise_angular_separation_min_rad": float(np.min([
+                        item["ring_pairwise_angular_separation_min_rad"] for item in angular_frames
+                    ])) if angular_frames else 0.0,
                     "coverage_strict_success": bool(record["coverage_strict_success"]),
                     "coverage_cv015_success": bool(coverage_area_cv <= 0.15),
                     "coverage_cv020_success": bool(coverage_area_cv <= 0.20),
@@ -822,11 +867,47 @@ def _screen(
             ]
             return float(np.mean(values)) if values else None
 
+        pure_role_rows = [
+            row for row in scene_role_rows
+            if row.get("capture_objective_role")
+            in {"direct_capture", "one_hop_informed", "uninformed"}
+        ]
+        pure_role_summary: Dict[str, Any] = {}
+        if pure_role_rows:
+            for role_name in ("direct_capture", "one_hop_informed", "uninformed"):
+                rows = [row for row in pure_role_rows if row.get("capture_objective_role") == role_name]
+                pure_role_summary[role_name] = {
+                    "agent_steps": int(len(rows)),
+                    "fraction": float(len(rows) / len(pure_role_rows)),
+                    **{
+                        f"reward_{component}_mean": float(np.mean([
+                            float(row.get(component, 0.0)) for row in rows
+                        ])) if rows else 0.0
+                        for component in (
+                            "capture_approach", "capture_mean_shift", "capture_front",
+                            "capture", "coverage", "terminal", "total",
+                        )
+                    },
+                }
         result[scene] = {
             "episodes": len(records),
             "success_rate": float(np.mean([bool(item["episode_success"]) for item in records])) if records else 0.0,
             "capture_rate": float(np.mean([bool(item["captured"]) for item in records])) if records else 0.0,
+            "normal_capture_count": int(sum(bool(item["normal_capture"]) for item in records)),
+            "normal_capture_rate": float(np.mean([bool(item["normal_capture"]) for item in records])) if records else 0.0,
+            "stationary_capture_count": int(sum(bool(item["stationary_capture"]) for item in records)),
+            "stationary_capture_rate": float(np.mean([bool(item["stationary_capture"]) for item in records])) if records else 0.0,
             "collision_rate": float(np.mean([bool(item["collision_event"]) for item in records])) if records else 0.0,
+            "agent_agent_collision_count": int(sum(bool(item["agent_agent_collision_event"]) for item in records)),
+            "agent_agent_collision_rate": float(np.mean([bool(item["agent_agent_collision_event"]) for item in records])) if records else 0.0,
+            "visited_2plus_ring_rate": float(np.mean([bool(item["visited_2plus_ring"]) for item in records])) if records else 0.0,
+            "visited_3plus_ring_rate": float(np.mean([bool(item["visited_3plus_ring"]) for item in records])) if records else 0.0,
+            "max_num_in_ring": int(max((int(item["max_num_in_ring"]) for item in records), default=0)),
+            "max_2plus_ring_hold_steps": int(max((int(item["max_2plus_ring_hold_steps"]) for item in records), default=0)),
+            "max_3plus_ring_hold_steps": int(max((int(item["max_3plus_ring_hold_steps"]) for item in records), default=0)),
+            "mean_largest_angular_gap_rad": mean_present("largest_angular_gap_rad_mean"),
+            "mean_pairwise_angular_separation_min_rad": mean_present("pairwise_angular_separation_min_rad"),
+            "pure_capture_role_reward_summary": pure_role_summary,
             "coverage_strict_rate": float(np.mean([bool(item["coverage_strict_success"]) for item in records])) if records else 0.0,
             "coverage_cv015_rate": float(np.mean([bool(item["coverage_cv015_success"]) for item in records])) if records else 0.0,
             "coverage_cv020_rate": float(np.mean([bool(item["coverage_cv020_success"]) for item in records])) if records else 0.0,
@@ -866,6 +947,29 @@ def _wrap_angle(value: float) -> float:
     return float((value + np.pi) % (2.0 * np.pi) - np.pi)
 
 
+def _diagnostic_eval_contract(
+    root_config: Mapping[str, Any],
+    cli_episodes: Optional[int],
+) -> Tuple[int, int]:
+    evaluation_cfg = root_config.get("evaluation", {}) or {}
+    episodes = int(
+        cli_episodes
+        if cli_episodes is not None
+        else evaluation_cfg.get("episodes_per_scene", 4)
+    )
+    rollout_cap = int(
+        evaluation_cfg.get(
+            "checkpoint_diagnostic_rollout_cap",
+            evaluation_cfg.get("diagnostic_rollout_cap", 400),
+        )
+    )
+    if episodes < 0:
+        raise ValueError("diagnostic eval episodes must be non-negative")
+    if rollout_cap <= 0:
+        raise ValueError("diagnostic rollout cap must be positive")
+    return episodes, rollout_cap
+
+
 def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Dict[str, float] | None:
     """Per-step pursuit diagnostics for capture scenes (uses env state after step)."""
     active_p = [p for p in env.pursuers if not p.deactivated]
@@ -875,6 +979,7 @@ def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Di
     epos = np.asarray([active_e[0].x, active_e[0].y], dtype=float)
     evel = np.asarray(active_e[0].velocity, dtype=float)
     dists = []
+    ring_angles: List[float] = []
     closing = []
     bearing = []
     turn_ok = 0
@@ -885,6 +990,8 @@ def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Di
         rel = epos - ppos
         d = float(np.linalg.norm(rel))
         dists.append(d)
+        if 8.0 <= d < 10.5:
+            ring_angles.append(float(np.arctan2(ppos[1] - epos[1], ppos[0] - epos[0])))
         if d > 1e-6:
             unit = rel / d
             closing.append(float(np.dot(pvel - evel, unit)))
@@ -904,6 +1011,16 @@ def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Di
         return None
     d_sorted = sorted(dists)
     d = [float(d_sorted[i]) if i < len(d_sorted) else 99.0 for i in range(4)]
+    largest_gap = 0.0
+    pairwise_separations: List[float] = []
+    if len(ring_angles) >= 2:
+        ordered = np.sort(np.mod(np.asarray(ring_angles, dtype=float), 2.0 * np.pi))
+        gaps = np.diff(np.concatenate([ordered, ordered[:1] + 2.0 * np.pi]))
+        largest_gap = float(np.max(gaps))
+        for left in range(len(ordered)):
+            for right in range(left + 1, len(ordered)):
+                delta = abs(float(ordered[right] - ordered[left]))
+                pairwise_separations.append(min(delta, 2.0 * np.pi - delta))
     return {
         "d1": d[0], "d2": d[1], "d3": d[2], "d4": d[3],
         "closing": float(np.mean(closing)) if closing else 0.0,
@@ -915,6 +1032,9 @@ def _pursuit_step_geometry(env: Any, actions: Optional[np.ndarray] = None) -> Di
         "num_within_12": int(np.sum([x < 12.0 for x in dists])),
         "num_within_20": int(np.sum([x < 20.0 for x in dists])),
         "num_in_ring_8_10_5": int(np.sum([8.0 <= x < 10.5 for x in dists])),
+        "ring_largest_angular_gap_rad": largest_gap,
+        "ring_pairwise_angular_separation_mean_rad": float(np.mean(pairwise_separations)) if pairwise_separations else 0.0,
+        "ring_pairwise_angular_separation_min_rad": float(np.min(pairwise_separations)) if pairwise_separations else 0.0,
     }
 
 
@@ -929,7 +1049,13 @@ def _role_reward_rows(
         meta = info.get("replay_metadata", {}) or {}
         rows.append({
             "role": str(meta.get("reward_role", "")).strip().lower(),
+            "capture_objective_role": str(meta.get("capture_objective_role", "")).strip().lower(),
+            "capture_objective_target_resolved": bool(meta.get("capture_objective_target_resolved", False)),
+            "capture_objective_friend_count": int(meta.get("capture_objective_friend_count", 0)),
             "capture": float(meta.get("reward_capture", 0.0)),
+            "capture_approach": float(meta.get("reward_capture_approach", 0.0)),
+            "capture_mean_shift": float(meta.get("reward_capture_mean_shift", 0.0)),
+            "capture_front": float(meta.get("reward_capture_front", 0.0)),
             "coverage": float(meta.get("reward_coverage", 0.0)),
             "terminal": float(meta.get("reward_terminal", 0.0)),
             "total": float(meta.get("reward_total", 0.0)),
@@ -944,6 +1070,19 @@ def _role_reward_rows(
             "support_upgraded_to_capture": bool(meta.get("support_upgraded_to_capture", False)),
         })
     return rows
+
+
+def _step_collision_types(infos: Sequence[Mapping[str, Any]]) -> List[str]:
+    return sorted(
+        {
+            str(collision_type)
+            for info in infos
+            for collision_type in (
+                (info.get("replay_metadata", {}) or {}).get("collision_types", [])
+                or []
+            )
+        }
+    )
 
 
 def _metrics_record(
@@ -964,6 +1103,7 @@ def _metrics_record(
     geometry: Sequence[Dict[str, Any]] = (),
     role_rewards: Sequence[Dict[str, Any]] = (),
     capture_types: Sequence[str] = (),
+    collision_types_by_step: Sequence[Sequence[str]] = (),
     window_wall_time_s: float = 0.0,
     window_env_steps: int = 0,
 ) -> Dict[str, Any]:
@@ -1051,6 +1191,17 @@ def _metrics_record(
     record["distinct_normal_capture_episodes"] = int(record["normal_capture_count"])
     record["distinct_stationary_capture_episodes"] = int(record["stationary_capture_count"])
     record["distinct_capture_episodes"] = int(record["capture_count"])
+    collision_type_counts: Dict[str, int] = {}
+    for step_types in collision_types_by_step:
+        for collision_type in set(str(value) for value in step_types):
+            collision_type_counts[collision_type] = int(
+                collision_type_counts.get(collision_type, 0) + 1
+            )
+    record["collision_type_transition_counts"] = dict(sorted(collision_type_counts.items()))
+    for collision_type in ("agent_agent", "obstacle", "boundary", "evader_contact"):
+        record[f"{collision_type}_collision_transition_count"] = int(
+            collision_type_counts.get(collision_type, 0)
+        )
 
     if role_rewards:
         active_role_rows = [row for row in role_rewards if str(row.get("role", "")) in {"capture", "support", "coverage"}]
@@ -1064,7 +1215,20 @@ def _metrics_record(
                 record[f"role_{role_name}_reward_{component}_mean"] = float(np.mean(values)) if values else 0.0
                 record[f"role_{role_name}_reward_{component}_p50"] = _percentile(values, 50) if values else 0.0
                 record[f"role_{role_name}_reward_{component}_p95"] = _percentile(values, 95) if values else 0.0
-        support_rows = [row for row in active_role_rows if row.get("role") == "support"]
+        pure_capture_rows_present = any(
+            str(row.get("capture_objective_role", ""))
+            in {"direct_capture", "one_hop_informed", "uninformed"}
+            for row in role_rewards
+        )
+        support_rows = (
+            [
+                row
+                for row in role_rewards
+                if row.get("capture_objective_role") == "one_hop_informed"
+            ]
+            if pure_capture_rows_present
+            else [row for row in active_role_rows if row.get("role") == "support"]
+        )
         support_steps = len(support_rows)
         support_without_enemy = sum(not bool(row.get("support_enemy_token_visible", False)) for row in support_rows)
         support_with_friend = sum(bool(row.get("support_has_pursuing_friend", False)) for row in support_rows)
@@ -1092,6 +1256,37 @@ def _metrics_record(
         record["support_in_ring_agent_steps"] = int(sum(bool(row.get("support_in_ring", False)) for row in support_rows))
         record["support_entered_ring_count"] = int(sum(bool(row.get("support_entered_ring", False)) for row in support_rows))
         record["support_upgraded_to_capture_count"] = int(sum(bool(row.get("support_upgraded_to_capture", False)) for row in support_rows))
+
+        pure_capture_rows = [
+            row
+            for row in role_rewards
+            if str(row.get("capture_objective_role", ""))
+            in {"direct_capture", "one_hop_informed", "uninformed"}
+        ]
+        if pure_capture_rows:
+            denominator = len(pure_capture_rows)
+            for role_name in ("direct_capture", "one_hop_informed", "uninformed"):
+                rows = [
+                    row
+                    for row in pure_capture_rows
+                    if row.get("capture_objective_role") == role_name
+                ]
+                prefix = f"pure_capture_role_{role_name}"
+                record[f"{prefix}_agent_steps"] = int(len(rows))
+                record[f"{prefix}_fraction"] = float(len(rows) / max(denominator, 1))
+                for component in (
+                    "capture_approach",
+                    "capture_mean_shift",
+                    "capture_front",
+                    "capture",
+                    "coverage",
+                    "terminal",
+                    "total",
+                ):
+                    values = [float(row.get(component, 0.0)) for row in rows]
+                    record[f"{prefix}_reward_{component}_mean"] = float(np.mean(values)) if values else 0.0
+                    record[f"{prefix}_reward_{component}_p50"] = _percentile(values, 50) if values else 0.0
+                    record[f"{prefix}_reward_{component}_p95"] = _percentile(values, 95) if values else 0.0
 
     if geometry:
         record.update({
@@ -1127,6 +1322,17 @@ def _metrics_record(
         record["max_any_ring_hold_steps"] = int(max_hold(1))
         record["max_2plus_ring_hold_steps"] = int(max_hold(2))
         record["max_3plus_ring_hold_steps"] = int(max_hold(3))
+        angular_frames = [g for g in geometry if int(g["num_in_ring_8_10_5"]) >= 2]
+        record["ring_2plus_angular_frame_count"] = int(len(angular_frames))
+        for field in (
+            "ring_largest_angular_gap_rad",
+            "ring_pairwise_angular_separation_mean_rad",
+            "ring_pairwise_angular_separation_min_rad",
+        ):
+            values = [float(g[field]) for g in angular_frames]
+            record[f"{field}_mean"] = float(np.mean(values)) if values else 0.0
+            record[f"{field}_p50"] = _percentile(values, 50) if values else 0.0
+            record[f"{field}_p95"] = _percentile(values, 95) if values else 0.0
     return record
 
 
@@ -1362,6 +1568,10 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         root_config = resolve_ladder_config(args.config)
     else:
         root_config = resolve_formal_config(args.config)
+    diagnostic_eval_episodes, diagnostic_rollout_cap = _diagnostic_eval_contract(
+        root_config,
+        getattr(args, "diagnostic_eval_episodes", None),
+    )
     training_mode = training_mode_contract(root_config)
     _set_seed(args.seed)
     if args.legacy_encoder_checkpoint:
@@ -1513,7 +1723,6 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
         raise ValueError("training.periodic_checkpoint_replay_mode must be full or rolling_latest")
     metrics_flush_interval = int(root_config["training"].get("metrics_flush_interval_env_steps", 1000))
     diagnostic_eval_interval = int(root_config["training"].get("diagnostic_eval_interval_env_steps", 25000))
-    diagnostic_rollout_cap = int((root_config.get("evaluation", {}) or {}).get("diagnostic_rollout_cap", 400))
     warmup_action_mode = str((root_config.get("warmup_action_policy", {}) or {}).get("mode", "actor_prior")).strip().lower()
     if args.warmup_action_mode:
         warmup_action_mode = args.warmup_action_mode
@@ -1529,6 +1738,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
     window_geometry: List[Dict[str, Any]] = []
     window_role_rewards: List[Dict[str, Any]] = []
     window_capture_types: List[str] = []
+    window_collision_types: List[List[str]] = []
     speed_limited_count = 0
     action_sample_count = 0
     terminated_count = 0
@@ -1611,6 +1821,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     str(event.get("capture_type", "unknown"))
                     for event in getattr(env, "last_capture_events", [])
                 )
+                window_collision_types.append(_step_collision_types(outcome.infos))
                 for info in outcome.infos:
                     diagnostics = info.get("action_diagnostics", {})
                     speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1715,6 +1926,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         geometry=window_geometry,
                         role_rewards=window_role_rewards,
                         capture_types=window_capture_types,
+                        collision_types_by_step=window_collision_types,
                         window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                         window_env_steps=transition_count - window_start_step,
                     )
@@ -1728,6 +1940,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     window_geometry = []
                     window_role_rewards = []
                     window_capture_types = []
+                    window_collision_types = []
                     window_terminated_count = 0
                     window_truncated_count = 0
                     window_collision_count = 0
@@ -1741,7 +1954,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                             trainer,
                             root_config,
                             args.seed,
-                            episodes=int(args.diagnostic_eval_episodes),
+                            episodes=diagnostic_eval_episodes,
                             device=device,
                             scenes=diagnostic_scenes,
                             max_steps=diagnostic_rollout_cap,
@@ -1861,6 +2074,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 str(event.get("capture_type", "unknown"))
                 for event in getattr(env, "last_capture_events", [])
             )
+            window_collision_types.append(_step_collision_types(outcome.infos))
             for info in outcome.infos:
                 diagnostics = info.get("action_diagnostics", {})
                 speed_limited_count += int(bool(diagnostics.get("speed_limited", False)))
@@ -1965,6 +2179,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                     geometry=window_geometry,
                     role_rewards=window_role_rewards,
                     capture_types=window_capture_types,
+                    collision_types_by_step=window_collision_types,
                     window_wall_time_s=max(time.perf_counter() - window_started_at, 1e-12),
                     window_env_steps=transition_count - window_start_step,
                 )
@@ -1978,6 +2193,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                 window_geometry = []
                 window_role_rewards = []
                 window_capture_types = []
+                window_collision_types = []
                 window_terminated_count = 0
                 window_truncated_count = 0
                 window_collision_count = 0
@@ -1991,7 +2207,7 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
                         trainer,
                         root_config,
                         args.seed,
-                        episodes=int(args.diagnostic_eval_episodes),
+                        episodes=diagnostic_eval_episodes,
                         device=device,
                         scenes=diagnostic_scenes,
                         max_steps=diagnostic_rollout_cap,
@@ -2094,12 +2310,12 @@ def run(args: argparse.Namespace) -> Dict[str, Any]:
             trainer,
             root_config,
             args.seed,
-            episodes=int(args.diagnostic_eval_episodes),
+            episodes=diagnostic_eval_episodes,
             device=device,
             scenes=diagnostic_scenes,
             max_steps=diagnostic_rollout_cap,
         )
-        if int(args.diagnostic_eval_episodes) > 0
+        if diagnostic_eval_episodes > 0
         else {}
     )
     final_bundle = _save_checkpoint_bundle(
@@ -2192,7 +2408,12 @@ def main() -> int:
     parser.add_argument("--legacy-encoder-checkpoint", default="")
     parser.add_argument("--total-steps", type=int, default=None)
     parser.add_argument("--screen-episodes", type=int, default=2)
-    parser.add_argument("--diagnostic-eval-episodes", type=int, default=4)
+    parser.add_argument(
+        "--diagnostic-eval-episodes",
+        type=int,
+        default=None,
+        help="Override evaluation.episodes_per_scene (default: use config, then 4).",
+    )
     parser.add_argument("--diagnostic-eval-scenes", default="")
     parser.add_argument("--tag", required=True)
     parser.add_argument("--resume-checkpoint", default="")
