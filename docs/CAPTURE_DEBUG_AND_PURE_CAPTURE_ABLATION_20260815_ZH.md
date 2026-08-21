@@ -73,3 +73,4 @@ Pure-Capture没有coverage/task切换，K10主要只剩role-bit hysteresis；它
 - 两条32-step CUDA smoke均`exit 0`、`step/replay=32/32`、all-finite、0 termination/collision；B0/B1 scene hash分别为`49422e99...`与`5a5ec052...`。
 - 2026-08-21 11:35+08:00正式启动：B0-K10为PID`1956375`、tmux=`b0_purecap_k10_200k`、GPU0；B1-K0为PID`1956378`、tmux=`b1_purecap_k0_200k`、GPU1。启动时两进程日志无错、各约404 MiB VRAM，均处5k warmup；artifact根为`artifacts/2026-08-21_pure_capture_k10_k0_200k/`。
 - 11:38两线均严格到达首个真实update：B0/B1=`step/replay/update=5000/5000/1`、`mean_finite=1`、alpha=`0.19998`、peak VRAM均约`8019.9 MiB`；critic loss=`8.20/9.53`、actor loss=`1.91/1.91`均有限。B0首窗出现2+ ring fraction=`0.4%`，B1尚无2+；5k仅为启动健康检查，不作K10优劣结论。
+- 11:40热状态：GPU0约84°C/1770MHz且无thermal throttle；GPU1约91°C/1410MHz，driver报告`SW Thermal Slowdown=Active`、`HW Slowdown=Not Active`。B1数值与进程仍正常，但后续ETA必须使用其独立实测吞吐，不能用B0速度外推；这是资源/散热差异，不是任务合同差异。

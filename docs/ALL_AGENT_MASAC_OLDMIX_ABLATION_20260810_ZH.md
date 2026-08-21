@@ -1082,4 +1082,5 @@ PC0后续判断必须分成两条独立问题：
 - Pure-Capture的K10-held状态不会获得不可观测full reward：dense reward另按当前target可解析性分为direct full、one-hop approach-only、uninformed zero。K10在单任务中只保留短期pursuing-bit hysteresis并引入不可见counter，因此新增同seed严格配对：B0-K10与B1-K0均scratch/new replay、200k、fixed swept collision；100k不早停。
 - B0于GPU0启动（PID`1956375`，tmux=`b0_purecap_k10_200k`），B1于GPU1启动（PID`1956378`，tmux=`b1_purecap_k0_200k`）；32-step双CUDA smoke及29项聚焦回归通过。每25k保留model+20-rollout汇总，完整replay只滚动一份，final200k才保存完整bundle并另做20-rollout+5GIF。
 - 两线5k首update窗口均为`step/replay/update=5000/5000/1`、finite，peak VRAM约8.02GiB，无OOM、NaN、replay或合同错误；5k几何不用于早期胜负判断。
+- 最终资源快照GPU0无thermal throttle；GPU1在91°C触发driver软件热降频但未触发硬件slowdown，B1仍finite。后续按各线steps/hour分别计算ETA和matched-step比较，禁止把墙时差异误作K10算法效应。
 - 清理CF3 50--175k六份已被400k取代的独立frozen replay，释放约`21.19 GiB`；200k/400k完整bundle和全部模型/metrics保留。磁盘从`78 GiB available / 92%`改善为`99 GiB / 89%`。详见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。
