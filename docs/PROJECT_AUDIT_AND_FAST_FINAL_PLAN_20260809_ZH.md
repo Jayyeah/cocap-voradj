@@ -473,3 +473,9 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - simulator默认升级为同步substep swept collision与atomic多机失活；旧结果保留并标记legacy semantics。
 - A1--A4改为CPU-only有限自动队列；结果前不提前上success replay或其他算法。
 - B local Pure-Capture代码/测试/CPU smoke已完成，正式训练待GPU可用；当前无本项目GPU进程或GPU waiter。详见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。
+
+### 2026-08-21 Pure-Capture 200k配对主线
+
+- A1--A4已完成：fixed collision下CF3温度探针最多仅`2/20 normal`且collision≥95%；旧IQN在完全相同corrected/fixed任务100回合达到`61% normal、85% total capture、10% collision`。当前可解性已成立，后续不再用“local sensing/动作动力学天然不可学”解释MASAC失败。
+- 当前两卡主线为同seed scratch Pure-Capture：GPU0 B0保留K10，GPU1 B1取消K10；其余reward、local observation、MASAC、UTD/LR/tau/batch、fixed collision及200k budget完全冻结。B0保持与CF3的严格任务ablation，B1检验无角色切换时删除hidden hysteresis是否更自然。
+- 200k Gate后：若Pure-Capture显著提高normal/3+，coverage/多角色干扰成立；若3+提高但仍撞毁，转slot assignment/安全投影；若仍rare capture，则停止普通MASAC扩步，优先利用已资格通过的IQN teacher做成功轨迹/蒸馏与几何分工，不做常规超参盲扫。

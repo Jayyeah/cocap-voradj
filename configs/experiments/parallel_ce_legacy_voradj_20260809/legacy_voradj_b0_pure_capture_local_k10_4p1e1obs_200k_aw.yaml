@@ -1,0 +1,18 @@
+extends: ./legacy_voradj_b_pure_capture_local_allcapture_4p1e1obs_100k_aw.yaml
+
+run_name: legacy_voradj_b0_pure_capture_local_k10_4p1e1obs_200k_aw_20260821
+seed: 2026081304
+device: cuda:0
+
+voradj:
+  is_pursuing_release_delay_steps: 10
+
+training:
+  total_env_steps: 200000
+
+experiment_metadata:
+  stage: b0_pure_capture_local_k10_200k_aw
+  training_start: scratch_new_replay
+  duration_contract: train through 200k; 100k is diagnostic only and never an early-stop gate
+  k10_contract: corrected K10 effective pursuing state retained as the strict CF3 task-level control
+  paired_ablation: same seed and full resolved contract as B1 except K10 release delay and execution GPU

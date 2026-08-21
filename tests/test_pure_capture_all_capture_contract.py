@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "configs/experiments/parallel_ce_legacy_voradj_20260809"
 CF3 = CONFIG_DIR / "legacy_voradj_cf3_capture_first_local_support_full_4p1e1obs_100k_aw.yaml"
 PURE_CAPTURE = CONFIG_DIR / "legacy_voradj_b_pure_capture_local_allcapture_4p1e1obs_100k_aw.yaml"
+B0_K10_200K = CONFIG_DIR / "legacy_voradj_b0_pure_capture_local_k10_4p1e1obs_200k_aw.yaml"
+B1_K0_200K = CONFIG_DIR / "legacy_voradj_b1_pure_capture_local_k0_4p1e1obs_200k_aw.yaml"
 
 
 def _make_env(config_path: Path, seed: int = 2026081601) -> VorAdjEnv:
@@ -76,6 +78,53 @@ def test_pure_capture_config_is_strict_local_scratch_single_task_contract() -> N
     assert config["evaluation"]["episodes_per_scene"] == 20
     assert config["evaluation"]["checkpoint_diagnostic_rollout_cap"] == 1000
     assert config["experiment_metadata"]["training_start"] == "scratch_new_replay"
+
+
+def test_b0_b1_are_matched_200k_k10_only_task_ablation() -> None:
+    b0 = resolve_ladder_config(B0_K10_200K)
+    b1 = resolve_ladder_config(B1_K0_200K)
+
+    assert b0["seed"] == b1["seed"] == 2026081304
+    assert b0["training"]["total_env_steps"] == 200000
+    assert b1["training"]["total_env_steps"] == 200000
+    assert b0["training"]["periodic_checkpoint_replay_mode"] == "rolling_latest"
+    assert b1["training"]["periodic_checkpoint_replay_mode"] == "rolling_latest"
+    assert b0["voradj"]["is_pursuing_release_delay_steps"] == 10
+    assert b1["voradj"]["is_pursuing_release_delay_steps"] == 0
+    assert b0["env"]["collision_semantics"] == "synchronized_swept_v1"
+    assert b1["env"]["collision_semantics"] == "synchronized_swept_v1"
+    assert b0["evaluation"]["episodes_per_scene"] == 20
+    assert b1["evaluation"]["episodes_per_scene"] == 20
+
+    # Identity, execution placement and explanatory metadata are not task
+    # semantics. After normalizing those fields and the intended K10 switch,
+    # the fully resolved configurations must be identical.
+    normalized_b0 = copy.deepcopy(b0)
+    normalized_b1 = copy.deepcopy(b1)
+    for config in (normalized_b0, normalized_b1):
+        config["run_name"] = "paired"
+        config["device"] = "cuda"
+        config["voradj"]["is_pursuing_release_delay_steps"] = -1
+        config["experiment_metadata"] = {}
+    assert normalized_b0 == normalized_b1
+
+
+def test_k0_removes_stale_effective_pursuing_state_immediately() -> None:
+    k10 = _make_env(B0_K10_200K)
+    k0 = _make_env(B1_K0_200K)
+    for env in (k10, k0):
+        env._pursuing_flags_initialized = True
+        env.pursuers[0].is_pursuing = True
+        env._pursuing_release_counters[0] = 10
+
+    raw_coverage = ["coverage"] * 4
+    k10._update_effective_pursuing_flags(raw_coverage)
+    k0._update_effective_pursuing_flags(raw_coverage)
+
+    assert k10.pursuers[0].is_pursuing is True
+    assert k10._pursuing_release_counters[0] == 9
+    assert k0.pursuers[0].is_pursuing is False
+    assert k0._pursuing_release_counters[0] == 0
 
 
 def test_pure_capture_roles_and_observable_dense_reward_partition() -> None:
