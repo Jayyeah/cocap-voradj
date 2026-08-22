@@ -1,0 +1,33 @@
+spec_version: maadpg-paper-v1
+purpose: formal_matched_long_training
+variants: [maddpg, maadpg]
+training_seeds: [2026082301, 2026082302, 2026082303]
+environment_step_budget_per_run: 450000
+nominal_paper_equivalent: 1500_episodes_times_assumed_300_step_horizon
+device_queues:
+  cuda:0:
+    - maddpg_seed_2026082301
+    - maddpg_seed_2026082302
+    - maddpg_seed_2026082303
+  cuda:1:
+    - maadpg_seed_2026082301
+    - maadpg_seed_2026082302
+    - maadpg_seed_2026082303
+checkpoint_every_steps: 25000
+model_every_steps: 50000
+diagnostic_every_steps: 1000
+selection:
+  validation_seeds: [420000, 420099]
+  rule: highest_success_then_lowest_collision_then_earliest_step
+final_test:
+  seeds: [430000, 430099]
+  consume_once_after_checkpoint_selection: true
+evaluation_mode:
+  deterministic_actor_only: true
+  exploration: false
+  pfm: false
+  adaptive_gate: false
+claim_limits:
+  - target policy is scripted_evasive_ou_v1 not the unreleased author checkpoint
+  - missing reward geometry reset and schedule values follow assumptions.yaml
+  - results are an independent reproduction under maadpg-paper-v1

@@ -1,0 +1,38 @@
+contract_id,layer,requirement,source,resolution,status,verification
+C-001,Paper-primary,"2 km x 2 km workspace","Tables 2-3","workspace [0,2]^2 km",frozen,test_workspace_bounds
+C-002,Paper-primary,"three pursuers and one target","problem formulation","fixed pursuer slots p0 p1 p2 and target t0",frozen,test_fixed_agent_slots
+C-003,Paper-primary,"0-3 static circular obstacles with radii U(0.10,0.15) km","Table 2","seeded discrete-uniform count and continuous-uniform radius",frozen,test_reset_distribution_contract
+C-004,Paper-primary,"pursuer vmax 0.010 km/s and amax 0.004 km/s^2","Table 3","per-agent norm projections",frozen,test_pursuer_dynamics_limits
+C-005,Paper-primary,"target vmax 0.011 km/s and amax 0.005 km/s^2","Table 3","target plugin uses separate limits",frozen,test_target_dynamics_limits
+C-006,Paper-primary,"Eq.12 velocity then position update","Eq.12; A-DYN-001","semi-implicit Euler dt=1",assumed,test_dynamics_golden_cases
+C-007,Audit-corrected,"physical acceleration respects Eq.13 norm bound","Eq.13; A-ACT-001","canonical L2 unit-disk action projection",assumed,test_action_projection_and_replay_identity
+C-008,Paper-primary,"world-frame continuous [ax ay] actor action","Eq.12 and Algorithm 1","no body-frame or discrete action adapter",frozen,test_action_frame
+C-009,Paper-primary,"26 defined pursuer observation fields","Eq.24; A-OBS-001","use formula-complete width 26",assumed,test_observation_field_values_and_order
+C-010,Paper-primary,"16-ray lidar range 0.2 km","observation section","ray-circle and ray-boundary nearest hit normalized by 0.2",frozen,test_lidar_analytic_geometry
+C-011,Paper-primary,"local independent actors","MADDPG formulation","three unshared actor networks; each receives only its 26-vector",frozen,test_actor_locality_and_independence
+C-012,Paper-primary,"joint centralized critic per pursuer","MADDPG equations; A-CRITIC-001","three critics each consume 84 scalars",frozen,test_critic_joint_input_and_cross_agent_gradient
+C-013,Paper-primary,"128-unit ReLU networks","network section; Table 1; A-NET-001","two hidden layers per actor and critic",assumed,test_network_shapes
+C-014,Paper-primary,"strict geometry success","Eq.18; A-SUCC-001","all six Eq.18 conditions required",frozen,test_success_predicate_boundary_table
+C-015,Audit-corrected,"numerical success thresholds","A-SUCC-002","rho=[0.08,0.15] km; gap<=150deg; dmin=0.04 km; dobs=0.02 km",assumed,test_success_predicate_boundary_table
+C-016,Paper-primary,"Eq.33 area/distance quantities","Eq.33; A-SUCC-001","reward features and diagnostics only",assumed,test_eq33_features_do_not_override_success
+C-017,Paper-primary,"reward decomposes into progress safety stage separation hit and terminal terms","Eqs.28-33","each term emitted separately before aggregation",frozen,test_reward_golden_cases
+C-018,Audit-corrected,"reward coefficient set is explicit","A-REWARD-001","dimensionless v1 values in assumptions.yaml",assumed,test_reward_config_completeness
+C-019,Paper-primary,"PFM inverse-square target obstacle and teammate fields","Eq.19","signed obstacle-surface distance with disclosed floors",assumed,test_pfm_analytic_vectors
+C-020,Paper-primary,"PFM force normalization","Eq.20","normalize then canonical action projection",frozen,test_pfm_zero_and_symmetric_cases
+C-021,Paper-primary,"gate uses PFM minus actor one-step reward","Eqs.21-22; A-GATE-001; A-GATE-004","compare ratio (rP-rPi)/(|rP|+lambda) with beta=0.1 and report 100*ratio as percent",assumed,test_gate_sign_threshold_and_denominator
+C-022,Audit-corrected,"counterfactuals are exact and mutation-free","Algorithm 1; A-GATE-002","full snapshot/restore including target state and all RNG",assumed,test_counterfactual_state_rng_identity
+C-023,Audit-corrected,"gate comparison order cannot change decisions","A-GATE-003","same base teammate joint action and simultaneous commit",assumed,test_gate_candidate_order_invariance
+C-024,Paper-primary,"formal evaluation is actor-only","evaluation section","no PFM gate Peek or exploration in validation/test",frozen,test_evaluation_disables_guidance_and_noise
+C-025,Audit-corrected,"target dependency is disclosed and replaceable","A-TARGET-001","scripted_evasive_ou_v1 plugin plus stationary R0 oracle",assumed,test_target_plugin_rng_and_resume
+C-026,Paper-primary,"gamma actor-lr critic-lr tau replay batch use Table 1 values","Table 1","0.95 5e-4 1e-3 0.01 1M 1024",frozen,test_training_config_paper_fields
+C-027,Audit-corrected,"missing MADDPG schedule is frozen","A-TRAIN-001","Adam warmup10k one update/step one gradient step OU decay no clipping",assumed,test_training_schedule_contract
+C-028,Audit-corrected,"terminated and truncated are separate","historical safeguard","zero bootstrap only on true termination",frozen,test_termination_truncation_bootstrap
+C-029,Audit-corrected,"terminal transitions enter replay","historical safeguard","store transition before reset",frozen,test_terminal_transition_retained
+C-030,Audit-corrected,"replay action equals exact environment action","historical safeguard","store canonical post-projection adopted action",frozen,test_action_projection_and_replay_identity
+C-031,Audit-corrected,"exact mid-episode resume","historical safeguard","full runtime checkpoint includes replay optimizers targets RNG env target noise current observation",frozen,test_checkpoint_split_run_equivalence
+C-032,Audit-corrected,"diagnostics exceed finite-loss checks","historical safeguard","log Q ordering TD errors gradients saturation action adoption replay health",frozen,test_diagnostic_schema
+C-033,Audit-corrected,"validation/test scenario seeds are preregistered and disjoint","A-EVAL-001","420000-420099 validation and 430000-430099 one-shot test",frozen,test_seed_partition_contract
+C-034,Paper-primary,"1500 training episodes","simulation section","300-step assumed horizon produces nominal 450k step budget",assumed,test_budget_contract
+C-035,Paper-primary,"no CoCap mechanisms in primary line","independent reproduction boundary","import guard plus config and source scans",frozen,test_paper_primary_contamination_guard
+C-036,Audit-corrected,"paper-discrete and swept collision semantics stay distinguishable","A-COLL-001; historical safeguard","discrete endpoint controls primary; swept result logged audit-only",assumed,test_collision_discrete_vs_swept_audit
+C-037,Audit-corrected,"gate candidate noise semantics are explicit","A-GATE-005","OU noise applies to actor candidate only; PFM candidate is deterministic",assumed,test_gate_candidate_noise_contract

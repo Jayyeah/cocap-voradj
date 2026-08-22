@@ -1,0 +1,242 @@
+schema_version: 1
+spec_version: maadpg-paper-v1
+policy:
+  rule: >-
+    Paper-primary facts remain unchanged. An executable resolution is stored in
+    assumptions.yaml with the ambiguity id, sensitivity, and claim limitation.
+  prohibited: >-
+    Never silently fill a missing paper value from CoCap or from an earlier
+    MASAC/IQN experiment.
+
+items:
+  - id: A-DYN-001
+    topic: integration_scheme
+    paper_evidence:
+      - "Eq. 12 updates velocity first and position with v_(t+1)."
+      - "The prose calls the method first-order explicit Euler."
+    conflict: "The displayed equation is semi-implicit Euler, not explicit Euler."
+    materiality: high
+    paper_primary_resolution: "Follow the displayed Eq. 12 update order."
+    sensitivity_required: true
+
+  - id: A-ACT-001
+    topic: action_constraint
+    paper_evidence:
+      - "Actor/PFM actions are clipped component-wise to [-1,1]^2."
+      - "Eq. 13 states ||a_i,t|| <= amax."
+    conflict: "A box corner has physical norm sqrt(2)*amax."
+    materiality: high
+    paper_primary_resolution: "Use an L2 unit-disk projection as the canonical executable action."
+    sensitivity_required: true
+
+  - id: A-OBS-001
+    topic: actor_input_width
+    paper_evidence:
+      - "Eq. 24 contains 4 self + 4 teammate + 16 lidar + 2 target = 26 scalars."
+      - "Network prose declares an actor input width of 28."
+    conflict: "Two actor inputs are undefined."
+    materiality: high
+    paper_primary_resolution: "Use the fully defined 26-dimensional Eq. 24 observation."
+    sensitivity_required: true
+
+  - id: A-CRITIC-001
+    topic: critic_input_width
+    paper_evidence:
+      - "The CTDE definition supplies joint observations/states and joint actions to Q_i."
+      - "Network prose declares a critic input width of 28."
+    conflict: "A 28-wide critic cannot contain three 26-wide observations plus six actions."
+    materiality: critical
+    paper_primary_resolution: "Use a genuine joint critic input of 3*26 + 3*2 = 84."
+    sensitivity_required: false
+
+  - id: A-NET-001
+    topic: hidden_layer_count
+    paper_evidence:
+      - "The layer strings show two 128-unit hidden layers per network."
+      - "Table 1 lists four hidden layers, 128 units, and 512 neurons."
+    conflict: "It is unclear whether four means per network or actor-plus-critic total."
+    materiality: medium
+    paper_primary_resolution: "Interpret four as two actor plus two critic hidden layers."
+    sensitivity_required: true
+
+  - id: A-SUCC-001
+    topic: success_predicate
+    paper_evidence:
+      - "Eq. 18 requires convex hull, a radial band, maximum angular gap, boundary, separation, and obstacle clearance."
+      - "Eq. 33 uses summed triangle areas and maximum distance; prose also mentions the target inside the triangle."
+    conflict: "The two predicates are not algebraically identical and several thresholds are absent."
+    materiality: critical
+    paper_primary_resolution: "Formal success uses Eq. 18; Eq. 33 quantities remain reward features/diagnostics."
+    sensitivity_required: true
+
+  - id: A-SUCC-002
+    topic: success_thresholds
+    missing_fields: [rho_min, Gamma_max, d_min, d_obs]
+    paper_evidence:
+      - "Only the 0.15 km capture radius is numerically disclosed."
+    materiality: critical
+    paper_primary_resolution: "Freeze explicit v1 values as assumptions and run preregistered sensitivities."
+    sensitivity_required: true
+
+  - id: A-REWARD-001
+    topic: reward_constants
+    missing_fields:
+      - reward_term_weights
+      - c_coll
+      - c_succ
+      - S4
+      - d_lim
+      - d_max
+      - separation_penalty_scale
+      - separation_radius
+      - target_soft_radius
+      - target_hard_radius
+      - target_hit_penalties
+    materiality: critical
+    paper_primary_resolution: "Use one frozen dimensionless v1 coefficient set and label it assumed."
+    sensitivity_required: true
+
+  - id: A-REWARD-002
+    topic: stage_reward_coverage
+    paper_evidence:
+      - "The displayed three branches do not visibly cover every boundary/equality combination."
+    materiality: medium
+    paper_primary_resolution: "Use ordered mutually exclusive branches with an explicit zero fallback and log branch-hit diagnostics."
+    sensitivity_required: false
+
+  - id: A-PFM-001
+    topic: potential_field_parameters
+    missing_fields:
+      - k_target
+      - k_obstacle
+      - k_teammate
+      - epsilon
+      - obstacle_distance_definition
+      - obstacle_influence_cutoff
+    materiality: high
+    paper_primary_resolution: "Freeze v1 values; use signed obstacle-surface clearance and lidar-range cutoff."
+    sensitivity_required: true
+
+  - id: A-GATE-001
+    topic: algorithm_label_and_sign
+    paper_evidence:
+      - "Eq. 21/prose define (PFM reward - actor reward)/(|PFM reward|+lambda)."
+      - "Algorithm 1 swaps PFM/actor labels and displays the reversed numerator."
+    conflict: "Pseudocode would select the opposite candidate in some states."
+    materiality: critical
+    paper_primary_resolution: "Follow the prose and Eqs. 21-22."
+    sensitivity_required: false
+
+  - id: A-GATE-002
+    topic: counterfactual_evaluator
+    paper_evidence:
+      - "The method is described both as a local Q evaluation and as an equivalent one-step environment rollout."
+      - "Algorithm 1 initializes an environment copy."
+    conflict: "Q estimates and exact one-step rewards are different mechanisms."
+    materiality: critical
+    paper_primary_resolution: "Use exact snapshot/restore one-step environment rewards."
+    sensitivity_required: true
+
+  - id: A-GATE-003
+    topic: multi_agent_candidate_order
+    paper_evidence:
+      - "The text mentions progressive consistency but does not fully specify teammate candidate actions."
+    materiality: high
+    paper_primary_resolution: >-
+      Compare each agent while holding all teammate actions at the same base actor
+      joint action, then apply all decisions simultaneously; verify order invariance.
+    sensitivity_required: true
+
+  - id: A-GATE-004
+    topic: threshold_units
+    paper_evidence:
+      - "Eq. 21 appends x100% to the relative reward difference."
+      - "The simulation setting gives beta=0.1 without stating percent or ratio units."
+    conflict: "Literal numeric percent comparison would mean 0.1%, while beta as a ratio means 10%."
+    materiality: high
+    paper_primary_resolution: >-
+      Compare the dimensionless ratio against beta=0.1 and multiply by 100 only
+      for percentage reporting.
+    sensitivity_required: true
+
+  - id: A-GATE-005
+    topic: candidate_exploration_noise
+    paper_evidence:
+      - "Eq. 20 defines a deterministic normalized PFM action."
+      - "Algorithm 1 adds noise inside inconsistently labelled actor/PFM expressions."
+    conflict: "It is unclear whether exploration noise is applied to both candidates."
+    materiality: high
+    paper_primary_resolution: >-
+      Compare the OU-perturbed canonical actor action against the deterministic
+      canonical PFM action.
+    sensitivity_required: true
+
+  - id: A-TARGET-001
+    topic: target_policy
+    missing_fields:
+      - source_code
+      - architecture
+      - checkpoint
+      - training_environment
+      - training_schedule
+      - exploration_or_stochasticity
+      - selection_rule
+    paper_evidence:
+      - "The target is called a stochastic MADDPG-based deep-RL policy."
+    materiality: critical
+    paper_primary_resolution: >-
+      Use a frozen disclosed scripted stochastic evader plugin. Limit claims and
+      report policy-specific results; never call it the authors' target.
+    sensitivity_required: true
+
+  - id: A-RESET-001
+    topic: reset_distribution
+    missing_fields:
+      - pursuer_position_distribution
+      - target_position_distribution
+      - obstacle_center_distribution
+      - rejection_clearances
+      - heading_initialization
+    materiality: high
+    paper_primary_resolution: "Use explicit seeded uniform/rejection sampling."
+    sensitivity_required: true
+
+  - id: A-TRAIN-001
+    topic: training_schedule
+    missing_fields:
+      - episode_horizon
+      - optimizer
+      - replay_warmup
+      - exploration_noise
+      - update_frequency
+      - gradient_steps
+      - gradient_clipping
+      - number_of_seeds
+      - checkpoint_rule
+    materiality: critical
+    paper_primary_resolution: "Freeze a standard MADDPG v1 schedule and preregister evaluation."
+    sensitivity_required: true
+
+  - id: A-COLL-001
+    topic: collision_semantics
+    paper_evidence:
+      - "Paper equations clip positions to the workspace."
+      - "The episode is said to terminate on boundary collision."
+      - "Discrete versus swept collision checking is not specified."
+    conflict: "Clipping can erase evidence of a boundary crossing."
+    materiality: high
+    paper_primary_resolution: >-
+      Detect collision using the un-clipped proposed endpoint and discrete
+      post-step geometry; retain swept checks as audit-only diagnostics.
+    sensitivity_required: true
+
+  - id: A-EVAL-001
+    topic: evaluation_protocol
+    missing_fields:
+      - evaluation_seed_list
+      - rollouts_per_checkpoint
+      - confidence_intervals
+      - deterministic_policy_definition
+    materiality: critical
+    paper_primary_resolution: "Pre-register non-overlapping seed ranges and actor-only deterministic evaluation."
+    sensitivity_required: false

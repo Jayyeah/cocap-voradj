@@ -1,0 +1,305 @@
+schema_version: 1
+spec_version: maadpg-paper-v1
+status: frozen_for_r0_implementation
+units:
+  distance: km
+  time: s
+  velocity: km_per_s
+  acceleration: km_per_s2
+
+scenario:
+  workspace:
+    x: [0.0, 2.0]
+    y: [0.0, 2.0]
+  dt: 1.0
+  horizon_steps: 300
+  pursuer_count: 3
+  target_count: 1
+  obstacle_count_distribution:
+    type: discrete_uniform
+    low: 0
+    high_inclusive: 3
+  obstacle_radius_distribution_km:
+    type: uniform
+    low: 0.10
+    high: 0.15
+  reset:
+    position_distribution: uniform
+    boundary_margin_km: 0.05
+    obstacle_center_margin: radius
+    obstacle_inter_clearance_km: 0.02
+    spawn_obstacle_clearance_km: 0.02
+    spawn_agent_clearance_km: 0.04
+    max_rejection_attempts: 10000
+    initial_velocity: [0.0, 0.0]
+    initial_heading_rad: 0.0
+  related_ambiguities: [A-RESET-001, A-TRAIN-001]
+  sensitivity: high
+
+dynamics:
+  integrator: semi_implicit_euler
+  update_order: [velocity_then_speed_projection, position_then_workspace_clip]
+  heading_when_speed_zero: retain_previous_heading
+  action:
+    policy_space: normalized_world_frame_acceleration
+    network_bounds: [-1.0, 1.0]
+    canonical_projection: l2_unit_disk
+    scale_by_agent_amax: true
+    replay_value: exact_post_projection_executed_normalized_action
+  pursuer:
+    vmax_km_s: 0.010
+    amax_km_s2: 0.004
+  target:
+    vmax_km_s: 0.011
+    amax_km_s2: 0.005
+  collision:
+    timing: discrete_post_step
+    boundary_uses_unclipped_proposal: true
+    swept_checks: audit_only
+  related_ambiguities: [A-DYN-001, A-ACT-001, A-COLL-001]
+  sensitivity: high
+
+observation:
+  pursuer_dim: 26
+  target_dim: 26
+  pursuer_fields:
+    - self_position_div_L
+    - self_velocity_div_vmax
+    - other_pursuer_absolute_positions_div_L_in_fixed_slot_order
+    - lidar_16_div_sensor_range
+    - target_relative_distance_div_dnorm
+    - target_world_bearing_rad
+  dnorm_km: 4.0
+  bearing_encoding: raw_radians_minus_pi_to_pi
+  teammate_order: ascending_fixed_agent_slot
+  lidar:
+    rays: 16
+    range_km: 0.2
+    angle_zero: current_heading
+    direction: counterclockwise
+    no_hit_value: 1.0
+    detects: [workspace_boundary, circular_obstacle_surface]
+    excludes: [pursuers, target]
+  related_ambiguities: [A-OBS-001]
+  sensitivity: high
+
+capture:
+  formal_predicate: eq18_strict_all_conditions
+  require_target_in_convex_hull: true
+  rho_min_km: 0.08
+  rho_max_km: 0.15
+  max_angular_gap_rad: 2.6179938779914944
+  min_pursuer_separation_km: 0.04
+  min_obstacle_surface_clearance_km: 0.02
+  inclusive_thresholds: true
+  geometry_tolerance: 1.0e-9
+  eq33_role: reward_feature_and_diagnostic_only
+  related_ambiguities: [A-SUCC-001, A-SUCC-002]
+  sensitivity: critical
+
+reward:
+  aggregation: unweighted_sum_of_displayed_terms_plus_terminal_bonus
+  r_prog_weight: 1.0
+  r_safe_weight: 1.0
+  r_stage_weight: 1.0
+  r_sep_weight: 1.0
+  r_hit_weight: 1.0
+  collision_penalty_c_coll: 10.0
+  success_bonus_c_succ: 100.0
+  stage:
+    d_cap_km: 0.15
+    d_limit_sum_km: 0.45
+    d_max_sum_km: 8.485281374238571
+    s4_km2: 0.029228357377724802
+    uncovered_fallback: 0.0
+  separation:
+    radius_km: 0.04
+    coefficient: 1.0
+    formula_per_agent: "-coefficient * sum_j(max(0, radius - d_ij) / radius)"
+  target_hit:
+    soft_radius_km: 0.05
+    hard_radius_km: 0.02
+    soft_coefficient: 1.0
+    hard_penalty: 10.0
+    formula_per_agent: >-
+      -hard_penalty when d<hard_radius; otherwise
+      -soft_coefficient*(soft_radius-d)/soft_radius when d<soft_radius; else 0
+  terminal_reward_applied_on: formal_eq18_success
+  related_ambiguities: [A-REWARD-001, A-REWARD-002, A-SUCC-001]
+  sensitivity: critical
+
+termination:
+  terminated_on:
+    - formal_eq18_success
+    - pursuer_boundary_crossing
+    - pursuer_obstacle_clearance_breach
+    - pursuer_pursuer_separation_breach
+    - pursuer_target_hard_collision
+  truncated_on: [horizon_steps]
+  terminal_transition_must_enter_replay: true
+  bootstrap_mask_zero_only_for_terminated: true
+  target_boundary_or_obstacle_contact: audit_only_not_terminal
+
+target_policy:
+  primary_id: scripted_evasive_ou_v1
+  class: disclosed_scripted_stochastic_plugin
+  deterministic_force_weights:
+    flee_from_pursuer_centroid: 0.75
+    obstacle_surface_repulsion: 0.15
+    boundary_repulsion: 0.10
+  obstacle_influence_km: 0.20
+  boundary_influence_km: 0.20
+  inverse_distance_floor_km: 0.01
+  ou_noise:
+    theta: 0.15
+    sigma: 0.20
+    dt: 1.0
+    initial_state: [0.0, 0.0]
+  output_projection: l2_unit_disk
+  evaluation_rng: scenario_seed_derived_and_restorable
+  r0_oracle_policy_id: stationary_target_v1
+  related_ambiguities: [A-TARGET-001]
+  sensitivity: critical
+  claim_limit: "This is not the unreleased target policy used by the paper authors."
+
+pfm:
+  exploration_noise: false
+  k_target: 1.0
+  k_obstacle: 1.0
+  k_teammate: 1.0
+  epsilon: 1.0e-8
+  inverse_square_distance_floor_km: 0.01
+  obstacle_distance: signed_surface_clearance
+  obstacle_influence_cutoff_km: 0.20
+  teammate_influence_cutoff: null
+  canonical_projection: l2_unit_disk
+  related_ambiguities: [A-PFM-001, A-ACT-001]
+  sensitivity: high
+
+gate:
+  evaluator: exact_one_step_snapshot_restore
+  actor_candidate: actor_plus_ou_then_canonical_projection
+  pfm_candidate: deterministic_pfm_action
+  delta_ratio_formula: "(reward_pfm - reward_actor) / (abs(reward_pfm) + lambda)"
+  delta_percent_for_reporting: "100 * delta_ratio"
+  lambda: 1.0e-6
+  beta_ratio: 0.1
+  adoption_rule: delta_greater_or_equal_beta
+  teammate_action_context: same_base_actor_joint_action
+  adoption_commit: simultaneous_after_all_agent_comparisons
+  candidate_order_must_be_invariant: true
+  candidate_rollouts_must_not_mutate_real_state_or_rng: true
+  replay_value: exact_adopted_action_executed_by_real_step
+  related_ambiguities: [A-GATE-001, A-GATE-002, A-GATE-003, A-GATE-004, A-GATE-005]
+  sensitivity: critical
+
+networks:
+  initialization: kaiming_uniform_hidden_and_uniform_plus_minus_3e-3_output
+  actor:
+    input_dim: 26
+    hidden_dims: [128, 128]
+    activation: relu
+    output_dim: 2
+    output_activation: tanh_then_l2_projection
+  critic:
+    count: 3
+    input_dim: 84
+    input_formula: 3_times_26_observations_plus_3_times_2_actions
+    hidden_dims: [128, 128]
+    activation: relu
+    output_dim: 1
+  target_networks: true
+  parameter_sharing: false
+  related_ambiguities: [A-CRITIC-001, A-NET-001]
+  sensitivity: high
+
+training:
+  algorithm_baseline: standard_maddpg
+  optimizer: adam
+  actor_learning_rate: 0.0005
+  critic_learning_rate: 0.001
+  gamma: 0.95
+  tau: 0.01
+  replay_capacity: 1000000
+  replay_sampling: uniform
+  batch_size: 1024
+  replay_warmup_transitions: 10000
+  update_every_environment_steps: 1
+  gradient_steps_per_update: 1
+  target_update_every_gradient_steps: 1
+  gradient_clipping: null
+  actor_exploration:
+    type: independent_ou_per_pursuer
+    theta: 0.15
+    sigma_start: 0.20
+    sigma_end: 0.05
+    linear_decay_fraction_of_budget: 0.80
+    reset_each_episode: true
+  episodes: 1500
+  horizon_steps: 300
+  nominal_environment_step_budget: 450000
+  train_seeds: [2026082301, 2026082302, 2026082303]
+  related_ambiguities: [A-TRAIN-001]
+  sensitivity: critical
+
+evaluation:
+  action_mode: deterministic_actor_only
+  exploration_noise: false
+  gate_or_pfm: false
+  tuning_scenario_seeds:
+    start: 410000
+    stop_inclusive: 410019
+  validation_scenario_seeds:
+    start: 420000
+    stop_inclusive: 420099
+  test_scenario_seeds:
+    start: 430000
+    stop_inclusive: 430099
+  seed_sets_must_not_overlap: true
+  primary_metric: strict_eq18_success_rate
+  secondary_metrics:
+    - wilson_95_interval
+    - collision_rate_by_type
+    - truncation_rate
+    - conditional_steps_to_success
+    - min_clearance_quantiles
+    - final_capture_margin_quantiles
+  checkpoint_selection: highest_validation_success_then_lowest_collision_then_earliest_step
+  test_consumption: once_after_selection
+  related_ambiguities: [A-EVAL-001]
+
+checkpoint:
+  exact_resume_required_fields:
+    - online_actor_and_critic_parameters
+    - target_actor_and_critic_parameters
+    - actor_and_critic_optimizer_states
+    - replay_contents_cursor_size_and_rng
+    - environment_state_and_rng
+    - target_policy_state_and_rng
+    - exploration_process_states
+    - python_numpy_and_torch_rng_states
+    - episode_and_environment_step_counters
+    - gradient_step_counter
+    - current_observation_and_in_progress_episode_accumulators
+    - spec_version_config_hash_git_commit_and_run_id
+  rolling_checkpoint_kind: full_runtime
+  milestone_checkpoint_kind: model_only
+  atomic_write: true
+
+contamination_guard:
+  forbidden_in_paper_primary:
+    - voronoi_features
+    - communication_topology
+    - orca
+    - action_shield
+    - safety_projection
+    - iqn
+    - sac_entropy
+    - cocap_oracle
+    - cocap_reward
+    - cocap_observation_compression
+    - cocap_curriculum
+  allowed_shared_dependencies:
+    - generic_math_utilities_with_contract_tests
+    - generic_atomic_file_write_utility
+    - generic_seed_and_rng_serialization_utility
