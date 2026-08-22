@@ -28,7 +28,7 @@ def test_r1_spec_artifacts_parse_and_are_traceable():
     assert assumptions["gate"]["beta_ratio"] == 0.1
     assert "A-GATE-004" in assumptions["gate"]["related_ambiguities"]
 
-    assert len(contracts) == 37
+    assert len(contracts) == 38
     contract_ids = [row["contract_id"] for row in contracts]
     assert len(contract_ids) == len(set(contract_ids))
     assert all(row["requirement"] and row["verification"] for row in contracts)

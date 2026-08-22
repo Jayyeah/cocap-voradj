@@ -19,8 +19,8 @@ reviewer can audit it without traversing the legacy CoCap/MASAC training stack.
 | replay | `replay.py` | `JointReplayBuffer` | fixed slots, executed action, terminal storage |
 | actors/critics | `networks.py` | `Actor`, `JointCritic` | shapes, locality, cross-agent critic dependence |
 | MADDPG learner | `maddpg.py` | `MADDPGLearner` | target equations, gradient ownership, updates |
-| rollout | `rollout.py` | train/evaluate rollout modes | actor-only eval, no lost terminal transition |
-| checkpoint | `checkpoint.py` | atomic full/model checkpoints | split-run bitwise/numerical equivalence |
+| rollout | `trainer.py`; `evaluation_contract.py` | train and full evaluation modes | actor-only eval, no lost terminal transition |
+| checkpoint | `checkpoint.py` | atomic rolling/final full and model-only checkpoints | split-run bitwise/numerical equivalence |
 | diagnostics | `diagnostics.py` | structured health records | schema and finite/non-finite tripwires |
 | CLI | `cli.py` | train/evaluate/inspect commands | smoke invocation and config provenance |
 

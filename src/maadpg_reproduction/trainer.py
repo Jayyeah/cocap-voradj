@@ -248,6 +248,7 @@ class MAADPGTrainer:
             self.runtime.current_episode_length = 0
             self.runtime.current_episode_gate_adoptions.fill(0)
 
+        self._validate_runtime_consistency(check_observation=False)
         return TrainerStep(
             environment_step=self.runtime.environment_steps,
             gradient_step=self.runtime.gradient_steps,
@@ -260,6 +261,41 @@ class MAADPGTrainer:
             gate_decision=gate_decision,
             episode=episode_record,
         )
+
+    def _validate_runtime_consistency(
+        self, *, check_observation: bool = True
+    ) -> None:
+        state = self.env.state
+        if state is None:
+            raise RuntimeError("trainer environment state is missing")
+        expected_size = min(self.runtime.environment_steps, self.replay.capacity)
+        expected_cursor = self.runtime.environment_steps % self.replay.capacity
+        checks = {
+            "runtime_vs_replay_insertions": (
+                self.runtime.environment_steps, self.replay.total_insertions
+            ),
+            "runtime_vs_learner_updates": (
+                self.runtime.gradient_steps, self.learner.update_count
+            ),
+            "runtime_vs_environment_episode_step": (
+                self.runtime.current_episode_length, state.step_count
+            ),
+            "replay_size": (self.replay.size, expected_size),
+            "replay_cursor": (self.replay.cursor, expected_cursor),
+        }
+        mismatches = {
+            name: values for name, values in checks.items() if values[0] != values[1]
+        }
+        if mismatches:
+            raise RuntimeError(
+                f"trainer/replay/runtime consistency failure: {mismatches}"
+            )
+        if check_observation and not np.array_equal(
+            self.runtime.current_observation, self.env.observation()
+        ):
+            raise RuntimeError(
+                "runtime observation differs from environment observation"
+            )
 
     @staticmethod
     def _global_rng_state() -> dict[str, Any]:
@@ -279,8 +315,11 @@ class MAADPGTrainer:
             torch.cuda.set_rng_state_all([value.cpu() for value in state["torch_cuda"]])
 
     def state_dict(self, *, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+        self._validate_runtime_consistency()
         return {
             "checkpoint_version": 1,
+            "checkpoint_kind": "full_runtime",
+            "contains_replay": True,
             "trainer_config": self.config,
             "runtime": deepcopy(self.runtime),
             "environment": self.env.snapshot(),
@@ -301,6 +340,7 @@ class MAADPGTrainer:
         self.env.restore(state["environment"])
         self.exploration.load_state_dict(state["exploration"])
         self.runtime = deepcopy(state["runtime"])
+        self._validate_runtime_consistency()
         self._restore_global_rng_state(state["global_rng"])
 
     @classmethod

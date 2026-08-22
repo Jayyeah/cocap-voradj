@@ -25,8 +25,13 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 
 mkdir -p "$artifact_root"
+exec 9>"$artifact_root/.${variant}.lock"
+if ! flock -n 9; then
+  echo "formal queue already holds lock for $variant" >&2
+  exit 4
+fi
 for seed in 2026082301 2026082302 2026082303; do
-  run_id="formal450k-${variant}-s${seed}"
+  run_id="formal1500ep-${variant}-s${seed}"
   run_dir="$artifact_root/${variant}_seed${seed}"
   mkdir -p "$run_dir"
   resume_args=()
@@ -40,6 +45,7 @@ for seed in 2026082301 2026082302 2026082303; do
     --seed "$seed" \
     --device "$device" \
     --step-budget 450000 \
+    --episode-budget 1500 \
     --checkpoint-every 25000 \
     --model-every 50000 \
     --diagnostic-every 1000 \

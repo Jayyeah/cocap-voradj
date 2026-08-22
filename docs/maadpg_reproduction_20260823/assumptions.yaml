@@ -237,7 +237,9 @@ training:
     reset_each_episode: true
   episodes: 1500
   horizon_steps: 300
-  nominal_environment_step_budget: 450000
+  formal_stop_condition: episodes_completed_greater_or_equal_1500
+  environment_step_safety_cap: 450000
+  nominal_environment_steps_if_all_episodes_truncate: 450000
   train_seeds: [2026082301, 2026082302, 2026082303]
   related_ambiguities: [A-TRAIN-001]
   sensitivity: critical
@@ -246,6 +248,12 @@ evaluation:
   action_mode: deterministic_actor_only
   exploration_noise: false
   gate_or_pfm: false
+  diagnostic_modes:
+    stochastic_actor_only: fixed_ou_sigma_0.05
+    guidance_on: deterministic_actor_vs_deterministic_pfm_gate
+  paper_terminal_diagnostic: target_in_hull_and_fan_area_le_S4_and_max_distance_le_dcap
+  strict_instantaneous_success: eq18
+  hold_success_diagnostic_steps: 10
   tuning_scenario_seeds:
     start: 410000
     stop_inclusive: 410019
@@ -264,9 +272,14 @@ evaluation:
     - conditional_steps_to_success
     - min_clearance_quantiles
     - final_capture_margin_quantiles
+    - paper_terminal_success
+    - instantaneous_strict_success
+    - ten_step_hold_success
+    - convex_hull_radial_band_angular_gap_and_feasibility_rates
+    - action_saturation_and_pursuer_speed
   checkpoint_selection: highest_validation_success_then_lowest_collision_then_earliest_step
   test_consumption: once_after_selection
-  related_ambiguities: [A-EVAL-001]
+  related_ambiguities: [A-EVAL-001, A-EVAL-002]
 
 checkpoint:
   exact_resume_required_fields:
@@ -283,7 +296,17 @@ checkpoint:
     - current_observation_and_in_progress_episode_accumulators
     - spec_version_config_hash_git_commit_and_run_id
   rolling_checkpoint_kind: full_runtime
+  final_checkpoint_kind: full_runtime
+  rolling_and_final_contains_replay: true
   milestone_checkpoint_kind: model_only
+  milestone_contains_replay: false
+  fail_closed_counter_checks:
+    - runtime_environment_steps_equals_replay_total_insertions
+    - runtime_gradient_steps_equals_learner_update_count
+    - runtime_episode_length_equals_environment_episode_step
+    - replay_cursor_and_size_match_total_insertions
+    - runtime_observation_equals_environment_observation
+  observation_action_schema_hash_required: true
   atomic_write: true
 
 contamination_guard:

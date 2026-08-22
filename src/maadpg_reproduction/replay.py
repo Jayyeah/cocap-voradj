@@ -54,6 +54,7 @@ class JointReplayBuffer:
         self.truncated = np.empty(capacity, dtype=np.bool_)
         self.cursor = 0
         self.size = 0
+        self.total_insertions = 0
         self._rng = np.random.default_rng(seed)
 
     def __len__(self) -> int:
@@ -107,6 +108,7 @@ class JointReplayBuffer:
         self.truncated[index] = bool(truncated)
         self.cursor = (self.cursor + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
+        self.total_insertions += 1
 
     def sample_indices(self, batch_size: int) -> NDArray[np.int64]:
         if batch_size <= 0:
@@ -156,6 +158,7 @@ class JointReplayBuffer:
             "action_dim": self.action_dim,
             "cursor": self.cursor,
             "size": self.size,
+            "total_insertions": self.total_insertions,
             "observations": self.observations[:valid].copy(),
             "actions": self.actions[:valid].copy(),
             "rewards": self.rewards[:valid].copy(),
@@ -182,9 +185,16 @@ class JointReplayBuffer:
             raise ValueError(f"replay metadata mismatch: {metadata} != {expected}")
         size = int(state["size"])
         cursor = int(state["cursor"])
+        total_insertions = int(state.get("total_insertions", size))
         valid = self.capacity if size == self.capacity else size
-        if not 0 <= size <= self.capacity or not 0 <= cursor < self.capacity:
-            raise ValueError("invalid replay size/cursor")
+        if (
+            not 0 <= size <= self.capacity
+            or not 0 <= cursor < self.capacity
+            or total_insertions < size
+            or cursor != total_insertions % self.capacity
+            or size != min(total_insertions, self.capacity)
+        ):
+            raise ValueError("invalid replay size/cursor/total_insertions")
         fields = (
             ("observations", self.observations),
             ("actions", self.actions),
@@ -200,4 +210,5 @@ class JointReplayBuffer:
             destination[:valid] = source
         self.size = size
         self.cursor = cursor
+        self.total_insertions = total_insertions
         self._rng.bit_generator.state = deepcopy(state["rng_state"])

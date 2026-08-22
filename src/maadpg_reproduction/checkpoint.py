@@ -61,6 +61,7 @@ def save_model_checkpoint(
     payload = {
         "checkpoint_version": 1,
         "checkpoint_kind": "model_only",
+        "contains_replay": False,
         "trainer_config": trainer.config,
         "learner": trainer.learner.state_dict(),
         "environment_steps": trainer.runtime.environment_steps,

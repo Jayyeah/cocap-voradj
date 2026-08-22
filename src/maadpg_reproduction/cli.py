@@ -19,10 +19,11 @@ import torch
 
 from .checkpoint import save_full_checkpoint, save_model_checkpoint
 from .config import default_environment_config
-from .evaluation import evaluate_actor_only
+from .evaluation_contract import evaluate_policy
 from .exploration import OUExplorationConfig
 from .logging_utils import append_jsonl, atomic_write_json, json_safe, utc_now
 from .maddpg import MADDPGLearner
+from .schema import observation_action_schema_sha256
 from .trainer import MAADPGTrainer, TrainerConfig, TrainerStep
 from .training_config import default_maddpg_config
 
@@ -94,6 +95,9 @@ def _load_trainer(path: Path, device: str) -> tuple[MAADPGTrainer, dict[str, Any
 def _metadata(run_id: str, trainer: MAADPGTrainer, provenance: dict[str, Any]) -> dict[str, Any]:
     return {
         "run_id": run_id,
+        "spec_version": trainer.config.environment.spec_version,
+        "environment_config_sha256": trainer.config.environment.canonical_sha256(),
+        "observation_action_schema_sha256": observation_action_schema_sha256(),
         "variant": trainer.config.variant,
         "training_seed": trainer.config.training_seed,
         "environment_steps": trainer.runtime.environment_steps,
@@ -101,6 +105,7 @@ def _metadata(run_id: str, trainer: MAADPGTrainer, provenance: dict[str, Any]) -
         "episodes_completed": trainer.runtime.episodes_completed,
         "spec_version": trainer.config.environment.spec_version,
         "environment_config_sha256": trainer.config.environment.canonical_sha256(),
+        "observation_action_schema_sha256": observation_action_schema_sha256(),
         **provenance,
     }
 
@@ -167,7 +172,16 @@ def train_command(args: argparse.Namespace) -> int:
         "run_id": run_id,
         "status": "running",
         "step_budget": args.step_budget,
+        "episode_budget": args.episode_budget,
+        "checkpoint_contract": {
+            "rolling_latest": {"kind": "full_runtime", "contains_replay": True},
+            "final": {"kind": "full_runtime", "contains_replay": True},
+            "milestones": {"kind": "model_only", "contains_replay": False},
+        },
         "device": args.device,
+        "pid": os.getpid(),
+        "parent_pid": os.getppid(),
+        "tmux_session": os.environ.get("MAADPG_TMUX_SESSION"),
         "trainer_config": trainer.config,
         "provenance": provenance,
         "resume_metadata": previous_metadata,
@@ -182,7 +196,13 @@ def train_command(args: argparse.Namespace) -> int:
     _install_signal_handlers()
     latest_step: TrainerStep | None = None
     try:
-        while trainer.runtime.environment_steps < args.step_budget:
+        while (
+            trainer.runtime.environment_steps < args.step_budget
+            and (
+                args.episode_budget is None
+                or trainer.runtime.episodes_completed < args.episode_budget
+            )
+        ):
             latest_step = trainer.step_once()
             if latest_step.episode is not None:
                 append_jsonl(
@@ -215,12 +235,25 @@ def train_command(args: argparse.Namespace) -> int:
             checkpoint_path,
             metadata=_metadata(run_id, trainer, provenance),
         )
+        save_full_checkpoint(
+            trainer,
+            run_dir / "final-full.pt",
+            metadata=_metadata(run_id, trainer, provenance),
+        )
         save_model_checkpoint(
             trainer,
             run_dir / "final-model.pt",
             metadata=_metadata(run_id, trainer, provenance),
         )
-        manifest["status"] = "budget_complete"
+        reached_episode_budget = (
+            args.episode_budget is None
+            or trainer.runtime.episodes_completed >= args.episode_budget
+        )
+        manifest["status"] = (
+            "budget_complete"
+            if reached_episode_budget
+            else "step_cap_complete_before_episode_budget"
+        )
         manifest["completed_at_utc"] = utc_now()
         manifest["final"] = _metadata(run_id, trainer, provenance)
         atomic_write_json(run_dir / "manifest.json", manifest)
@@ -278,15 +311,18 @@ def evaluate_command(args: argparse.Namespace) -> int:
         if args.seed_start is not None
         else _evaluation_seeds(args.partition)
     )
-    summary = evaluate_actor_only(learner, config.environment, seeds)
+    summary = evaluate_policy(
+        learner, config.environment, seeds, mode=args.mode
+    )
     record = {
         "event": "actor_only_evaluation",
         "time_utc": utc_now(),
         "checkpoint": str(Path(args.checkpoint).resolve()),
         "checkpoint_metadata": payload.get("metadata", {}),
         "partition": args.partition if args.seed_start is None else "custom",
-        "guidance_enabled": False,
-        "exploration_enabled": False,
+        "mode": args.mode,
+        "guidance_enabled": args.mode == "guidance",
+        "exploration_enabled": args.mode == "stochastic",
         "summary": summary,
     }
     atomic_write_json(output, record)
@@ -304,6 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--seed", type=int, required=True)
     train.add_argument("--device", default="cpu")
     train.add_argument("--step-budget", type=int, required=True)
+    train.add_argument("--episode-budget", type=int)
     train.add_argument("--checkpoint-every", type=int, default=25_000)
     train.add_argument("--model-every", type=int, default=50_000)
     train.add_argument("--diagnostic-every", type=int, default=1_000)
@@ -316,6 +353,11 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--checkpoint", required=True)
     evaluate.add_argument("--output", required=True)
     evaluate.add_argument("--device", default="cpu")
+    evaluate.add_argument(
+        "--mode",
+        choices=("deterministic", "stochastic", "guidance"),
+        default="deterministic",
+    )
     evaluate.add_argument(
         "--partition", choices=("tuning", "validation", "test"), default="validation"
     )
@@ -331,6 +373,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     for name in ("step_budget", "checkpoint_every", "diagnostic_every"):
         if hasattr(args, name) and getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
+    if (
+        args.command == "train"
+        and args.episode_budget is not None
+        and args.episode_budget <= 0
+    ):
+        parser.error("--episode-budget must be positive")
     if args.command == "evaluate" and args.seed_start is None and args.seed_count != 1:
         parser.error("--seed-count requires --seed-start")
     if args.command == "evaluate" and args.seed_count <= 0:
