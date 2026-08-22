@@ -479,3 +479,9 @@ CF2已挂100k完整冻结后同trainer/replay/runtime/RNG原位续到200k的自�
 - A1--A4已完成：fixed collision下CF3温度探针最多仅`2/20 normal`且collision≥95%；旧IQN在完全相同corrected/fixed任务100回合达到`61% normal、85% total capture、10% collision`。当前可解性已成立，后续不再用“local sensing/动作动力学天然不可学”解释MASAC失败。
 - 当前两卡主线为同seed scratch Pure-Capture：GPU0 B0保留K10，GPU1 B1取消K10；其余reward、local observation、MASAC、UTD/LR/tau/batch、fixed collision及200k budget完全冻结。B0保持与CF3的严格任务ablation，B1检验无角色切换时删除hidden hysteresis是否更自然。
 - 200k Gate后：若Pure-Capture显著提高normal/3+，coverage/多角色干扰成立；若3+提高但仍撞毁，转slot assignment/安全投影；若仍rare capture，则停止普通MASAC扩步，优先利用已资格通过的IQN teacher做成功轨迹/蒸馏与几何分工，不做常规超参盲扫。
+
+### 2026-08-22 Pure-Capture Gate结果与路线收紧
+
+- B0-K10/B1-K0均完整200k且finite，但训练内仅`3/1`次normal，final deterministic均`0/20 capture`；碰撞`19/20、20/20`，3+均为0。Pure-Capture没有把连续MASAC从rare stochastic success提升为稳定策略。
+- K0曾在150/175k各短暂`1/20 normal`，200k丢失；B0-K10最终2+、距离、碰撞和训练内normal整体更优。因此K10继续作为local默认合同，不扩K0、不再另做K10删除主线。
+- coverage dilution已明显降级为次要因素。当前P0训练路线改为corrected Pure-Capture IQN anchor：利用IQN125k同环境`61% normal / 85% total / 10% collision`的zero-shot证据，比较保守warm-start+fresh replay与scratch，先获得≥70--80% normal capture、≤10--20% collision且stationary不主导的teacher；随后才做连续Actor成功轨迹蒸馏/slot coordination。普通MASAC扩步、LR/UTD/Huber/batch sweep继续暂停。

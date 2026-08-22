@@ -1084,4 +1084,11 @@ PC0后续判断必须分成两条独立问题：
 - 两线5k首update窗口均为`step/replay/update=5000/5000/1`、finite，peak VRAM约8.02GiB，无OOM、NaN、replay或合同错误；5k几何不用于早期胜负判断。
 - 最终资源快照GPU0无thermal throttle；GPU1在91°C触发driver软件热降频但未触发硬件slowdown，B1仍finite。后续按各线steps/hour分别计算ETA和matched-step比较，禁止把墙时差异误作K10算法效应。
 - 6k完整post-warmup窗：B0/B1=`13.76k/12.74k step/h`且finite；25k完整bundle预计`2026-08-21 13:15--13:40`，200k含诊断预计B0=`2026-08-22 02:30--03:45`、B1=`03:40--05:30`（Asia/Shanghai）。
+
+### 10.37 Pure-Capture B0-K10 / B1-K0 200k收口（2026-08-22）
+
+- 两条均自然完成`200000 replay / 48751 updates / all-finite`，final milestone与rolling完整且hardlink去重；GPU已释放。B0/B1训练内normal=`3/1`、stationary=`0/0`，collision=`875/987`，agent-agent=`712/757`，2+窗口=`129/150`，3+窗口=`13/12`，max 3+ hold=`13/7`。
+- B1-K0在150/175k deterministic20各有1次normal，但200k回到0；B0所有里程碑均0 capture。final20为B0/B1 capture=`0/20、0/20`，collision=`19/20、20/20`，visited2+=`10/20、4/20`，visited3+=`0/20、0/20`，mean min-min=`6.01/11.50 m`。K0没有稳定优于K10，且最终碰撞/几何更弱。
+- 决策：冻结两条，不扩300/400k；默认保留K10。Pure-Capture仍未打通deterministic MASAC，故coverage/多角色reward interference不是主要根因。下一训练优先建立corrected Pure-Capture IQN anchor（warm-start/fresh replay与scratch对照），再做成功轨迹蒸馏；不继续普通MASAC扩步/超参扫。
+- 每25k deterministic20 JSON均完成；final GIF尚未生成（当前0），不得写为GIF完成。完整分段表、bundle和磁盘审计见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。
 - 清理CF3 50--175k六份已被400k取代的独立frozen replay，释放约`21.19 GiB`；200k/400k完整bundle和全部模型/metrics保留。磁盘从`78 GiB available / 92%`改善为`99 GiB / 89%`。详见`docs/CAPTURE_DEBUG_AND_PURE_CAPTURE_ABLATION_20260815_ZH.md`。
