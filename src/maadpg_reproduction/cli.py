@@ -103,9 +103,6 @@ def _metadata(run_id: str, trainer: MAADPGTrainer, provenance: dict[str, Any]) -
         "environment_steps": trainer.runtime.environment_steps,
         "gradient_steps": trainer.runtime.gradient_steps,
         "episodes_completed": trainer.runtime.episodes_completed,
-        "spec_version": trainer.config.environment.spec_version,
-        "environment_config_sha256": trainer.config.environment.canonical_sha256(),
-        "observation_action_schema_sha256": observation_action_schema_sha256(),
         **provenance,
     }
 
@@ -137,13 +134,16 @@ def _diagnostic_record(step: TrainerStep, trainer: MAADPGTrainer) -> dict[str, A
     return record
 
 
-def _install_signal_handlers() -> None:
+def _install_signal_handlers() -> dict[str, str | None]:
+    request: dict[str, str | None] = {"reason": None}
+
     def stop(signum, frame):
         del frame
-        raise GracefulStop(f"received signal {signum}")
+        request["reason"] = f"received signal {signum}"
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
+    return request
 
 
 def train_command(args: argparse.Namespace) -> int:
@@ -170,6 +170,9 @@ def train_command(args: argparse.Namespace) -> int:
         previous_metadata = {}
     manifest = {
         "run_id": run_id,
+        "spec_version": trainer.config.environment.spec_version,
+        "environment_config_sha256": trainer.config.environment.canonical_sha256(),
+        "observation_action_schema_sha256": observation_action_schema_sha256(),
         "status": "running",
         "step_budget": args.step_budget,
         "episode_budget": args.episode_budget,
@@ -193,7 +196,7 @@ def train_command(args: argparse.Namespace) -> int:
             {"event": "run_started", "time_utc": utc_now(), **_metadata(run_id, trainer, provenance)},
             sync=True,
         )
-    _install_signal_handlers()
+    stop_request = _install_signal_handlers()
     latest_step: TrainerStep | None = None
     try:
         while (
@@ -230,6 +233,8 @@ def train_command(args: argparse.Namespace) -> int:
                     / f"model-step-{latest_step.environment_step:09d}.pt",
                     metadata=_metadata(run_id, trainer, provenance),
                 )
+            if stop_request["reason"] is not None:
+                raise GracefulStop(stop_request["reason"])
         save_full_checkpoint(
             trainer,
             checkpoint_path,

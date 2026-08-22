@@ -44,6 +44,25 @@ The preserved artifacts were moved as a unit from `formal/` to
   deterministic/stochastic/guidance modes;
 - a per-variant `flock` makes each three-seed supervisor queue idempotent.
 
+## Deferred-signal correction
+
+A second short launch on `43a00e4` validated the new fail-closed counters and
+exposed an asynchronous-stop edge case. The original signal handler raised
+inside `env.step`; one MADDPG stop landed after the environment advanced but
+before runtime/replay accounting (`episode_step=47` versus `runtime=46`). The
+full save correctly refused this inconsistent state instead of emitting a false
+checkpoint. MAADPG happened to stop at a safe boundary and produced a valid
+7,532-step full bundle. Both artifact directories are preserved under
+`formal_signal_preflight_43a00e4/` and are not formal evidence.
+
+Signals now only set a deferred request. The trainer completes the current real
+transition, replay insertion, optional update, metrics, and periodic checkpoint,
+then raises at the loop boundary. An integration test sent SIGTERM during a
+MAADPG rollout and recovered a consistent 829-step bundle with
+`runtime_steps=replay_insertions=829` and
+`episode_length=environment_episode_step=16`; the isolated restored copy
+advanced exactly to step 830.
+
 ## Storage bound
 
 The observed preflight full bundles were 30.1 MB at 31,910 transitions and
