@@ -3,6 +3,7 @@ runs/
 logs/
 results/
 wandb/
+.venv/
 
 # Python/cache
 __pycache__/
@@ -19,6 +20,12 @@ __pycache__/
 artifacts/**/_workers/
 artifacts/**/episode_*.json
 artifacts/**/summary_*_seed_*.json
+
+# Immutable upstream snapshots intentionally retain their supplied weights.
+!vendor/upstream/**/*.pt
+!vendor/upstream/**/*.pth
+!vendor/upstream/**/*.pkl
+artifacts/open_encirclement_ctde/**/state.lock
 
 # Keep curated A3 best artifacts in this staging copy.
 !artifacts/2026-07-23_a3_apfnew_sqrtn_curriculum/best_20rollout10gif/stage*/step_*.pt

@@ -1,0 +1,13 @@
+category,field,upstream_raw,corrected_roundup_v1,L0_MAPPO,L0_MADDPG
+world,agents,"3 learned hunters + 1 learned target","3 learned hunters + 1 scripted target",same corrected env,same corrected env
+world,arena_and_obstacles,"2x2; 3 static circles","2x2; 3 static circles",same,same
+dynamics,action,"world [ax ay]; hidden norm clip","world [ax ay]; elementwise Box +/-0.04",tanh physical action,tanh physical action plus bounded noise
+dynamics,dt_and_speed,"dt .5; buggy global velocity norm","dt .5; per-agent hunter .1 target .12",same,same
+observation,hunter,"26 full-target-information",same 26 fields,local actor 26,local actor 26
+ctde,critic,"four per-agent joint-Q critics","environment only","central V over 78 joint obs","three critics over 78 joint obs + 6 joint action"
+reward,hunters,"stage/terminal only agents 0:2","stage/terminal all 3",same,same
+task,success,"exact area equality + radius .3","stable nondegenerate triangle inclusion + all distances <=.3",instantaneous terminated,instantaneous terminated
+task,time_limit,"single done list","timeout truncated; capture terminated","truncation bootstraps terminal V","critic target masks only terminated"
+recovery,full_bundle,"network-only","N/A","actor critic optimizers ValueNorm RNG runtime env state","actors critics targets optimizers schedulers replay RNG runtime env state"
+evaluation,deterministic,"upstream actor mean","20 fixed-seed rollouts per milestone",noise off,noise off
+claims,boundary,Upstream-Raw only,Audit-Corrected,matched algorithm baseline,matched algorithm baseline
