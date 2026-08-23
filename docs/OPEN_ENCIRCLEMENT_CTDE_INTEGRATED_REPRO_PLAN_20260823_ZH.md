@@ -1,6 +1,6 @@
 # 开源连续 CTDE 围捕整合复现计划（2026-08-23）
 
-> 状态：R-1、R0、R1、R2 与 CPU/CUDA smoke 已完成；L0 正式长训待最终提交后启动（2026-08-23）。
+> 状态：R-1、R0、R1、R2 与 CPU/CUDA smoke 已完成；L0 双 GPU 正式长训已于 2026-08-23 11:50:28 +08:00 启动并通过稳定性验收，后续仅等待自动队列增长。
 >
 > 主工程底座：`tinyzqh/light_mappo`。
 >
@@ -419,4 +419,4 @@ R2：在同一个corrected_roundup_v1上准备两条算法。
 - R1：PASS。`corrected_roundup_v1`、稳定三角形判定、三 hunter reward、逐 agent 限速、有界动作、scripted target、seed、terminated/truncated、metrics/state 与 moving-target oracle 已实现；oracle 在无障碍 10 seeds 为 10/10。
 - R2：PASS。MAPPO actor 为 local 26、central V 为 joint 78；MADDPG 三个 actor 为 local 26、三个 critic 为 joint 78+6。完整 bundle 覆盖 optimizer、ValueNorm/replay、RNG、runtime 与环境状态。
 - Smoke：PASS。聚焦 pytest 18 项通过；MAPPO/MADDPG 32-step CPU smoke 各完成 1 次真实更新；CUDA 2k 分别完成 10/98 updates，metrics finite。MAPPO 已从 600-step rolling full 实际恢复到 2k，MADDPG 的含 replay full bundle 也已实际加载。
-- L0：六个 150k 配置与双 GPU fail-closed supervisor 已完成 preflight；实际 PID/tmux/step/ETA 将在正式启动并观察后回填。
+- L0：RUNNING/PASS。提交 `0547dc35ebbabf8fc3bdb43685da10539f85946f` 后，tmux `open_ctde_l0_20260823` 于 11:50:28 +08:00 启动 supervisor PID 233110；GPU0 worker 233196 跑 MAPPO seed1，GPU1 worker 233197 跑 MADDPG seed1，其余四条已进入 fail-closed 自动队列。11:53:32 固定快照为 MAPPO 55,000 steps/275 updates/303.06 steps/s（约 1.091M steps/h），MADDPG 38,312 steps/3,729 updates/210.95 steps/s（约 759k steps/h，replay=38,312）；两条均已完成 25k 评估并继续增长，rolling full 写入、内部校验及 CPU 直接加载均通过。按该快照，当前两条 150k ETA 分别为 11:58:45 与 12:02:21 +08:00；完整证据见执行记录。

@@ -95,4 +95,24 @@ supervisor 使用非阻塞文件锁、PID/run state、原子状态写入和 fail
 
 按 smoke 吞吐，单条 150k 纯训练约 10.7 分钟；25k/50k/75k/100k/125k/150k 的 20-rollout deterministic eval 会增加墙时，保守按每条 12–18 分钟估算。每张卡串行三条约 36–54 分钟。MADDPG 在 150k 有效 replay 约 193 MiB；单 seed 同时保留 rolling/final 的峰值约 400 MiB，final 验证后降至约 200 MiB。六条正式线加模型、日志和 GIF 预计低于 1.5 GiB，显著低于启动前 83 GiB 可用空间。
 
-正式启动后的 tmux、supervisor/worker PID、当前 step、GPU/VRAM/RAM、实测吞吐与绝对 ETA 在启动验收后追加。
+## L0 正式启动验收
+
+- 启动代码提交：`0547dc35ebbabf8fc3bdb43685da10539f85946f`。
+- 启动时间：2026-08-23 11:50:28 +08:00；tmux：`open_ctde_l0_20260823`；supervisor PID：233110。
+- GPU0 worker PID 233196：`l0_mappo_seed1_150k`；队列为 MADDPG seed2 → MAPPO seed3。
+- GPU1 worker PID 233197：`l0_maddpg_seed1_150k`；队列为 MAPPO seed2 → MADDPG seed3。
+- supervisor 状态为 `RUNNING`、failed 为空；队列使用 fail-closed 语义，当前 run 成功后自动接续，失败时不会误启同 lane 的后续 seed。
+
+固定观测窗为 11:50:28–11:53:32 +08:00：
+
+| lane | 固定快照 step/update | 实测吞吐 | steps/hour | 首个 25k | 150k 绝对 ETA |
+|---|---:|---:|---:|---|---|
+| MAPPO seed1 / cuda:0 | 55,000 / 275 | 303.06 steps/s | 1,091,002 | 11:51:54 已完成评估 | 11:58:45 +08:00 |
+| MADDPG seed1 / cuda:1 | 38,312 / 3,729 | 210.95 steps/s | 759,406 | 11:52:30 已完成评估 | 12:02:21 +08:00 |
+
+两次间隔观测均显示 step/update 单调增长，且两条线跨过 25k milestone eval 后继续训练。MAPPO 的 value/policy/entropy/actor-grad/critic-grad 均为有限值且 `value_normalizer=true`；MADDPG 的 Q/TD/actor/critic 指标均为有限值，固定快照 replay=38,312。两份 `rolling-full.pt` 均由训练进程原子写入并标记 `rolling_full_verified=true`，随后又在独立 CPU 进程中直接 `torch.load`：
+
+- MAPPO bundle schema 为 `open-encirclement-full-v1`，包含 actor/critic、两 optimizer、ValueNorm、RNG、runtime、8 个环境状态和 observations；
+- MADDPG bundle 使用相同 schema，包含 actors/critics/targets、optimizers、schedulers、完整 replay、RNG、runtime、8 个环境状态和 observations；25k 载入快照的 replay count 精确为 25,000。
+
+验收时 GPU0/GPU1 显存分别为 371/373 MiB（总计各 49,140 MiB），温度 64/72°C；系统 RAM 125 GiB、available 114 GiB、swap 0；根盘 available 82 GiB。没有 OOM、traceback、NaN/Inf、checkpoint 或 supervisor 错误。至此未启动的四个 seed 已可靠挂入自动调度，后续唯一事项是等待正式 step 增长。
