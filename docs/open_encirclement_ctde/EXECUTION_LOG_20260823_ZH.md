@@ -116,3 +116,9 @@ supervisor 使用非阻塞文件锁、PID/run state、原子状态写入和 fail
 - MADDPG bundle 使用相同 schema，包含 actors/critics/targets、optimizers、schedulers、完整 replay、RNG、runtime、8 个环境状态和 observations；25k 载入快照的 replay count 精确为 25,000。
 
 验收时 GPU0/GPU1 显存分别为 371/373 MiB（总计各 49,140 MiB），温度 64/72°C；系统 RAM 125 GiB、available 114 GiB、swap 0；根盘 available 82 GiB。没有 OOM、traceback、NaN/Inf、checkpoint 或 supervisor 错误。至此未启动的四个 seed 已可靠挂入自动调度，后续唯一事项是等待正式 step 增长。
+
+## L0 最终完成与性能结论（2026-08-27 回填）
+
+六条 150k 训练已于 2026-08-23 12:26:19 +08:00 全部完成；supervisor=`COMPLETED`、6/6 completed、failed 为空、队列为空。MAPPO 三 seed deterministic/stochastic capture 均为 2/60（3.33%）；MADDPG 分别为 1/60（1.67%）和 0/60。MAPPO 平均碰撞约 9%，MADDPG 约 63%。
+
+工程与恢复 Gate 全部通过，但“稳定围捕”性能 Gate 未通过。MAPPO 更常让三机同时接近 target，却几乎不形成 containment；MADDPG 的 seed2/seed3 出现高碰撞退化。完整逐线、逐模式、里程碑表现与结论见 `L0_FINAL_RESULTS_20260823_ZH.md`。
