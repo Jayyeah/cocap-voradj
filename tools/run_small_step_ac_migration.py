@@ -360,7 +360,14 @@ def main() -> int:
             append_jsonl(run_dir / "episodes.jsonl", record); observations = env.reset()
         else: observations = next_observations
         if step % int(config["small_step_ac"]["log_interval"]) == 0:
-            throughput = step / max(time.time() - started, 1e-6); append_jsonl(run_dir / "learning_metrics.jsonl", {"step": step, "throughput": throughput, "replay_size": len(replay) if replay is not None else 0, **last_metrics})
+            throughput = step / max(time.time() - started, 1e-6)
+            eta_seconds = max(total - step, 0) / max(throughput, 1e-8)
+            append_jsonl(run_dir / "learning_metrics.jsonl", {"step": step, "throughput": throughput,
+                                                               "replay_size": len(replay) if replay is not None else 0, **last_metrics})
+            atomic_json(run_dir / "status.json", {"state": "running", "step": step, "total": total,
+                                                   "pid": os.getpid(), "algorithm": algorithm,
+                                                   "throughput": throughput, "eta_seconds": eta_seconds,
+                                                   "last_metrics": last_metrics, "updated": time.time()})
         if step % interval == 0 or step == total:
             ckpt = run_dir / "checkpoints" / f"step_{step:09d}.pt"
             resume_ckpt = run_dir / "resume_latest.pt"

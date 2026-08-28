@@ -127,12 +127,12 @@ GPU0：`MAPPO-9 seed1→2→3`，自动生成三种子汇总，再 `IQN-VXY9 see
 
 GPU1：`MAPPO-AW seed1→2→3`，自动生成三种子汇总，再 `TD3-AW seed1→2→3`。
 
-每个 supervisor：单实例 `flock`、独立 PID/status/log、非零退出最多自动恢复3次、从最新原子滚动完整 `resume_latest.pt` 恢复、完成条目不重跑。正式启动后的实时 PID/step/ETA 以：
+每个 supervisor：单实例 `flock`、独立 PID/status/log、非零退出最多自动恢复3次、从最新原子滚动完整 `resume_latest.pt` 恢复、完成条目不重跑。实时状态源为：
 
 - `artifacts/2026-08-28_small_step_ac/supervisor/gpu0_status.json`
 - `artifacts/2026-08-28_small_step_ac/supervisor/gpu1_status.json`
-
-为准。
+- `artifacts/2026-08-28_small_step_ac/<run>/learning_metrics.jsonl`（每1k真实步）
+首批进程由 `b2926ce` 启动，其 supervisor status 在首个25k checkpoint前仍显示0，当前真实步数以 learning metrics 为准；后续 runner 已补每1k写入 status 的监控增强，不中断当前训练。
 
 验收门槛不是“有一次 capture”，而是三种子 deterministic/stochastic 的 normal、stationary、collision/type、2+/3+、3+ hold、angular/ring quality、return 与学习曲线共同判断。只有到 300k×3 完整结束才形成每条线的正式结论。
 
@@ -140,12 +140,14 @@ GPU1：`MAPPO-AW seed1→2→3`，自动生成三种子汇总，再 `TD3-AW seed
 
 | GPU | 当前/后续条目 | 状态 | step | ETA | 下一自动任务 |
 |---:|---|---|---:|---|---|
-| 0 | MAPPO-9 seed1 | QUEUED（首个 pre-launch commit 后启动） | 0/300k | 首个1k吞吐后估算 | MAPPO-9 seed2 |
+| 0 | MAPPO-9 seed1 | **RUNNING**（supervisor 2365773 / child 2365790 / tmux `cocap_small_ac_gpu0`） | 4k/300k | 当前18.33 step/s，约4h29m到本seed 300k（不含formal eval） | MAPPO-9 seed2 |
 | 0 | MAPPO-9 seed2/seed3 | QUEUED | 0/300k | 依赖前序 | IQN-VXY9 seed1 |
 | 0 | IQN-VXY9 seed1/2/3 | QUEUED | 0/300k | 依赖前序 | lane complete |
-| 1 | MAPPO-AW seed1 | QUEUED（首个 pre-launch commit 后启动） | 0/300k | 首个1k吞吐后估算 | MAPPO-AW seed2 |
+| 1 | MAPPO-AW seed1 | **RUNNING**（supervisor 2365779 / child 2365798 / tmux `cocap_small_ac_gpu1`） | 4k/300k | 当前16.02 step/s，约5h08m到本seed 300k（不含formal eval） | MAPPO-AW seed2 |
 | 1 | MAPPO-AW seed2/seed3 | QUEUED | 0/300k | 依赖前序 | TD3-AW seed1 |
 | 1 | TD3-AW seed1/2/3 | QUEUED | 0/300k | 依赖前序 | lane complete |
+
+4k health snapshot（2026-08-28 15:08 CST）：MAPPO-9 update15，entropy 1.9400、value loss 55.3378、clip 0.3510、KL 0.03950、EV 0.23508；MAPPO-AW update15，entropy 2.6704、value loss 11.1041、clip 0.2898、KL 0.04898、EV 0.18214，Gaussian mean `(a,w)=(-0.6851,0.1142)`、std `(1.6241,0.6554)`。指标均 finite；这是早期 health，不是性能结论。首个正式 checkpoint 路径将在25k生成，当前为 `PENDING`。
 
 Gate：25k仅 health；50k检查数值、approach、2+；100k看趋势；150/200/250/300k看稳定 capture 增长。当前 formal Gate 全部 `PENDING`，smoke Gate 为 `DONE/PASS`。除 NaN/Inf、明确 simulator/config/action mapping 错误或数值发散外，不因早期0 capture重启。
 
