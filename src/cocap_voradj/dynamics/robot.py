@@ -278,6 +278,53 @@ class Robot:
             self.velocity = command_world + ocean_current
             self.speed = float(np.linalg.norm(command_world))
 
+    def update_state_desired_velocity_body(
+        self,
+        command_body: np.ndarray,
+        *,
+        acceleration_limit: float,
+        current_velocity=np.zeros(2),
+        substep_callback=None,
+    ) -> bool:
+        """Track a body-frame velocity target under the legacy acceleration budget."""
+        target_world = body_to_world(np.asarray(command_body, dtype=float), self.theta)
+        ocean_current = np.asarray(current_velocity, dtype=float)
+        previous_world = np.asarray(self.velocity, dtype=float) - ocean_current
+        if previous_world.shape != (2,) or not np.all(np.isfinite(previous_world)):
+            previous_world = np.zeros(2, dtype=float)
+        limit = float(acceleration_limit)
+        if not np.isfinite(limit) or limit <= 0.0:
+            raise ValueError("acceleration_limit must be finite and positive")
+        damping = float(self.coefficient_water_resistance or 0.0)
+        speed_limited = False
+        for _ in range(max(int(self.N), 1)):
+            desired_acceleration = (target_world - previous_world) / max(float(self.dt), 1e-8)
+            desired_acceleration += damping * previous_world
+            magnitude = float(np.linalg.norm(desired_acceleration))
+            if magnitude > limit:
+                desired_acceleration *= limit / magnitude
+            next_world = previous_world + (
+                desired_acceleration - damping * previous_world
+            ) * float(self.dt)
+            if self.max_speed is not None:
+                speed = float(np.linalg.norm(next_world))
+                if speed > float(self.max_speed):
+                    next_world *= float(self.max_speed) / max(speed, np.finfo(float).eps)
+                    speed_limited = True
+            self.x += 0.5 * (previous_world[0] + next_world[0]) * float(self.dt)
+            self.y += 0.5 * (previous_world[1] + next_world[1]) * float(self.dt)
+            self.velocity = next_world + ocean_current
+            self.speed = float(np.linalg.norm(next_world))
+            previous_world = next_world
+            if substep_callback is not None:
+                substep_callback()
+            if self.deactivated:
+                break
+        if not self.deactivated:
+            self.velocity = previous_world + ocean_current
+            self.speed = float(np.linalg.norm(previous_world))
+        return bool(speed_limited)
+
     def update_state_acceleration_body(
         self,
         acceleration_body: np.ndarray,

@@ -12,6 +12,7 @@ from cocap_voradj.dynamics.pursuer import Pursuer
 from cocap_voradj.dynamics.continuous_action import (
     AccelerationActionAdapter,
     AccelerationAngularVelocityActionAdapter,
+    DesiredBodyVelocityActionAdapter,
 )
 
 TWO_PI = 2.0 * np.pi
@@ -62,6 +63,12 @@ class CoCapEnv:
         }:
             self.action_mode = "acceleration_2d_world"
         elif raw_action_mode in {
+            "desired_velocity_2d_body",
+            "discrete_desired_velocity_2d_body",
+            "vxy9",
+        }:
+            self.action_mode = "desired_velocity_2d_body"
+        elif raw_action_mode in {
             "acceleration_2d_body",
             "continuous_acceleration_2d_body",
             # Read old isolated configs without preserving their old
@@ -80,15 +87,19 @@ class CoCapEnv:
         else:
             raise ValueError(f"unsupported pursuer action_mode: {raw_action_mode}")
         self.continuous_world_action = self.action_mode == "acceleration_2d_world"
+        self.desired_velocity_action = self.action_mode == "desired_velocity_2d_body"
         self.continuous_action = self.action_mode == "acceleration_2d_body" or self.continuous_world_action
         self.continuous_aw_action = self.action_mode == "acceleration_angular_velocity_body"
-        self.continuous_control = self.continuous_action or self.continuous_aw_action
+        self.continuous_control = self.continuous_action or self.continuous_aw_action or self.desired_velocity_action
         self.v_max = float(config.get("v_max", pursuer_cfg.get("max_speed", 3.0)))
         if not np.isfinite(self.v_max) or self.v_max <= 0.0:
             raise ValueError("v_max must be finite and positive")
         self.acceleration_adapter: Optional[AccelerationActionAdapter] = None
         self.action_adapter = None
-        if self.continuous_action:
+        if self.desired_velocity_action:
+            decision_dt = float(config.get("decision_dt", self.env_cfg.get("decision_dt", 0.5)))
+            self.action_adapter = DesiredBodyVelocityActionAdapter(self.v_max, decision_dt)
+        elif self.continuous_action:
             decision_dt = float(
                 config.get(
                     "decision_dt",
@@ -709,6 +720,45 @@ class CoCapEnv:
 
     def _move_robot(self, robot, action: Any) -> None:
         if robot.deactivated or action is None:
+            return
+        if self.desired_velocity_action and getattr(robot, "robot_type", None) == "pursuer":
+            if self.action_adapter is None:
+                raise RuntimeError("desired velocity adapter is not initialized")
+            command = self.action_adapter.validate(action)
+            speed_before = float(robot.speed)
+
+            def substep_checks() -> None:
+                self._clip_and_kill_boundary(robot)
+                self._record_collision_substep(robot)
+
+            action_cfg = self.config.get("action", {}) or {}
+            acceleration_limit = float(
+                action_cfg.get("servo_acceleration_limit", action_cfg.get("a_max", 0.4))
+            )
+            speed_limited = robot.update_state_desired_velocity_body(
+                command,
+                acceleration_limit=acceleration_limit,
+                current_velocity=np.zeros(2, dtype=float),
+                substep_callback=substep_checks,
+            )
+            decision_dt = float(robot.dt * max(int(robot.N), 1))
+            actual_acceleration = (
+                0.0 if robot.deactivated else abs(float(robot.speed) - speed_before) / max(decision_dt, 1e-8)
+            )
+            robot.action_history.append(command.astype(float).tolist())
+            robot.last_action_diagnostics = {
+                "commanded_velocity": float(np.linalg.norm(command)),
+                "validated_velocity": float(np.linalg.norm(command)),
+                "action_rejected": False,
+                "validation_delta": 0.0,
+                "speed_before": speed_before,
+                "speed_after": float(robot.speed),
+                "speed_limited": bool(speed_limited),
+                "actual_acceleration": actual_acceleration,
+                "jerk": 0.0,
+                "validation_rate": 0.0,
+            }
+            robot.trajectory.append([robot.x, robot.y, robot.theta, robot.speed, robot.velocity[0], robot.velocity[1]])
             return
         if self.continuous_aw_action and getattr(robot, "robot_type", None) == "pursuer":
             if self.action_adapter is None:

@@ -678,6 +678,7 @@ def _screen(
     device: str,
     scenes: Tuple[str, ...] = SCENES,
     max_steps: int | None = None,
+    deterministic: bool = True,
 ) -> Dict[str, Any]:
     if int(episodes) <= 0:
         return {}
@@ -714,6 +715,7 @@ def _screen(
             ce_energies: List[float] = []
             episode_action_norms: List[float] = []
             episode_speeds: List[float] = []
+            episode_return = np.zeros(len(env.pursuers), dtype=np.float64)
             discovery_seen = False
             discovery_step: Optional[int] = None
             episode_geometry: List[Dict[str, Any]] = []
@@ -740,9 +742,10 @@ def _screen(
                     padded,
                     len(env.pursuers),
                     adapter,
-                    deterministic=True,
+                    deterministic=bool(deterministic),
                 )
                 outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
+                episode_return += np.asarray(outcome.rewards, dtype=np.float64)
                 geometry = _pursuit_step_geometry(env, actions)
                 if geometry is not None:
                     episode_geometry.append(geometry)
@@ -802,6 +805,9 @@ def _screen(
             records.append(
                 {
                     "length": int(record["length"]),
+                    "episode_return_by_agent": episode_return.tolist(),
+                    "episode_return_mean": float(np.mean(episode_return)),
+                    "episode_return_sum": float(np.sum(episode_return)),
                     "episode_success": bool(record["episode_success"]),
                     "captured": bool(record["captured"]),
                     "normal_capture": bool(
@@ -867,6 +873,19 @@ def _screen(
             ]
             return float(np.mean(values)) if values else None
 
+        collision_type_names = sorted({
+            str(name)
+            for item in records
+            for name in (item.get("collision_type_counts", {}) or {})
+        })
+        collision_type_counts = {
+            name: int(sum(int((item.get("collision_type_counts", {}) or {}).get(name, 0)) for item in records))
+            for name in collision_type_names
+        }
+        collision_type_episode_rates = {
+            name: float(np.mean([int((item.get("collision_type_counts", {}) or {}).get(name, 0)) > 0 for item in records]))
+            for name in collision_type_names
+        }
         pure_role_rows = [
             row for row in scene_role_rows
             if row.get("capture_objective_role")
@@ -898,6 +917,8 @@ def _screen(
             "stationary_capture_count": int(sum(bool(item["stationary_capture"]) for item in records)),
             "stationary_capture_rate": float(np.mean([bool(item["stationary_capture"]) for item in records])) if records else 0.0,
             "collision_rate": float(np.mean([bool(item["collision_event"]) for item in records])) if records else 0.0,
+            "collision_type_counts": collision_type_counts,
+            "collision_type_episode_rates": collision_type_episode_rates,
             "agent_agent_collision_count": int(sum(bool(item["agent_agent_collision_event"]) for item in records)),
             "agent_agent_collision_rate": float(np.mean([bool(item["agent_agent_collision_event"]) for item in records])) if records else 0.0,
             "visited_2plus_ring_rate": float(np.mean([bool(item["visited_2plus_ring"]) for item in records])) if records else 0.0,
@@ -918,6 +939,8 @@ def _screen(
             "detected_rate": float(np.mean([bool(item["detected"]) for item in records])) if records else 0.0,
             "mean_discovery_step": mean_present("discovery_step"),
             "mean_episode_length": mean_present("length"),
+            "mean_episode_return": mean_present("episode_return_mean"),
+            "mean_team_episode_return": mean_present("episode_return_sum"),
             "mean_initial_min_distance": mean_present("initial_min_distance"),
             "mean_final_min_distance": mean_present("final_min_distance"),
             "mean_min_min_distance": mean_present("min_min_distance"),

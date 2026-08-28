@@ -189,6 +189,35 @@ class AccelerationAngularVelocityActionAdapter:
         return self.validate_with_diagnostics(action)
 
 
+class DesiredBodyVelocityActionAdapter:
+    """Validate a rate-limited body-frame velocity target for VXY9."""
+
+    def __init__(self, v_max: float, decision_dt: float, atol: float = 1e-6):
+        self.v_max = float(v_max)
+        self.decision_dt = float(decision_dt)
+        self.atol = float(atol)
+        if not np.isfinite(self.v_max) or self.v_max <= 0.0:
+            raise ValueError("v_max must be finite and positive")
+        if not np.isfinite(self.decision_dt) or self.decision_dt <= 0.0:
+            raise ValueError("decision_dt must be finite and positive")
+
+    def validate(self, action: Any) -> np.ndarray:
+        value = _vector2(action, "desired_velocity_body")
+        if float(np.linalg.norm(value)) > self.v_max + self.atol:
+            raise ActionContractError("desired_velocity_body violates v_max")
+        return value
+
+    def validate_with_diagnostics(self, action: Any) -> tuple[np.ndarray, AccelerationActionDiagnostics]:
+        value = self.validate(action)
+        magnitude = float(np.linalg.norm(value))
+        return value, AccelerationActionDiagnostics(
+            commanded_acceleration=magnitude,
+            validated_acceleration=magnitude,
+            action_rejected=False,
+            validation_delta=0.0,
+        )
+
+
 # Compatibility aliases for old isolated artifacts. New code must use the
 # acceleration names above; aliases do not preserve the old velocity semantics.
 VelocityCommandDiagnostics = AccelerationActionDiagnostics
