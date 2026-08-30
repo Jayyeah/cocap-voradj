@@ -1,0 +1,59 @@
+extends: ../cr_ms_support_approach_ce_curriculum_20260802/common.yaml
+
+# Strict first-round Final-AW -> VXY migration.  Reward, replay, network,
+# optimizer, role logic, scene mix and curriculum are inherited unchanged.
+output_root: artifacts/2026-08-30_iqn_vxy_full
+action_mode: vxy9
+v_max: 3.0
+decision_dt: 0.5
+
+# Continuous-control initialization would otherwise silently switch the old
+# random heading to world-axis alignment.  Preserve Final-AW spawn headings.
+yaw:
+  init: legacy_random
+
+action:
+  mode: discrete_desired_velocity_2d_body
+  dimension: 2
+  grid: vxy9_body_cartesian_outer_x_inner_y
+  frame: body_heading_aligned
+  v_max: 3.0
+  diagonal_component: v_max_over_sqrt_2
+  servo_acceleration_limit: 0.4
+
+dynamics:
+  profile: desired_body_velocity_vxy9_v1
+  physics_dt: 0.05
+  substeps_per_action: 10
+  decision_dt: 0.5
+  v_max: 3.0
+  integration: trapezoidal_rate_limited_servo
+  linear_drag_coefficient: 0.13333333333333333
+  speed_clip_each_substep: true
+  collision_check_each_substep: false
+  boundary_check_each_substep: true
+
+env:
+  action_mode: vxy9
+  # Final-AW checkpoints were trained before synchronized-swept collision.
+  # Keep the historical contract so action parameterization is the sole main
+  # experimental variable; corrected-collision transfer is a separate control.
+  collision_semantics: legacy_end_step
+
+pursuer:
+  action_mode: vxy9
+
+iqn:
+  checkpoint_freq: 25000
+
+checkpointing:
+  full_resume: true
+
+experiment_metadata:
+  series: iqn_vxy_full_migration_20260830
+  source_contract: Final integrated CR-MS + VCT-LS + CE AW curriculum
+  only_changed_variable: discrete AW9 action parameterization to proven heading-aligned rate-limited VXY9
+  infrastructure_only_changes: 25k model milestones plus one atomic rolling full-resume checkpoint
+  collision_contract: historical Final-AW legacy_end_step retained for strict causal comparison
+  vxy_reference: corrected Pure-Capture IQN-VXY9 implementation and tests on the small-step branch
+  promotion_gate: capture and mix capture >=0.5, coverage and mix CE strict >=0.1, max collision <=0.5

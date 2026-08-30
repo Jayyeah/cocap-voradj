@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
+import os
 import random
 import time
 from collections import defaultdict, deque
@@ -107,7 +109,43 @@ def safe_json_dumps(payload: Any, **kwargs: Any) -> str:
     return json.dumps(_json_safe(payload), allow_nan=False, **kwargs)
 
 
+FULL_RESUME_SCHEMA = "cocap_iqn_full_resume_v1"
+
+
+def _resume_contract(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Return the immutable training contract used to reject unsafe resumes."""
+
+    contract = copy.deepcopy(config)
+    for key in ("device", "output_root", "run_name", "total_timesteps"):
+        contract.pop(key, None)
+    checkpointing = contract.get("checkpointing")
+    if isinstance(checkpointing, dict):
+        checkpointing.pop("resume_path", None)
+    return contract
+
+
+def _resume_contract_hash(config: Dict[str, Any]) -> str:
+    encoded = safe_json_dumps(_resume_contract(config), sort_keys=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 class CoCapTrainer:
+    _FULL_RESUME_STATIC_FIELDS = frozenset({
+        "config",
+        "project_root",
+        "device",
+        "run_dir",
+        "ckpt_dir",
+        "episode_log",
+        "metric_log",
+        "model",
+        "target_model",
+        "optimizer",
+        "total_timesteps",
+        "full_resume_enabled",
+        "resume_path",
+    })
+
     def __init__(self, config: Dict[str, Any]):
         self.config = copy.deepcopy(config)
         self.project_root = Path(__file__).resolve().parents[3]
@@ -132,6 +170,10 @@ class CoCapTrainer:
         self.metric_log = (self.run_dir / "metrics.jsonl").open("a", encoding="utf-8")
 
         self.total_timesteps = int(self.config.get("total_timesteps", 20000))
+        checkpointing_cfg = self.config.get("checkpointing", {}) or {}
+        self.full_resume_enabled = bool(checkpointing_cfg.get("full_resume", False))
+        raw_resume_path = str(checkpointing_cfg.get("resume_path", "")).strip()
+        self.resume_path = self._resolve_checkpoint_path(raw_resume_path) if raw_resume_path else None
         iqn_cfg = self.config.get("iqn", {})
         self.batch_size = int(iqn_cfg.get("batch_size", 64))
         self.gamma = float(
@@ -364,7 +406,10 @@ class CoCapTrainer:
             }
             for task in recent_tasks
         }
-        self._save_checkpoint("init.pt")
+        if self.resume_path is not None:
+            self._load_full_resume(self.resume_path)
+        else:
+            self._save_checkpoint("init.pt")
 
     def _resolve_checkpoint_path(self, raw_path: str) -> Path:
         path = Path(raw_path)
@@ -969,6 +1014,90 @@ class CoCapTrainer:
             "collision_event",
         ] if k in payload}, ensure_ascii=False), flush=True)
 
+    def _full_resume_runtime_state(self) -> Dict[str, Any]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in self._FULL_RESUME_STATIC_FIELDS
+        }
+
+    def _save_full_resume(self) -> Path:
+        if not getattr(self, "_train_runtime_ready", False):
+            raise RuntimeError("full resume cannot be saved before training runtime initialization")
+        path = self.ckpt_dir / "resume_latest.pt"
+        temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+        payload = {
+            "schema": FULL_RESUME_SCHEMA,
+            "contract_hash": _resume_contract_hash(self.config),
+            "contract": _resume_contract(self.config),
+            "model": self.model.state_dict(),
+            "target_model": self.target_model.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "runtime": self._full_resume_runtime_state(),
+            "rng": {
+                "python": random.getstate(),
+                "numpy": np.random.get_state(),
+                "torch": torch.get_rng_state(),
+                "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
+            },
+        }
+        try:
+            torch.save(payload, temporary)
+            temporary.replace(path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        return path
+
+    def _load_full_resume(self, path: Path) -> None:
+        if not path.is_file():
+            raise FileNotFoundError(f"IQN full-resume checkpoint not found: {path}")
+        payload = torch.load(path, map_location=self.device, weights_only=False)
+        if payload.get("schema") != FULL_RESUME_SCHEMA:
+            raise ValueError("IQN full-resume checkpoint schema mismatch")
+        expected_hash = _resume_contract_hash(self.config)
+        if payload.get("contract_hash") != expected_hash:
+            raise ValueError("IQN full-resume training contract mismatch; refusing unsafe resume")
+        runtime = payload.get("runtime")
+        if not isinstance(runtime, dict) or not runtime.get("_train_runtime_ready", False):
+            raise ValueError("IQN full-resume checkpoint is missing initialized runtime state")
+        self.model.load_state_dict(payload["model"])
+        self.target_model.load_state_dict(payload["target_model"])
+        self.optimizer.load_state_dict(payload["optimizer"])
+        for optimizer_state in self.optimizer.state.values():
+            for key, value in optimizer_state.items():
+                if torch.is_tensor(value):
+                    optimizer_state[key] = value.to(self.device)
+        for key, value in runtime.items():
+            if key in self._FULL_RESUME_STATIC_FIELDS:
+                continue
+            setattr(self, key, value)
+        if self.global_step > self.total_timesteps:
+            raise ValueError(
+                f"resume step {self.global_step} exceeds configured total_timesteps {self.total_timesteps}"
+            )
+        rng = payload.get("rng", {})
+        random.setstate(rng["python"])
+        np.random.set_state(rng["numpy"])
+        torch.set_rng_state(rng["torch"].cpu())
+        if torch.cuda.is_available() and rng.get("cuda"):
+            torch.cuda.set_rng_state_all([state.cpu() for state in rng["cuda"]])
+        set_global_config(self.envs[self.current_task].config)
+        (self.run_dir / "resume_loaded.json").write_text(
+            safe_json_dumps(
+                {
+                    "schema": FULL_RESUME_SCHEMA,
+                    "path": str(path),
+                    "global_step": int(self.global_step),
+                    "episode": int(self.episode_idx),
+                    "contract_hash": expected_hash,
+                },
+                indent=2,
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
     def _save_checkpoint(self, name: str) -> Path:
         path = self.ckpt_dir / name
         self.model.save(
@@ -990,32 +1119,44 @@ class CoCapTrainer:
                 "coverage_ce_speed_weight": self.current_coverage_ce_speed_weight,
             },
         )
+        if self.full_resume_enabled and getattr(self, "_train_runtime_ready", False):
+            self._save_full_resume()
         return path
 
     def train(self) -> Path:
-        task_cursor = 0
-        task = self.task_order[task_cursor % len(self.task_order)]
-        obs_list = self._reset_task(task)
-        episode_done = False
-        episode_reward = 0.0
-        episode_reward_components = {
-            "reward_coverage": 0.0,
-            "reward_capture": 0.0,
-            "reward_safety": 0.0,
-            "reward_terminal": 0.0,
-            "reward_speed_repeat": 0.0,
-            "reward_early_speed": 0.0,
-            "reward_deceleration": 0.0,
-            "reward_settled_terminal": 0.0,
-            "reward_motion_penalty": 0.0,
-            "reward_ce_center": 0.0,
-            "reward_ce_control": 0.0,
-            "reward_ce_pbrs": 0.0,
-            "reward_ce_terminal_correction": 0.0,
-            "reward_support_blend_capture": 0.0,
-            "reward_support_blend_coverage": 0.0,
-        }
-        episode_transition_count = 0
+        if getattr(self, "_train_runtime_ready", False):
+            task_cursor = int(self.task_cursor)
+            task = str(self.current_task)
+            obs_list = self.current_observations
+            episode_done = bool(self.current_episode_done)
+            episode_reward = float(self.current_episode_reward)
+            episode_reward_components = dict(self.current_episode_reward_components)
+            episode_transition_count = int(self.current_episode_transition_count)
+        else:
+            task_cursor = 0
+            task = self.task_order[task_cursor % len(self.task_order)]
+            obs_list = self._reset_task(task)
+            episode_done = False
+            episode_reward = 0.0
+            episode_reward_components = {
+                "reward_coverage": 0.0,
+                "reward_capture": 0.0,
+                "reward_safety": 0.0,
+                "reward_terminal": 0.0,
+                "reward_speed_repeat": 0.0,
+                "reward_early_speed": 0.0,
+                "reward_deceleration": 0.0,
+                "reward_settled_terminal": 0.0,
+                "reward_motion_penalty": 0.0,
+                "reward_ce_center": 0.0,
+                "reward_ce_control": 0.0,
+                "reward_ce_pbrs": 0.0,
+                "reward_ce_terminal_correction": 0.0,
+                "reward_support_blend_capture": 0.0,
+                "reward_support_blend_coverage": 0.0,
+            }
+            episode_transition_count = 0
+            self._train_runtime_ready = True
         while self.global_step < self.total_timesteps:
             env = self.envs[task]
             self._set_coverage_ce_control_weights()
@@ -1103,8 +1244,6 @@ class CoCapTrainer:
                     })
                 self.metric_log.write(safe_json_dumps(metric_payload, ensure_ascii=False) + "\n")
                 self.metric_log.flush()
-            if self.global_step % self.checkpoint_freq == 0:
-                self._save_checkpoint(f"step_{self.global_step}.pt")
             obs_list = result.observations
             episode_done = step_done
             if episode_done:
@@ -1136,6 +1275,23 @@ class CoCapTrainer:
                 episode_reward = 0.0
                 episode_reward_components = {key: 0.0 for key in episode_reward_components}
                 episode_transition_count = 0
+                episode_done = False
+            self.task_cursor = int(task_cursor)
+            self.current_task = str(task)
+            self.current_observations = obs_list
+            self.current_episode_done = bool(episode_done)
+            self.current_episode_reward = float(episode_reward)
+            self.current_episode_reward_components = dict(episode_reward_components)
+            self.current_episode_transition_count = int(episode_transition_count)
+            if self.global_step % self.checkpoint_freq == 0:
+                self._save_checkpoint(f"step_{self.global_step}.pt")
+        self.task_cursor = int(task_cursor)
+        self.current_task = str(task)
+        self.current_observations = obs_list
+        self.current_episode_done = bool(episode_done)
+        self.current_episode_reward = float(episode_reward)
+        self.current_episode_reward_components = dict(episode_reward_components)
+        self.current_episode_transition_count = int(episode_transition_count)
         final = self._save_checkpoint(f"final_step_{self.global_step}.pt")
         self.episode_log.close()
         self.metric_log.close()
@@ -1170,6 +1326,9 @@ def apply_cli_overrides(config: Dict[str, Any], args: argparse.Namespace) -> Dic
         cfg["run_name"] = args.run_name
     if args.device is not None:
         cfg["device"] = args.device
+    if args.resume_path is not None:
+        cfg.setdefault("checkpointing", {})["full_resume"] = True
+        cfg["checkpointing"]["resume_path"] = args.resume_path
     return cfg
 
 
@@ -1179,6 +1338,7 @@ def main() -> None:
     parser.add_argument("--total-timesteps", type=int, default=None)
     parser.add_argument("--run-name", default=None)
     parser.add_argument("--device", default=None)
+    parser.add_argument("--resume-path", default=None)
     args = parser.parse_args()
     cfg = apply_cli_overrides(load_config(args.config), args)
     trainer = CoCapTrainer(cfg)

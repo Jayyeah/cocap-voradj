@@ -4,6 +4,8 @@ The modules in this namespace do not alter the legacy CoCapIQN execution path.
 """
 
 from cocap_voradj.models.continuous.local_entity_token_encoder import (
+    LegacyVorAdjFeatureBackbone,
+    LegacyVorAdjFeatureBackboneConfig,
     LocalEntityTokenEncoder,
     LocalEntityTokenEncoderConfig,
 )
@@ -22,6 +24,8 @@ from cocap_voradj.models.continuous.central_attention_critic import (
 __all__ = [
     "LocalEntityTokenEncoder",
     "LocalEntityTokenEncoderConfig",
+    "LegacyVorAdjFeatureBackbone",
+    "LegacyVorAdjFeatureBackboneConfig",
     "AccelerationActorConfig",
     "RadialSquashedGaussianAccelerationActor",
     "RadialActorConfig",

@@ -11,6 +11,29 @@ class ActionContractError(ValueError):
     """Raised when an already-executed command violates the action contract."""
 
 
+def vxy9_body_grid(v_max: float) -> np.ndarray:
+    """Return the proven heading-aligned 3x3 desired-velocity grid.
+
+    The ordering intentionally matches the small-step IQN-VXY experiments:
+    the longitudinal/body-x component is the outer index and the lateral/body-y
+    component is the inner index. Scaling each non-zero component by
+    ``v_max / sqrt(2)`` keeps diagonal commands on the physical speed boundary.
+    """
+
+    limit = float(v_max)
+    if not np.isfinite(limit) or limit <= 0.0:
+        raise ValueError("v_max must be finite and positive")
+    component = limit / np.sqrt(2.0)
+    return np.asarray(
+        [
+            (vx, vy)
+            for vx in (-component, 0.0, component)
+            for vy in (-component, 0.0, component)
+        ],
+        dtype=np.float32,
+    )
+
+
 @dataclass(frozen=True)
 class AccelerationActionDiagnostics:
     commanded_acceleration: float

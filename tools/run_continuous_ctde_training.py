@@ -679,6 +679,7 @@ def _screen(
     scenes: Tuple[str, ...] = SCENES,
     max_steps: int | None = None,
     deterministic: bool = True,
+    reward_tail_windows: Tuple[int, ...] = (),
 ) -> Dict[str, Any]:
     if int(episodes) <= 0:
         return {}
@@ -720,6 +721,8 @@ def _screen(
             discovery_step: Optional[int] = None
             episode_geometry: List[Dict[str, Any]] = []
             episode_capture_types: List[str] = []
+            episode_role_steps: List[List[Dict[str, Any]]] = []
+            episode_collision_types_by_step: List[List[str]] = []
             horizon = int(config["env"]["episode_max_length"])
             if max_steps is not None and int(max_steps) > 0:
                 horizon = min(horizon, int(max_steps))
@@ -749,7 +752,11 @@ def _screen(
                 geometry = _pursuit_step_geometry(env, actions)
                 if geometry is not None:
                     episode_geometry.append(geometry)
-                scene_role_rows.extend(_role_reward_rows(outcome.infos, before_active))
+                step_role_rows = _role_reward_rows(outcome.infos, before_active)
+                scene_role_rows.extend(step_role_rows)
+                if reward_tail_windows:
+                    episode_role_steps.append(step_role_rows)
+                    episode_collision_types_by_step.append(_step_collision_types(outcome.infos))
                 episode_capture_types.extend(
                     str(event.get("capture_type", "unknown"))
                     for event in getattr(env, "last_capture_events", [])
@@ -802,8 +809,7 @@ def _screen(
                 f"collision={bool(record['collision_event'])}",
                 flush=True,
             )
-            records.append(
-                {
+            episode_payload = {
                     "length": int(record["length"]),
                     "episode_return_by_agent": episode_return.tolist(),
                     "episode_return_mean": float(np.mean(episode_return)),
@@ -864,7 +870,13 @@ def _screen(
                     "speed_mean": float(np.mean(episode_speeds)) if episode_speeds else 0.0,
                     "speed_max": float(np.max(episode_speeds)) if episode_speeds else 0.0,
                 }
-            )
+            if reward_tail_windows:
+                episode_payload["reward_tail_windows"] = _reward_tail_summaries(
+                    episode_role_steps,
+                    episode_collision_types_by_step,
+                    reward_tail_windows,
+                )
+            records.append(episode_payload)
         def mean_present(key: str) -> float | None:
             values = [
                 float(item[key])
@@ -1106,6 +1118,68 @@ def _step_collision_types(infos: Sequence[Mapping[str, Any]]) -> List[str]:
             )
         }
     )
+
+
+def _reward_tail_summaries(
+    role_steps: Sequence[Sequence[Mapping[str, Any]]],
+    collision_types_by_step: Sequence[Sequence[str]],
+    windows: Sequence[int],
+) -> Dict[str, Any]:
+    """Summarize reward components over the last N environment transitions.
+
+    This is opt-in evaluation instrumentation.  It never enters observation,
+    reward, replay, or optimization and therefore cannot change a trajectory.
+    """
+
+    components = (
+        "capture_approach",
+        "capture_mean_shift",
+        "capture_front",
+        "capture",
+        "coverage",
+        "terminal",
+        "total",
+    )
+    summaries: Dict[str, Any] = {}
+    for raw_window in sorted(set(int(value) for value in windows)):
+        if raw_window <= 0:
+            raise ValueError("reward tail windows must be positive")
+        selected_role_steps = list(role_steps[-raw_window:])
+        selected_collisions = list(collision_types_by_step[-raw_window:])
+        rows = [dict(row) for step_rows in selected_role_steps for row in step_rows]
+        component_sums = {
+            name: float(sum(float(row.get(name, 0.0)) for row in rows))
+            for name in components
+        }
+        role_counts: Dict[str, int] = {}
+        for row in rows:
+            role = str(row.get("capture_objective_role") or row.get("role") or "unknown")
+            role_counts[role] = role_counts.get(role, 0) + 1
+        collision_step_count = sum(bool(types) for types in selected_collisions)
+        collision_type_step_counts: Dict[str, int] = {}
+        for types in selected_collisions:
+            for collision_type in set(str(value) for value in types):
+                collision_type_step_counts[collision_type] = (
+                    collision_type_step_counts.get(collision_type, 0) + 1
+                )
+        steps = len(selected_role_steps)
+        agent_steps = len(rows)
+        summaries[str(raw_window)] = {
+            "requested_window_steps": raw_window,
+            "observed_window_steps": steps,
+            "agent_steps": agent_steps,
+            "component_sums": component_sums,
+            "component_agent_step_means": {
+                name: value / max(agent_steps, 1) for name, value in component_sums.items()
+            },
+            "role_agent_step_counts": role_counts,
+            "collision_step_count": int(collision_step_count),
+            "collision_step_rate": float(collision_step_count / max(steps, 1)),
+            "boundary_step_count": int(collision_type_step_counts.get("boundary", 0)),
+            "boundary_step_rate": float(collision_type_step_counts.get("boundary", 0) / max(steps, 1)),
+            "collision_type_step_counts": collision_type_step_counts,
+        }
+    return summaries
 
 
 def _metrics_record(

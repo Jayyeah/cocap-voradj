@@ -2,7 +2,7 @@
 
 ## 1. 当前结论与状态
 
-本轮不是继续调 MASAC，而是用四条最小差异线拆开两个问题：Actor-Critic 本身是否可行，以及连续 `(a,w)` 是否是主要退化源。代码、12 份正式配置、双 GPU 串行 supervisor、双评估、完整 resume 和三种子汇总已经实现。截至 2026-08-30，MAPPO-9、MAPPO-AW、IQN-VXY9 三线三种子均完成 300k；TD3-AW seed1/2 完成 300k，seed3 仍在训练。因此前三线结论已经形成，TD3-AW 是基于两个完整种子的阶段性结论，必须在 seed3 完成后合并复核。
+本轮不是继续调 MASAC，而是用四条最小差异线拆开两个问题：Actor-Critic 本身是否可行，以及连续 `(a,w)` 是否是主要退化源。代码、12 份正式配置、双 GPU 串行 supervisor、双评估、完整 resume 和三种子汇总已经实现。截至 2026-08-30，MAPPO-9、MAPPO-AW、IQN-VXY9、TD3-AW 四线三种子均已自然完成 300k；TD3 seed3 final capture 0%、collision 65%，所以 TD3-AW“三种子原配方失败”的结论已封版。后续 fixed-τ复评、reward-tail审计、IQN-VXY Full 与 MAPPO-9-v2 的最新状态见第18节。
 
 GitHub 于 2026-08-28 重新 `fetch --prune` 核验。Golden 基线是远端 `origin/ablation/all-agent-oldmix-20260810` 的最新提交 `3ee4d94909a163b5f54689b6a4b1e62ac4baf286`；后续 `repro/open-ctde-20260823` 是另一任务合同的复现分支，不替换 CoCap Golden 环境，仅提供已经验证过的 PPO/GAE/MAPPO 语义参考。
 
@@ -117,7 +117,7 @@ B0 训练内200k仅出现3次 normal、B1仅1次；它们不能当作稳定策�
 | MAPPO-9 | DONE | DONE | DONE | 三种子一致失败；无稳定 capture，末期 deterministic collision 100% |
 | MAPPO-AW | DONE | DONE | DONE | 三种子一致失败；PPO KL/clip 失控并出现动作饱和/静止退化 |
 | IQN-VXY9 | DONE | DONE | DONE | 明确学会 normal capture；225k 最强，300k 明显退化 |
-| TD3-AW | 2/3 DONE | 2/3 DONE | 2/3 DONE | seed1/2 阶段性强失败；seed3 完成后再封版 |
+| TD3-AW | DONE | DONE | DONE | 三种子 final capture 均为0；原配方强失败 |
 
 最终数据源：`artifacts/2026-08-28_small_step_ac/<line>_seed{1,2,3}/evaluations/step_000300000.json`；无挑选汇总：`artifacts/2026-08-28_small_step_ac/summaries/<line>_three_seed.json`。
 
@@ -168,16 +168,16 @@ Gate：25k仅 health；50k检查数值、approach、2+；100k看趋势；150/200
 
 ### 9.1 数据完整度与结论边界
 
-截至本节写入时，MAPPO-9、MAPPO-AW、IQN-VXY9 的 seed1/2/3 均自然训练到 300k，并且每个 seed 都有 25k、50k、……、300k 共 12 个 checkpoint 的 deterministic20 与 stochastic20 formal eval。每个 checkpoint 的跨种子均值来自 60 个 episode；单 seed 的成功率最小变化单位为 5%，三种子合并后的最小变化单位为 1.67%。TD3-AW seed1/2 已完成 300k，seed3 正在训练；因此 TD3 数字是两个完整种子加 seed3 当前早期点的阶段性审计，不是最终三种子封版结论。
+截至本节最终回填时，四条线的 seed1/2/3 均自然训练到 300k，并且每个 seed 都有 25k、50k、……、300k 共 12 个 checkpoint 的 deterministic20 与 stochastic20 formal eval。每个 checkpoint 的跨种子均值来自 60 个 episode；单 seed 的成功率最小变化单位为 5%，三种子合并后的最小变化单位为 1.67%。TD3-AW seed3 也已完成，故该线现在是完整三种子结论。
 
-当前后台唯一活动项是 TD3-AW seed3。2026-08-30 本次写文档时 supervisor 报告约 69k/300k；它的 25k formal eval 已完成，50k 以后会继续由 supervisor 自动保存和评估。此前用户口述“只剩 TD3 的最后一个种子1”中的种子编号需要纠正：实际剩余的是 **seed3**，seed1 和 seed2 已完成。
+TD3-AW seed3 已由原 supervisor 自然跑至300k并完成 final 双评估；terminal milestone保留，配置按既定 `retain_final_full_resume:false` 删除滚动 full replay。随后 GPU1 自动转入 MAPPO-9-v2 seed1；GPU0 则运行 IQN-VXY Full stage1，详见第18节。
 
 结论摘要：
 
 - **唯一明确、可跨种子复现地学会 capture 的新线是 IQN-VXY9。**
 - **MAPPO-9 失败。** 离散 AW9 动作并没有挽救当前 PPO/GAE Actor-Critic，所以这批结果支持“退化不只是 continuous action 导致，当前 Actor-Critic 训练本身已有主要问题”。
 - **MAPPO-AW 失败，而且失败机制比 MAPPO-9 更明显。** 除 capture 消失外，还出现 KL/clip 持续失控、tanh 前 Gaussian 均值漂到大幅饱和区，以及不同 seed 分裂成静止、满速或撞击策略。
-- **TD3-AW 暂定失败。** 两个已完成种子都没有形成稳定 capture，critic 的 Q 尺度、双 Q gap 和裁剪前梯度持续膨胀；seed3 完成后应把它并入最终统计，但从当前证据看不太可能改变“当前配方不可用”的主结论。
+- **TD3-AW 三种子最终失败。** 三个 final checkpoint 均为0 capture；seed3 final collision 65%、Q1/Q2约 -51.77/-52.44、twin gap 4.20、裁剪前 critic grad 903.4，与前两 seed 一致支持“当前配方不可用”。
 - **AW 归纳偏置明显提升样本效率和稳定性，但不是学会任务的必要条件。** 历史 IQN-AW@125k 很强；IQN-VXY9 在 125k 明显更慢，却在 225k 达到三种子 deterministic normal capture 70%，证明 VXY9 也能学会，而且不依赖 stationary fallback。
 - **当前 continuous Actor-Critic 没有成功，但 MAPPO-AW 与 TD3-AW 的故障形态不同。** 前者主要表现为 PPO 更新过猛与策略饱和，后者主要表现为 critic 数值尺度恶化；不能简单归结为同一个“连续动作 bug”。
 - **最值得作为后续实验基础的是 IQN-VXY9 的 225k–250k 窗口，而不是 300k final。** 300k 时 capture 大幅回落，同时部分 reward/ring 代理指标仍上升，是过训练或代理目标错配的强信号。
@@ -377,20 +377,21 @@ replay 最终达到 1,000,000 item。loss 随 replay 分布和 Q 尺度变大而
 - src/cocap_voradj/models/small_step_ac.py:81
 - src/cocap_voradj/models/iqn.py:83
 
-因此报告中的 deterministic 是“无 epsilon 随机动作、固定评估 RNG”，而不是数学意义上使用固定 tau 网格的完全确定性评估。它不推翻跨种子趋势，但最佳 checkpoint 的精确百分比应在下一步改为固定 tau grid 或足够大的固定 quantile 集后，用 100 episode 重评。
+因此原报告中的 deterministic 是“无 epsilon 随机动作、固定评估 RNG”，而不是数学意义上使用固定 tau 网格的完全确定性评估。该缺口已在第18节补齐：固定 midpoint τ、冻结新 seeds 的100回合复评全部完成。
 
-**结论：IQN-VXY9 的能力证明是 solid 的，225k 最佳窗口也有较强证据；精确成功率仍需严格 100-episode 复评。300k 不应作为默认部署 checkpoint。**
+**结论：IQN-VXY9 的能力证明是 solid 的。** 独立300回合聚合后，统一225k capture为58.33%、per-seed-best为64%；历史20回合70%含选择偏差/方差，300k仍不应作为默认部署 checkpoint。
 
-## 13. TD3-AW：两个完整种子的阶段性失败
+## 13. TD3-AW：三个完整种子的最终失败
 
-### 13.1 已完成 seed
+### 13.1 三 seed final
 
 | seed | 最好 deterministic checkpoint | 300k deterministic |
 |---|---|---|
 | seed1 | 150k：capture 5%，collision 80% | capture 0%，collision 55%，visited2+ 30%，visited3+ 0%，return -282，progress 2.78，action norm 0.450，speed 0.266 |
 | seed2 | 100k：capture 10%，collision 90% | capture 0%，collision 85%，visited2+ 70%，visited3+ 10%，hold 14，return -235，progress 15.77，action norm 0.323，speed 0.777 |
+| seed3 | 中期无稳定capture | capture 0%，collision 65%，visited2+ 40%，visited3+ 0%，return -569.55，mean length 579.65 |
 
-TD3 是确定性 actor，当前 bookkeeping 中的 deterministic/stochastic formal eval 都直接使用无噪声 actor，因此两份报告相同是设计语义，不是评估 bug。两个完整 seed 均只有极少数中期成功，300k 都回到 0 capture。
+TD3 是确定性 actor，当前 bookkeeping 中的 deterministic/stochastic formal eval 都直接使用无噪声 actor，因此两份报告相同是设计语义，不是评估 bug。三个完整 seed 均只有极少数中期成功，300k 全部回到 0 capture。
 
 训练内每 50k capture：
 
@@ -399,11 +400,11 @@ TD3 是确定性 actor，当前 bookkeeping 中的 deterministic/stochastic form
 
 两条曲线后 100k 都为零，不支持盲目延长。
 
-### 13.2 seed3 当前早期证据
+### 13.2 seed3 完整证据
 
-seed3 的 25k formal deterministic/stochastic 都是 capture 0%、collision 0%、visited2+/3+=0、return 2.5525、progress 6.1549、action norm 0.5173、speed 0。该点表现为早期静止/被动策略，不是成功。
+seed3 的 25k formal deterministic/stochastic 都是 capture 0%、collision 0%、visited2+/3+=0、return 2.5525、progress 6.1549、action norm 0.5173、speed 0。该点表现为早期静止/被动策略，不是成功；自然训练到300k后仍是capture 0%，并转为collision 65%。
 
-约 50k 的 learning snapshot：throughput 8.1165 step/s、replay 50k、critic loss 1.1214、Q1/Q2 -1.879/-1.838、Q gap 0.4942、裁剪前 critic grad 26.18、update 11251；未发现 NaN/Inf。该 run 仍应自然跑完，最终结果再合并到本节。
+50k→300k 的 critic 从 loss 1.12、Q约 -1.88、gap .49、raw grad 26.18 走到 loss 49.10、Q1/Q2 -51.77/-52.44、gap 4.20、raw grad 903.4；全程 finite，但任务性能与数值尺度同时恶化。terminal checkpoint、final eval 与状态完整落盘。
 
 ### 13.3 critic 恶化曲线
 
@@ -411,14 +412,15 @@ seed3 的 25k formal deterministic/stochastic 都是 capture 0%、collision 0%�
 
 - seed1：Q1 -0.29→-24.7→-51.1→-70.3；Q gap 0.53→3.89→5.06→4.54；裁剪前 critic grad 31→1294→1185→1157。
 - seed2：Q1 -1.47→-22.1→-40.1→-48.0；Q gap 1.43→4.06→4.52→4.60；裁剪前 critic grad 446→745→837→1166。
+- seed3：50k时Q约 -1.88、gap .49、raw grad 26.18；300k时Q1/Q2 -51.77/-52.44、gap 4.20、raw grad 903.4。
 
 没有 NaN，实际 gradient clip 为 0.5，但 Q 绝对值、双 Q 分歧和裁剪前梯度均持续变坏。梯度裁剪防止了直接爆炸，却没有修复 reward/Q 尺度或 critic 学习动力学。继续增加 env step 很可能只是继续在坏尺度上训练。
 
 ### 13.4 TD3 actor 指标的可观测性 bug
 
-training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed actor update=2；记录点总落在奇数 critic-only update，所以日志里的 actor_loss 和 actor_grad 始终为 0，即使偶数 update 上 actor 实际已经更新。这是日志采样相位 bug，不是“actor 没训练”，但会妨碍诊断，必须在下一版通过缓存最近一次 actor update 或分别记录 critic/actor update 修正。
+原 runner 每 1k step 记录一次，而 TD3 delayed actor update=2；记录点总落在奇数 critic-only update，所以旧日志里的 actor_loss 和 actor_grad 始终为 0，即使偶数 update 上 actor 实际已经更新。这是日志采样相位 bug，不是“actor 没训练”。本轮已增加最近一次 actor update 的 loss/grad/update_count 缓存并纳入 resume；为不改变轨迹，已运行的 seed3 进程没有热加载新逻辑。
 
-**阶段性结论：TD3-AW 在两个完整种子上是强失败，seed3 尚未封版。** seed3 应继续自然完成以完善结论，但原配置不值得在 300k 后追加训练。
+**最终结论：TD3-AW 在三个完整种子上是强失败。** 原配置不值得在 300k 后追加训练；后续若做TD3-v2，centralized joint gradient与focal-gradient必须作为显式单变量消融。
 
 ## 14. 已确认的实现健康项、分析限制与可能 bug
 
@@ -447,7 +449,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 | 从 IQN 迁到 Actor-Critic 是否本身造成退化？ | **是。** MAPPO-9 保持离散 AW9 仍三种子失败，而 IQN-AW 历史锚点很强。 | solid |
 | AW 是否是唯一或主要退化源？ | **不是唯一原因。** 离散 MAPPO-9 已失败；但 AW 对 IQN 的样本效率确有明显帮助。 | solid |
 | 去掉 AW、改 VXY9 是否完全学不会？ | **否。** IQN-VXY9 在 225k 达 70% normal capture，三个 seed 都出现高成功窗口。 | solid |
-| continuous MAPPO 与 TD3 谁更可行？ | 当前两者都不合格，不能宣称赢家；MAPPO-AW 是策略更新/饱和问题，TD3 是 critic 尺度问题。 | MAPPO solid；TD3 待 seed3 封版 |
+| continuous MAPPO 与 TD3 谁更可行？ | 当前两者都不合格，不能宣称赢家；MAPPO-AW 是策略更新/饱和问题，TD3 是 critic 尺度问题。 | 三 seed均solid |
 | 是否获得稳定 deterministic continuous capture？ | **没有。** MAPPO-AW 和已完成 TD3-AW final 都是 0 capture。 | strong |
 | 这批“小跳”是否完成了诊断目的？ | **是。** 它成功拆分出算法迁移问题、动作归纳偏置作用和不同连续 AC 故障形态。 | solid |
 
@@ -462,7 +464,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 
 - **MAPPO-9 任务性能失败，且结论 solid。**
 - **MAPPO-AW 任务性能失败，且更新稳定性失败，结论非常 solid。**
-- **TD3-AW 当前两个完整种子任务性能失败；最终结论等待 seed3，但阶段性证据已经很强。**
+- **TD3-AW 三个完整种子任务性能均失败；最终结论 solid。**
 - **IQN-VXY9 的 300k final checkpoint 选择失败。** 算法/动作能力成功，但持续训练到 300k 造成明显退化。
 - **“当前配方直接得到稳定 continuous Actor-Critic”这一目标失败。**
 
@@ -473,7 +475,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 3. MAPPO-9 原配方不可用：solid。
 4. MAPPO-AW 原配方不可用且有严重 KL/饱和问题：非常 solid。
 5. 当前 Actor-Critic 问题不只是 continuous action：solid。
-6. TD3 原配方大概率不可用：两个完整种子上 strong；等 seed3 后升级为最终结论。
+6. TD3 原配方不可用：三个完整种子上均失败，结论 solid。
 7. “VXY9 最终优于 AW9”：**当前不支持。** 现有证据只支持 VXY9 可行、AW 更快；缺 matched 三种子 AW 曲线。
 
 ## 16. 后续实验与是否扩训练步数
@@ -482,7 +484,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 
 不要从 300k final 盲目续训。优先顺序：
 
-1. 固定 tau grid，预先冻结 eval seeds，对 seed1@250k、seed2@225k、seed3@225k 各做 deterministic 100 episodes；同时保留原 stochastic 定义做 100 episodes。
+1. 固定 midpoint tau、冻结 eval seeds 的独立复评已完成：uniform225跨300回合capture 58.33%，per-seed-best跨300回合capture 64%；后续引用这些数字，不再引用事后20回合70%作为正式率。
 2. 若严格复评保持高 capture，再从各自最佳 checkpoint 做短程 continuation：降低学习率、减慢 target/探索变化，并设置基于独立 validation 的 early stop。
 3. 明确记录 normal/stationary、collision type、visited/hold、angular gap、separation、return 分项，避免只按 return 选 checkpoint。
 4. 若要形成统一发布模型，先比较统一 225k 与 per-seed best；不能把 per-seed 事后最优直接当公平最终指标。
@@ -491,7 +493,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 
 ### 16.2 不值得原样延长：MAPPO-9
 
-先启动 MAPPO-9 v2，从 scratch 做稳定性修复：
+MAPPO-9-v2 已从 scratch 启动，并落实以下稳定性修复：
 
 - PPO epochs 从 10 降到约 2–4；
 - actor LR 从 1e-4 下调，例如先测 3e-5；
@@ -513,7 +515,7 @@ training/small_step_ac.py:214 当前每 1k step 记录一次，而 TD3 delayed a
 
 ### 16.4 不值得原样延长：TD3-AW
 
-seed3 继续跑完是为了完成既定三种子证据，不是因为当前曲线值得加预算。下一版先：
+seed3 已自然跑完并完成既定三种子证据；原配方不再追加预算。下一版先：
 
 - 修正 actor update 指标日志；
 - 拆解 reward 与 Q target 尺度；
@@ -541,4 +543,82 @@ seed3 继续跑完是为了完成既定三种子证据，不是因为当前曲�
 - 最佳 IQN 模型：seed1@250k、seed2@225k、seed3@225k
 - 每个已完成 run 的 checkpoints/step_000300000.pt 与全部轻量 milestone
 
-这些训练产物受 .gitignore 排除，不上传 GitHub；GitHub 只同步本台账文档。2026-08-30 已逐 run 确认 300k model+optimizer checkpoint、12 个 formal eval 文件、metrics 和完成状态，并删除 8 个仍残留的已完成 run 滚动 resume_latest.pt/full replay；此前已删除的 IQN-VXY9/TD3-AW seed2/3 resume 也复核为证据完整。本次额外释放 11,930,662,878 bytes（约 11.93 GB 十进制），artifacts 总占用由约 25 GB 降至约 14 GB。滚动 resume 只服务中断恢复，删除后不可从任意中间 environment/replay 状态无损续训，但不影响模型推理、formal 复评或本文结论。当前只剩仍在运行的 TD3-AW seed3 resume_latest.pt，并明确保留到自然完成。
+这些训练产物受 .gitignore 排除，不上传 GitHub；GitHub 只同步代码、配置、测试与台账。2026-08-30 已逐 run 确认 300k model+optimizer checkpoint、12 个 formal eval 文件、metrics 和完成状态，并删除 8 个仍残留的已完成 run 滚动 resume_latest.pt/full replay；此前已删除的 IQN-VXY9/TD3-AW seed2/3 resume 也复核为证据完整。本次额外释放 11,930,662,878 bytes（约 11.93 GB 十进制），artifacts 总占用由约 25 GB 降至约 14 GB。滚动 resume 只服务中断恢复，删除后不可从任意中间 environment/replay 状态无损续训，但不影响模型推理、formal 复评或本文结论。TD3-AW seed3 完成后按其既定配置移除 final full resume；当前新增的 IQN-VXY Full 与 MAPPO-9-v2 活跃 run 各自保留滚动 resume。
+
+## 18. 2026-08-30 中断恢复：AC/CTDE audit 与 MAPPO-9-v2
+
+本节是在上一次 Codex turn 因 usage limit 中断后，从实际 worktree、git diff、tmux、PID、checkpoint、日志和GPU状态恢复得到；没有重跑已完成的旧三种子实验，也没有回滚第1–17节结论。详细公式与证据见 `docs/AC_CTDE_GAP_AUDIT_20260830_ZH.md`；Final-AW/VXY Full 另见当日两份 IQN 文档。
+
+### 18.1 恢复点
+
+- branch：`experiment/small-step-ac-migration-20260828`；恢复时local/remote均为 `9ed9f61a462c213b93b304a6106fa5c5f083e97a`；
+- GPU1 的 TD3-AW seed3 属于中断前既有正确训练，已保留并自然完成到300k，没有被抢占；
+- GPU0 fixed-midpoint τ 的100回合复评已全部完成：uniform225为58.33% capture，per-seed-best为64%；
+- 已完成的MAPPO-v2/full-resume CUDA smoke产物均保留，不重复执行。
+
+### 18.2 MAPPO-9-v2 正式记录
+
+```text
+STATUS: CODE_TEST_SMOKE_PASS / LONG_RUN_SEED1_ACTIVE
+HYPOTHESIS: exact IQN decision representation + healthy PPO recipe可分离AC算法gap与历史迁移误差
+ONLY_CHANGED_VARIABLE: IQN value learning -> categorical MAPPO；centralized V/GAE/ValueNorm是算法或优化必需
+CONFIG: configs/experiments/mappo9_v2_20260830/{common,seed1,seed2,seed3}.yaml
+COMMIT: based on 9ed9f61；本轮实现提交待push后回填
+SEED: 2026083001 / 2026083002 / 2026083003
+START_STEP: 0
+CURRENT_STEP: 75k / 400k（2026-08-30 22:04 CST冻结快照）
+RESULT: exact feature parity、formula tests、2-step CUDA smoke均PASS；long-run 3个checkpoint、rolling resume、0 restart，最新KL/clip/value均健康
+GATE: 3×400k；每25k det/stoch20；KL/clip/value健康并跨seed重复非零capture
+CONCLUSION: 旧MAPPO-9不是严格桥接；v2执行合同已修复，性能结论尚不能提前给出
+NEXT: 自动继续seed1→seed2→seed3；PASS→MAPPO-AW-v2，healthy FAIL→discrete counterfactual-Q
+```
+
+v2 的关键冻结值为 rollout256、3 PPO epochs、2 minibatches、actor LR `3e-5`、critic LR `1e-4`、clip `.2`、target-KL `.02`、ValueNorm beta `.99999`、categorical logits gain `.01`、400k/seed。Actor exact复用 IQN 的 self/mean/max/target attention/summary attention/pursuing embedding/fusion decision feature，critic仍是action-free centralized V。
+
+第一次2-step smoke暴露了ValueNorm value clipping的尺度语义错误：raw old value在更新running stats后重新normalize，可能进入零梯度clip支路。已修为rollout保存normalized prediction、GAE前用旧stats反归一化、更新stats后normalize return target。全新smoke得到 value loss `.1106`、raw value grad `6.1316`、actor update L2 `.05059`、max KL `1.38e-4`，resume/milestone/deterministic+stochastic eval全部完成。
+
+### 18.3 MAPPO-v2 自动线
+
+`tools/supervise_mappo9_v2_20260830.py` 当前在 tmux `cocap_mappo9_v2_supervisor_gpu1` 中运行。它没有杀死或抢占历史 TD3；检测到TD3自然完成并释放GPU1后，已自动启动seed1，并负责：
+
+- rolling resume、PID/tmux/GPU/VRAM/温度/RAM/disk/ETA/checkpoint；
+- finite metrics；KL>.05或clip>.3 WARN；KL>.1连续3点暂停；
+- 三seed最终gate JSON；
+- PASS路由MAPPO-AW-v2，healthy FAIL路由discrete centralized-Q/counterfactual CTDE；在结果未知前不擅自启动下一算法。
+
+22:04 CST 状态为 `seed_active`：75k/400k、约16.94 step/s、ETA约5.3h，finite=true、warn=false、critical=false、`approx_kl_max=6.19e-5`、clip=0；GPU1温度约68°C。该快照只证明优化健康，不能提前宣称任务性能。
+
+### 18.4 TD3 centralized-Q/gradient审计与final seed3
+
+```text
+STATUS: AUDIT_PASS / THREE_SEED_COMPLETE
+HYPOTHESIS: 旧TD3失败来自critic尺度/credit dynamics，而不是target公式或actor完全未更新
+ONLY_CHANGED_VARIABLE: 只修logging可观测性；不改变当前算法/训练轨迹
+CONFIG: configs/experiments/small_step_ac_migration_20260828/td3_aw_seed3.yaml
+COMMIT: based on 9ed9f61；logging/test提交待push后回填
+SEED: 2026082803
+START_STEP: 0（中断恢复时约193k，保留原进程续跑）
+CURRENT_STEP: 300k / 300k，COMPLETE
+RESULT: final capture 0%、collision 65%、visited2+ 40%、visited3+ 0%、return -569.55；critic loss49.10、Q1/Q2 -51.77/-52.44、gap4.20、raw grad903.4
+GATE: 自然跑完且final formal完整；FAIL，不原样延长，不自动启动TD3-v2
+CONCLUSION: target/mask/noise/delay实现通过；actor是明确的centralized joint gradient，不是focal gradient
+NEXT: 三种子结论已封版；若后续TD3-v2，joint与focal必须作为单变量消融
+```
+
+新增合同测试覆盖：terminal不bootstrap、truncation bootstrap、dead-agent mask、normalized target noise、twin-Q、delayed target update和跨agent joint gradient。历史每1k日志恰落在critic-only update，使actor loss/grad表面恒0；新代码缓存 `last_actor_loss/grad/update_count` 并保留当前update指标。已完成的旧进程加载的是修改前Python代码，故其历史日志不会倒推出这些新字段；这没有修改live trajectory。
+
+### 18.5 Paired reward-tail 审计
+
+统一225k与300k使用同一组独立新 seeds、fixed midpoint τ，各做 `3×20` 回合并记录尾100/200步。225k→300k 的 failed-3+ 组中：episode数 `9→36`、mean return `-231.28→+20.19`、3+ hold `11.22→34.64`、length `429.67→773.08`，但最后100步 approach `.05395→.00196`、capture shaping `.41159→.27977`，terminal始终为0。300k并非瞬时代理奖励更强，而是低质量 nonterminal dwell 更长；结论是 proxy/time-horizon mismatch。本轮只增强可观测性，不改 reward。
+
+### 18.6 验证与当前边界
+
+最终合并定向suite：`78 passed`（另有2条第三方 protobuf deprecation warning，无失败），覆盖：
+
+- Legacy IQN decision feature bit-exact parity且旧checkpoint keys不变；
+- GAE terminal/truncation/active mask；
+- PPO ratio、target-KL、ValueNorm、actor update与nonzero critic gradient；
+- TD3 target/noise/mask/delay/joint-gradient；
+- VXY9 action、Final-AW strict diff、full resume与两条supervisor gate。
+
+本轮不引入Flow/Beta/full-cov、MATD3/FACMAC、新pooling、global enemy、新reward/replay或continuous VXY Actor-Critic。下一阶段仅由正式gate结果决定。

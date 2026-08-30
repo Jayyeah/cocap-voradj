@@ -9,24 +9,36 @@ import torch
 import torch.nn as nn
 from torch.distributions import Categorical
 
-from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoder
+from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoder, policy_context
 from cocap_voradj.models.iqn import CoCapIQN
 
 
 def _context(encoder: LocalEntityTokenEncoder, obs: Mapping[str, torch.Tensor]) -> torch.Tensor:
-    features = encoder(obs)
-    return torch.cat([features["self_token"], features["mean_context"]], dim=-1)
+    return policy_context(encoder, obs, context_pooling="mean")
 
 
 class CategoricalGridActor(nn.Module):
     """Shared decentralized categorical actor with an auditable physical grid."""
 
-    def __init__(self, encoder: LocalEntityTokenEncoder, grid: np.ndarray):
+    def __init__(
+        self,
+        encoder: nn.Module,
+        grid: np.ndarray,
+        *,
+        orthogonal_policy_head: bool = False,
+        output_gain: float = 0.01,
+    ):
         super().__init__()
         self.encoder = encoder
         h = int(encoder.config.hidden_dim)
-        self.policy = nn.Sequential(nn.Linear(2 * h, h), nn.LayerNorm(h), nn.ReLU())
+        input_dim = int(getattr(encoder, "decision_feature_dim", 2 * h))
+        self.policy = nn.Sequential(nn.Linear(input_dim, h), nn.LayerNorm(h), nn.ReLU())
         self.logits_head = nn.Linear(h, 9)
+        if orthogonal_policy_head:
+            nn.init.orthogonal_(self.policy[0].weight, gain=np.sqrt(2.0))
+            nn.init.zeros_(self.policy[0].bias)
+            nn.init.orthogonal_(self.logits_head.weight, gain=float(output_gain))
+            nn.init.zeros_(self.logits_head.bias)
         value = np.asarray(grid, dtype=np.float32)
         if value.shape != (9, 2) or not np.all(np.isfinite(value)):
             raise ValueError("categorical action grid must have shape [9,2]")
@@ -48,12 +60,13 @@ class CategoricalGridActor(nn.Module):
 class DeterministicAWActor(nn.Module):
     """Shared local TD3 actor producing bounded continuous ``(a,w)``."""
 
-    def __init__(self, encoder: LocalEntityTokenEncoder, a_max: float, w_max: float):
+    def __init__(self, encoder: nn.Module, a_max: float, w_max: float):
         super().__init__()
         self.encoder = encoder
         h = int(encoder.config.hidden_dim)
+        input_dim = int(getattr(encoder, "decision_feature_dim", 2 * h))
         self.policy = nn.Sequential(
-            nn.Linear(2 * h, h), nn.LayerNorm(h), nn.ReLU(), nn.Linear(h, 2)
+            nn.Linear(input_dim, h), nn.LayerNorm(h), nn.ReLU(), nn.Linear(h, 2)
         )
         self.register_buffer("scale", torch.tensor([float(a_max), float(w_max)]))
 
@@ -78,7 +91,12 @@ class IQNGridPolicy(nn.Module):
         self.register_buffer("action_grid", torch.as_tensor(np.asarray(grid), dtype=torch.float32))
 
     def sample(self, obs: Mapping[str, torch.Tensor], deterministic: bool = False):
-        q = self.model(dict(obs), num_tau=self.quantiles, mode="voradj")["q_values"].mean(dim=1)
+        tau = None
+        if deterministic:
+            tau = (
+                torch.arange(self.quantiles, device=obs["self"].device, dtype=torch.float32) + 0.5
+            ) / float(self.quantiles)
+        q = self.model(dict(obs), num_tau=self.quantiles, mode="voradj", tau=tau)["q_values"].mean(dim=1)
         if deterministic:
             index = q.argmax(dim=-1)
         else:

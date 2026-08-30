@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.distributions import Normal
 
 from cocap_voradj.dynamics.continuous_action import AccelerationActionAdapter
-from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoder
+from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoder, policy_context
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ class RadialSquashedGaussianAccelerationActor(nn.Module):
 
     def __init__(
         self,
-        encoder: LocalEntityTokenEncoder,
+        encoder: nn.Module,
         config: AccelerationActorConfig | None = None,
         adapter: Optional[AccelerationActionAdapter] = None,
     ):
@@ -48,7 +48,7 @@ class RadialSquashedGaussianAccelerationActor(nn.Module):
         if pooling not in {"mean", "mean_max"}:
             raise ValueError(f"unsupported actor context_pooling: {self.config.context_pooling!r}")
         self.context_pooling = pooling
-        input_dim = (3 if pooling == "mean_max" else 2) * h
+        input_dim = int(getattr(encoder, "decision_feature_dim", (3 if pooling == "mean_max" else 2) * h))
         self.policy = nn.Sequential(
             nn.Linear(input_dim, h),
             nn.LayerNorm(h),
@@ -63,11 +63,8 @@ class RadialSquashedGaussianAccelerationActor(nn.Module):
         )
 
     def distribution(self, obs: Mapping[str, torch.Tensor]) -> Tuple[Normal, torch.Tensor]:
-        features = self.encoder(obs)
-        context = [features["self_token"], features["mean_context"]]
-        if self.context_pooling == "mean_max":
-            context.append(features["max_context"])
-        hidden = self.policy(torch.cat(context, dim=-1))
+        features = policy_context(self.encoder, obs, context_pooling=self.context_pooling)
+        hidden = self.policy(features)
         mean = self.mean_head(hidden)
         log_std = self.log_std_head(hidden).clamp(self.config.log_std_min, self.config.log_std_max)
         return Normal(mean, log_std.exp()), log_std

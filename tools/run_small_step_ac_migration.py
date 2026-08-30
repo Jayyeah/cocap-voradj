@@ -25,10 +25,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from cocap_voradj.control.apf import ApfAgent
+from cocap_voradj.dynamics.continuous_action import vxy9_body_grid
 from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.models.continuous.box_actor import BoxActorConfig, SquashedGaussianAccelerationAngularVelocityActor
 from cocap_voradj.models.continuous.central_attention_critic import CentralCriticConfig, CentralTwinCritics
-from cocap_voradj.models.continuous.local_entity_token_encoder import LocalEntityTokenEncoder, LocalEntityTokenEncoderConfig
+from cocap_voradj.models.continuous.local_entity_token_encoder import (
+    LegacyVorAdjFeatureBackbone,
+    LegacyVorAdjFeatureBackboneConfig,
+    LocalEntityTokenEncoder,
+    LocalEntityTokenEncoderConfig,
+)
 from cocap_voradj.models.iqn import CoCapIQN, CoCapNetConfig
 from cocap_voradj.models.small_step_ac import CategoricalGridActor, CentralValueNetwork, DeterministicAWActor, IQNGridPolicy
 from cocap_voradj.training.continuous.central_schema import build_central_global_obs
@@ -44,7 +50,9 @@ from tools.run_continuous_ctde_training import (
 
 
 SCHEMA = "small-step-ac-full-v1"
-ALGORITHMS = {"mappo9", "mappo_aw", "iqn_vxy9", "td3_aw"}
+ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "iqn_vxy9", "td3_aw"}
+MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw"}
+CATEGORICAL_MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2"}
 
 
 def stable_hash(value: Any) -> str:
@@ -81,8 +89,7 @@ def aw_grid() -> np.ndarray:
 
 
 def vxy_grid(v_max: float) -> np.ndarray:
-    component = float(v_max) / np.sqrt(2.0)
-    return np.asarray([(vx, vy) for vx in (-component, 0.0, component) for vy in (-component, 0.0, component)], dtype=np.float32)
+    return vxy9_body_grid(v_max)
 
 
 def configure_environment(root_config: dict[str, Any], algorithm: str) -> dict[str, Any]:
@@ -122,9 +129,31 @@ def central_config(config: Mapping[str, Any]) -> CentralCriticConfig:
 def make_components(config: dict[str, Any], algorithm: str, device: str):
     spec = config["small_step_ac"]
     enc_cfg = encoder_config(config); critic_cfg = central_config(config)
-    if algorithm in {"mappo9", "mappo_aw"}:
-        if algorithm == "mappo9":
-            actor = CategoricalGridActor(LocalEntityTokenEncoder(enc_cfg), aw_grid())
+    if algorithm in MAPPO_ALGORITHMS:
+        if algorithm in CATEGORICAL_MAPPO_ALGORITHMS:
+            if algorithm == "mappo9_v2":
+                iqn = config["iqn"]
+                actor_encoder = LegacyVorAdjFeatureBackbone(
+                    LegacyVorAdjFeatureBackboneConfig(
+                        hidden_dim=int(iqn["hidden_dim"]),
+                        num_heads=int(iqn["num_heads"]),
+                        num_layers=int(iqn["num_layers"]),
+                        self_feature_dim=int(iqn["self_feature_dim"]),
+                        max_pursuers=int(config["actor"]["max_pursuers"]),
+                        max_evaders=int(config["actor"].get("max_evaders", 8)),
+                        max_obstacles=int(config["actor"].get("max_obstacles", 5)),
+                        pursuing_embed_dim=int(iqn.get("pursuing_embed_dim", 8)),
+                        dropout=float(iqn.get("dropout", 0.1)),
+                    )
+                )
+            else:
+                actor_encoder = LocalEntityTokenEncoder(enc_cfg)
+            actor = CategoricalGridActor(
+                actor_encoder,
+                aw_grid(),
+                orthogonal_policy_head=algorithm == "mappo9_v2",
+                output_gain=float(spec["mappo"].get("output_gain", 0.01)),
+            )
         else:
             actor = SquashedGaussianAccelerationAngularVelocityActor(
                 LocalEntityTokenEncoder(enc_cfg),
@@ -141,7 +170,10 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
             gamma=float(ppo["gamma"]), gae_lambda=float(ppo["gae_lambda"]), clip_param=float(ppo["clip_param"]),
             ppo_epochs=int(ppo["ppo_epochs"]), minibatches=int(ppo["minibatches"]), actor_lr=float(ppo["actor_lr"]),
             critic_lr=float(ppo["critic_lr"]), entropy_coef=float(ppo["entropy_coef"]), value_coef=float(ppo["value_coef"]),
-            max_grad_norm=float(ppo["max_grad_norm"])), device)
+            max_grad_norm=float(ppo["max_grad_norm"]), target_kl=ppo.get("target_kl"),
+            value_norm=bool(ppo.get("value_norm", False)),
+            value_norm_beta=float(ppo.get("value_norm_beta", 0.99999)),
+            value_norm_epsilon=float(ppo.get("value_norm_epsilon", 1e-5))), device)
         return trainer, None
     if algorithm == "td3_aw":
         actor = DeterministicAWActor(LocalEntityTokenEncoder(enc_cfg), float(config["action"]["a_max"]), float(config["action"]["w_max"]))
@@ -187,7 +219,7 @@ def batched_global(env, config):
 
 def choose_actions(trainer, algorithm, local, global_batch, config, rng, step, deterministic=False):
     active_count = int(config["env"]["num_pursuers"])
-    if algorithm in {"mappo9", "mappo_aw"}:
+    if algorithm in MAPPO_ALGORITHMS:
         actions, logp, latent, values = trainer.act(local, global_batch, deterministic)
         return actions[:active_count], logp[:active_count], latent[:active_count], values[0]
     if algorithm == "td3_aw":
@@ -211,7 +243,7 @@ def choose_actions(trainer, algorithm, local, global_batch, config, rng, step, d
 
 
 def empty_rollout() -> dict[str, list[Any]]:
-    return {key: [] for key in ("local_obs", "global_obs", "actions", "latent", "log_prob", "values", "next_values", "rewards", "active_mask", "terminated", "episode_end")}
+    return {key: [] for key in ("local_obs", "global_obs", "actions", "latent", "log_prob", "values", "next_values", "rewards", "active_mask", "terminated", "truncated", "episode_end")}
 
 
 def stack_rollout(rollout):
@@ -219,6 +251,10 @@ def stack_rollout(rollout):
     for key, values in rollout.items():
         if key in {"local_obs", "global_obs"}:
             result[key] = {name: np.stack([item[name] for item in values]) for name in values[0]}
+        elif key == "truncated" and not values:
+            # Backward-compatible with pre-v2 in-memory/test rollouts.  Old
+            # bundles had episode_end but no separately persisted timeout bit.
+            result[key] = np.zeros_like(np.stack(rollout["terminated"]), dtype=bool)
         else: result[key] = np.stack(values)
     return result
 
@@ -331,16 +367,19 @@ def main() -> int:
         rewards_pad = _pad_vector(outcome.rewards, int(config["training"]["max_agents"]), np.float32)
         next_observations = list(outcome.observations); next_local = padded_local(next_observations, config); next_global, next_global_batch = batched_global(env, config)
         with torch.no_grad():
-            if algorithm in {"mappo9", "mappo_aw"}: next_values = trainer.value(tensor_tree(next_global_batch, trainer.device))[0].cpu().numpy()
+            if algorithm in MAPPO_ALGORITHMS: next_values = trainer.value(tensor_tree(next_global_batch, trainer.device))[0].cpu().numpy()
             else: next_values = np.zeros(int(config["training"]["max_agents"]), dtype=np.float32)
-        if algorithm in {"mappo9", "mappo_aw"}:
+        if algorithm in MAPPO_ALGORITHMS:
             for key, value in (("local_obs", local), ("global_obs", global_state), ("actions", _pad_actions(actions, len(active_pad))),
-                               ("latent", _pad_vector(latent, len(active_pad), np.int64) if algorithm == "mappo9" else _pad_actions(latent, len(active_pad))),
+                               ("latent", _pad_vector(latent, len(active_pad), np.int64) if algorithm in CATEGORICAL_MAPPO_ALGORITHMS else _pad_actions(latent, len(active_pad))),
                                ("log_prob", _pad_vector(logp, len(active_pad), np.float32)), ("values", values), ("next_values", next_values),
-                               ("rewards", rewards_pad), ("active_mask", active_pad), ("terminated", term_pad), ("episode_end", term_pad | trunc_pad)):
+                               ("rewards", rewards_pad), ("active_mask", active_pad), ("terminated", term_pad),
+                               ("truncated", trunc_pad), ("episode_end", term_pad | trunc_pad)):
                 rollout[key].append(value)
             if len(rollout["rewards"]) >= ppo_horizon or step == total:
-                last_metrics = trainer.update(stack_rollout(rollout), categorical=algorithm == "mappo9"); rollout = empty_rollout()
+                last_metrics = trainer.update(
+                    stack_rollout(rollout), categorical=algorithm in CATEGORICAL_MAPPO_ALGORITHMS
+                ); rollout = empty_rollout()
         elif algorithm == "td3_aw":
             roles = np.where(active_pad, 1, 0).astype(np.uint8)
             replay.add(local_obs=local, next_local_obs=next_local, global_state=global_state, next_global_state=next_global,

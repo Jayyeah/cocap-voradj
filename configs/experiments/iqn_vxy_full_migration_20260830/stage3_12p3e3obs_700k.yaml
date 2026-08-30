@@ -1,0 +1,39 @@
+extends: stage2_8p2e2obs_700k.yaml
+
+seed: 2026080203
+device: cuda:0
+total_timesteps: 700000
+run_name: stage3_12p3e3obs_700k
+
+reward:
+  coverage_ce_min_active_pursuers: 12
+  min_active_pursuers: 12
+  post_capture_coverage_window_steps: 700
+
+tasks:
+  voradj:
+    env:
+      num_pursuers: 12
+      num_evaders: 3
+      num_obstacles: 3
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+      evader_spawn_min_sep: 15.0
+  voradj_coverage:
+    env:
+      num_pursuers: 12
+      num_evaders: 0
+      num_obstacles: 3
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 13.0
+      pursuer_spawn_min_sep: 7.0
+
+pretrained:
+  compatibility_mode: shape_compatible
+
+experiment_metadata:
+  stage: stage3_12p3e3obs
+  training_start: warm_start_from_stage2_selected_checkpoint
+  stage_timesteps: 700000
+  historical_stage_source: cr_ms_support_approach_ce_curriculum_20260802/stage3_12p3e3obs_700k.yaml

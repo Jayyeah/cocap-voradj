@@ -1,0 +1,39 @@
+extends: ../small_step_ac_migration_20260828/common.yaml
+
+# Corrected Pure-Capture/AW9 task is inherited unchanged.  This line changes
+# the algorithm and actor representation, not the environment or reward.
+small_step_ac:
+  algorithm: mappo9_v2
+  algorithm_line: mappo9_v2_legacy_iqn_decision_feature
+  total_env_steps: 400000
+  checkpoint_interval: 25000
+  retain_final_full_resume: true
+  eval_episodes: 20
+  log_interval: 1000
+  mappo:
+    rollout_length: 256
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_param: 0.2
+    ppo_epochs: 3
+    minibatches: 2
+    actor_lr: 0.00003
+    critic_lr: 0.0001
+    entropy_coef: 0.01
+    value_coef: 1.0
+    max_grad_norm: 0.5
+    target_kl: 0.02
+    value_norm: true
+    value_norm_beta: 0.99999
+    value_norm_epsilon: 0.00001
+    output_gain: 0.01
+
+experiment_metadata:
+  series: mappo9_v2_20260830
+  hypothesis: Strict legacy IQN decision-feature parity plus conservative MAPPO removes representation and optimizer confounds.
+  only_changed_variable: IQN distributional value learning is replaced by categorical MAPPO with a centralized action-free V critic.
+  actor_contract: scratch LegacyVorAdjFeatureBackbone followed by categorical logits[9]
+  critic_contract: centralized action-free V with ValueNorm
+  gate_contract: three seeds, 400k each, formal evaluation every 25k; no early failure at 50k
+  next_stage_pass: MAPPO-AW-v2
+  next_stage_healthy_fail: discrete centralized-Q counterfactual CTDE

@@ -13,6 +13,7 @@ from cocap_voradj.dynamics.continuous_action import (
     AccelerationActionAdapter,
     AccelerationAngularVelocityActionAdapter,
     DesiredBodyVelocityActionAdapter,
+    vxy9_body_grid,
 )
 
 TWO_PI = 2.0 * np.pi
@@ -55,6 +56,10 @@ class CoCapEnv:
             self.env_cfg.get("action_mode", pursuer_cfg.get("action_mode", "unicycle_discrete")),
         )
         raw_action_mode = str(raw_action_mode).strip().lower()
+        self.discrete_desired_velocity_action = raw_action_mode in {
+            "discrete_desired_velocity_2d_body",
+            "vxy9",
+        }
         if raw_action_mode in {"unicycle", "unicycle_discrete"}:
             self.action_mode = "unicycle_discrete"
         elif raw_action_mode in {
@@ -204,6 +209,8 @@ class CoCapEnv:
 
     @property
     def action_size(self) -> int:
+        if self.discrete_desired_velocity_action:
+            return 9
         if self.continuous_control:
             return 2
         if self.pursuers:
@@ -724,7 +731,16 @@ class CoCapEnv:
         if self.desired_velocity_action and getattr(robot, "robot_type", None) == "pursuer":
             if self.action_adapter is None:
                 raise RuntimeError("desired velocity adapter is not initialized")
-            command = self.action_adapter.validate(action)
+            raw_command = action
+            if self.discrete_desired_velocity_action:
+                scalar = np.asarray(action)
+                if scalar.ndim != 0 or not np.issubdtype(scalar.dtype, np.integer):
+                    raise ValueError("VXY9 action must be an integer scalar")
+                action_index = int(scalar)
+                if action_index < 0 or action_index >= 9:
+                    raise ValueError("VXY9 action index must be in [0, 8]")
+                raw_command = vxy9_body_grid(self.v_max)[action_index]
+            command = self.action_adapter.validate(raw_command)
             speed_before = float(robot.speed)
 
             def substep_checks() -> None:
