@@ -563,7 +563,7 @@ STATUS: CODE_TEST_SMOKE_PASS / LONG_RUN_SEED1_ACTIVE
 HYPOTHESIS: exact IQN decision representation + healthy PPO recipe可分离AC算法gap与历史迁移误差
 ONLY_CHANGED_VARIABLE: IQN value learning -> categorical MAPPO；centralized V/GAE/ValueNorm是算法或优化必需
 CONFIG: configs/experiments/mappo9_v2_20260830/{common,seed1,seed2,seed3}.yaml
-COMMIT: based on 9ed9f61；本轮实现提交待push后回填
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026083001 / 2026083002 / 2026083003
 START_STEP: 0
 CURRENT_STEP: 75k / 400k（2026-08-30 22:04 CST冻结快照）
@@ -595,7 +595,7 @@ STATUS: AUDIT_PASS / THREE_SEED_COMPLETE
 HYPOTHESIS: 旧TD3失败来自critic尺度/credit dynamics，而不是target公式或actor完全未更新
 ONLY_CHANGED_VARIABLE: 只修logging可观测性；不改变当前算法/训练轨迹
 CONFIG: configs/experiments/small_step_ac_migration_20260828/td3_aw_seed3.yaml
-COMMIT: based on 9ed9f61；logging/test提交待push后回填
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026082803
 START_STEP: 0（中断恢复时约193k，保留原进程续跑）
 CURRENT_STEP: 300k / 300k，COMPLETE

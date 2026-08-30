@@ -22,6 +22,8 @@ artifacts/2026-08-04_crms_vctls_ce_final/
 
 `STATUS: FINAL_AW_CONTRACT_RESOLVED / UNEXPLAINED=0 / VXY_DIFF_TESTED`
 
+`IMPLEMENTATION_COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02`
+
 ## 2. Final IQN-AW Contract Table
 
 | 项目 | AW final behavior | VXY required change | should remain identical? | actual implementation path | test status |

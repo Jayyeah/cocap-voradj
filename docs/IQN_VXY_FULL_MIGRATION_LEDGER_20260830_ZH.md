@@ -8,7 +8,7 @@
 
 基线是 `configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/`，不是 Pure-Capture B0。第一轮不加入新 reward、replay、LR decay、regularizer 或 early stop；25k checkpoint、严格 validation 与 rolling full resume 只属于观测/恢复基础设施。
 
-当前工作树基于 `9ed9f61a462c213b93b304a6106fa5c5f083e97a`；本轮实现提交号在推送后回填。运行产物留在本机 `artifacts/`，不上传大 checkpoint/replay。
+历史基线为 `9ed9f61a462c213b93b304a6106fa5c5f083e97a`；本轮实现与审计提交为 `dda2a23f20c4b857bc958c856d76bf869b50df02`。运行产物留在本机 `artifacts/`，不上传大 checkpoint/replay。
 
 ## 2. 唯一变量与保持项
 
@@ -61,7 +61,7 @@ STATUS: COMPLETE / BOTH_PROTOCOLS_FINITE_AND_HASH_MATCHED
 HYPOTHESIS: 225k附近的跨种子能力是真实的，但20回合事后选优数字会收缩
 ONLY_CHANGED_VARIABLE: random evaluation tau -> fixed midpoint tau；不改模型与环境
 CONFIG: small_step_ac_migration_20260828/iqn_vxy9_seed{1,2,3}.yaml
-COMMIT: based on 9ed9f61; evaluator implementation pending final commit
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: training 2026082803/04/05；evaluation 2026093000/4000/5000
 START_STEP: uniform 225k；per-seed best 250k/225k/225k
 CURRENT_STEP: four unique checkpoint evaluations均为100/100
@@ -117,11 +117,11 @@ STATUS: ACTIVE / TRAIN_SCREEN_FINALIZER_RUNNING
 HYPOTHESIS: strict action-only VXY9可在完整4v1 CR-MS+VCT-LS+CE mix中形成非零 capture与CE
 ONLY_CHANGED_VARIABLE: AW9 -> proven VXY9；25k checkpoint/full-resume为infra
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage1_4p1e1obs_scratch2m.yaml
-COMMIT: pending final implementation commit
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026080201
 START_STEP: 0
-CURRENT_STEP: 506k / 2M（2026-08-30 22:04 CST冻结快照）
-RESULT: finite；20个25k checkpoint；rolling full-resume存在（约4.3 GiB）；截至475k共19个screen完成。当前严格排序最优为275k：capture=.20、coverage CE=.10、mix capture=.20、mix CE=0、max collision=.45，尚未通过最终gate
+CURRENT_STEP: 524k / 2M（2026-08-30 22:15 CST冻结快照）
+RESULT: finite；20个25k checkpoint；rolling full-resume存在（约4.3 GiB）；截至500k共20个screen完成。当前严格排序最优仍为275k：capture=.20、coverage CE=.10、mix capture=.20、mix CE=0、max collision=.45，尚未通过最终gate
 GATE: capture>=.50、mix capture>=.50、coverage CE>=.10、mix CE>=.10、max collision<=.50
 CONCLUSION: contract可执行，性能待2M及25k screening
 NEXT: 不早停、不跳stage，继续自然训练到2M；finalizer完成全量选择并仅在gate PASS后晋级8v2
@@ -134,7 +134,7 @@ STATUS: BLOCKED_BY_STAGE1_GATE（按设计）
 HYPOTHESIS: selected 4v1 VXY policy可shape-compatible warm-start到8v2
 ONLY_CHANGED_VARIABLE: historical stage size/curriculum change；action仍是同一VXY9
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage2_8p2e2obs_700k.yaml
-COMMIT: pending final implementation commit
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026080202
 START_STEP: 0，pretrained=stage1 selected checkpoint
 CURRENT_STEP: 0
@@ -151,7 +151,7 @@ STATUS: BLOCKED_BY_STAGE2_GATE（按设计）
 HYPOTHESIS: selected 8v2 VXY policy可扩展到12v3并保留capture+CE
 ONLY_CHANGED_VARIABLE: historical stage size/curriculum change；action仍是同一VXY9
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage3_12p3e3obs_700k.yaml
-COMMIT: pending final implementation commit
+COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026080203
 START_STEP: 0，pretrained=stage2 selected checkpoint
 CURRENT_STEP: 0

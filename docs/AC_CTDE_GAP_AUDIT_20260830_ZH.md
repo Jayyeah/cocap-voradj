@@ -4,6 +4,8 @@
 
 `STATUS: AUDIT_COMPLETE / MAPPO-9-v2_SEED1_ACTIVE / TD3_THREE_SEED_COMPLETE`
 
+`IMPLEMENTATION_COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02`
+
 本轮结论不是“PPO 一定不适合”，而是旧 MAPPO-9 不能作为严格 IQN→Actor-Critic 对照：它把 IQN 的完整 decision feature 简化成了 `self token + mean pooling`，同时使用 10 epochs、actor LR `1e-4`，没有 target-KL 和 ValueNorm。旧 MAPPO-AW 进一步出现 KL/clip 失控和饱和坏吸引子。TD3-AW 则是另一类故障：target 公式与 twin-Q 基本正确，但 Q 绝对值、twin gap 与裁剪前 critic gradient 随训练扩大，且 actor 使用 centralized joint-action gradient，不是历史 all-agent MASAC 的 focal-gradient 语义。
 
 因此本轮建立的新锚点是：
