@@ -559,19 +559,19 @@ seed3 已自然跑完并完成既定三种子证据；原配方不再追加预�
 ### 18.2 MAPPO-9-v2 正式记录
 
 ```text
-STATUS: CODE_TEST_SMOKE_PASS / SEED1_SEED2_COMPLETE / SEED3_ACTIVE
+STATUS: THREE_SEED_COMPLETE / GATE_PASS_TO_MAPPO_AW_V2
 HYPOTHESIS: exact IQN decision representation + healthy PPO recipe可分离AC算法gap与历史迁移误差
 ONLY_CHANGED_VARIABLE: IQN value learning -> categorical MAPPO；centralized V/GAE/ValueNorm是算法或优化必需
 CONFIG: configs/experiments/mappo9_v2_20260830/{common,seed1,seed2,seed3}.yaml
 COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026083001 / 2026083002 / 2026083003
 START_STEP: 0
-CURRENT_STEP: seed1=400k COMPLETE；seed2=400k COMPLETE；seed3=91k/400k（2026-08-31 09:29 CST冻结快照）
-RESULT: exact feature parity、formula tests、2-step CUDA smoke均PASS；三seed累计0 restart。seed1 best capture10%/collision90%，seed2 best capture50%/collision50%；seed3当前25k/50k/75k capture均为0，优化健康
+CURRENT_STEP: seed1/seed2/seed3均400k COMPLETE（gate于2026-08-31 13:28 CST写盘）
+RESULT: 三seed累计0 restart、optimization healthy；best依次为10%/90%、50%/50%、5%/95%（capture/collision），mean best capture21.67%、mean collision78.33%，all-seed nonzero
 GATE: 3×400k；每25k det/stoch20；KL/clip/value健康并跨seed重复非零capture
-CONCLUSION: 旧MAPPO-9不是严格桥接；v2执行合同已修复，性能结论尚不能提前给出
-ETA: seed3 supervisor ETA约4小时04分；预计13:35完成训练，含formal eval与gate写盘的保守窗口为13:35–14:15 CST
-NEXT: 自动完成seed3；PASS→MAPPO-AW-v2，healthy FAIL→discrete counterfactual-Q
+CONCLUSION: `PASS_TO_MAPPO_AW_V2`；证明修复后的离散AC达到预声明最低桥接门槛，但seed1/3高碰撞说明策略仍弱，不能写成强成功
+ETA: MAPPO-9-v2已完成；MAPPO-AW-v2尚未启动，当前无训练ETA
+NEXT: 进入严格单变量的MAPPO-AW-v2；除categorical AW9→continuous (a,w)外保持合同固定
 ```
 
 v2 的关键冻结值为 rollout256、3 PPO epochs、2 minibatches、actor LR `3e-5`、critic LR `1e-4`、clip `.2`、target-KL `.02`、ValueNorm beta `.99999`、categorical logits gain `.01`、400k/seed。Actor exact复用 IQN 的 self/mean/max/target attention/summary attention/pursuing embedding/fusion decision feature，critic仍是action-free centralized V。
@@ -580,14 +580,14 @@ v2 的关键冻结值为 rollout256、3 PPO epochs、2 minibatches、actor LR `3
 
 ### 18.3 MAPPO-v2 自动线
 
-`tools/supervise_mappo9_v2_20260830.py` 当前在 tmux `cocap_mappo9_v2_supervisor_gpu1` 中运行。它没有杀死或抢占历史 TD3；seed1、seed2 完成后均已自动晋到下一seed，现在运行seed3，并负责：
+`tools/supervise_mappo9_v2_20260830.py` 已完成其职责并正常退出。它没有杀死或抢占历史 TD3；seed1→seed2→seed3均自动晋级并完成：
 
 - rolling resume、PID/tmux/GPU/VRAM/温度/RAM/disk/ETA/checkpoint；
 - finite metrics；KL>.05或clip>.3 WARN；KL>.1连续3点暂停；
 - 三seed最终gate JSON；
 - PASS路由MAPPO-AW-v2，healthy FAIL路由discrete centralized-Q/counterfactual CTDE；在结果未知前不擅自启动下一算法。
 
-2026-08-31 09:29 CST 状态为 `seed_active`：seed3 91k/400k、约21.11 step/s、ETA约4小时04分，finite=true、warn=false、critical=false、`approx_kl_max=.00293`、clip=.0124；GPU1温度约79–80°C。seed1/2已完整400k，当前快照仍不能提前宣称三seed任务性能PASS。
+2026-08-31 13:28 CST 状态为 `three_seed_gate_complete`：`PASS_TO_MAPPO_AW_V2`，mean best capture21.67%、mean collision78.33%、all-seed nonzero=true、optimization healthy=true。该PASS仅表示达到预声明迁移门槛；seed1/3 best collision分别90%/95%，仍需在连续动作线中严格验证。
 
 ### 18.4 TD3 centralized-Q/gradient审计与final seed3
 

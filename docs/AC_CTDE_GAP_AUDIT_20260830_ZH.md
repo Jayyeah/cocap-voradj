@@ -2,7 +2,7 @@
 
 ## 1. 状态与结论
 
-`STATUS: AUDIT_COMPLETE / MAPPO-9-v2_SEED1_SEED2_COMPLETE_SEED3_ACTIVE / TD3_THREE_SEED_COMPLETE`
+`STATUS: AUDIT_COMPLETE / MAPPO-9-v2_THREE_SEED_COMPLETE_GATE_PASS / TD3_THREE_SEED_COMPLETE`
 
 `IMPLEMENTATION_COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02`
 
@@ -226,9 +226,9 @@ TARGET_KL: .02
 VALUE_NORM: beta=.99999, variance floor=.01
 ```
 
-supervisor：`tools/supervise_mappo9_v2_20260830.py`。seed1、seed2 均已自然完成400k；2026-08-31 09:29 CST 已自动进入 seed3 `91k/400k`，3个checkpoint、rolling resume存在、三seed累计0次重启。seed3 最新 `approx_kl_max=.00293`、clip fraction `.0124`、value loss `.3430`、actor update L2 `.0683`，finite/WARN/CRITICAL=`true/false/false`，约 `21.11 step/s`。当前 ETA 为4小时04分，预计13:35左右完成训练；计入余下formal eval与gate写盘，保守窗口为13:35–14:15 CST。它继续监控 PID/tmux/GPU/RAM/disk/finite/KL/clip/checkpoint/ETA，并写 `gate_decision.json`：
+supervisor：`tools/supervise_mappo9_v2_20260830.py`。三 seed 均已自然完成400k，累计0次重启；supervisor于2026-08-31 13:28 CST正常写入 `gate_decision.json` 后结束。三seed best分别为：seed1 250k capture10%/collision90%，seed2 250k capture50%/collision50%，seed3 400k capture5%/collision95%；mean best capture `21.67%`、mean collision `78.33%`、all-seed nonzero=true、optimization healthy=true。
 
-当前任务表现仍只作阶段性记录：seed1 best为250k capture10%/collision90%，final为0%/100%；seed2 best为250k capture50%/collision50%，final为5%/95%；seed3在25k/50k/75k尚无capture。优化健康不等于任务已PASS，三seed gate仍等待seed3完成。
+预声明gate结果为 `PASS_TO_MAPPO_AW_V2`。这是“离散Actor-Critic桥接已达到最低可迁移门槛”，不是强策略结论：seed1/3碰撞仍高，且final分别为0%/100%、5%/95%、5%/95%。下一步已路由到MAPPO-AW-v2，但本轮状态检查时尚未启动，因此没有可报告的训练ETA。
 
 - 三 seed重复非零且平均 best capture ≥10%、collision <80%：`PASS_TO_MAPPO_AW_V2`；
 - 优化健康但任务失败：`HEALTHY_FAIL_TO_DISCRETE_COUNTERFACTUAL_Q`；
@@ -244,7 +244,7 @@ supervisor：`tools/supervise_mappo9_v2_20260830.py`。seed1、seed2 均已自�
 - first-update critic nonzero gradient：PASS；
 - TD3 target/noise/twin/delay/joint-gradient：PASS；
 - MAPPO-v2 2-step GPU smoke + checkpoint + full resume + dual formal eval：PASS。
-- MAPPO-v2 long-run seed1/seed2：400k COMPLETE；seed3 91k ACTIVE，三seed累计0 restart，当前无 KL/clip warning。
+- MAPPO-v2 long-run：3×400k COMPLETE，0 restart，optimization healthy；预声明gate为 `PASS_TO_MAPPO_AW_V2`。
 - TD3-AW seed3 300k + final dual formal eval：COMPLETE；三 seed 原配方任务性能最终失败。
 
-正式性能结论必须等待 3×400k；smoke 只证明合同执行正确。
+三种子正式结果已完成；结论是桥接门槛PASS但策略仍弱，后续连续动作因果结论必须等待MAPPO-AW-v2。
