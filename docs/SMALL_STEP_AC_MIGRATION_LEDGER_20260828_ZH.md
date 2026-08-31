@@ -623,3 +623,13 @@ NEXT: 三种子结论已封版；若后续TD3-v2，joint与focal必须作为单�
 - VXY9 action、Final-AW strict diff、full resume与两条supervisor gate。
 
 本轮不引入Flow/Beta/full-cov、MATD3/FACMAC、新pooling、global enemy、新reward/replay或continuous VXY Actor-Critic。下一阶段仅由正式gate结果决定。
+
+## 19. MAPPO-AW-v2：严格 continuous `(a,w)` 桥接（2026-08-31）
+
+MAPPO-9-v2 的预声明 gate 已通过，故 GPU1 下一阶段严格路由到 MAPPO-AW-v2。实现提交为 `b37ced92e21819608e7a7fb3dc89a30a1ab95754`，配置为 `configs/experiments/mappo_aw_v2_20260831/{common,seed1,seed2,seed3}.yaml`，详细 parity、continuous policy 数学、旧 saturated-action inverse bug、监控和 gate 见 `docs/MAPPO_AW_V2_LAUNCH_AUDIT_20260831_ZH.md`。
+
+唯一主要变量是 categorical AW9 改为 factorized diagonal Gaussian continuous `(a,w)`，并经 tanh/physical scale 映射到 `[-.4,.4] × [-π/6,π/6]`。Legacy IQN decision feature、centralized action-free V、ValueNorm、3 epochs/2 minibatches、LR、target-KL、mask、任务环境、三 seed、eval seeds、25k cadence与MAPPO-9-v2完全保持。PPO直接使用rollout保存的pre-tanh latent重算log-prob，避免饱和float32物理动作反解造成伪KL；新增mean/log_std/saturation/action/entropy及完整PPO health指标。
+
+验证：实现阶段合并定向回归 `119 passed`；active VRAM guard 修正后的最终合集 `118 passed, 2 skipped`（仅缺可选历史 P1 frozen manifest），无 failure。GPU1 fresh 2-step 与 `2->4` full-resume smoke、checkpoint、双短评估均PASS，4-step max KL `1.03e-4`、clip `0`、saturation `0`，指标finite。正式 seed1 于 `2026-08-31 17:25:39 CST` 启动；supervisor修正pre-launch/active VRAM阈值语义后在不重启训练child的情况下接管。
+
+首个 formal 25k checkpoint、rolling resume 与 det20/stoch20 已持久化。deterministic 为 capture `0%` / collision `0%`，stochastic 为 capture `0%` / collision `30%`（boundary 5、agent-agent 1）；两者2+/3+/3+hold均为0，符合“25k不因无capture停”的合同。`17:55:48 CST` 已恢复训练至 seed1 26k：pre-eval训练吞吐 `29.33 step/s`，含40-episode评估的当前wall吞吐 `14.47 step/s`；max KL `1.79e-4`、clip `0`、saturation `.0215`、pre-tanh mean abs max `.279`、std约 `(.931,.962)`、value loss `.00924`、actor/critic grad `1.052/.0928`，全部finite、所有health streak为0。训练PID `3830951`、supervisor PID `3833154`，tmux分别为 `cocap_mappo_aw_v2_seed1_gpu1` 与 `cocap_mappo_aw_v2_supervisor_gpu1`；attempts/restarts均为0。

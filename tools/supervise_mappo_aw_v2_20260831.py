@@ -48,6 +48,7 @@ CHECKPOINT_INTERVAL = 25_000
 EVAL_EPISODES = 20
 POLL_SECONDS = 60
 MIN_FREE_GPU_MIB = 26_000
+ACTIVE_MIN_FREE_GPU_MIB = 2_000
 MIN_DISK_FREE_GIB = 20.0
 MAX_RESTARTS = 3
 SESSION_PREFIX = "cocap_mappo_aw_v2"
@@ -513,6 +514,10 @@ def foreign_gpu_processes(processes: Iterable[Mapping[str, Any]]) -> list[dict[s
     return [dict(process) for process in processes if not is_aw_v2_process(process)]
 
 
+def aw_v2_gpu_processes(processes: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return [dict(process) for process in processes if is_aw_v2_process(process)]
+
+
 def _gpu_state(gpu_index: int) -> dict[str, Any]:
     result = subprocess.run(
         [
@@ -590,6 +595,13 @@ def resource_blockers(snapshot: Mapping[str, Any], min_free_gpu_mib: int = MIN_F
     if disk_free < float(min_disk_free_gib):
         blockers.append("disk_free_below_guard")
     return blockers
+
+
+def gpu_free_mib(snapshot: Mapping[str, Any]) -> int:
+    try:
+        return int((snapshot.get("gpu") or {}).get("memory_free_mib", 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 def stop_owned_session(name: str, config: Path | None = None) -> bool:
@@ -779,6 +791,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.min_disk_free_gib,
                 block_foreign_processes=not args.allow_shared_gpu,
             )
+            existing_aw_processes = aw_v2_gpu_processes(
+                snapshot.get("gpu_compute_processes") or []
+            )
+            if existing_aw_processes:
+                # A restarted supervisor must adopt the already-running seed;
+                # its allocation naturally lowers free VRAM below the
+                # pre-launch reservation.
+                blockers = [item for item in blockers if item != "free_vram_below_26g"]
             if not blockers:
                 break
             if "foreign_gpu_compute_process" in blockers:
@@ -787,7 +807,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 state = "waiting_for_gpu1_low_vram"
             else:
                 state = "waiting_for_gpu1_resource_gate"
-            status(state, pid=os.getpid(), blockers=blockers, resources=snapshot)
+            status(
+                state,
+                pid=os.getpid(),
+                blockers=blockers,
+                resources=snapshot,
+                existing_aw_processes=existing_aw_processes,
+            )
             if args.check_once:
                 return 0
             if "disk_free_below_guard" in blockers:
@@ -827,6 +853,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                     args.min_disk_free_gib,
                     block_foreign_processes=not args.allow_shared_gpu,
                 )
+                owned_session_running = session_is_expected(session, config)
+                if owned_session_running:
+                    # The 26 GiB threshold is a pre-launch reservation.  Once
+                    # this seed owns its allocation, enforce a smaller hard
+                    # headroom guard without classifying our own VRAM as a
+                    # launch blocker.
+                    blockers = [item for item in blockers if item != "free_vram_below_26g"]
+                    if gpu_free_mib(snapshot) < ACTIVE_MIN_FREE_GPU_MIB:
+                        stopped = stop_owned_session(session, config)
+                        status(
+                            "paused_active_vram_guard",
+                            pid=os.getpid(),
+                            seed=index,
+                            session=session,
+                            stopped_owned_session=stopped,
+                            resources=snapshot,
+                            active_min_free_gpu_mib=ACTIVE_MIN_FREE_GPU_MIB,
+                        )
+                        return 9
                 if optimization["critical"]:
                     stopped = stop_owned_session(session, config)
                     status("paused_critical_optimization", pid=os.getpid(), seed=index, session=session,
@@ -897,6 +942,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     checkpoint_count=_checkpoint_count(run),
                     rolling_resume=resume.is_file(),
                     target_steps=TOTAL_STEPS,
+                    active_min_free_gpu_mib=ACTIVE_MIN_FREE_GPU_MIB,
                     note="No capture-based early stop at 25k/50k.",
                 )
                 if args.check_once:

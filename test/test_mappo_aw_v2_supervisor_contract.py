@@ -12,6 +12,7 @@ def test_aw_v2_contract_constants_and_independent_paths() -> None:
     assert supervisor.CHECKPOINT_INTERVAL == 25_000
     assert supervisor.EVAL_EPISODES == 20
     assert supervisor.MIN_FREE_GPU_MIB == 26_000
+    assert supervisor.ACTIVE_MIN_FREE_GPU_MIB == 2_000
     assert supervisor.CLIP_STREAK_LIMIT == 5
     assert supervisor.SATURATION_STREAK_LIMIT == 5
     assert supervisor.PRE_TANH_STREAK_LIMIT == 5
@@ -74,6 +75,7 @@ def test_gpu_foreign_process_audit_never_reclassifies_other_commands() -> None:
     assert supervisor.is_aw_v2_process(own) is True
     assert supervisor.is_aw_v2_process(foreign) is False
     assert supervisor.foreign_gpu_processes([own, foreign]) == [foreign]
+    assert supervisor.aw_v2_gpu_processes([own, foreign]) == [own]
 
 
 def test_resource_gate_waits_for_vram_and_foreign_compute_process() -> None:
@@ -90,6 +92,7 @@ def test_resource_gate_waits_for_vram_and_foreign_compute_process() -> None:
     shared_blockers = supervisor.resource_blockers(snapshot, block_foreign_processes=False)
     assert "free_vram_below_26g" in shared_blockers
     assert "foreign_gpu_compute_process" not in shared_blockers
+    assert supervisor.gpu_free_mib(snapshot) == 25_999
 
 
 def test_flock_prevents_a_second_supervisor_instance(tmp_path: Path) -> None:
