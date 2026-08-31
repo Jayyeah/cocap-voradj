@@ -23,6 +23,10 @@ class BoxActorConfig:
     log_std_max: float = 1.0
     dropout: float = 0.0
     context_pooling: str = "mean"
+    orthogonal_policy_head: bool = False
+    mean_output_gain: float = 0.01
+    initial_log_std: Optional[float] = None
+    saturation_threshold: float = 0.99
 
 
 class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
@@ -56,6 +60,25 @@ class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
         )
         self.mean_head = nn.Linear(h, 2)
         self.log_std_head = nn.Linear(h, 2)
+        if float(self.config.a_max) <= 0.0 or float(self.config.w_max) <= 0.0:
+            raise ValueError("continuous AW physical scales must be positive")
+        if self.config.log_std_min > self.config.log_std_max:
+            raise ValueError("log_std_min must not exceed log_std_max")
+        if not 0.0 < float(self.config.saturation_threshold) < 1.0:
+            raise ValueError("saturation_threshold must be in (0, 1)")
+        if self.config.orthogonal_policy_head:
+            nn.init.orthogonal_(self.policy[0].weight, gain=np.sqrt(2.0))
+            nn.init.zeros_(self.policy[0].bias)
+            nn.init.orthogonal_(self.mean_head.weight, gain=float(self.config.mean_output_gain))
+            nn.init.zeros_(self.mean_head.bias)
+        if self.config.initial_log_std is not None:
+            initial_log_std = float(self.config.initial_log_std)
+            if not self.config.log_std_min <= initial_log_std <= self.config.log_std_max:
+                raise ValueError("initial_log_std must lie inside the configured clamp")
+            # A zero state-dependent weight is the standard, auditable MAPPO
+            # starting point.  The head remains trainable after initialization.
+            nn.init.zeros_(self.log_std_head.weight)
+            nn.init.constant_(self.log_std_head.bias, initial_log_std)
         self.adapter = adapter or AccelerationAngularVelocityActionAdapter(
             self.config.a_max,
             self.config.w_max,
@@ -86,10 +109,62 @@ class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
         normalized = (action / scale).clamp(-1.0 + 1e-6, 1.0 - 1e-6)
         return torch.atanh(normalized)
 
+    def log_prob_from_distribution(self, distribution: Normal, latent: torch.Tensor) -> torch.Tensor:
+        """Density of an authoritative pre-tanh sample in physical action space."""
+
+        if latent.shape[-1:] != (2,):
+            raise ValueError("continuous AW latent must have final dimension 2")
+        if not bool(torch.isfinite(latent).all()):
+            raise ValueError("continuous AW latent must be finite")
+        return distribution.log_prob(latent).sum(dim=-1) - self._log_abs_det_jacobian(latent)
+
+    def log_prob_from_latent(
+        self,
+        obs: Mapping[str, torch.Tensor],
+        latent: torch.Tensor,
+    ) -> torch.Tensor:
+        """Re-evaluate a rollout's exact pre-tanh latent without an inverse tanh.
+
+        PPO must use this path.  A saturated float32 physical action can no
+        longer encode whether its original latent was, for example, 8 or 10;
+        reconstructing it with ``atanh`` would therefore create an artificial
+        likelihood ratio and KL spike.
+        """
+
+        distribution, _ = self.distribution(obs)
+        return self.log_prob_from_distribution(distribution, latent)
+
+    def evaluate_latent(
+        self,
+        obs: Mapping[str, torch.Tensor],
+        latent: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Normal, torch.Tensor]:
+        """Return PPO log-prob and both bounded/base entropy diagnostics.
+
+        The bounded entropy is a one-sample reparameterized Monte-Carlo
+        estimate of the actual physical-action policy entropy.  It uses the
+        same distribution forward pass as the PPO likelihood, which also
+        avoids an additional legacy-backbone dropout draw.
+        """
+
+        distribution, log_std = self.distribution(obs)
+        log_prob = self.log_prob_from_distribution(distribution, latent)
+        entropy_latent = distribution.rsample()
+        bounded_entropy = -self.log_prob_from_distribution(distribution, entropy_latent)
+        base_entropy = distribution.entropy().sum(dim=-1)
+        return log_prob, bounded_entropy, base_entropy, distribution, log_std
+
     def log_prob(self, obs: Mapping[str, torch.Tensor], action: torch.Tensor) -> torch.Tensor:
+        if action.shape[-1:] != (2,):
+            raise ValueError("continuous AW action must have final dimension 2")
+        if not bool(torch.isfinite(action).all()):
+            raise ValueError("continuous AW action must be finite")
+        scale = self._scale(action.device, action.dtype)
+        if bool((action.abs() > scale * (1.0 + 1e-6)).any()):
+            raise ValueError("continuous AW action lies outside physical bounds")
         distribution, _ = self.distribution(obs)
         latent = self._inverse(action)
-        return distribution.log_prob(latent).sum(dim=-1) - self._log_abs_det_jacobian(latent)
+        return self.log_prob_from_distribution(distribution, latent)
 
     def sample(
         self,
@@ -99,7 +174,7 @@ class SquashedGaussianAccelerationAngularVelocityActor(nn.Module):
         distribution, _ = self.distribution(obs)
         latent = distribution.loc if deterministic else distribution.rsample()
         action = self._squash(latent)
-        log_prob = distribution.log_prob(latent).sum(dim=-1) - self._log_abs_det_jacobian(latent)
+        log_prob = self.log_prob_from_distribution(distribution, latent)
         return action, log_prob, latent
 
     @torch.no_grad()

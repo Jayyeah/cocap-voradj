@@ -325,11 +325,16 @@ class MAPPOTrainer:
                 obs_mb = {key: value[indices] for key, value in flat_local.items()}
                 if categorical:
                     log_prob, entropy = self.actor.evaluate_indices(obs_mb, latent.reshape(-1)[indices].long())
+                    base_entropy = entropy
                 else:
                     physical = actions.reshape(steps * agents, 2)[indices].float()
-                    log_prob = self.actor.log_prob(obs_mb, physical)
-                    distribution, _ = self.actor.distribution(obs_mb)
-                    entropy = distribution.entropy().sum(dim=-1)
+                    latent_mb = latent.reshape(steps * agents, 2)[indices].float()
+                    # The rollout's pre-tanh sample is authoritative.  A
+                    # saturated float32 physical action cannot be inverted
+                    # losslessly and previously produced artificial PPO KL.
+                    log_prob, entropy, base_entropy, distribution, log_std = (
+                        self.actor.evaluate_latent(obs_mb, latent_mb)
+                    )
                 log_ratio = log_prob - old_log_prob.reshape(-1)[indices]
                 ratio = torch.exp(log_ratio)
                 adv = advantages.reshape(-1)[indices]
@@ -360,10 +365,46 @@ class MAPPOTrainer:
                         "actor_grad_norm": actor_grad, "value_grad_norm": value_grad,
                     }
                     if not categorical:
-                        row.update({"gaussian_mean_a": float(distribution.loc[:, 0].mean()),
-                                    "gaussian_mean_w": float(distribution.loc[:, 1].mean()),
-                                    "gaussian_std_a": float(distribution.scale[:, 0].mean()),
-                                    "gaussian_std_w": float(distribution.scale[:, 1].mean())})
+                        normalized_action = torch.tanh(latent_mb)
+                        threshold = float(getattr(self.actor.config, "saturation_threshold", 0.99))
+                        saturated = normalized_action.abs() >= threshold
+                        action_magnitude = torch.linalg.vector_norm(physical, dim=-1)
+                        mean_abs = distribution.loc.abs()
+                        latent_abs = latent_mb.abs()
+                        row.update({
+                            # Keep historical names while adding unambiguous
+                            # pre-tanh diagnostics that cannot cancel signs.
+                            "gaussian_mean_a": float(distribution.loc[:, 0].mean()),
+                            "gaussian_mean_w": float(distribution.loc[:, 1].mean()),
+                            "pre_tanh_mean_a": float(distribution.loc[:, 0].mean()),
+                            "pre_tanh_mean_w": float(distribution.loc[:, 1].mean()),
+                            "pre_tanh_mean_abs_a": float(mean_abs[:, 0].mean()),
+                            "pre_tanh_mean_abs_w": float(mean_abs[:, 1].mean()),
+                            "pre_tanh_mean_abs_max": float(mean_abs.max()),
+                            "sampled_latent_abs_mean": float(latent_abs.mean()),
+                            "sampled_latent_abs_max": float(latent_abs.max()),
+                            "log_std_a_mean": float(log_std[:, 0].mean()),
+                            "log_std_w_mean": float(log_std[:, 1].mean()),
+                            "log_std_min": float(log_std.min()),
+                            "log_std_max": float(log_std.max()),
+                            "gaussian_std_a": float(distribution.scale[:, 0].mean()),
+                            "gaussian_std_w": float(distribution.scale[:, 1].mean()),
+                            "std_a_mean": float(distribution.scale[:, 0].mean()),
+                            "std_w_mean": float(distribution.scale[:, 1].mean()),
+                            "entropy_base_gaussian": float(base_entropy.mean()),
+                            "entropy_squashed_physical_mc": float(entropy.mean()),
+                            "post_tanh_saturation_ratio": float(saturated.float().mean()),
+                            "post_tanh_saturation_any_ratio": float(saturated.any(dim=-1).float().mean()),
+                            "post_tanh_saturation_a_ratio": float(saturated[:, 0].float().mean()),
+                            "post_tanh_saturation_w_ratio": float(saturated[:, 1].float().mean()),
+                            "action_abs_a_mean": float(physical[:, 0].abs().mean()),
+                            "action_abs_w_mean": float(physical[:, 1].abs().mean()),
+                            "action_magnitude_mean": float(action_magnitude.mean()),
+                            "action_magnitude_max": float(action_magnitude.max()),
+                            "action_log_prob_mean": float(log_prob.mean()),
+                            "action_log_prob_min": float(log_prob.min()),
+                            "action_log_prob_max": float(log_prob.max()),
+                        })
                     metric_rows.append(row)
                     if (
                         self.config.target_kl is not None
@@ -378,6 +419,18 @@ class MAPPOTrainer:
                 break
         self.update_count += 1
         result = {key: float(np.mean([row[key] for row in metric_rows])) for key in metric_rows[0]}
+        if not categorical:
+            for key in (
+                "pre_tanh_mean_abs_max",
+                "sampled_latent_abs_max",
+                "log_std_max",
+                "action_magnitude_max",
+                "action_log_prob_max",
+            ):
+                result[key] = float(max(row[key] for row in metric_rows))
+            for key in ("log_std_min", "action_log_prob_min"):
+                result[key] = float(min(row[key] for row in metric_rows))
+            result["critic_grad_norm"] = result["value_grad_norm"]
         with torch.no_grad():
             prediction = self._denormalize_values(self.value(central))[active]
             result["explained_variance"] = explained_variance(prediction, returns[active])

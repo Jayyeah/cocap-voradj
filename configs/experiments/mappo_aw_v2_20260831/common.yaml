@@ -1,0 +1,28 @@
+extends: ../mappo9_v2_20260830/common.yaml
+
+# MAPPO-9-v2 is the direct parent.  The task, centralized V and PPO recipe
+# remain inherited; this block selects only the continuous AW policy head.
+small_step_ac:
+  algorithm: mappo_aw_v2
+  algorithm_line: mappo_aw_v2_legacy_iqn_decision_feature
+  mappo:
+    # Conservative bounded-Gaussian initialization for the AW bridge.
+    log_std_min: -5.0
+    log_std_max: 1.0
+    # Standard zero log-std starts at unit latent std.  With mean gain .01,
+    # initial |tanh(z)|>=.99 saturation remains rare while exploration spans
+    # the AW box; this is fixed rather than swept.
+    initial_log_std: 0.0
+    saturation_threshold: 0.99
+
+actor:
+  backbone: legacy_iqn_decision_feature
+  policy_head: factorized_squashed_gaussian_aw
+  action_dim: 2
+
+experiment_metadata:
+  series: mappo_aw_v2_20260831
+  algorithm_line: mappo_aw_v2_legacy_iqn_decision_feature
+  hypothesis: Replace only categorical AW9 with a bounded continuous Gaussian (a,w) head while retaining MAPPO-9-v2 task, representation and PPO contract.
+  only_changed_variable: categorical AW9 policy head -> factorized squashed Gaussian (a,w) policy head
+  actor_contract: scratch LegacyVorAdjFeatureBackbone followed by factorized squashed Gaussian mean/log_std[2], tanh-bounded to physical (a,w)

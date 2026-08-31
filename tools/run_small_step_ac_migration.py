@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified Golden-contract runner for MAPPO-9, MAPPO-AW, IQN-VXY9 and TD3-AW."""
+"""Unified Golden-contract runner for the small-step AC migration lines."""
 from __future__ import annotations
 
 import argparse
@@ -50,8 +50,8 @@ from tools.run_continuous_ctde_training import (
 
 
 SCHEMA = "small-step-ac-full-v1"
-ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "iqn_vxy9", "td3_aw"}
-MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw"}
+ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "iqn_vxy9", "td3_aw"}
+MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2"}
 CATEGORICAL_MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2"}
 
 
@@ -130,24 +130,24 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
     spec = config["small_step_ac"]
     enc_cfg = encoder_config(config); critic_cfg = central_config(config)
     if algorithm in MAPPO_ALGORITHMS:
-        if algorithm in CATEGORICAL_MAPPO_ALGORITHMS:
-            if algorithm == "mappo9_v2":
-                iqn = config["iqn"]
-                actor_encoder = LegacyVorAdjFeatureBackbone(
-                    LegacyVorAdjFeatureBackboneConfig(
-                        hidden_dim=int(iqn["hidden_dim"]),
-                        num_heads=int(iqn["num_heads"]),
-                        num_layers=int(iqn["num_layers"]),
-                        self_feature_dim=int(iqn["self_feature_dim"]),
-                        max_pursuers=int(config["actor"]["max_pursuers"]),
-                        max_evaders=int(config["actor"].get("max_evaders", 8)),
-                        max_obstacles=int(config["actor"].get("max_obstacles", 5)),
-                        pursuing_embed_dim=int(iqn.get("pursuing_embed_dim", 8)),
-                        dropout=float(iqn.get("dropout", 0.1)),
-                    )
+        if algorithm in {"mappo9_v2", "mappo_aw_v2"}:
+            iqn = config["iqn"]
+            actor_encoder = LegacyVorAdjFeatureBackbone(
+                LegacyVorAdjFeatureBackboneConfig(
+                    hidden_dim=int(iqn["hidden_dim"]),
+                    num_heads=int(iqn["num_heads"]),
+                    num_layers=int(iqn["num_layers"]),
+                    self_feature_dim=int(iqn["self_feature_dim"]),
+                    max_pursuers=int(config["actor"]["max_pursuers"]),
+                    max_evaders=int(config["actor"].get("max_evaders", 8)),
+                    max_obstacles=int(config["actor"].get("max_obstacles", 5)),
+                    pursuing_embed_dim=int(iqn.get("pursuing_embed_dim", 8)),
+                    dropout=float(iqn.get("dropout", 0.1)),
                 )
-            else:
-                actor_encoder = LocalEntityTokenEncoder(enc_cfg)
+            )
+        else:
+            actor_encoder = LocalEntityTokenEncoder(enc_cfg)
+        if algorithm in CATEGORICAL_MAPPO_ALGORITHMS:
             actor = CategoricalGridActor(
                 actor_encoder,
                 aw_grid(),
@@ -155,11 +155,21 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
                 output_gain=float(spec["mappo"].get("output_gain", 0.01)),
             )
         else:
+            continuous_v2 = algorithm == "mappo_aw_v2"
             actor = SquashedGaussianAccelerationAngularVelocityActor(
-                LocalEntityTokenEncoder(enc_cfg),
-                BoxActorConfig(hidden_dim=enc_cfg.hidden_dim, a_max=float(config["action"]["a_max"]),
+                actor_encoder,
+                BoxActorConfig(hidden_dim=int(actor_encoder.config.hidden_dim), a_max=float(config["action"]["a_max"]),
                                w_max=float(config["action"]["w_max"]), decision_dt=float(config["dynamics"]["decision_dt"]),
-                               dropout=enc_cfg.dropout, context_pooling="mean"),
+                               log_std_min=float(spec["mappo"].get("log_std_min", -5.0)),
+                               log_std_max=float(spec["mappo"].get("log_std_max", 1.0)),
+                               dropout=enc_cfg.dropout, context_pooling="mean",
+                               orthogonal_policy_head=continuous_v2,
+                               mean_output_gain=float(spec["mappo"].get("output_gain", 0.01)),
+                               initial_log_std=(
+                                   float(spec["mappo"].get("initial_log_std", 0.0))
+                                   if continuous_v2 else None
+                               ),
+                               saturation_threshold=float(spec["mappo"].get("saturation_threshold", 0.99))),
             )
         value = CentralValueNetwork(hidden_dim=critic_cfg.hidden_dim, num_heads=critic_cfg.num_heads,
                                     num_layers=critic_cfg.num_layers, self_feature_dim=critic_cfg.self_feature_dim,
