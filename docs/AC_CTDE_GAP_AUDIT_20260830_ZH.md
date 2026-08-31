@@ -2,7 +2,7 @@
 
 ## 1. 状态与结论
 
-`STATUS: AUDIT_COMPLETE / MAPPO-9-v2_SEED1_ACTIVE / TD3_THREE_SEED_COMPLETE`
+`STATUS: AUDIT_COMPLETE / MAPPO-9-v2_SEED1_SEED2_COMPLETE_SEED3_ACTIVE / TD3_THREE_SEED_COMPLETE`
 
 `IMPLEMENTATION_COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02`
 
@@ -226,7 +226,9 @@ TARGET_KL: .02
 VALUE_NORM: beta=.99999, variance floor=.01
 ```
 
-supervisor：`tools/supervise_mappo9_v2_20260830.py`。历史 TD3 seed3 已自然完成并释放 GPU1；supervisor 已自动启动 seed1。2026-08-30 22:04 CST 的冻结快照为 `75k/400k`、3个 checkpoint、rolling resume存在、0次重启、约 `16.94 step/s`；最新 `approx_kl_max=6.19e-5`、clip fraction `0`、value loss `.0102`、actor update L2 `.0260`，finite/WARN/CRITICAL=`true/false/false`。它会继续跑三 seed、恢复中断、监控 PID/tmux/GPU/RAM/disk/finite/KL/clip/checkpoint/ETA，并写 `gate_decision.json`：
+supervisor：`tools/supervise_mappo9_v2_20260830.py`。seed1、seed2 均已自然完成400k；2026-08-31 09:29 CST 已自动进入 seed3 `91k/400k`，3个checkpoint、rolling resume存在、三seed累计0次重启。seed3 最新 `approx_kl_max=.00293`、clip fraction `.0124`、value loss `.3430`、actor update L2 `.0683`，finite/WARN/CRITICAL=`true/false/false`，约 `21.11 step/s`。当前 ETA 为4小时04分，预计13:35左右完成训练；计入余下formal eval与gate写盘，保守窗口为13:35–14:15 CST。它继续监控 PID/tmux/GPU/RAM/disk/finite/KL/clip/checkpoint/ETA，并写 `gate_decision.json`：
+
+当前任务表现仍只作阶段性记录：seed1 best为250k capture10%/collision90%，final为0%/100%；seed2 best为250k capture50%/collision50%，final为5%/95%；seed3在25k/50k/75k尚无capture。优化健康不等于任务已PASS，三seed gate仍等待seed3完成。
 
 - 三 seed重复非零且平均 best capture ≥10%、collision <80%：`PASS_TO_MAPPO_AW_V2`；
 - 优化健康但任务失败：`HEALTHY_FAIL_TO_DISCRETE_COUNTERFACTUAL_Q`；
@@ -242,7 +244,7 @@ supervisor：`tools/supervise_mappo9_v2_20260830.py`。历史 TD3 seed3 已自�
 - first-update critic nonzero gradient：PASS；
 - TD3 target/noise/twin/delay/joint-gradient：PASS；
 - MAPPO-v2 2-step GPU smoke + checkpoint + full resume + dual formal eval：PASS。
-- MAPPO-v2 long-run seed1 启动与首三个25k checkpoint：PASS；75k health finite、无 KL/clip warning。
+- MAPPO-v2 long-run seed1/seed2：400k COMPLETE；seed3 91k ACTIVE，三seed累计0 restart，当前无 KL/clip warning。
 - TD3-AW seed3 300k + final dual formal eval：COMPLETE；三 seed 原配方任务性能最终失败。
 
 正式性能结论必须等待 3×400k；smoke 只证明合同执行正确。

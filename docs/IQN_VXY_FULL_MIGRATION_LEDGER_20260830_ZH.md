@@ -120,10 +120,11 @@ CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage1_4p1e1obs_scra
 COMMIT: dda2a23f20c4b857bc958c856d76bf869b50df02
 SEED: 2026080201
 START_STEP: 0
-CURRENT_STEP: 524k / 2M（2026-08-30 22:15 CST冻结快照）
-RESULT: finite；20个25k checkpoint；rolling full-resume存在（约4.3 GiB）；截至500k共20个screen完成。当前严格排序最优仍为275k：capture=.20、coverage CE=.10、mix capture=.20、mix CE=0、max collision=.45，尚未通过最终gate
+CURRENT_STEP: 1.300M / 2M（2026-08-31 09:29 CST冻结快照）
+RESULT: finite；52个25k checkpoint；rolling full-resume存在；截至1.275M共51个screen完成，1.300M screen正在运行。当前严格排序最优为1.275M：capture=.80、coverage CE=.10、mix capture=.90、mix CE=.30、max collision=0，五项初筛gate全部满足
 GATE: capture>=.50、mix capture>=.50、coverage CE>=.10、mix CE>=.10、max collision<=.50
-CONCLUSION: contract可执行，性能待2M及25k screening
+CONCLUSION: 首次出现同时跨过capture/coverage/mix/safety五项阈值的强候选；仍须跑满2M并由finalizer正式选模，不能把初筛提前写成最终PASS
+ETA: 最近1.20M→1.30M用时92分14秒（约18.1 step/s）；训练到2M约还需10小时46分，预计2026-08-31 20:15 CST。计入末个screen与formal gate缓冲，预计20:45–21:30给出stage1正式决定
 NEXT: 不早停、不跳stage，继续自然训练到2M；finalizer完成全量选择并仅在gate PASS后晋级8v2
 ```
 
