@@ -1,0 +1,20 @@
+extends: ../mappo9_v2_20260830/common.yaml
+
+# Strict MAPPO-9-v2 parent.  Actor, task, AW9 action space and PPO recipe are
+# unchanged; only the centralized action-free V/GAE credit path is replaced.
+small_step_ac:
+  algorithm: ppo_cf
+  algorithm_line: ppo_cf_counterfactual_central_q_aw9
+  retain_final_full_resume: false
+
+experiment_metadata:
+  series: ppo_counterfactual_q_20260901
+  hypothesis: Conditioning the central critic on teammate actions and exactly enumerating focal AW9 actions improves multi-agent action credit over action-free V.
+  only_changed_variable: centralized action-free V and GAE advantage are replaced by teammate-action-conditioned Q_i and exact counterfactual advantage.
+  actor_contract: identical scratch LegacyVorAdjFeatureBackbone and categorical AW9 logits from MAPPO-9-v2
+  critic_contract: centralized entity Transformer conditioned on actual teammate action indices; focal action excluded; Q head emits 9 values
+  target_contract: per-agent reward TD(lambda), terminal no bootstrap, truncation and rollout boundary bootstrap
+  gate_contract: three seeds, 400k each, deterministic20 and stochastic20 every 25k
+  next_stage_pass: continuous centralized-Q or FACMAC-like CTDE
+  next_stage_healthy_fail: stop stacking Q critics; centralized V credit is not the primary bottleneck
+

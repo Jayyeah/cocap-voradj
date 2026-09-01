@@ -643,3 +643,9 @@ seed3 325k没有刷新best：deterministic capture/collision=`0%/100%`，stochas
 对应best deterministic的2+/3+为`70/15%、65/15%、70/20%`，3+ hold为`3/4/22`，表明continuous策略已学到ring接近，但稳定三人包围仍弱且碰撞偏高；best stochastic则为`15/10/10%` capture、`50/40/70%` collision，mean=`11.67%/53.33%`，显示分布内动作质量优于mean-action，正式结论仍只看deterministic。三seed全程max KL=`.0291/.0382/.0235`、max clip=`.137/.153/.109`、max saturation=`.0547/.0469/.0390`、max pre-tanh mean=`.698/.749/.691`，所有暂停阈值命中次数均为0，无NaN/Inf或value发散。
 
 剩余ETA：seed1/2为0；seed3 `325k/400k`、剩75k，含正式评估的wall throughput `19.65 step/s`，runner ETA `3,817s`（63.6min），预计三seed与最终Gate在`2026-09-01 11:06–11:15 CST`完成。训练PID `4107314`、supervisor PID `3833154`，GPU1无外部compute进程、free `41,699 MiB`，RAM free `116.56 GiB`、disk free `36.54 GiB`，restarts=0、rolling resume与health gate均正常。详细逐seed checkpoint、collision type、ring/angular/return/action与PPO区间见 `docs/MAPPO_AW_V2_LAUNCH_AUDIT_20260831_ZH.md` 第7节。
+
+## 20. PPO-CF / Counterfactual Central-Q（2026-09-01）
+
+MAPPO-AW-v2确认continuous AC有学习信号但仍弱于离散父实验后，GPU1下一条严格隔离线回到MAPPO-9-v2 AW9，只替换action-free central V/GAE为teammate-action-conditioned Central-Q和精确9动作counterfactual advantage。Actor、Legacy IQN decision feature、任务、reward、AW9、PPO recipe、ValueNorm、三paired seeds和25k deterministic/stochastic20全部冻结。
+
+实现、公式、terminal/truncation/active mask、selected-action TD(λ)、恢复schema、assigned-GPU RNG隔离、CPU/CUDA smoke、supervisor健康阈值与相对MAPPO-9-v2 gate详见 `docs/PPO_COUNTERFACTUAL_Q_AUDIT_20260901_ZH.md`。第一版保留per-agent reward且不加twin/target Q或混合GAE，避免同时引入第二实验变量。

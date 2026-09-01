@@ -300,3 +300,9 @@ Stage3必须自然训练到700k，等待28个25k checkpoint全部screen，按既
 - pure coverage初始化计数为12/8；
 - 每个GIF记录为edges=true、circles=true、trails=false，且仅coverage为CE targets=true；
 - Stage3有selection、`all_summaries.json`、`timing.json`和`FORMAL_DONE`。
+
+## 10. GPU0后续 Pure-Coverage isolation 队列（2026-09-01）
+
+Stage2 formal已证明standalone coverage CE `.15`但mixed CE仅`.05`。为区分VXY coverage skill难度与capture→coverage phase/replay interference，Stage3自然结束并完成formal/GIF后，GPU0固定串行：Stage2 selected 600k warm-start pure coverage 500k，再同seed scratch pure coverage 500k。
+
+两线保持Final Stage2 reward/CE/horizon/observation/IQN/VXY9/optimizer/epsilon/target update与buffer规模，只把任务分布切为8P0E2obs pure coverage。每25k coverage-only deterministic20，选中点formal20/GIF10；gate只看CE/CV/centroid/speed/collision/boundary/length/return decomposition，不看capture。历史合同取舍、500k预算依据、paired config、指标扩展、CUDA恢复smoke以及不打断Stage3的三重放行条件详见 `docs/VXY_PURE_COVERAGE_AUDIT_20260901_ZH.md`。

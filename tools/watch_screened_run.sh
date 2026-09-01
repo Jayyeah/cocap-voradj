@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ "$#" -lt 9 ]]; then
   echo "usage: $0 CONFIG RUN_DIR OUTPUT_ROOT SEED_BASE DEVICE TOTAL_STEPS CAPTURE_EVADERS COVERAGE_MAX_STEPS MIX_MAX_STEPS" >&2
-  echo "  env overrides: EPISODES WORKERS CHECKPOINT_INTERVAL WAIT_SECONDS" >&2
+  echo "  env overrides: EPISODES WORKERS CHECKPOINT_INTERVAL WAIT_SECONDS SCENARIOS" >&2
   exit 2
 fi
 
@@ -20,6 +20,7 @@ EPISODES="${EPISODES:-10}"
 WORKERS="${WORKERS:-4}"
 CHECKPOINT_INTERVAL="${CHECKPOINT_INTERVAL:-100000}"
 WAIT_SECONDS="${WAIT_SECONDS:-120}"
+SCENARIOS="${SCENARIOS:-capture coverage mix}"
 MAX_NUMPY_SEED=4294967295
 
 if (( SEED_BASE < 0 || SEED_BASE + TOTAL_STEPS / 1000 + EPISODES > MAX_NUMPY_SEED )); then
@@ -37,7 +38,7 @@ run_dir: $RUN_DIR
 device: $DEVICE
 episodes_per_scenario: $EPISODES
 workers: $WORKERS
-scenarios: capture coverage mix
+scenarios: $SCENARIOS
 checkpoint_interval: $CHECKPOINT_INTERVAL
 total_steps: $TOTAL_STEPS
 rollout_limits: capture=1000, coverage=$COVERAGE_MAX_STEPS, mix=$MIX_MAX_STEPS
@@ -68,7 +69,7 @@ while [[ "$STEP" -le "$TOTAL_STEPS" ]]; do
     --output-root "$STEP_OUT" \
     --episodes "$EPISODES" \
     --gif-count 0 \
-    --scenarios capture coverage mix \
+    --scenarios $SCENARIOS \
     --seed "$((SEED_BASE + STEP / 1000))" \
     --device "$DEVICE" \
     --workers "$WORKERS" \

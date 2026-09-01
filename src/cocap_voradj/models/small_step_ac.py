@@ -173,6 +173,98 @@ class CentralValueNetwork(nn.Module):
         return value * active.to(value.dtype)
 
 
+class CentralCounterfactualQNetwork(nn.Module):
+    """Central Q over all focal AW9 actions, conditioned on teammate actions."""
+
+    def __init__(
+        self,
+        hidden_dim: int = 256,
+        num_heads: int = 8,
+        num_layers: int = 4,
+        self_feature_dim: int = 9,
+        max_agents: int = 12,
+        max_evaders: int = 8,
+        max_obstacles: int = 5,
+        num_actions: int = 9,
+    ):
+        super().__init__()
+        self.hidden_dim = int(hidden_dim)
+        self.max_agents = int(max_agents)
+        self.max_evaders = int(max_evaders)
+        self.max_obstacles = int(max_obstacles)
+        self.self_feature_dim = int(self_feature_dim)
+        self.num_actions = int(num_actions)
+        h = self.hidden_dim
+        self.self_encoder = _embed(self.self_feature_dim, h)
+        self.pursuer_encoder = _embed(7, h)
+        self.evader_encoder = _embed(7, h)
+        self.obstacle_encoder = _embed(5, h)
+        self.type_embedding = nn.Embedding(4, h)
+        self.teammate_action_embedding = nn.Embedding(self.num_actions, h)
+        layer = nn.TransformerEncoderLayer(
+            d_model=h,
+            nhead=int(num_heads),
+            dim_feedforward=4 * h,
+            dropout=0.0,
+            batch_first=True,
+            norm_first=True,
+        )
+        self.attention = nn.TransformerEncoder(layer, int(num_layers), enable_nested_tensor=False)
+        self.q_head = nn.Sequential(
+            nn.Linear(h, h), nn.LayerNorm(h), nn.ReLU(), nn.Linear(h, self.num_actions)
+        )
+
+    def forward(
+        self,
+        global_obs: Mapping[str, torch.Tensor],
+        joint_action_indices: torch.Tensor,
+    ) -> torch.Tensor:
+        active = global_obs["active_mask"].bool()
+        batch, agents = active.shape
+        if agents != self.max_agents:
+            raise ValueError("central Q active mask has wrong agent dimension")
+        actions = joint_action_indices.long()
+        if actions.shape != (batch, agents):
+            raise ValueError("central Q joint actions must have shape [batch, max_agents]")
+        if bool(((actions < 0) | (actions >= self.num_actions)).any()):
+            raise ValueError("central Q joint action index is outside the categorical action space")
+
+        h = self.hidden_dim
+        focal = self.self_encoder(global_obs["self"])
+        pursuers = self.pursuer_encoder(global_obs["pursuers"].reshape(batch * agents, agents, 7))
+
+        # Expand the sampled joint action once per focal row and mask the
+        # diagonal, so Q_i never reads the focal action a_i from its input.
+        action_features = self.teammate_action_embedding(actions)
+        action_features = action_features[:, None].expand(batch, agents, agents, h)
+        focal_diagonal = torch.eye(agents, device=actions.device, dtype=torch.bool)[None]
+        teammate_mask = global_obs["pursuer_mask"].bool() & ~focal_diagonal
+        pursuers = pursuers + (
+            action_features * teammate_mask[..., None].to(action_features.dtype)
+        ).reshape(batch * agents, agents, h)
+
+        evaders = global_obs["evaders"][:, None].expand(batch, agents, -1, -1)
+        evaders = self.evader_encoder(evaders.reshape(batch * agents, self.max_evaders, 7))
+        obstacles = global_obs["obstacles"][:, None].expand(batch, agents, -1, -1)
+        obstacles = self.obstacle_encoder(obstacles.reshape(batch * agents, self.max_obstacles, 5))
+        tokens = torch.cat([focal.reshape(batch * agents, 1, h), pursuers, evaders, obstacles], dim=1)
+        type_ids = torch.cat([
+            torch.zeros(1, device=tokens.device, dtype=torch.long),
+            torch.ones(agents, device=tokens.device, dtype=torch.long),
+            torch.full((self.max_evaders,), 2, device=tokens.device, dtype=torch.long),
+            torch.full((self.max_obstacles,), 3, device=tokens.device, dtype=torch.long),
+        ]).view(1, -1).expand(batch * agents, -1)
+        tokens = tokens + self.type_embedding(type_ids)
+        pursuer_mask = global_obs["pursuer_mask"].reshape(batch * agents, agents).bool()
+        evader_mask = global_obs["evader_mask"][:, None].expand(batch, agents, -1).reshape(batch * agents, -1).bool()
+        obstacle_mask = global_obs["obstacle_mask"][:, None].expand(batch, agents, -1).reshape(batch * agents, -1).bool()
+        focal_mask = torch.ones(batch * agents, 1, device=tokens.device, dtype=torch.bool)
+        mask = torch.cat([focal_mask, pursuer_mask, evader_mask, obstacle_mask], dim=1)
+        encoded = self.attention(tokens, src_key_padding_mask=~mask)
+        q_values = self.q_head(encoded[:, 0]).reshape(batch, agents, self.num_actions)
+        return q_values * active[..., None].to(q_values.dtype)
+
+
 def hard_copy(module: nn.Module) -> nn.Module:
     target = copy.deepcopy(module)
     target.requires_grad_(False)

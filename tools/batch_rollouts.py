@@ -203,6 +203,38 @@ def settle_summary_for_scenario(scenario: str, phase_summaries: List[Dict[str, A
     return next((item for item in reversed(phase_summaries) if "coverage_settled_success" in item), {})
 
 
+def coverage_quality_stats(frames: List[Dict[str, Any]]) -> Dict[str, float]:
+    coverage = [frame for frame in frames if str(frame.get("phase", "")) == "coverage"]
+
+    def finite_values(key: str) -> List[float]:
+        values = []
+        for frame in coverage:
+            try:
+                value = float(frame.get(key, float("nan")))
+            except (TypeError, ValueError):
+                continue
+            if math.isfinite(value):
+                values.append(value)
+        return values
+
+    ce_rms = finite_values("ce_center_rms")
+    ce_max = finite_values("ce_center_max")
+    speed_rms = finite_values("active_speed_rms")
+    speed_mean = finite_values("active_speed_mean")
+    speed_max = finite_values("active_speed_max")
+    return {
+        "final_ce_center_rms": ce_rms[-1] if ce_rms else float("nan"),
+        "best_ce_center_rms": min(ce_rms) if ce_rms else float("nan"),
+        "final_ce_center_max": ce_max[-1] if ce_max else float("nan"),
+        "best_ce_center_max": min(ce_max) if ce_max else float("nan"),
+        "avg_active_speed_rms": float(np.mean(speed_rms)) if speed_rms else 0.0,
+        "final_active_speed_rms": speed_rms[-1] if speed_rms else 0.0,
+        "avg_active_speed_mean": float(np.mean(speed_mean)) if speed_mean else 0.0,
+        "final_active_speed_mean": speed_mean[-1] if speed_mean else 0.0,
+        "max_active_speed": max(speed_max) if speed_max else 0.0,
+    }
+
+
 def summarize(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     total = max(len(records), 1)
 
@@ -228,6 +260,7 @@ def summarize(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "coverage_success_rate": rate("coverage_success_bool"),
         "episode_success_rate": rate("episode_success_bool"),
         "collision_rate": rate("collision_event"),
+        "boundary_collision_rate": rate("boundary_collision_event"),
         "soft_oob_rate": rate("soft_oob_event"),
         "zone_demo_episode_rate": rate("zone_demo_enabled"),
         "zone_breach_rate": rate("zone_breach_event"),
@@ -244,6 +277,7 @@ def summarize(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "avg_steps": mean_value("steps"),
         "avg_rollout_wall_seconds": mean_value("rollout_wall_seconds"),
         "avg_settle_elapsed_steps": mean_value("settle_elapsed_steps"),
+        "avg_coverage_success_step": mean_value("coverage_success_step"),
         "avg_episode_end_mean_speed": mean_value("episode_end_mean_speed"),
         "avg_episode_end_max_speed": mean_value("episode_end_max_speed"),
         "avg_initial_active_pursuers": mean_value("initial_active_pursuers"),
@@ -265,6 +299,30 @@ def summarize(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "mean_abs_angle_delta": mean_value("mean_abs_angle_delta"),
         "mean_centroid_move": mean_value("mean_centroid_move"),
         "mean_radius_cv": mean_value("mean_radius_cv"),
+        "avg_final_ce_center_rms": mean_value("final_ce_center_rms"),
+        "avg_best_ce_center_rms": mean_value("best_ce_center_rms"),
+        "avg_final_ce_center_max": mean_value("final_ce_center_max"),
+        "avg_best_ce_center_max": mean_value("best_ce_center_max"),
+        "avg_active_speed_rms": mean_value("avg_active_speed_rms"),
+        "avg_final_active_speed_rms": mean_value("final_active_speed_rms"),
+        "avg_active_speed_mean": mean_value("avg_active_speed_mean"),
+        "avg_final_active_speed_mean": mean_value("final_active_speed_mean"),
+        "max_active_speed": max(
+            [float(record.get("max_active_speed", 0.0)) for record in records] or [0.0]
+        ),
+        "avg_episode_return_mean": mean_value("episode_return_mean"),
+        "avg_episode_return_sum": mean_value("episode_return_sum"),
+        "reward_component_means": {
+            key: float(np.mean([
+                float((record.get("reward_component_means", {}) or {}).get(key, 0.0))
+                for record in records
+            ]))
+            for key in sorted({
+                key
+                for record in records
+                for key in (record.get("reward_component_means", {}) or {})
+            })
+        },
     }
 
 
@@ -347,6 +405,7 @@ def main() -> None:
                     "coverage_success_bool": bool(final_status.get("coverage_success_bool", False)),
                     "episode_success_bool": bool(final_status.get("episode_success_bool", False)),
                     "collision_event": bool(any(frame.get("collision_event", False) for frame in frames)),
+                    "boundary_collision_event": bool(any(frame.get("boundary_collision_event", False) for frame in frames)),
                     "soft_oob_event": bool(any(frame.get("soft_oob_event", False) for frame in frames)),
                     "coverage_geometric_success": bool(settle_summary.get("coverage_geometric_success", False)),
                     "coverage_settled_success": bool(settle_summary.get("coverage_settled_success", False)),
@@ -355,6 +414,10 @@ def main() -> None:
                     "coverage_init_source": coverage_init_source,
                     "episode_end_mean_speed": float(settle_summary.get("episode_end_mean_speed", 0.0)),
                     "episode_end_max_speed": float(settle_summary.get("episode_end_max_speed", 0.0)),
+                    "coverage_success_step": int(settle_summary.get("coverage_success_step", -1)),
+                    "episode_return_mean": float(settle_summary.get("episode_return_mean", 0.0)),
+                    "episode_return_sum": float(settle_summary.get("episode_return_sum", 0.0)),
+                    "reward_component_means": dict(settle_summary.get("reward_component_means", {}) or {}),
                     "zone_demo_enabled": bool(zone_summary.get("zone_demo_enabled", False)),
                     "zone_breach_event": bool(zone_summary.get("zone_breach_event", False)),
                     "zone_any_evader_entered_inner": bool(zone_summary.get("zone_any_evader_entered_inner", False)),
@@ -362,6 +425,7 @@ def main() -> None:
                     "zone_pursuer_left_inner_event": bool(zone_summary.get("zone_pursuer_left_inner_event", False)),
                     "phase_summaries": phase_summaries,
                     **coverage_cv_stats(frames),
+                    **coverage_quality_stats(frames),
                     **rotation_stats(frames),
                     **trajectory_stats(frames),
                 }

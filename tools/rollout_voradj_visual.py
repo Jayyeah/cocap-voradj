@@ -203,6 +203,11 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
     sites = np.asarray(data.get("sites", np.zeros((0, 2), dtype=float)), dtype=float)
     record = env.episode_record(task=scenario)
     voradj_metrics = record.get("voradj_metrics", {}) or {}
+    active_speeds = [
+        float(np.linalg.norm(np.asarray(p.velocity, dtype=float)))
+        for p in env.pursuers
+        if not p.deactivated
+    ]
     coverage_success = coverage_success_from_record(record, env)
     sensing = snapshot_sensing_metadata(env)
     ce_targets = []
@@ -261,6 +266,11 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
         ],
         "edges": unique_edges(data),
         "voronoi_cv": float(snapshot_voronoi_cv(keys, sites, bounds)),
+        "ce_center_rms": float(record.get("coverage_ce_center_rms", float("nan"))),
+        "ce_center_max": float(record.get("coverage_ce_center_max", float("nan"))),
+        "active_speed_mean": float(np.mean(active_speeds)) if active_speeds else 0.0,
+        "active_speed_rms": float(np.sqrt(np.mean(np.square(active_speeds)))) if active_speeds else 0.0,
+        "active_speed_max": float(max(active_speeds)) if active_speeds else 0.0,
         "sensing": sensing,
         "ce_targets": ce_targets,
         "capture_success": bool(record.get("captured", False)),
@@ -268,6 +278,7 @@ def snapshot_env(env: VorAdjEnv, scenario: str, phase: str, phase_index: int, lo
         **settle_fields_from_record(record),
         "episode_success": bool(record.get("episode_success", False)),
         "collision_event": bool(record.get("collision_event", False)),
+        "boundary_collision_event": bool(record.get("boundary_collision_event", False)),
         "soft_oob_event": bool(record.get("soft_boundary_out_of_bounds_event", False)),
     }
 
@@ -319,10 +330,27 @@ def rollout_phase(
     frames = [snapshot_env(env, scenario, phase, phase_index, 0, global_step_start)]
     stopped_by_env_done = False
     phase_success_reached = False
+    episode_return_by_agent = np.zeros(len(env.pursuers), dtype=float)
+    reward_component_sums: Dict[str, float] = {}
+    reward_transition_count = 0
     for local_step in range(1, int(max_steps) + 1):
         set_global_config(cfg)
         actions = act_pursuers(model, obs_list, device)
         result = env.step(actions, act_evaders(env, apf_agents))
+        for index, reward in enumerate(result.rewards):
+            episode_return_by_agent[index] += float(reward)
+            info = result.infos[index] if index < len(result.infos) else {}
+            metadata = (info.get("replay_metadata", {}) if isinstance(info, dict) else {}) or {}
+            for key, value in metadata.items():
+                if not str(key).startswith("reward_"):
+                    continue
+                try:
+                    scalar = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(scalar):
+                    reward_component_sums[str(key)] = reward_component_sums.get(str(key), 0.0) + scalar
+            reward_transition_count += 1
         obs_list = result.observations
         frames.append(snapshot_env(env, scenario, phase, phase_index, local_step, global_step_start + local_step))
         latest = frames[-1]
@@ -354,7 +382,18 @@ def rollout_phase(
         "capture_success_status": phase_status if phase == "capture" else status_text(capture_success),
         "coverage_success_status": phase_status if phase == "coverage" else status_text(coverage_success),
         "episode_success": phase_success,
+        "coverage_success_step": int(env.episode_step) if phase == "coverage" and coverage_success else -1,
+        "episode_return_by_agent": episode_return_by_agent.tolist(),
+        "episode_return_mean": float(np.mean(episode_return_by_agent)),
+        "episode_return_sum": float(np.sum(episode_return_by_agent)),
+        "reward_transition_count": int(reward_transition_count),
+        "reward_component_sums": dict(reward_component_sums),
+        "reward_component_means": {
+            key: value / max(reward_transition_count, 1)
+            for key, value in reward_component_sums.items()
+        },
         "collision_event": bool(record.get("collision_event", False)),
+        "boundary_collision_event": bool(record.get("boundary_collision_event", False)),
         "soft_oob_event": bool(record.get("soft_boundary_out_of_bounds_event", False)),
         **settle_fields_from_record(record),
         "zone_metrics": zone_metrics,

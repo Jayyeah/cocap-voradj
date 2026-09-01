@@ -36,12 +36,26 @@ from cocap_voradj.models.continuous.local_entity_token_encoder import (
     LocalEntityTokenEncoderConfig,
 )
 from cocap_voradj.models.iqn import CoCapIQN, CoCapNetConfig
-from cocap_voradj.models.small_step_ac import CategoricalGridActor, CentralValueNetwork, DeterministicAWActor, IQNGridPolicy
+from cocap_voradj.models.small_step_ac import (
+    CategoricalGridActor,
+    CentralCounterfactualQNetwork,
+    CentralValueNetwork,
+    DeterministicAWActor,
+    IQNGridPolicy,
+)
 from cocap_voradj.training.continuous.central_schema import build_central_global_obs
 from cocap_voradj.training.continuous.formal_config import resolve_ladder_config, scene_config
 from cocap_voradj.training.continuous.joint_replay import JointReplayBuffer, UniformJointReplaySampler
 from cocap_voradj.training.replay import ReplayBuffer
-from cocap_voradj.training.small_step_ac import IQNTrainer, MAPPOConfig, MAPPOTrainer, TD3Config, TD3Trainer, tensor_tree
+from cocap_voradj.training.small_step_ac import (
+    CounterfactualPPOTrainer,
+    IQNTrainer,
+    MAPPOConfig,
+    MAPPOTrainer,
+    TD3Config,
+    TD3Trainer,
+    tensor_tree,
+)
 from cocap_voradj.training.trainer import set_global_config
 from tools.run_continuous_ctde_training import (
     _evader_actions_for_env, _pad_actions, _pad_local_obs_tree, _pad_vector,
@@ -50,9 +64,11 @@ from tools.run_continuous_ctde_training import (
 
 
 SCHEMA = "small-step-ac-full-v1"
-ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "iqn_vxy9", "td3_aw"}
-MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2"}
-CATEGORICAL_MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2"}
+PPO_CF_ROLLOUT_SCHEMA = "ppo-cf-rollout-v1"
+ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "ppo_cf", "iqn_vxy9", "td3_aw"}
+MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "ppo_cf"}
+CATEGORICAL_MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "ppo_cf"}
+PPO_CF_ALGORITHMS = {"ppo_cf"}
 
 
 def stable_hash(value: Any) -> str:
@@ -130,7 +146,7 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
     spec = config["small_step_ac"]
     enc_cfg = encoder_config(config); critic_cfg = central_config(config)
     if algorithm in MAPPO_ALGORITHMS:
-        if algorithm in {"mappo9_v2", "mappo_aw_v2"}:
+        if algorithm in {"mappo9_v2", "mappo_aw_v2", "ppo_cf"}:
             iqn = config["iqn"]
             actor_encoder = LegacyVorAdjFeatureBackbone(
                 LegacyVorAdjFeatureBackboneConfig(
@@ -151,7 +167,7 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
             actor = CategoricalGridActor(
                 actor_encoder,
                 aw_grid(),
-                orthogonal_policy_head=algorithm == "mappo9_v2",
+                orthogonal_policy_head=algorithm in {"mappo9_v2", "ppo_cf"},
                 output_gain=float(spec["mappo"].get("output_gain", 0.01)),
             )
         else:
@@ -171,19 +187,33 @@ def make_components(config: dict[str, Any], algorithm: str, device: str):
                                ),
                                saturation_threshold=float(spec["mappo"].get("saturation_threshold", 0.99))),
             )
-        value = CentralValueNetwork(hidden_dim=critic_cfg.hidden_dim, num_heads=critic_cfg.num_heads,
-                                    num_layers=critic_cfg.num_layers, self_feature_dim=critic_cfg.self_feature_dim,
-                                    max_agents=critic_cfg.max_agents, max_evaders=critic_cfg.max_evaders,
-                                    max_obstacles=critic_cfg.max_obstacles)
         ppo = spec["mappo"]
-        trainer = MAPPOTrainer(actor, value, MAPPOConfig(
+        trainer_config = MAPPOConfig(
             gamma=float(ppo["gamma"]), gae_lambda=float(ppo["gae_lambda"]), clip_param=float(ppo["clip_param"]),
             ppo_epochs=int(ppo["ppo_epochs"]), minibatches=int(ppo["minibatches"]), actor_lr=float(ppo["actor_lr"]),
             critic_lr=float(ppo["critic_lr"]), entropy_coef=float(ppo["entropy_coef"]), value_coef=float(ppo["value_coef"]),
             max_grad_norm=float(ppo["max_grad_norm"]), target_kl=ppo.get("target_kl"),
             value_norm=bool(ppo.get("value_norm", False)),
             value_norm_beta=float(ppo.get("value_norm_beta", 0.99999)),
-            value_norm_epsilon=float(ppo.get("value_norm_epsilon", 1e-5))), device)
+            value_norm_epsilon=float(ppo.get("value_norm_epsilon", 1e-5)))
+        if algorithm in PPO_CF_ALGORITHMS:
+            critic = CentralCounterfactualQNetwork(
+                hidden_dim=critic_cfg.hidden_dim,
+                num_heads=critic_cfg.num_heads,
+                num_layers=critic_cfg.num_layers,
+                self_feature_dim=critic_cfg.self_feature_dim,
+                max_agents=critic_cfg.max_agents,
+                max_evaders=critic_cfg.max_evaders,
+                max_obstacles=critic_cfg.max_obstacles,
+                num_actions=9,
+            )
+            trainer = CounterfactualPPOTrainer(actor, critic, trainer_config, device)
+        else:
+            value = CentralValueNetwork(hidden_dim=critic_cfg.hidden_dim, num_heads=critic_cfg.num_heads,
+                                        num_layers=critic_cfg.num_layers, self_feature_dim=critic_cfg.self_feature_dim,
+                                        max_agents=critic_cfg.max_agents, max_evaders=critic_cfg.max_evaders,
+                                        max_obstacles=critic_cfg.max_obstacles)
+            trainer = MAPPOTrainer(actor, value, trainer_config, device)
         return trainer, None
     if algorithm == "td3_aw":
         actor = DeterministicAWActor(LocalEntityTokenEncoder(enc_cfg), float(config["action"]["a_max"]), float(config["action"]["w_max"]))
@@ -231,7 +261,8 @@ def choose_actions(trainer, algorithm, local, global_batch, config, rng, step, d
     active_count = int(config["env"]["num_pursuers"])
     if algorithm in MAPPO_ALGORITHMS:
         actions, logp, latent, values = trainer.act(local, global_batch, deterministic)
-        return actions[:active_count], logp[:active_count], latent[:active_count], values[0]
+        stored_values = values if algorithm in PPO_CF_ALGORITHMS else values[0]
+        return actions[:active_count], logp[:active_count], latent[:active_count], stored_values
     if algorithm == "td3_aw":
         with torch.no_grad():
             actions = trainer.actor(tensor_tree(local, trainer.device)).cpu().numpy()
@@ -252,14 +283,25 @@ def choose_actions(trainer, algorithm, local, global_batch, config, rng, step, d
     return actions[:active_count], np.zeros(active_count), indices[:active_count], np.zeros(int(config["training"]["max_agents"]))
 
 
-def empty_rollout() -> dict[str, list[Any]]:
-    return {key: [] for key in ("local_obs", "global_obs", "actions", "latent", "log_prob", "values", "next_values", "rewards", "active_mask", "terminated", "truncated", "episode_end")}
+def empty_rollout(counterfactual: bool = False) -> dict[str, list[Any]]:
+    if counterfactual:
+        return {key: [] for key in (
+            "local_obs", "next_local_obs", "global_obs", "next_global_obs",
+            "physical_actions", "action_indices", "next_action_indices",
+            "log_prob", "behavior_action_probs", "next_behavior_action_probs",
+            "rewards", "active_mask", "terminated", "truncated", "episode_end",
+        )}
+    keys = [
+        "local_obs", "global_obs", "actions", "latent", "log_prob", "values",
+        "next_values", "rewards", "active_mask", "terminated", "truncated", "episode_end",
+    ]
+    return {key: [] for key in keys}
 
 
 def stack_rollout(rollout):
     result = {}
     for key, values in rollout.items():
-        if key in {"local_obs", "global_obs"}:
+        if key in {"local_obs", "global_obs", "next_local_obs", "next_global_obs"}:
             result[key] = {name: np.stack([item[name] for item in values]) for name in values[0]}
         elif key == "truncated" and not values:
             # Backward-compatible with pre-v2 in-memory/test rollouts.  Old
@@ -270,10 +312,17 @@ def stack_rollout(rollout):
 
 
 def checkpoint(path: Path, *, config, algorithm, step, trainer, replay, rollout, env, observations, rng, metrics):
+    cuda_rng = (
+        torch.cuda.get_rng_state(trainer.device).cpu()
+        if trainer.device.type == "cuda"
+        else None
+    )
     payload = {"schema": SCHEMA, "config_hash": stable_hash(config), "algorithm": algorithm, "step": int(step),
+               "rollout_schema": PPO_CF_ROLLOUT_SCHEMA if algorithm in PPO_CF_ALGORITHMS else None,
                "trainer": trainer.state_dict(), "replay": replay, "rollout": rollout, "env": env, "observations": observations,
                "rng": {"python": random.getstate(), "numpy": np.random.get_state(), "runner": rng.bit_generator.state,
-                       "torch": torch.get_rng_state(), "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []},
+                       "torch": torch.get_rng_state(), "cuda": cuda_rng,
+                       "cuda_device_index": trainer.device.index},
                "last_metrics": metrics}
     path.parent.mkdir(parents=True, exist_ok=True); temporary = path.with_suffix(".tmp")
     torch.save(payload, temporary); loaded = torch.load(temporary, map_location="cpu", weights_only=False)
@@ -301,9 +350,19 @@ def restore(path, trainer, config, algorithm):
     payload = torch.load(path, map_location=trainer.device, weights_only=False)
     if payload.get("schema") != SCHEMA or payload.get("algorithm") != algorithm or payload.get("config_hash") != stable_hash(config):
         raise ValueError("resume checkpoint contract mismatch")
+    if algorithm in PPO_CF_ALGORITHMS and payload.get("rollout_schema") != PPO_CF_ROLLOUT_SCHEMA:
+        raise ValueError("PPO-CF rollout checkpoint schema mismatch")
     trainer.load_state_dict(payload["trainer"]); random.setstate(payload["rng"]["python"]); np.random.set_state(payload["rng"]["numpy"])
     torch.set_rng_state(payload["rng"]["torch"].cpu())
-    if torch.cuda.is_available() and payload["rng"]["cuda"]: torch.cuda.set_rng_state_all([state.cpu() for state in payload["rng"]["cuda"]])
+    cuda_rng = payload["rng"].get("cuda")
+    if trainer.device.type == "cuda" and cuda_rng is not None:
+        # New checkpoints persist only the assigned GPU state so a GPU1 job
+        # never initializes or claims a CUDA context on GPU0.  Old list-based
+        # checkpoints remain readable by selecting just the assigned device.
+        if isinstance(cuda_rng, (list, tuple)):
+            device_index = trainer.device.index or 0
+            cuda_rng = cuda_rng[device_index]
+        torch.cuda.set_rng_state(cuda_rng.cpu(), device=trainer.device)
     rng = np.random.default_rng(); rng.bit_generator.state = payload["rng"]["runner"]
     return int(payload["step"]), payload["replay"], payload["rollout"], payload["env"], payload["observations"], rng, payload.get("last_metrics", {})
 
@@ -357,7 +416,7 @@ def main() -> int:
     interval = int(root_config["small_step_ac"]["checkpoint_interval"]); eval_episodes = int(args.eval_episodes or root_config["small_step_ac"]["eval_episodes"])
     eval_max_steps = args.eval_max_steps; run_dir = Path(args.run_dir).resolve() if args.run_dir else ROOT / str(root_config["small_step_ac"]["run_dir"])
     seed_all(int(config["seed"])); rng = np.random.default_rng(int(config["seed"])); trainer, replay = make_components(config, algorithm, device)
-    rollout = empty_rollout(); set_global_config(config); env = VorAdjEnv(config, seed=int(config["seed"])); observations = env.reset(); step = 0; last_metrics = {}
+    rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS); set_global_config(config); env = VorAdjEnv(config, seed=int(config["seed"])); observations = env.reset(); step = 0; last_metrics = {}
     if args.resume: step, replay, rollout, env, observations, rng, last_metrics = restore(Path(args.resume), trainer, config, algorithm)
     run_dir.mkdir(parents=True, exist_ok=True); (run_dir / "effective_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     atomic_json(run_dir / "manifest.json", {"schema": SCHEMA, "algorithm": algorithm, "seed": config["seed"], "device": device,
@@ -376,20 +435,76 @@ def main() -> int:
         term_pad = _pad_vector(terminated, int(config["training"]["max_agents"]), bool); trunc_pad = _pad_vector(truncated, int(config["training"]["max_agents"]), bool)
         rewards_pad = _pad_vector(outcome.rewards, int(config["training"]["max_agents"]), np.float32)
         next_observations = list(outcome.observations); next_local = padded_local(next_observations, config); next_global, next_global_batch = batched_global(env, config)
+        next_latent = None
         with torch.no_grad():
-            if algorithm in MAPPO_ALGORITHMS: next_values = trainer.value(tensor_tree(next_global_batch, trainer.device))[0].cpu().numpy()
-            else: next_values = np.zeros(int(config["training"]["max_agents"]), dtype=np.float32)
+            if algorithm in PPO_CF_ALGORITHMS:
+                # Preview the next behavior action without advancing the
+                # policy RNG.  On non-terminal transitions this is therefore
+                # exactly the action sampled at the next environment step;
+                # at truncation/rollout boundaries it supplies the bootstrap
+                # teammate action required by the action-conditioned critic.
+                torch_state = torch.get_rng_state()
+                cuda_state = (
+                    torch.cuda.get_rng_state(trainer.device)
+                    if trainer.device.type == "cuda"
+                    else None
+                )
+                next_distribution = trainer.actor.distribution(tensor_tree(next_local, trainer.device))
+                next_latent_tensor = next_distribution.sample()
+                next_values = next_distribution.probs.cpu().numpy()
+                next_latent = next_latent_tensor.cpu().numpy()
+                torch.set_rng_state(torch_state.cpu())
+                if cuda_state is not None:
+                    torch.cuda.set_rng_state(cuda_state.cpu(), device=trainer.device)
+            elif algorithm in MAPPO_ALGORITHMS:
+                next_values = trainer.value(tensor_tree(next_global_batch, trainer.device))[0].cpu().numpy()
+            else:
+                next_values = np.zeros(int(config["training"]["max_agents"]), dtype=np.float32)
         if algorithm in MAPPO_ALGORITHMS:
-            for key, value in (("local_obs", local), ("global_obs", global_state), ("actions", _pad_actions(actions, len(active_pad))),
-                               ("latent", _pad_vector(latent, len(active_pad), np.int64) if algorithm in CATEGORICAL_MAPPO_ALGORITHMS else _pad_actions(latent, len(active_pad))),
-                               ("log_prob", _pad_vector(logp, len(active_pad), np.float32)), ("values", values), ("next_values", next_values),
-                               ("rewards", rewards_pad), ("active_mask", active_pad), ("terminated", term_pad),
-                               ("truncated", trunc_pad), ("episode_end", term_pad | trunc_pad)):
+            if algorithm in PPO_CF_ALGORITHMS:
+                rows = (
+                    ("local_obs", local),
+                    ("next_local_obs", next_local),
+                    ("global_obs", global_state),
+                    ("next_global_obs", next_global),
+                    ("physical_actions", _pad_actions(actions, len(active_pad))),
+                    ("action_indices", _pad_vector(latent, len(active_pad), np.int64)),
+                    ("next_action_indices", _pad_vector(next_latent, len(active_pad), np.int64)),
+                    ("log_prob", _pad_vector(logp, len(active_pad), np.float32)),
+                    ("behavior_action_probs", values),
+                    ("next_behavior_action_probs", next_values),
+                    ("rewards", rewards_pad),
+                    ("active_mask", active_pad),
+                    ("terminated", term_pad),
+                    ("truncated", trunc_pad),
+                    ("episode_end", term_pad | trunc_pad),
+                )
+            else:
+                rows = (
+                    ("local_obs", local),
+                    ("global_obs", global_state),
+                    ("actions", _pad_actions(actions, len(active_pad))),
+                    (
+                        "latent",
+                        _pad_vector(latent, len(active_pad), np.int64)
+                        if algorithm in CATEGORICAL_MAPPO_ALGORITHMS
+                        else _pad_actions(latent, len(active_pad)),
+                    ),
+                    ("log_prob", _pad_vector(logp, len(active_pad), np.float32)),
+                    ("values", values),
+                    ("next_values", next_values),
+                    ("rewards", rewards_pad),
+                    ("active_mask", active_pad),
+                    ("terminated", term_pad),
+                    ("truncated", trunc_pad),
+                    ("episode_end", term_pad | trunc_pad),
+                )
+            for key, value in rows:
                 rollout[key].append(value)
             if len(rollout["rewards"]) >= ppo_horizon or step == total:
                 last_metrics = trainer.update(
                     stack_rollout(rollout), categorical=algorithm in CATEGORICAL_MAPPO_ALGORITHMS
-                ); rollout = empty_rollout()
+                ); rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS)
         elif algorithm == "td3_aw":
             roles = np.where(active_pad, 1, 0).astype(np.uint8)
             replay.add(local_obs=local, next_local_obs=next_local, global_state=global_state, next_global_state=next_global,

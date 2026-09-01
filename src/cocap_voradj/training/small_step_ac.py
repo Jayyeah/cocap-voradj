@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from cocap_voradj.models.iqn import CoCapIQN
-from cocap_voradj.models.small_step_ac import CentralValueNetwork
+from cocap_voradj.models.small_step_ac import CentralCounterfactualQNetwork, CentralValueNetwork
 
 
 def tensor_tree(tree: Mapping[str, Any], device: torch.device) -> dict[str, torch.Tensor]:
@@ -184,6 +184,77 @@ def compute_gae(
         advantages[index] = gae
     returns = torch.where(active, advantages + values, torch.zeros_like(values))
     return advantages, returns
+
+
+def counterfactual_advantage(
+    q_values: torch.Tensor,
+    policy_probabilities: torch.Tensor,
+    action_indices: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Exact COMA-style baseline over the nine focal categorical actions."""
+
+    if q_values.shape != policy_probabilities.shape or q_values.ndim != 3:
+        raise ValueError("counterfactual Q and policy tensors must share [time, agent, action]")
+    if action_indices.shape != q_values.shape[:2]:
+        raise ValueError("counterfactual action indices must have shape [time, agent]")
+    probabilities = policy_probabilities.to(q_values.dtype)
+    if not torch.allclose(
+        probabilities.sum(dim=-1),
+        torch.ones_like(probabilities[..., 0]),
+        atol=1e-5,
+        rtol=1e-5,
+    ):
+        raise ValueError("counterfactual policy probabilities must sum to one")
+    chosen = q_values.gather(-1, action_indices.long().unsqueeze(-1)).squeeze(-1)
+    baseline = (probabilities * q_values).sum(dim=-1)
+    return chosen - baseline, chosen, baseline
+
+
+def compute_q_lambda_returns(
+    rewards: torch.Tensor,
+    next_baselines: torch.Tensor,
+    terminated: torch.Tensor,
+    active: torch.Tensor,
+    *,
+    gamma: float,
+    trace_lambda: float,
+    truncated: Optional[torch.Tensor] = None,
+    episode_end: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """TD(lambda) targets with terminal, truncation and rollout-boundary bootstrap."""
+
+    tensors = [next_baselines, terminated, active]
+    if any(item.shape != rewards.shape for item in tensors):
+        raise ValueError("Q(lambda) inputs must have identical [time, agent] shapes")
+    terminated = terminated.bool()
+    active = active.bool()
+    truncated = torch.zeros_like(terminated) if truncated is None else truncated.bool()
+    if truncated.shape != rewards.shape:
+        raise ValueError("Q(lambda) truncated mask has incompatible shape")
+    if episode_end is None:
+        episode_end = terminated | truncated
+    else:
+        episode_end = episode_end.bool() | terminated | truncated
+    if episode_end.shape != rewards.shape:
+        raise ValueError("Q(lambda) episode_end mask has incompatible shape")
+
+    gamma = float(gamma)
+    trace_lambda = float(trace_lambda)
+    if not 0.0 <= trace_lambda <= 1.0:
+        raise ValueError("Q(lambda) trace lambda must be in [0, 1]")
+    targets = torch.zeros_like(rewards)
+    recursive = next_baselines[-1]
+    for index in reversed(range(rewards.shape[0])):
+        bootstrap = (~terminated[index]).to(rewards.dtype)
+        next_return = torch.where(episode_end[index], next_baselines[index], recursive)
+        mixed_bootstrap = (
+            (1.0 - trace_lambda) * next_baselines[index] + trace_lambda * next_return
+        )
+        target = rewards[index] + gamma * bootstrap * mixed_bootstrap
+        target = torch.where(active[index], target, torch.zeros_like(target))
+        targets[index] = target
+        recursive = target
+    return targets
 
 
 @dataclass(frozen=True)
@@ -463,6 +534,285 @@ class MAPPOTrainer:
     def load_state_dict(self, state: Mapping[str, Any]) -> None:
         self.actor.load_state_dict(state["actor"]); self.value.load_state_dict(state["value"])
         self.actor_optimizer.load_state_dict(state["actor_optimizer"]); self.value_optimizer.load_state_dict(state["value_optimizer"])
+        if self.value_normalizer is not None and state.get("value_normalizer") is not None:
+            self.value_normalizer.load_state_dict(state["value_normalizer"])
+        self.update_count = int(state["update_count"])
+
+
+class CounterfactualPPOTrainer:
+    """Clipped PPO actor with an action-conditioned centralized Q critic."""
+
+    def __init__(
+        self,
+        actor: nn.Module,
+        critic: CentralCounterfactualQNetwork,
+        config: MAPPOConfig,
+        device: str,
+    ):
+        self.device = torch.device(device)
+        self.actor = actor.to(self.device)
+        self.critic = critic.to(self.device)
+        self.config = config
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=config.critic_lr, eps=1e-5)
+        self.value_normalizer = (
+            ValueNorm(beta=config.value_norm_beta, epsilon=config.value_norm_epsilon, device=self.device)
+            if config.value_norm
+            else None
+        )
+        self.update_count = 0
+
+    @property
+    def value_norm(self) -> Optional[ValueNorm]:
+        return self.value_normalizer
+
+    def _denormalize(self, values: torch.Tensor) -> torch.Tensor:
+        if self.value_normalizer is None:
+            return values
+        return self.value_normalizer.denormalize(values)
+
+    @torch.no_grad()
+    def act(
+        self,
+        local_obs: Mapping[str, Any],
+        global_obs: Mapping[str, Any],
+        deterministic: bool = False,
+    ):
+        local = tensor_tree(local_obs, self.device)
+        central = tensor_tree(global_obs, self.device)
+        distribution = self.actor.distribution(local)
+        indices = distribution.logits.argmax(dim=-1) if deterministic else distribution.sample()
+        actions = self.actor.action_grid[indices]
+        probabilities = distribution.probs
+        # The fourth return slot intentionally carries behavior-policy
+        # probabilities for the exact counterfactual baseline.
+        return (
+            actions.cpu().numpy(),
+            distribution.log_prob(indices).cpu().numpy(),
+            indices.cpu().numpy(),
+            probabilities.cpu().numpy(),
+        )
+
+    def update(self, batch: Mapping[str, Any], categorical: bool = True) -> dict[str, float]:
+        if not categorical:
+            raise ValueError("PPO-CF first version requires categorical AW9")
+        local = tensor_tree(batch["local_obs"], self.device)
+        next_local = tensor_tree(batch["next_local_obs"], self.device)
+        central = tensor_tree(batch["global_obs"], self.device)
+        next_central = tensor_tree(batch["next_global_obs"], self.device)
+        flat_local, (steps, agents) = flatten_local(local)
+        flat_next_local, _ = flatten_local(next_local)
+        del flat_next_local
+        active = torch.as_tensor(batch["active_mask"], dtype=torch.bool, device=self.device)
+        rewards = torch.as_tensor(batch["rewards"], dtype=torch.float32, device=self.device)
+        terminated = torch.as_tensor(batch["terminated"], dtype=torch.bool, device=self.device)
+        truncated = torch.as_tensor(batch["truncated"], dtype=torch.bool, device=self.device)
+        episode_end = torch.as_tensor(batch["episode_end"], dtype=torch.bool, device=self.device)
+        actions = torch.as_tensor(batch["action_indices"], dtype=torch.long, device=self.device)
+        next_actions = torch.as_tensor(
+            batch["next_action_indices"], dtype=torch.long, device=self.device
+        )
+        old_probabilities = torch.as_tensor(
+            batch["behavior_action_probs"], dtype=torch.float32, device=self.device
+        )
+        next_probabilities = torch.as_tensor(
+            batch["next_behavior_action_probs"], dtype=torch.float32, device=self.device
+        )
+        old_log_prob = torch.as_tensor(batch["log_prob"], dtype=torch.float32, device=self.device).detach()
+
+        with torch.no_grad():
+            old_q_normalized = self.critic(central, actions)
+            old_q = self._denormalize(old_q_normalized)
+            next_q = self._denormalize(self.critic(next_central, next_actions))
+            next_baseline = (next_probabilities * next_q).sum(dim=-1)
+            returns = compute_q_lambda_returns(
+                rewards,
+                next_baseline,
+                terminated,
+                active,
+                gamma=self.config.gamma,
+                trace_lambda=self.config.gae_lambda,
+                truncated=truncated,
+                episode_end=episode_end,
+            )
+            advantages, q_chosen, q_baseline = counterfactual_advantage(
+                old_q, old_probabilities, actions
+            )
+            q_span = old_q.max(dim=-1).values - old_q.min(dim=-1).values
+            q_rank = 1.0 + (old_q > q_chosen[..., None]).sum(dim=-1).to(old_q.dtype)
+            q_argmax = old_q.argmax(dim=-1).eq(actions)
+
+        valid_advantages = advantages[active]
+        if valid_advantages.numel():
+            advantages = (
+                advantages - valid_advantages.mean()
+            ) / valid_advantages.std(unbiased=False).clamp_min(1e-6)
+        else:
+            advantages = torch.zeros_like(advantages)
+        if self.value_normalizer is not None and valid_advantages.numel():
+            self.value_normalizer.update(returns, active)
+            normalized_returns = self.value_normalizer.normalize(returns)
+        else:
+            normalized_returns = returns
+        old_q_chosen_normalized = old_q_normalized.gather(
+            -1, actions.unsqueeze(-1)
+        ).squeeze(-1)
+
+        flat_active = active.reshape(-1)
+        valid_indices = torch.nonzero(flat_active, as_tuple=False).squeeze(-1)
+        if not len(valid_indices):
+            self.update_count += 1
+            return {
+                "actor_loss": 0.0,
+                "critic_loss": 0.0,
+                "entropy": 0.0,
+                "clip_fraction": 0.0,
+                "approx_kl": 0.0,
+                "actor_grad_norm": 0.0,
+                "critic_grad_norm": 0.0,
+                "q_chosen_mean": 0.0,
+                "q_baseline_mean": 0.0,
+                "counterfactual_advantage_mean": 0.0,
+                "counterfactual_advantage_std": 0.0,
+                "q_span_mean": 0.0,
+                "chosen_action_q_rank_mean": 0.0,
+                "chosen_action_q_argmax_rate": 0.0,
+                "update_count": float(self.update_count),
+            }
+
+        actor_before = [parameter.detach().clone() for parameter in self.actor.parameters()]
+        metric_rows: list[dict[str, float]] = []
+        stopped_early = False
+        epochs_completed = 0
+        for _ in range(self.config.ppo_epochs):
+            permutation = valid_indices[torch.randperm(len(valid_indices), device=self.device)]
+            for indices in torch.chunk(permutation, max(1, self.config.minibatches)):
+                if not len(indices):
+                    continue
+                obs_mb = {key: value[indices] for key, value in flat_local.items()}
+                log_prob, entropy = self.actor.evaluate_indices(
+                    obs_mb, actions.reshape(-1)[indices]
+                )
+                log_ratio = log_prob - old_log_prob.reshape(-1)[indices]
+                ratio = torch.exp(log_ratio)
+                advantage_mb = advantages.reshape(-1)[indices]
+                surrogate = torch.minimum(
+                    ratio * advantage_mb,
+                    ratio.clamp(1.0 - self.config.clip_param, 1.0 + self.config.clip_param)
+                    * advantage_mb,
+                )
+                actor_loss = -surrogate.mean() - self.config.entropy_coef * entropy.mean()
+                self.actor_optimizer.zero_grad(set_to_none=True)
+                actor_loss.backward()
+                actor_grad = float(
+                    torch.nn.utils.clip_grad_norm_(self.actor.parameters(), self.config.max_grad_norm)
+                )
+                self.actor_optimizer.step()
+
+                q_all = self.critic(central, actions)
+                q_selected = q_all.gather(-1, actions.unsqueeze(-1)).squeeze(-1).reshape(-1)[indices]
+                q_old = old_q_chosen_normalized.reshape(-1)[indices]
+                q_target = normalized_returns.reshape(-1)[indices]
+                q_clipped = q_old + (q_selected - q_old).clamp(
+                    -self.config.clip_param, self.config.clip_param
+                )
+                critic_loss = 0.5 * torch.maximum(
+                    (q_selected - q_target).square(),
+                    (q_clipped - q_target).square(),
+                ).mean()
+                self.critic_optimizer.zero_grad(set_to_none=True)
+                (self.config.value_coef * critic_loss).backward()
+                critic_grad = float(
+                    torch.nn.utils.clip_grad_norm_(self.critic.parameters(), self.config.max_grad_norm)
+                )
+                self.critic_optimizer.step()
+                with torch.no_grad():
+                    approx_kl = ((ratio - 1.0) - log_ratio).mean()
+                    metric_rows.append({
+                        "actor_loss": float(actor_loss),
+                        "critic_loss": float(critic_loss),
+                        "entropy": float(entropy.mean()),
+                        "clip_fraction": float(
+                            (torch.abs(ratio - 1.0) > self.config.clip_param).float().mean()
+                        ),
+                        "approx_kl": float(approx_kl),
+                        "actor_grad_norm": actor_grad,
+                        "critic_grad_norm": critic_grad,
+                    })
+                    if (
+                        self.config.target_kl is not None
+                        and float(self.config.target_kl) > 0.0
+                        and float(approx_kl) > float(self.config.target_kl)
+                    ):
+                        stopped_early = True
+                if stopped_early:
+                    break
+            epochs_completed += 1
+            if stopped_early:
+                break
+
+        self.update_count += 1
+        result = {
+            key: float(np.mean([row[key] for row in metric_rows]))
+            for key in metric_rows[0]
+        }
+        with torch.no_grad():
+            updated_q = self._denormalize(self.critic(central, actions))
+            updated_chosen = updated_q.gather(-1, actions.unsqueeze(-1)).squeeze(-1)
+            result["explained_variance"] = explained_variance(
+                updated_chosen[active], returns[active]
+            )
+            result["q_chosen_mean"] = float(q_chosen[active].mean())
+            result["q_baseline_mean"] = float(q_baseline[active].mean())
+            result["counterfactual_advantage_mean"] = float(
+                (q_chosen - q_baseline)[active].mean()
+            )
+            result["counterfactual_advantage_std"] = float(
+                (q_chosen - q_baseline)[active].std(unbiased=False)
+            )
+            result["q_span_mean"] = float(q_span[active].mean())
+            result["chosen_action_q_rank_mean"] = float(q_rank[active].mean())
+            result["chosen_action_q_argmax_rate"] = float(q_argmax[active].float().mean())
+            result["q_target_mean"] = float(returns[active].mean())
+            if self.value_normalizer is not None:
+                result["value_norm_mean"] = float(self.value_normalizer.mean)
+                result["value_norm_std"] = float(self.value_normalizer.std)
+        result["kl_early_stop"] = float(stopped_early)
+        result["ppo_epochs_completed"] = float(epochs_completed)
+        result["minibatch_updates"] = float(len(metric_rows))
+        result["approx_kl_max"] = float(max(row["approx_kl"] for row in metric_rows))
+        with torch.no_grad():
+            update_sq = sum(
+                float((parameter - before).square().sum())
+                for parameter, before in zip(self.actor.parameters(), actor_before)
+            )
+            parameter_sq = sum(float(before.square().sum()) for before in actor_before)
+            result["actor_update_l2"] = float(np.sqrt(update_sq))
+            result["actor_update_relative_l2"] = float(
+                np.sqrt(update_sq) / max(np.sqrt(parameter_sq), 1e-12)
+            )
+        result["update_count"] = float(self.update_count)
+        return result
+
+    def state_dict(self) -> dict[str, Any]:
+        return {
+            "actor": self.actor.state_dict(),
+            "critic": self.critic.state_dict(),
+            "actor_optimizer": self.actor_optimizer.state_dict(),
+            "critic_optimizer": self.critic_optimizer.state_dict(),
+            "value_normalizer": (
+                self.value_normalizer.state_dict()
+                if self.value_normalizer is not None
+                else None
+            ),
+            "update_count": self.update_count,
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        self.actor.load_state_dict(state["actor"])
+        self.critic.load_state_dict(state["critic"])
+        self.actor_optimizer.load_state_dict(state["actor_optimizer"])
+        self.critic_optimizer.load_state_dict(state["critic_optimizer"])
         if self.value_normalizer is not None and state.get("value_normalizer") is not None:
             self.value_normalizer.load_state_dict(state["value_normalizer"])
         self.update_count = int(state["update_count"])

@@ -1,0 +1,50 @@
+extends: ../iqn_vxy_full_migration_20260830/stage2_8p2e2obs_700k.yaml
+
+# Isolation line: preserve the Final 8v2 VXY/IQN/CE contract while changing
+# the training task distribution from mixed capture+coverage to pure coverage.
+output_root: artifacts/2026-09-01_iqn_vxy_pure_coverage
+train_mode: voradj
+total_timesteps: 500000
+
+env:
+  num_pursuers: 8
+  num_evaders: 0
+  num_obstacles: 2
+  pursuer_spawn_mode: inner_random_cluster
+  spawn_cluster_radius: 11.0
+  pursuer_spawn_min_sep: 7.0
+
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+
+voradj:
+  scenes:
+    - voradj_coverage
+
+iqn:
+  checkpoint_freq: 25000
+
+experiment_metadata:
+  series: iqn_vxy_pure_coverage_20260901
+  isolation_variable: mixed capture+coverage task distribution to pure coverage only
+  frozen_contract: Final 8v2 Stage2 reward, CE thresholds, horizon, local observation, IQN, VXY9, optimizer, epsilon, target update and batch size
+  replay_note: single uniform replay contains only pure-coverage transitions; capacity, batch size, warmup and update cadence remain Final Stage2 values
+  budget_basis: 500k follows the successful historical CE13 8-agent pure-CE scratch budget; Final integrated line has no unique pure-only stage
+  evaluation_contract: fixed-midpoint IQN, coverage-only deterministic20 every25k, formal20 and 10 GIF at selected checkpoint
+  gate_metrics: CE success, CV, centroid error, speed/RMS, collision/boundary, episode length/return decomposition, success step
+
