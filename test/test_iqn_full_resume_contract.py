@@ -83,3 +83,36 @@ def test_iqn_resume_rejects_changed_training_contract(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="training contract mismatch"):
         trainer = CoCapTrainer(copy.deepcopy(changed))
         _close_logs(trainer)
+
+
+def test_iqn_full_resume_can_use_external_storage_and_move_it_on_restore(
+    tmp_path: Path,
+) -> None:
+    external_path = tmp_path / "external" / "resume_latest.pt"
+    source_config = _config(tmp_path, "external_source")
+    source_config["checkpointing"]["full_resume_path"] = str(external_path)
+    source = CoCapTrainer(source_config)
+    try:
+        source.train()
+        assert source.full_resume_path == external_path
+        assert external_path.is_file()
+        assert not (
+            tmp_path / "external_source/checkpoints/resume_latest.pt"
+        ).exists()
+        payload = torch.load(external_path, map_location="cpu", weights_only=False)
+        assert payload["schema"] == FULL_RESUME_SCHEMA
+    finally:
+        _close_logs(source)
+
+    moved_path = tmp_path / "moved" / "resume_latest.pt"
+    resumed_config = _config(tmp_path, "external_resumed")
+    resumed_config["checkpointing"]["resume_path"] = str(external_path)
+    resumed_config["checkpointing"]["full_resume_path"] = str(moved_path)
+    resumed = CoCapTrainer(resumed_config)
+    try:
+        assert resumed.global_step == 0
+        assert resumed.full_resume_path == moved_path
+        resumed.train()
+        assert moved_path.is_file()
+    finally:
+        _close_logs(resumed)

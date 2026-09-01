@@ -101,17 +101,26 @@ def stage_paths(stage: dict[str, Any]) -> dict[str, Path]:
     }
 
 
-def runtime_config(base: Path, destination: Path, pretrained: Path | None) -> Path:
-    if pretrained is None:
+def runtime_config(
+    base: Path,
+    destination: Path,
+    pretrained: Path | None,
+    full_resume_path: Path | None = None,
+) -> Path:
+    if pretrained is None and full_resume_path is None:
         return base
-    payload = {
-        "extends": str(base.resolve()),
-        "pretrained": {"path": relative(pretrained), "compatibility_mode": "shape_compatible"},
-        "experiment_metadata": {
+    payload: dict[str, Any] = {"extends": str(base.resolve())}
+    if pretrained is not None:
+        payload["pretrained"] = {
+            "path": relative(pretrained),
+            "compatibility_mode": "shape_compatible",
+        }
+        payload["experiment_metadata"] = {
             "selected_from_previous_stage": True,
             "pretrained_checkpoint": relative(pretrained),
-        },
-    }
+        }
+    if full_resume_path is not None:
+        payload["checkpointing"] = {"full_resume_path": str(full_resume_path.resolve())}
     destination.parent.mkdir(parents=True, exist_ok=True)
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=True)
     if destination.is_file() and destination.read_text(encoding="utf-8") != rendered:
@@ -198,13 +207,47 @@ def gate_selection(path: Path) -> tuple[bool, dict[str, Any]]:
     return all(checks.values()), {"checks": checks, "metrics": metrics, "checkpoint": relative(checkpoint)}
 
 
-def ensure_stage(stage: dict[str, Any], pretrained: Path | None, train_device: str, eval_device: str) -> dict[str, str]:
+def can_override_stage_gate(
+    stage: dict[str, Any],
+    gate: dict[str, Any],
+    force_promote_stage2: bool,
+) -> bool:
+    """Allow only the explicitly authorized Stage-2 gate override.
+
+    The historical metric gate remains failed and unchanged. Promotion is
+    possible only when the selected Stage-2 checkpoint still exists.
+    """
+    checks = gate.get("checks") or {}
+    return (
+        bool(force_promote_stage2)
+        and int(stage["number"]) == 2
+        and bool(checks.get("checkpoint", False))
+    )
+
+
+def rolling_resume_path(paths: dict[str, Path], override: Path | None) -> Path:
+    return override if override is not None else paths["run"] / "checkpoints/resume_latest.pt"
+
+
+def ensure_stage(
+    stage: dict[str, Any],
+    pretrained: Path | None,
+    train_device: str,
+    eval_device: str,
+    *,
+    formal_gif_count: int = 0,
+    formal_workers: int = 2,
+    formal_seed: int | None = None,
+    full_resume_path: Path | None = None,
+) -> dict[str, str]:
     paths = stage_paths(stage)
-    launch_config = runtime_config(paths["config"], paths["runtime"], pretrained)
+    launch_config = runtime_config(
+        paths["config"], paths["runtime"], pretrained, full_resume_path
+    )
     number, label, total = int(stage["number"]), str(stage["label"]), int(stage["steps"])
     prefix = f"cocap_vxy_full_s{number}_{label}"
     final = paths["run"] / "checkpoints" / f"final_step_{total}.pt"
-    resume = paths["run"] / "checkpoints/resume_latest.pt"
+    resume = rolling_resume_path(paths, full_resume_path)
     train_command = ["python3", "train.py", "--config", relative(launch_config), "--device", train_device]
     if resume.is_file() and not final.is_file():
         train_command += ["--resume-path", relative(resume)]
@@ -222,10 +265,12 @@ def ensure_stage(stage: dict[str, Any], pretrained: Path | None, train_device: s
             ["python3", "tools/finalize_screened_run.py", "--config", relative(paths["config"]),
              "--run-dir", relative(paths["run"]), "--screening-root", relative(paths["screen"]),
              "--best-root", relative(BEST_ROOT), "--line-label", f"iqn_vxy_full_stage{number}_{label}",
-             "--total-steps", str(total), "--checkpoint-interval", str(INTERVAL), "--seed", str(stage["formal_seed"]),
+             "--total-steps", str(total), "--checkpoint-interval", str(INTERVAL), "--seed",
+             str(stage["formal_seed"] if formal_seed is None else int(formal_seed)),
              "--device", eval_device, "--capture-evaders", str(stage["evaders"]),
              "--coverage-max-steps", str(stage["coverage_max"]), "--max-steps", str(stage["mix_max"]),
-             "--formal-episodes", "20", "--gif-count", "0", "--workers", "2"], paths["final_log"],
+             "--formal-episodes", "20", "--gif-count", str(int(formal_gif_count)),
+             "--workers", str(int(formal_workers))], paths["final_log"],
         ),
     }
     return actions
@@ -238,19 +283,54 @@ def main() -> int:
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--max-restarts", type=int, default=3)
     parser.add_argument("--min-disk-free-gib", type=float, default=25.0)
+    parser.add_argument("--force-promote-stage2", action="store_true")
+    parser.add_argument("--stage3-formal-gif-count", type=int, default=0)
+    parser.add_argument("--stage3-formal-workers", type=int, default=2)
+    parser.add_argument(
+        "--stage3-formal-seed",
+        type=int,
+        default=0,
+        help="Override Stage3 formal seed; zero keeps the stage default.",
+    )
+    parser.add_argument("--stage3-full-resume-path", default="")
     parser.add_argument("--check-once", action="store_true")
     args = parser.parse_args()
+    if args.stage3_formal_gif_count < 0:
+        parser.error("--stage3-formal-gif-count must be non-negative")
+    if args.stage3_formal_workers < 1:
+        parser.error("--stage3-formal-workers must be positive")
+    if args.stage3_formal_seed < 0:
+        parser.error("--stage3-formal-seed must be non-negative")
+    stage3_full_resume_path: Path | None = None
+    if str(args.stage3_full_resume_path).strip():
+        stage3_full_resume_path = Path(args.stage3_full_resume_path).expanduser()
+        if not stage3_full_resume_path.is_absolute():
+            stage3_full_resume_path = ROOT / stage3_full_resume_path
     pretrained: Path | None = None
     for stage in STAGES:
         paths = stage_paths(stage)
+        number, label = int(stage["number"]), str(stage["label"])
+        full_resume_path = stage3_full_resume_path if number == 3 else None
+        formal_gif_count = args.stage3_formal_gif_count if number == 3 else 0
+        formal_workers = args.stage3_formal_workers if number == 3 else 2
+        formal_seed = args.stage3_formal_seed if number == 3 and args.stage3_formal_seed else None
+        resume = rolling_resume_path(paths, full_resume_path)
         restarts = 0
         launch_count = 0
         while not paths["selection"].is_file():
-            actions = ensure_stage(stage, pretrained, args.train_device, args.eval_device)
+            actions = ensure_stage(
+                stage,
+                pretrained,
+                args.train_device,
+                args.eval_device,
+                formal_gif_count=formal_gif_count,
+                formal_workers=formal_workers,
+                formal_seed=formal_seed,
+                full_resume_path=full_resume_path,
+            )
             if actions.get("train") == "launched":
                 launch_count += 1
                 restarts = max(0, launch_count - 1)
-            number, label = int(stage["number"]), str(stage["label"])
             session = f"cocap_vxy_full_s{number}_{label}_train"
             final = paths["run"] / "checkpoints" / f"final_step_{stage['steps']}.pt"
             latest = last_jsonl(paths["run"] / "metrics.jsonl")
@@ -261,7 +341,15 @@ def main() -> int:
                           train_session=tmux_exists(session), latest_metrics=latest,
                           finite_metrics=finite,
                           checkpoint_count=len(list((paths["run"] / "checkpoints").glob("step_*.pt"))),
-                          rolling_resume=(paths["run"] / "checkpoints/resume_latest.pt").is_file(),
+                          rolling_resume=resume.is_file(),
+                          rolling_resume_path=relative(resume),
+                          stage2_gate_override_enabled=bool(args.force_promote_stage2),
+                          formal_rollout={
+                              "episodes_per_scenario": 20,
+                              "gif_count_per_scenario": int(formal_gif_count),
+                              "workers": int(formal_workers),
+                              "seed": int(stage["formal_seed"] if formal_seed is None else formal_seed),
+                          },
                           resources=resource_state, selection=relative(paths["selection"]))
             if args.check_once:
                 return 0
@@ -283,7 +371,19 @@ def main() -> int:
             time.sleep(max(5, args.poll_seconds))
         passed, gate = gate_selection(paths["selection"])
         if not passed:
-            atomic_status("stage_gate_failed", stage=int(stage["number"]), label=str(stage["label"]), gate=gate)
+            if can_override_stage_gate(stage, gate, args.force_promote_stage2):
+                pretrained = ROOT / str(gate["checkpoint"])
+                atomic_status(
+                    "stage_gate_overridden",
+                    stage=number,
+                    label=label,
+                    reason="user_authorized_20260901",
+                    gate=gate,
+                    next_stage=3,
+                    pretrained=relative(pretrained),
+                )
+                continue
+            atomic_status("stage_gate_failed", stage=number, label=label, gate=gate)
             return 2
         pretrained = ROOT / str(gate["checkpoint"])
         atomic_status("stage_gate_passed", stage=int(stage["number"]), label=str(stage["label"]), gate=gate)

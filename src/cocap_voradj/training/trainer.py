@@ -121,6 +121,7 @@ def _resume_contract(config: Dict[str, Any]) -> Dict[str, Any]:
     checkpointing = contract.get("checkpointing")
     if isinstance(checkpointing, dict):
         checkpointing.pop("resume_path", None)
+        checkpointing.pop("full_resume_path", None)
     return contract
 
 
@@ -144,6 +145,7 @@ class CoCapTrainer:
         "total_timesteps",
         "full_resume_enabled",
         "resume_path",
+        "full_resume_path",
     })
 
     def __init__(self, config: Dict[str, Any]):
@@ -174,6 +176,12 @@ class CoCapTrainer:
         self.full_resume_enabled = bool(checkpointing_cfg.get("full_resume", False))
         raw_resume_path = str(checkpointing_cfg.get("resume_path", "")).strip()
         self.resume_path = self._resolve_checkpoint_path(raw_resume_path) if raw_resume_path else None
+        raw_full_resume_path = str(checkpointing_cfg.get("full_resume_path", "")).strip()
+        self.full_resume_path = (
+            self._resolve_checkpoint_path(raw_full_resume_path)
+            if raw_full_resume_path
+            else self.ckpt_dir / "resume_latest.pt"
+        )
         iqn_cfg = self.config.get("iqn", {})
         self.batch_size = int(iqn_cfg.get("batch_size", 64))
         self.gamma = float(
@@ -1024,7 +1032,8 @@ class CoCapTrainer:
     def _save_full_resume(self) -> Path:
         if not getattr(self, "_train_runtime_ready", False):
             raise RuntimeError("full resume cannot be saved before training runtime initialization")
-        path = self.ckpt_dir / "resume_latest.pt"
+        path = self.full_resume_path
+        path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
         payload = {
             "schema": FULL_RESUME_SCHEMA,

@@ -2,7 +2,7 @@
 
 ## 1. 总状态与因果问题
 
-`STATUS: CONTRACT_AND_SMOKE_PASS / FIXED-TAU_REEVAL_COMPLETE / STAGE1_PASS / STAGE2_GATE_FAILED / COURSE_STOPPED`
+`STATUS: CONTRACT_AND_SMOKE_PASS / FIXED-TAU_REEVAL_COMPLETE / STAGE1_PASS / STAGE2_GATE_FAILED / DECLARED_COURSE_STOPPED / USER_OVERRIDE_STAGE3_ACTIVE`
 
 本线只回答一个问题：原 Final IQN-AW 的完整 `capture + coverage + episode mix + 4v1→8v2→12v3` 合同，仅把离散 `(a,w)` 3×3 动作替换为已经在 corrected Pure-Capture 上训练成功的 body-frame、rate-limited VXY9 后，能否继续成立。
 
@@ -219,3 +219,84 @@ ETA: 0
 ```
 
 8v2保留了强capture和单独coverage能力，但capture后的mixed CE扩展没有达到预声明门槛；screen与formal独立确认同一缺口。supervisor因此正常结束，Stage3保持0/700k且没有训练进程、checkpoint或评估产物。本条Full课程的最终结论是“4v1成功迁移，8v2捕获保持但mixed CE扩展失败”；任何修复都应另开显式变量线，不能把12v3算作本线继续。
+
+
+## 9. 用户授权的 Stage2 gate override 与 paired 展示线（2026-09-01）
+
+### 9.1 授权边界与 lineage
+
+第8节仍是原先声明课程的不可改写归档：Stage2 的 `mix_ce` gate 确实失败，严格课程也确实在该点停止。本节记录的是用户于2026-09-01另行明确授权的执行扩展，只忽略 Stage2 promotion gate，不修改 selection、不伪造 gate 结果，也不降低 Stage3 后续选优和正式评估合同。
+
+```text
+OVERRIDE_REASON: user_authorized_20260901
+STAGE2_SELECTED: step_600000.pt
+STAGE2_SHA256: 1388ac6813fa6c6ee9f0cc6041446e04556a01ef611a07d0afe3071340a86940
+STAGE3_START: 2026-09-01 15:16:35 CST
+STAGE3_PRETRAINED_LOAD: loaded_count=119, adapted_keys=[], skipped_keys=[]
+```
+
+supervisor 先原样记录 `stage_gate_overridden`，其中原 checks 仍为 capture/coverage/collision PASS、mix CE FAIL、checkpoint PASS；随后 runtime overlay 精确注入 Stage2 600k checkpoint。Stage1 selected 1.425M 的 SHA-256 为 `51a936f04d72b062e9fb9ab631024197b115ee404cf5981f0f1a979cd2fe902c`。
+
+### 9.2 旧 IQN 最终 rollout 的启动前逐项对齐
+
+旧仓库与当前分支的四层正式执行代码逐字节相同：
+
+| 文件 | SHA-256 |
+| --- | --- |
+| `tools/finalize_screened_run.py` | `6225fb8bb716cca41276390349563b2ca6789fd43d6d4ef79c63be5a7ba51676` |
+| `tools/batch_rollouts_parallel.py` | `0656f6c9b49a18b3c866d4bc7db78e2a5e0a9925a1e905b9e05cbb197ee7786e` |
+| `tools/batch_rollouts.py` | `16820f728f60b792f740f91761ddb2983eee05055289bfbdc8ddc3041abd9c7c` |
+| `tools/rollout_voradj_visual.py` | `1e9540c451792727d5fdd3895037393afbae37e08878cc54fdee9c7c78b07b93` |
+
+三阶段 resolved config 也已递归比较：排除声明过的 AW9 到 VXY9 动作/动力学差异、25k checkpoint/full-resume 基础设施、运行路径和 metadata 后，其余每个评估环境字段与旧 Final-IQN 完全相等。外置full-resume、override作用域、runtime overlay、Stage3 paired finalizer、旧配置与可视化合同定向测试合计 `21 passed`。
+
+| Stage | 场景 | 每场景 rollout/GIF | paired seed | workers/chunks | capture/coverage/mix cap | evaders |
+| --- | --- | ---: | ---: | --- | --- | ---: |
+| 4p1e1obs | capture, coverage, mix | 20/10 | 2026081201..1220 | 4，5/5/5/5 | 1000/1200/2200 | 1 |
+| 8p2e2obs | capture, coverage, mix | 20/10 | 2026082201..2220 | 4，5/5/5/5 | 1000/1500/2500 | 2 |
+| 12p3e3obs | capture, coverage, mix | 20/10 | 2026082301..2320 | 4，5/5/5/5 | 1000/1800/2800 | 3 |
+
+三场景共同合同：
+
+- IQN 为 `model.eval + no_grad + epsilon=0 + fixed_midpoint_32`，不是 rollout 随机 quantile；
+- 地图120乘120，Voronoi cell始终绘制，邻接线开、20m敌人/障碍surface-distance感知圈开、faded trails关；
+- 100 ms每帧，最多1000帧；超过时按完整轨迹等距采样并保留首尾；
+- GIF固定取每场景前10个 paired seeds，不按成功与否事后选图；
+- pure coverage强制0 evader，保留1/2/3 obstacles；只有它绘制CE centroid；
+- capture和mix不绘制CE centroid，即使mix已进入coverage phase；
+- mix在同一环境中捕获后继续coverage，post-capture window依次为500/600/700；
+- capture与mix为map-random；pure coverage按每个worker内部episode index交替map-random与inner-random-cluster，4乘5分块的旧实际分布为12次map-random和8次cluster；
+- 输出路径含精确目录层 `best_20rollout10gif`，因此自动备份config和checkpoint。
+
+旧 Final-AW 与本次唯一主要实验差异仍是动作合同：旧为unicycle AW9，本次为heading-aligned rate-limited VXY9。本次执行设备按GPU0要求为 `cuda:0`，旧 artifact 为 `cuda:1`；环境动力学仍在CPU，但不同CUDA卡不声明为bitwise一致。其余15个显式 rollout 参数已在创建tmux前逐项对照旧真实 `run_args.json` 并通过。
+
+### 9.3 已启动后台线
+
+| 任务 | tmux / 主PID | 输出 | 启动状态 |
+| --- | --- | --- | --- |
+| Stage1 best paired 20/10 | `cocap_iqn_vxy_s1_best20r10g_gpu0` / 109373 | `artifacts/2026-09-01_iqn_vxy_full_rollouts/best_20rollout10gif/stage1_4p1e1obs_step_1425000/` | 4 workers均运行，实际run_args复核PASS |
+| Stage2 best paired 20/10 | `cocap_iqn_vxy_s2_best20r10g_gpu0` / 109380 | `artifacts/2026-09-01_iqn_vxy_full_rollouts/best_20rollout10gif/stage2_8p2e2obs_step_600000/` | 4 workers均运行，实际run_args复核PASS |
+| Stage3 override supervisor | `cocap_iqn_vxy_full_stage3_override_gpu0` / 109566 | supervisor status/runtime overlay | ACTIVE |
+| Stage3 train | `cocap_vxy_full_s3_12p3e3obs_train` / 109572 | `artifacts/2026-08-30_iqn_vxy_full/stage3_12p3e3obs_700k/` | ACTIVE，首批2k metrics已写入 |
+| Stage3 screen | `cocap_vxy_full_s3_12p3e3obs_screen` | 28个25k节点，三场景各20回合 | WAITING/ACTIVE |
+| Stage3 finalizer | `cocap_vxy_full_s3_12p3e3obs_finalize` / 109602 | selection后自动formal20/10 | WAITING |
+
+Stage1/2 rollout日志位于 `logs/iqn_vxy_full_20260901/`；Stage3 train/screen/finalize仍用 `logs/iqn_vxy_full_20260830/stage3_*.log`，override supervisor另写 `logs/iqn_vxy_full_20260901/stage3_override_supervisor.log`。
+
+启动时GPU0约3.0 GiB显存、根盘36.36 GiB空闲、RAM约109 GiB可用。为避免约10 GiB rolling full-resume把根盘压到25 GiB guard附近，Stage3仅把该单个可替换恢复包写到 `/dev/shm/cocap_iqn_vxy_full_stage3/resume_latest.pt`；25k轻量checkpoint、metrics、screen和best仍持久化在根盘。`/dev/shm`有63 GiB空间且可承受原子替换峰值，但主机重启会清空它；进程崩溃可精确恢复，主机重启后只能从持久化25k轻量checkpoint重启而不能恢复replay/RNG。
+
+### 9.4 ETA
+
+Stage1/2旧同合同墙钟分别约8.2分钟和27.8分钟。本次二者并行且叠加Stage3训练，保守预计在2026-09-01 15:40至16:20 CST完成；本轮不等待其全部结束。
+
+Stage3在15:18已到2k，但该点仍处于replay warm-up，不能用瞬时速度线性外推。证据化估计采用两项历史量：本轮VXY Stage2 700k耗时12小时38分，旧AW课程从8v2到12v3的同700k规模耗时系数约1.31。由此Stage3训练中央估计约16.5小时，预计2026-09-02 07:45 CST左右结束，实际窗口约07:30至10:00。28个25k screening若能持续跟上，selection和自动20/10 formal约在08:00至12:00完成；后续应按首个25k与100k的真实吞吐收紧ETA。
+
+### 9.5 自动收尾验收
+
+Stage3必须自然训练到700k，等待28个25k checkpoint全部screen，按既有词典序选择历史最佳，而不是强制final700k。finalizer已实际以 `seed=2026082301 / episodes=20 / gif=10 / workers=4 / caps=1000,1800,2800 / evaders=3` 启动等待；未传 `--draw-trails`，底层固定补齐邻接线和感知圈。完成后应验收：
+
+- 无 `failures.json`；
+- 每场景20条records、10个GIF，seed范围与前10 GIF seeds精确；
+- pure coverage初始化计数为12/8；
+- 每个GIF记录为edges=true、circles=true、trails=false，且仅coverage为CE targets=true；
+- Stage3有selection、`all_summaries.json`、`timing.json`和`FORMAL_DONE`。

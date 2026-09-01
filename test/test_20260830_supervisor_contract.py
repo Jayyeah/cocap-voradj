@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import yaml
+
 from tools import reevaluate_iqn_vxy_best_20260830 as reeval
 from tools import run_continuous_ctde_training as ctde
 from tools import supervise_iqn_vxy_full_20260830 as full
@@ -123,3 +125,96 @@ def test_mappo_gate_routes_pass_and_healthy_fail(tmp_path: Path, monkeypatch) ->
         encoding="utf-8",
     )
     assert mappo.final_gate()["decision"] == "HEALTHY_FAIL_TO_DISCRETE_COUNTERFACTUAL_Q"
+
+
+def test_full_vxy_gate_override_is_explicit_and_stage2_only() -> None:
+    valid_gate = {"checks": {"checkpoint": True}}
+    assert full.can_override_stage_gate(full.STAGES[1], valid_gate, True) is True
+    assert full.can_override_stage_gate(full.STAGES[1], valid_gate, False) is False
+    assert full.can_override_stage_gate(full.STAGES[0], valid_gate, True) is False
+    assert full.can_override_stage_gate(full.STAGES[2], valid_gate, True) is False
+    assert full.can_override_stage_gate(
+        full.STAGES[1], {"checks": {"checkpoint": False}}, True
+    ) is False
+
+
+def test_full_vxy_runtime_overlay_records_pretrained_and_external_resume(
+    tmp_path: Path,
+) -> None:
+    base = tmp_path / "base.yaml"
+    base.write_text("run_name: test\n", encoding="utf-8")
+    checkpoint = tmp_path / "selected.pt"
+    checkpoint.write_bytes(b"model")
+    external_resume = tmp_path / "external" / "resume_latest.pt"
+    destination = tmp_path / "runtime.yaml"
+
+    assert full.runtime_config(
+        base, destination, checkpoint, external_resume
+    ) == destination
+    payload = yaml.safe_load(destination.read_text(encoding="utf-8"))
+    assert payload["extends"] == str(base.resolve())
+    assert payload["pretrained"] == {
+        "path": str(checkpoint.resolve()),
+        "compatibility_mode": "shape_compatible",
+    }
+    assert payload["checkpointing"] == {
+        "full_resume_path": str(external_resume.resolve())
+    }
+
+
+def test_full_vxy_stage3_finalizer_uses_explicit_paired_rollout_contract(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    stage = dict(full.STAGES[2])
+    paths = {
+        "config": tmp_path / "stage3.yaml",
+        "run": tmp_path / "run",
+        "screen": tmp_path / "screen",
+        "selection": tmp_path / "selection.json",
+        "runtime": tmp_path / "runtime.yaml",
+        "train_log": tmp_path / "train.log",
+        "screen_log": tmp_path / "screen.log",
+        "final_log": tmp_path / "final.log",
+    }
+    paths["config"].write_text("run_name: stage3\n", encoding="utf-8")
+    captured: dict[str, list[str]] = {}
+
+    monkeypatch.setattr(full, "stage_paths", lambda unused_stage: paths)
+    monkeypatch.setattr(
+        full,
+        "runtime_config",
+        lambda base, destination, pretrained, full_resume_path=None: base,
+    )
+
+    def fake_launch(name: str, command: list[str], unused_log: Path) -> str:
+        captured[name] = command
+        return "launched"
+
+    monkeypatch.setattr(full, "launch_tmux", fake_launch)
+    external_resume = tmp_path / "external" / "resume_latest.pt"
+    external_resume.parent.mkdir(parents=True)
+    external_resume.write_bytes(b"resume")
+    full.ensure_stage(
+        stage,
+        tmp_path / "stage2_selected.pt",
+        "cuda:0",
+        "cuda:0",
+        formal_gif_count=10,
+        formal_workers=4,
+        formal_seed=2026082301,
+        full_resume_path=external_resume,
+    )
+
+    train_command = captured["cocap_vxy_full_s3_12p3e3obs_train"]
+    assert train_command[train_command.index("--resume-path") + 1] == str(
+        external_resume.resolve()
+    )
+
+    command = captured["cocap_vxy_full_s3_12p3e3obs_finalize"]
+    assert command[command.index("--seed") + 1] == "2026082301"
+    assert command[command.index("--gif-count") + 1] == "10"
+    assert command[command.index("--workers") + 1] == "4"
+    assert command[command.index("--capture-evaders") + 1] == "3"
+    assert command[command.index("--coverage-max-steps") + 1] == "1800"
+    assert command[command.index("--max-steps") + 1] == "2800"
