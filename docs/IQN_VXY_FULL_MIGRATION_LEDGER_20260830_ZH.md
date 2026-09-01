@@ -2,7 +2,7 @@
 
 ## 1. 总状态与因果问题
 
-`STATUS: CONTRACT_AND_SMOKE_PASS / FIXED-TAU_REEVAL_COMPLETE / STAGE1_ACTIVE`
+`STATUS: CONTRACT_AND_SMOKE_PASS / FIXED-TAU_REEVAL_COMPLETE / STAGE1_PASS / STAGE2_GATE_FAILED / COURSE_STOPPED`
 
 本线只回答一个问题：原 Final IQN-AW 的完整 `capture + coverage + episode mix + 4v1→8v2→12v3` 合同，仅把离散 `(a,w)` 3×3 动作替换为已经在 corrected Pure-Capture 上训练成功的 body-frame、rate-limited VXY9 后，能否继续成立。
 
@@ -113,7 +113,7 @@ seed2/3 的 per-best 就是同一个225k独立结果，不重复运行。跨300�
 ### 5.1 Stage 1：4v1 scratch 2M
 
 ```text
-STATUS: ACTIVE / TRAIN_SCREEN_FINALIZER_RUNNING
+STATUS: HISTORICAL_SNAPSHOT / ACTIVE_AT_2026-08-31_15:56 / FINAL_SEE_SECTION_8
 HYPOTHESIS: strict action-only VXY9可在完整4v1 CR-MS+VCT-LS+CE mix中形成非零 capture与CE
 ONLY_CHANGED_VARIABLE: AW9 -> proven VXY9；25k checkpoint/full-resume为infra
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage1_4p1e1obs_scratch2m.yaml
@@ -131,7 +131,7 @@ NEXT: 不早停、不跳stage，继续自然训练到2M；finalizer完成全量�
 ### 5.2 Stage 2：8v2 course 700k
 
 ```text
-STATUS: BLOCKED_BY_STAGE1_GATE（按设计）
+STATUS: HISTORICAL_SNAPSHOT / BLOCKED_AT_STAGE1_GATE / FINAL_SEE_SECTION_8
 HYPOTHESIS: selected 4v1 VXY policy可shape-compatible warm-start到8v2
 ONLY_CHANGED_VARIABLE: historical stage size/curriculum change；action仍是同一VXY9
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage2_8p2e2obs_700k.yaml
@@ -148,7 +148,7 @@ NEXT: stage1 formal selection PASS后自动写只含pretrained.path的runtime wr
 ### 5.3 Stage 3：12v3 course 700k
 
 ```text
-STATUS: BLOCKED_BY_STAGE2_GATE（按设计）
+STATUS: HISTORICAL_SNAPSHOT / BLOCKED_AT_STAGE2_GATE / FINAL_SEE_SECTION_8
 HYPOTHESIS: selected 8v2 VXY policy可扩展到12v3并保留capture+CE
 ONLY_CHANGED_VARIABLE: historical stage size/curriculum change；action仍是同一VXY9
 CONFIG: configs/experiments/iqn_vxy_full_migration_20260830/stage3_12p3e3obs_700k.yaml
@@ -186,4 +186,36 @@ rolling `resume_latest.pt` schema 为 `cocap_iqn_full_resume_v1`，包含 model/
 - 2-step Full-VXY CUDA smoke/resume：PASS；
 - 最终合并定向回归：`78 passed`；修改 Python 全量 `py_compile` 与 `git diff --check` 均PASS。
 
-正式 capture/coverage/generalization 结论必须等待长训；smoke 只证明执行与恢复合同成立。
+长训已完成并按gate停止：Stage1 4v1 PASS；Stage2 8v2 mixed CE FAIL；Stage3按合同未启动。smoke仍只证明执行与恢复合同，最终性能结论以第8节的全量筛选和formal评估为准。
+
+
+## 8. 长训最终归档（2026-09-01 10:16 CST）
+
+### 8.1 Stage 1 最终结果
+
+```text
+STATUS: COMPLETE / GATE_PASS / PROMOTED_TO_STAGE2
+CURRENT_STEP: 2.000M / 2.000M，2026-08-31 20:30 CST自然完成
+SELECTION: 80个25k节点全部筛选；严格排序选中step_1425000.pt
+SCREEN: capture=.85、coverage CE=.20、mix capture=.90、mix CE=.20、max collision=0
+FORMAL20: capture=.75、coverage CE=.15、mix capture=.85、mix CE=.15、max collision=.05
+GATE: 五项全部PASS；supervisor于20:42自动晋级Stage2，formal产物于20:53完整落盘
+ETA: 0
+```
+
+Stage1的screen与formal都跨过capture、coverage、mix和safety门槛。晋级使用选中的1.425M checkpoint，没有早停或人工跳级。
+
+### 8.2 Stage 2 最终结果
+
+```text
+STATUS: COMPLETE / GATE_FAILED_ON_MIX_CE / COURSE_STOPPED
+PRETRAINED: Stage1 step_1425000.pt
+CURRENT_STEP: 700k / 700k，2026-09-01 09:20 CST自然完成
+SELECTION: 28个25k节点全部筛选；严格排序选中step_600000.pt
+SCREEN: capture=1.00、coverage CE=.10、mix capture=1.00、mix CE=0、max collision=.05
+FORMAL20: capture=.90、coverage CE=.15、mix capture=.95、mix CE=.05、max collision=.10
+GATE: capture/coverage/safety PASS；mixed CE < .10，FAIL
+ETA: 0
+```
+
+8v2保留了强capture和单独coverage能力，但capture后的mixed CE扩展没有达到预声明门槛；screen与formal独立确认同一缺口。supervisor因此正常结束，Stage3保持0/700k且没有训练进程、checkpoint或评估产物。本条Full课程的最终结论是“4v1成功迁移，8v2捕获保持但mixed CE扩展失败”；任何修复都应另开显式变量线，不能把12v3算作本线继续。

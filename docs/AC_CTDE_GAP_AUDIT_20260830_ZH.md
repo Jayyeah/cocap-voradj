@@ -248,3 +248,8 @@ supervisor：`tools/supervise_mappo9_v2_20260830.py`。三 seed 均已自然完�
 - TD3-AW seed3 300k + final dual formal eval：COMPLETE；三 seed 原配方任务性能最终失败。
 
 三种子正式结果已完成；结论是桥接门槛PASS但策略仍弱，后续连续动作因果结论必须等待MAPPO-AW-v2。
+
+
+### 11.1 MAPPO-9-v2 运行产物归档复核（2026-09-01）
+
+本地归档根目录为 `artifacts/2026-08-30_mappo9_v2/`。三 seed 的 `status.json` 均为 `complete / 400000`，每 seed 均保留16个25k checkpoint、16份对应deterministic20+stochastic20评估、rolling resume、manifest、effective config、episodes与learning metrics；根目录 `gate_decision.json` 与supervisor终态文件完整存在。大体积运行产物按仓库策略仅保存在本机，Git台账归档的是可审计路径、汇总结论与gate，不上传checkpoint。
