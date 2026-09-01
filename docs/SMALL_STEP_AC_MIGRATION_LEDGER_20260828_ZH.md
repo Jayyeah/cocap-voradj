@@ -633,3 +633,13 @@ MAPPO-9-v2 的预声明 gate 已通过，故 GPU1 下一阶段严格路由到 MA
 验证：实现阶段合并定向回归 `119 passed`；active VRAM guard 修正后的最终合集 `118 passed, 2 skipped`（仅缺可选历史 P1 frozen manifest），无 failure。GPU1 fresh 2-step 与 `2->4` full-resume smoke、checkpoint、双短评估均PASS，4-step max KL `1.03e-4`、clip `0`、saturation `0`，指标finite。正式 seed1 于 `2026-08-31 17:25:39 CST` 启动；supervisor修正pre-launch/active VRAM阈值语义后在不重启训练child的情况下接管。
 
 首个 formal 25k checkpoint、rolling resume 与 det20/stoch20 已持久化。deterministic 为 capture `0%` / collision `0%`，stochastic 为 capture `0%` / collision `30%`（boundary 5、agent-agent 1）；两者2+/3+/3+hold均为0，符合“25k不因无capture停”的合同。`17:55:48 CST` 已恢复训练至 seed1 26k：pre-eval训练吞吐 `29.33 step/s`，含40-episode评估的当前wall吞吐 `14.47 step/s`；max KL `1.79e-4`、clip `0`、saturation `.0215`、pre-tanh mean abs max `.279`、std约 `(.931,.962)`、value loss `.00924`、actor/critic grad `1.052/.0928`，全部finite、所有health streak为0。训练PID `3830951`、supervisor PID `3833154`，tmux分别为 `cocap_mappo_aw_v2_seed1_gpu1` 与 `cocap_mappo_aw_v2_supervisor_gpu1`；attempts/restarts均为0。
+
+### 19.1 2026-09-01 10:02 后台更新
+
+seed1/2已完成400k，seed3到325k且该节点20+20评估已写盘。当前best deterministic分别为seed1 `10%@400k / collision90%`、seed2 `5%@375k / collision80%`、seed3 `10%@300k / collision85%`；三seed均在多个checkpoint重复出现非零det capture，mean best capture/collision=`8.33%/85.00%`，相对旧MAPPO-AW的`5.00%/93.33%`为`+3.33pp/-8.33pp`，但相对MAPPO-9-v2 parent的`21.67%/78.33%`仍有`-13.34pp/+6.67pp` gap。当前只可记provisional `HEALTHY_DISCRETE_TO_CONTINUOUS_GAP`；seed3剩余350/375/400k节点若达到至少15% det capture且paired mean collision `<90%`，才会通过10% mean-capture正式Gate。
+
+seed3 325k没有刷新best：deterministic capture/collision=`0%/100%`，stochastic=`0%/90%`；deterministic 2+/3+=`75%/20%`、3+ hold=`12`，但mean length仅`173.8`，表现为能进ring却更早碰撞。同期PPO health仍正常，因此这是策略性能波动/collision gap，而不是continuous policy数值失控。
+
+对应best deterministic的2+/3+为`70/15%、65/15%、70/20%`，3+ hold为`3/4/22`，表明continuous策略已学到ring接近，但稳定三人包围仍弱且碰撞偏高；best stochastic则为`15/10/10%` capture、`50/40/70%` collision，mean=`11.67%/53.33%`，显示分布内动作质量优于mean-action，正式结论仍只看deterministic。三seed全程max KL=`.0291/.0382/.0235`、max clip=`.137/.153/.109`、max saturation=`.0547/.0469/.0390`、max pre-tanh mean=`.698/.749/.691`，所有暂停阈值命中次数均为0，无NaN/Inf或value发散。
+
+剩余ETA：seed1/2为0；seed3 `325k/400k`、剩75k，含正式评估的wall throughput `19.65 step/s`，runner ETA `3,817s`（63.6min），预计三seed与最终Gate在`2026-09-01 11:06–11:15 CST`完成。训练PID `4107314`、supervisor PID `3833154`，GPU1无外部compute进程、free `41,699 MiB`，RAM free `116.56 GiB`、disk free `36.54 GiB`，restarts=0、rolling resume与health gate均正常。详细逐seed checkpoint、collision type、ring/angular/return/action与PPO区间见 `docs/MAPPO_AW_V2_LAUNCH_AUDIT_20260831_ZH.md` 第7节。

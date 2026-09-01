@@ -136,3 +136,76 @@ RAM available: 82.07 GiB; disk free: 49.93 GiB
 - repeated deterministic capture 且 mean best capture `>=10%`、mean collision `<90%`、明确优于旧 MAPPO-AW：`CONTINUOUS_AC_ROUTE_ESTABLISHED`；
 - 优化健康但未过上述门槛：`HEALTHY_DISCRETE_TO_CONTINUOUS_GAP`；
 - 优化不健康：`UNHEALTHY_CONTINUOUS_POLICY_PPO_IMPLEMENTATION`。
+
+## 7. 后台进展与逐 seed 性能（2026-09-01 10:02 CST）
+
+seed1、seed2 已自然完成400k和全部16个25k formal evaluation；seed3已到325k，325k checkpoint与第13个20+20 formal evaluation均已持久化。下表的“best deterministic”严格使用supervisor排序：先最大capture，再最小collision，再取较晚step；seed3统计已完整写盘的325k及之前评估；325k未刷新best，详见下文。
+
+| seed | 状态 | best deterministic | 同点collision | 非零det checkpoint | best stochastic |
+|---|---|---|---:|---|---|
+| 1 | 400k complete | 10% @400k，normal 10%，stationary 0 | 90% | 175k/225k=5%；325k/375k/400k=10% | 15% @175k，collision 50% |
+| 2 | 400k complete | 5% @375k，normal 5%，stationary 0 | 80% | 100k/125k/250k/325k/375k=5% | 10% @400k，collision 40% |
+| 3 | 325k running；latest eval=325k | 10% @300k，normal 10%，stationary 0 | 85% | 75k/150k/225k/250k/275k=5%；300k=10% | 10% @200k，collision 70% |
+
+三 seed 都已重复出现非零 deterministic capture，说明 continuous actor 已经学出可复现而非单次偶然的捕获行为；但轨迹不是单调的，seed2 final 400k deterministic 回落到0%，因此必须按best-checkpoint gate而不能只看terminal checkpoint。当前best deterministic宏观值为：
+
+```text
+mean best capture = (10% + 5% + 10%) / 3 = 8.33%
+mean paired collision = (90% + 80% + 85%) / 3 = 85.00%
+old MAPPO-AW = capture 5.00%, collision 93.33%
+improvement over old = capture +3.33pp, collision -8.33pp
+MAPPO-9-v2 parent = capture 21.67%, collision 78.33%
+remaining parent gap = capture -13.34pp, collision +6.67pp
+```
+
+因此截至300k完整评估，continuous AC 已明确优于旧 MAPPO-AW 且优化健康，但 mean-best capture 尚低于正式路线成立门槛10%。若seed3剩余350/375/400k中出现至少15% deterministic capture，并保持paired mean collision `<90%`，即可把三seed mean推到10%；在seed3结束前只记为provisional `HEALTHY_DISCRETE_TO_CONTINUOUS_GAP`，不提前封版。
+
+325k最新评估没有改变best：deterministic capture/collision=`0%/100%`，stochastic=`0%/90%`；deterministic 2+/3+=`75%/20%`、3+ hold=`12`、mean episode length仅`173.8`，stochastic 2+/3+=`60%/15%`、3+ hold=`5`。策略仍能进入ring，但更早发生接触碰撞，说明checkpoint间性能方差和collision gap仍大；同期PPO health健康，不能把该回落归因于优化崩溃。
+
+### 7.1 Best deterministic 的几何、碰撞与收益
+
+| seed@step | capture/collision | collision types（20 episodes） | 2+ / 3+ | max ring；2+/3+ hold | angular gap / min separation | return agent/team | action norm |
+|---|---:|---|---:|---|---:|---:|---:|
+| 1@400k | 10% / 90% | agent-agent 12，boundary 3，evader 2，obstacle 1 | 70% / 15% | 3；13/3 | 3.195/.950 | -537.81/-2151.25 | .1771 |
+| 2@375k | 5% / 80% | agent-agent 15，boundary 1，obstacle 1 | 65% / 15% | 3；39/4 | 3.425/.390 | -1068.39/-4273.56 | .1582 |
+| 3@300k | 10% / 85% | agent-agent 4，boundary 1，evader 11，obstacle 2 | 70% / 20% | 4；38/22 | 3.357/.639 | -602.48/-2409.91 | .1876 |
+
+几何指标显示三 seed best checkpoint 均能让至少两个追捕者进入capture ring（65–70%），但3+仅15–20%，且捕获仍伴随大量接触；seed3的3+ hold `22`步和max ring `4`最好，seed1/2则主要受agent-agent collision限制。负return主要由碰撞惩罚主导，不能把return与capture率混用为同一Gate。
+
+### 7.2 Best stochastic 的补充信号
+
+| seed@step | capture/collision | 2+ / 3+ | max 3+ hold | return agent/team | action norm |
+|---|---:|---:|---:|---:|---:|
+| 1@175k | 15% / 50% | 90% / 25% | 24 | -259.85/-1039.41 | .3648 |
+| 2@400k | 10% / 40% | 75% / 15% | 4 | -90.43/-361.70 | .3005 |
+| 3@200k | 10% / 70% | 85% / 5% | 1 | -340.04/-1360.14 | .3531 |
+
+best stochastic mean capture为11.67%、mean collision为53.33%，说明Gaussian分布中存在明显优于deterministic mean-action的有效动作质量；但正式Gate仍只使用deterministic结果，以避免靠采样偶然性宣告路线成立。
+
+### 7.3 全程 PPO/continuous-policy health
+
+| seed | max KL | max clip | max saturation | max `|mean|` | max value loss / critic grad | std(a) range | std(w) range | 任何暂停阈值命中 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 complete | .0291 | .1372 | .0547 | .698 | 4.646 / 21.005 | .806–1.254 | .350–1.062 | 0 |
+| 2 complete | .0382 | .1533 | .0469 | .749 | 5.518 / 24.231 | .580–1.081 | .335–1.141 | 0 |
+| 3 through325k | .0235 | .1094 | .0390 | .691 | 2.142 / 12.887 | .732–1.176 | .348–1.088 | 0 |
+
+三 seed 从未出现 KL `>0.1`、clip `>0.3`、saturation `>=.95`、pre-tanh mean `>=5`、NaN/Inf或value divergence。seed3在325k更新点为：max KL `.00528`、clip `.02962`、saturation `.00488`、pre-tanh mean abs max `.6699`、std(a,w)=`(.807,.502)`、value loss `.5285`、explained variance `.1158`、actor/critic grad `1.467/2.400`；仍为健康PPO。
+
+### 7.4 剩余 ETA 与运行资源
+
+```text
+seed1: 400k complete, ETA 0
+seed2: 400k complete, ETA 0
+seed3: 325k/400k, 75k remaining
+wall throughput including formal evals: 19.65 env step/s
+runner ETA: 3,817 s = 63.6 min
+projected three-seed/final-gate completion: 2026-09-01 11:06–11:15 CST
+training PID / tmux: 4107314 / cocap_mappo_aw_v2_seed3_gpu1
+supervisor PID / tmux: 3833154 / cocap_mappo_aw_v2_supervisor_gpu1
+GPU1: 6,841 MiB used, 41,699 MiB free, no foreign compute process
+RAM available: 116.56 GiB; disk free: 36.54 GiB
+restarts=0; rolling resume present; all health streaks=0
+```
+
+剩余正式评估为350/375/400k。ETA按seed3迄今包含13轮formal eval的实际wall throughput估算，已包含评估开销；最终400k评估完成后supervisor会自动生成三seed Gate并退出。
