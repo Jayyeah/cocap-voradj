@@ -649,3 +649,7 @@ seed3 325k没有刷新best：deterministic capture/collision=`0%/100%`，stochas
 MAPPO-AW-v2确认continuous AC有学习信号但仍弱于离散父实验后，GPU1下一条严格隔离线回到MAPPO-9-v2 AW9，只替换action-free central V/GAE为teammate-action-conditioned Central-Q和精确9动作counterfactual advantage。Actor、Legacy IQN decision feature、任务、reward、AW9、PPO recipe、ValueNorm、三paired seeds和25k deterministic/stochastic20全部冻结。
 
 实现、公式、terminal/truncation/active mask、selected-action TD(λ)、恢复schema、assigned-GPU RNG隔离、CPU/CUDA smoke、supervisor健康阈值与相对MAPPO-9-v2 gate详见 `docs/PPO_COUNTERFACTUAL_Q_AUDIT_20260901_ZH.md`。第一版保留per-agent reward且不加twin/target Q或混合GAE，避免同时引入第二实验变量。
+
+### 20.1 正式启动
+
+2026-09-01 21:55 CST从已推送commit `4f7216f`在GPU1启动seed1；21:58到4k，PID `263896`、tmux `cocap_ppo_cf_seed1_gpu1`，supervisor PID `265176`。throughput `32.56 step/s`，critic/Q/A_CF/Actor/KL全部finite、health streak为0、restarts=0。GPU1只有该训练compute PID，GPU0没有PPO-CF context。详细数值和后续gate见专项审计第7节。

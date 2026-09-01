@@ -65,3 +65,19 @@ selection按以下词典序：CE success最大；collision、boundary、centroid
 
 实际Stage3和队列runtime状态在本文件后续提交中追加。
 
+## 7. 队列启动状态（2026-09-01 21:58 CST）
+
+```text
+GPU0 STAGE3: ACTIVE, step 305k / 700k
+TRAIN PID/TMUX: 109572 / cocap_vxy_full_s3_12p3e3obs_train
+SCREEN PID/TMUX: 109587 / cocap_vxy_full_s3_12p3e3obs_screen
+FINALIZER PID/TMUX: 109602 / cocap_vxy_full_s3_12p3e3obs_finalize
+CHECKPOINT: 12个25k milestone，latest step_300000.pt
+SCREEN: DONE through 275k；300k screening active
+FORMAL/GIF: 尚无selection与FORMAL_DONE；finalizer仍等待
+FINITE: true；305k loss 33.788、EMA 34.151、recent capture .95、collision .06
+```
+
+Pure-Coverage supervisor已启动于 `cocap_vxy_pure_coverage_queue_gpu0`，PID 264842，状态严格为 `observing_stage3_read_only`。没有warm/scratch train或screen child，没有修改/重启/kill现有Stage3。GPU0此刻compute app仍仅为Stage3 train和300k screening workers。
+
+队列顺序已持久化为warm-start→scratch；除Stage3三重放行外，每个新entry/restart前还会再次确认GPU0没有其他compute app。启动commit为 `4f7216fb8ec786a58be2e922a7ccae6dcd720267`。

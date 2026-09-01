@@ -266,7 +266,15 @@ def main() -> int:
     while True:
         preflight = resources(gpu_index)
         gpu = preflight.get("gpu") or {}
-        if not gpu.get("compute_apps") and int(gpu.get("memory_free_mib", 0)) >= args.min_free_gpu_mib:
+        active_seed_sessions = [
+            f"cocap_ppo_cf_seed{item['index']}_gpu1"
+            for item in SEEDS
+            if tmux_exists(f"cocap_ppo_cf_seed{item['index']}_gpu1")
+        ]
+        if active_seed_sessions or (
+            not gpu.get("compute_apps")
+            and int(gpu.get("memory_free_mib", 0)) >= args.min_free_gpu_mib
+        ):
             break
         status("waiting_for_exclusive_gpu1", resources=preflight)
         if args.check_once:
@@ -286,6 +294,20 @@ def main() -> int:
             run_status = read_json(run / "status.json") or {}
             if run_status.get("state") == "complete" and int(run_status.get("step", 0)) >= 400_000:
                 break
+            if not tmux_exists(session):
+                launch_resources = resources(gpu_index)
+                launch_gpu = launch_resources.get("gpu") or {}
+                if (
+                    launch_gpu.get("compute_apps")
+                    or int(launch_gpu.get("memory_free_mib", 0)) < args.min_free_gpu_mib
+                ):
+                    status(
+                        "waiting_for_exclusive_gpu1",
+                        seed=index,
+                        resources=launch_resources,
+                    )
+                    time.sleep(max(5, args.poll_seconds))
+                    continue
             command = [
                 "python3",
                 "tools/run_small_step_ac_migration.py",

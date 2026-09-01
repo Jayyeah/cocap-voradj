@@ -384,6 +384,17 @@ def main() -> int:
             if final_checkpoint.is_file():
                 action = "complete"
             else:
+                if not tmux_exists(train_session):
+                    launch_state = resources()
+                    launch_gpu = launch_state.get("gpu0") or {}
+                    if launch_gpu.get("compute_apps"):
+                        status(
+                            "waiting_for_exclusive_gpu0",
+                            label=label,
+                            resources=launch_state,
+                        )
+                        time.sleep(max(5, args.poll_seconds))
+                        continue
                 command = [
                     "python3",
                     "train.py",

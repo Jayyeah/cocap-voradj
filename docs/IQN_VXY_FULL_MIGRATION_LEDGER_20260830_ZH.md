@@ -306,3 +306,7 @@ Stage3必须自然训练到700k，等待28个25k checkpoint全部screen，按既
 Stage2 formal已证明standalone coverage CE `.15`但mixed CE仅`.05`。为区分VXY coverage skill难度与capture→coverage phase/replay interference，Stage3自然结束并完成formal/GIF后，GPU0固定串行：Stage2 selected 600k warm-start pure coverage 500k，再同seed scratch pure coverage 500k。
 
 两线保持Final Stage2 reward/CE/horizon/observation/IQN/VXY9/optimizer/epsilon/target update与buffer规模，只把任务分布切为8P0E2obs pure coverage。每25k coverage-only deterministic20，选中点formal20/GIF10；gate只看CE/CV/centroid/speed/collision/boundary/length/return decomposition，不看capture。历史合同取舍、500k预算依据、paired config、指标扩展、CUDA恢复smoke以及不打断Stage3的三重放行条件详见 `docs/VXY_PURE_COVERAGE_AUDIT_20260901_ZH.md`。
+
+### 10.1 队列已就绪，Stage3未受扰动
+
+2026-09-01 21:58 CST，Stage3到305k，12个milestone已落盘，screen已完成至275k且300k active；train/screen/finalizer PID仍为109572/109587/109602，formal/GIF尚未开始。Pure-Coverage queue supervisor PID `264842`、tmux `cocap_vxy_pure_coverage_queue_gpu0`，状态为read-only observe且没有创建任何pure-coverage child。Stage1/2两个已完成rolling resume经terminal/selected/formal和file-handle核验后删除，释放约16.6 GiB；Stage3活跃resume未动，根盘恢复至约46 GiB空闲。

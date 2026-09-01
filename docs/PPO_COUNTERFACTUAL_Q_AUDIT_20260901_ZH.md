@@ -74,3 +74,21 @@ GPU1 supervisor逐seed串行，要求独占GPU1、至少27 GiB根盘空闲，支
 
 长训runtime状态在本文件后续提交中追加；在正式结果未知前不自动延长到500k。
 
+## 7. 正式启动状态（2026-09-01 21:58 CST）
+
+```text
+STATUS: seed1 ACTIVE / optimization healthy
+COMMIT_AT_LAUNCH: 4f7216fb8ec786a58be2e922a7ccae6dcd720267
+SUPERVISOR_TMUX/PID: cocap_ppo_cf_supervisor_gpu1 / 265176
+TRAIN_TMUX/PID: cocap_ppo_cf_seed1_gpu1 / 263896
+SEED: 2026083001
+STEP: 4k / 400k
+RESTARTS: 0
+CHECKPOINT: 首个25k尚未到；2→4 full-resume已由独立CUDA smoke验证
+```
+
+step4k状态：throughput `32.56 step/s`、runner ETA约3.38小时（不含25k formal评估）；entropy `2.1891`、max KL `2.87e-5`、clip `0`、Actor/Q raw grad `3.626/3.064`、critic loss `1.924`、Q chosen/baseline `-15.09/-15.11`、raw `A_CF` std `1.616`、Q span `4.974`，全部finite，health streak均为0。
+
+GPU1仅有训练PID 263896，约5.99 GiB VRAM；assigned-device RNG验证后GPU0没有PPO-CF compute context。启动时根盘46.35 GiB空闲、RAM约88 GiB可用。GPU温度瞬时85°C，低于93°C max operating与95°C slowdown阈值，继续由每60秒资源状态监控。
+
+supervisor重启合同已现场验证：只重启supervisor时能识别自己的active seed tmux并以 `already_running` 接管，不会重启child；每个新seed或异常restart前都会重新检查GPU1无外部compute app和free VRAM阈值。
