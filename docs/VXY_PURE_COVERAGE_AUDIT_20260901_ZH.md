@@ -81,3 +81,20 @@ FINITE: true；305k loss 33.788、EMA 34.151、recent capture .95、collision .0
 Pure-Coverage supervisor已启动于 `cocap_vxy_pure_coverage_queue_gpu0`，PID 264842，状态严格为 `observing_stage3_read_only`。没有warm/scratch train或screen child，没有修改/重启/kill现有Stage3。GPU0此刻compute app仍仅为Stage3 train和300k screening workers。
 
 队列顺序已持久化为warm-start→scratch；除Stage3三重放行外，每个新entry/restart前还会再次确认GPU0没有其他compute app。启动commit为 `4f7216fb8ec786a58be2e922a7ccae6dcd720267`。
+
+## 8. 完成结果与结论（2026-09-02）
+
+两条500k训练、全部20个25k screening节点和各自formal20/GIF10均已完成，queue supervisor于 `2026-09-02 22:15:54 CST` 正常进入 `queue_complete`；GPU0已释放，无残留pure child。
+
+| 初始化 | selected checkpoint | formal CE success | geometric/settled | CV≤.15 | centroid RMS / max | collision / boundary | 结论 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Stage2 step600k warm-start | 75k | 1.00 | 1.00 / 1.00 | .90 | .0316 / .0482 | 0 / 0 | 快速恢复且稳定 |
+| scratch | 500k | .45 | .45 / .45 | .30 | .0524 / .0687 | 0 / 0 | 能学到部分CE，但未稳定 |
+
+Warm-start在75k就达到20/20 formal CE，证明VXY9 coverage skill本身并非不可学；scratch跑满500k仅45% formal CE，说明从零建立同一包围/扩展行为明显困难。结合 Stage2 standalone coverage `.15`但 mixed CE `.05`，本轮证据更支持“初始化与capture→coverage phase/recovery exposure interference是主要瓶颈”，而不是“VXY完全无法coverage”。这不是把warm-start的结果外推成scratch成功，两个结果保持分开记录。
+
+正式产物：
+
+- warm selected `step_75000.pt`，SHA-256 `a7e2e930ee9c86fa2156d4d2518c9e060f2b69053d9e31235a2cc0ffb72138d0`；
+- scratch selected `step_500000.pt`，SHA-256 `90707d1c0e8df38d85270e26a364fda9fb526a0bba98174e379606ada9fd3a62`；
+- 两者均有 `formal_manifest.json`、`FORMAL_DONE`、20 records、10 GIF且无 failures。

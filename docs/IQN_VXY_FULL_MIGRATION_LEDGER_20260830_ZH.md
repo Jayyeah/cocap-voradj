@@ -310,3 +310,9 @@ Stage2 formal已证明standalone coverage CE `.15`但mixed CE仅`.05`。为区�
 ### 10.1 队列已就绪，Stage3未受扰动
 
 2026-09-01 21:58 CST，Stage3到305k，12个milestone已落盘，screen已完成至275k且300k active；train/screen/finalizer PID仍为109572/109587/109602，formal/GIF尚未开始。Pure-Coverage queue supervisor PID `264842`、tmux `cocap_vxy_pure_coverage_queue_gpu0`，状态为read-only observe且没有创建任何pure-coverage child。Stage1/2两个已完成rolling resume经terminal/selected/formal和file-handle核验后删除，释放约16.6 GiB；Stage3活跃resume未动，根盘恢复至约46 GiB空闲。
+
+### 10.2 Stage3与Pure-Coverage最终结果
+
+Stage3 12v3 已自然完成700k，28个screen节点、formal20/GIF10和 `FORMAL_DONE` 全部落盘。selected为 `step_150000.pt`；formal capture `.90`、standalone coverage CE `1.00`、mixed capture `.90`、mixed CE `.90`、collision `.10`（boundary `.10`），supervisor记录的六项 checks 全部PASS。screen selected节点为四项核心成功率1.00、max collision0；该结果表明在用户授权的Stage2 gate override下，12v3 VXY完整capture+coverage+mix合同得到正式PASS。
+
+后续GPU0 isolation也已完成：warm selected75k的formal CE `1.00`、collision/boundary `0/0`；scratch selected500k的formal CE `.45`、collision/boundary `0/0`。结论是已有Stage2模型可以快速恢复coverage，但VXY9从scratch的稳定CE上限明显较低；mixed CE缺口更偏向phase/recovery exposure与初始化，而非VXY coverage skill不存在。完整指标与SHA见 `docs/VXY_PURE_COVERAGE_AUDIT_20260901_ZH.md`。

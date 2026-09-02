@@ -653,3 +653,7 @@ MAPPO-AW-v2确认continuous AC有学习信号但仍弱于离散父实验后，GP
 ### 20.1 正式启动
 
 2026-09-01 21:55 CST从已推送commit `4f7216f`在GPU1启动seed1；21:58到4k，PID `263896`、tmux `cocap_ppo_cf_seed1_gpu1`，supervisor PID `265176`。throughput `32.56 step/s`，critic/Q/A_CF/Actor/KL全部finite、health streak为0、restarts=0。GPU1只有该训练compute PID，GPU0没有PPO-CF context。详细数值和后续gate见专项审计第7节。
+
+### 20.2 当前结论与剩余线
+
+截至2026-09-02：GPU0 Stage3 12v3已正式PASS；其后Pure-Coverage warm-start正式CE `1.00`、scratch正式CE `.45`，完成“coverage可恢复但scratch较弱”的隔离结论。GPU1 PPO-CF seed1/2均400k COMPLETE、deterministic capture均0且优化健康；seed3因范围外PID `487833` 占用GPU1而处于安全等待，释放后ETA约8.5小时。不得提前用两seed结果封三seed gate。

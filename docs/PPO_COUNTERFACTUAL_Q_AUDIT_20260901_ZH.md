@@ -92,3 +92,16 @@ step4k状态：throughput `32.56 step/s`、runner ETA约3.38小时（不含25k f
 GPU1仅有训练PID 263896，约5.99 GiB VRAM；assigned-device RNG验证后GPU0没有PPO-CF compute context。启动时根盘46.35 GiB空闲、RAM约88 GiB可用。GPU温度瞬时85°C，低于93°C max operating与95°C slowdown阈值，继续由每60秒资源状态监控。
 
 supervisor重启合同已现场验证：只重启supervisor时能识别自己的active seed tmux并以 `already_running` 接管，不会重启child；每个新seed或异常restart前都会重新检查GPU1无外部compute app和free VRAM阈值。
+
+## 8. 已完成种子与剩余ETA（2026-09-02）
+
+seed1/seed2均自然完成 `400000/400000`，各16个25k评估节点、轻量checkpoint完整落盘，terminal full-resume按配置删除；两者均0 restart、Q/critic/PPO指标finite且未触发health暂停。
+
+| seed | wall time | best deterministic capture/collision | final Q chosen/baseline | final Q span | final critic loss | explained variance |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 8.11 h | 0 / 0 | 12.73 / 12.73 | 1.34 | .0080 | .976 |
+| 2 | 8.25 h | 0 / 0 | 9.27 / 9.26 | 1.15 | .0203 | .826 |
+
+两seed的 centralized-Q 拟合和梯度健康，但 deterministic policy没有出现capture；因此当前证据不支持“仅把V换成counterfactual Q就缩小MAPPO gap”。3-seed gate仍不能提前封版，也不能把这两个seed的健康优化误写成算法PASS。
+
+seed3当前未启动，supervisor状态为 `waiting_for_exclusive_gpu1`。GPU1唯一compute app是范围外的 OmniVLA 服务：PID `487833`，命令 `limo_adapter.server_omnivla_full`，占用约17,006 MiB；未对其执行kill或重启。按seed1/2观测，GPU1一旦释放，seed3的400k训练预计约 `8.2–8.5 h`，再加最后评估与gate约数分钟；释放时间本身不可从仓库推定，故当前ETA是“外部GPU1释放后约8.5小时”，不是确定日历时间。supervisor会自动保留等待并在GPU独占后启动。
