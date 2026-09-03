@@ -320,3 +320,18 @@ Stage3 12v3 已自然完成700k，28个screen节点、formal20/GIF10和 `FORMAL_
 ### 10.3 2026-09-03 现场状态与收尾
 
 现场核对显示 Stage3 的 selected `step_150000.pt`、formal20/GIF10、`FORMAL_DONE` 均已落盘，Stage3 自然结束；GPU0 后续 warm-start→scratch Pure-Coverage 队列也已正常 `queue_complete`，GPU0 当前空闲。该成果线没有剩余训练，ETA 为“已完成”。完整指标、选择策略和 checkpoint SHA 分别见第10.2节及 `docs/VXY_PURE_COVERAGE_AUDIT_20260901_ZH.md`。
+
+## 11. Stage3 selected 回迁 Stage2 formal100（2026-09-03）
+
+本轮冻结 Stage2 600k 与 Stage3 selected 150k 权重，在同一个 Stage2 `8p2e2obs` 正式环境、fixed-midpoint-32、`epsilon=0`、seeds `2026083201..3300` 下执行 capture/coverage/mix 各100回合。Stage3 SHA-256 为 `b33dce2484f3394d1aadb13cd02ca5085929011a8bf7a2a9742ba75c0dba419b`；`pretrained_load.json` 证明它由 Stage2 600k 加载119项且无 adapted/skipped key。本节没有训练或改权重。
+
+| 模型 | capture / collision / length | standalone CE / CV≤.15 | mixed capture / CE / collision | capture条件 survival / CE |
+| --- | --- | --- | --- | --- |
+| Stage2 600k | `.97/.02/235.95` | `.05/.20` | `.98/.07/.06` | `.9592/.0714` |
+| Stage3 150k→Stage2 | `.98/.02/269.27` | `1.00/.49` | `.98/.97/.03` | `.9898/.9898` |
+
+paired 结论：Stage3 capture 仅 `+1pp`，95% bootstrap interval `[-3,+5]pp`，mixed capture `0pp [-4,+4]pp`；两者均不支持更强8v2 capture，且 capture length 反而 `+33.32 [4.55,61.92]` steps。另一方面 standalone CE 为 `+95pp [90,99]pp`，mixed CE 为 `+90pp [84,96]pp`。因此准确结论是：**Stage3 学到了可回迁的更强 capture→coverage joint skill，但没有学到更强或更快的8v2 capture。**
+
+Stage3 在 capture-only 的2+/3+ episode rate 为 `.98/.40`，高于 Stage2 的 `.90/.25`；2+/3+ time fraction 为 `.1439/.01283`，高于 `.0761/.00636`，但首次3+（仅统计出现回合）为197.90步而非126.64步。这支持“更持久的 coverage-like ring geometry”，不支持“更早完成 capture”。所有 stationary capture 均为0。
+
+完整 formal100、support-latency、paired GIF 和合同/lineage 边界见 `docs/IQN_VXY_STAGE2_CROSS_RETENTION_AUDIT_20260903_ZH.md`。后续 matched Final-AW/VXY 与 IQN→MAPPO distillation 只登记为 TODO，本轮未启动长训。

@@ -102,3 +102,18 @@ Warm-start在75k就达到20/20 formal CE，证明VXY9 coverage skill本身并非
 ## 9. 2026-09-03 实际状态复核
 
 `2026-09-03 08:52 CST` 现场核对：queue supervisor 状态仍为 `queue_complete`（最后更新 `2026-09-02 22:15:54 CST`），GPU0 显存 `15/48525 MiB`、无 compute app，未发现 Stage3 或 Pure-Coverage 残留训练/筛选进程。故本线已完全收尾，后续不再给 GPU0 排队 ETA；上述 warm-start/scratch formal 结果可作为最终隔离结论。
+
+## 10. warm75 capture / mixed retention formal100（2026-09-03）
+
+已先复核 warm selected `step_75000.pt` SHA-256 为 `a7e2e930ee9c86fa2156d4d2518c9e060f2b69053d9e31235a2cc0ffb72138d0`，随后冻结权重并恢复 Stage2 `8p2e2obs` capture/mixed 正式合同；同时保留 standalone coverage sanity。三场景各100回合，与 Stage2 600k 严格同 seeds、fixed midpoint τ 配对，没有训练或权重更新。
+
+| 模型 | capture / collision / length | standalone CE / collision | mixed capture / CE / collision | capture条件 mixed survival / CE |
+| --- | --- | --- | --- | --- |
+| Stage2 600k | `.97/.02/235.95` | `.05/.01` | `.98/.07/.06` | `.9592/.0714` |
+| warm75 | `.80/.13/428.95` | `1.00/0` | `.82/.82/.15` | `1.00/1.00` |
+
+paired 差值为：capture `-17pp [-25,-9]pp`、capture collision `+11pp [+5,+18]pp`、capture length `+193.00 [142.79,245.82]` steps；mixed capture `-16pp [-24,-9]pp`、mixed CE `+75pp [66,83]pp`、mixed collision `+9pp [+1,+18]pp`。warm75 的 capture rate 绝对保留80%，相对 parent 保留 `82.47%`；mixed capture 相对保留 `83.67%`。
+
+warm75 一旦 capture，mixed 的82/82回合全部完成CE且全部 survival；损失集中在 capture 前/第二个 enemy 收尾。capture-only 中95回合至少有一个 normal capture event，只有80回合完成2/2，另15回合为部分捕获；mixed 对应95与82，另13回合为部分捕获。故结论是：CE及 capture→coverage 转换显著改善，但 capture 和碰撞安全发生统计显著的 selective catastrophic interference；它是明显干扰，不是完全遗忘。
+
+support audit 同样显示 warm75 的补位退化：support→direct/pursuing 约115步，对比 parent 84步；support→enemy/friend progress `.075/.015`，对比 `.200/.084`；2+/3+ episode rate `.86/.15`，对比 `.90/.25`。完整 paired interval、CV/centroid/episode length、settling 解释与固定前三 seeds GIF 见 `docs/IQN_VXY_STAGE2_CROSS_RETENTION_AUDIT_20260903_ZH.md`。

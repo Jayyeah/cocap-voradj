@@ -703,3 +703,45 @@ GPU0 当前显存 `15/48525 MiB`、无 compute app；GPU1 显存 `17029/49140 Mi
 - IQN-VXY Stage1/2 best rollout GIF 位于 `artifacts/2026-09-01_iqn_vxy_full_rollouts/best_20rollout10gif/stage1_4p1e1obs_step_1425000/` 与 `.../stage2_8p2e2obs_step_600000/`；Stage3 位于 `artifacts/2026-08-30_iqn_vxy_full_best/iqn_vxy_full_stage3_12p3e3obs_step_150000/`。
 - GPU1：PPO-CF seed1/2 `400k COMPLETE`；按用户要求 seed3 **不再启动**，PPO-CF supervisor 进程组/tmux 已关闭；外部 OmniVLA PID `487833` 保持运行。该线不再有训练 ETA。
 - 未改变任何现有训练进程、未 kill/restart 外部 PID；当前状态以 `artifacts/2026-09-01_ppo_counterfactual_q/supervisor/status.json` 与现场 `ps/tmux/nvidia-smi` 为准。
+
+## 22. IQN-VXY Stage2 cross-retention formal100（2026-09-03）
+
+### 22.1 Final-AW 对齐与 lineage 最终口径
+
+配置、实现、Final release manifest、Stage3 `pretrained_load.json` 和合同测试共同支持以下表述：
+
+- 当前 IQN-VXY 的**课程/环境/reward/网络合同**对齐 `configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/`，即 2026-08-04 Final IQN-AW integrated CR-MS + VCT-LS + CE curriculum；VXY 首轮唯一主要变量是 AW9 → body-frame rate-limited VXY9。
+- support 精确为 `0.5 × neighbor-visible approach-only + 0.5 × CE`；direct detector 为 `ring_importance_ms_v0`；旧 `omega_approach/omega_mean_shift/omega_front` 全部为0。
+- “合同对齐”不等于 checkpoint 血缘。VXY Stage3 selected 的 lineage 是 VXY Stage2 600k → VXY Stage3 150k，加载119项、无 adapted/skipped key，不继承 Final-AW checkpoint。
+- Final-AW release 展示的 Stage2 selected 为300k；历史 Stage3 实际从当时选中的500k warm-start。只在说明 release/历史 lineage 时分别使用，不混写。
+
+### 22.2 冻结权重 formal100
+
+三个已校验 SHA 的模型全部回到同一 Stage2 `8p2e2obs`，使用 `model.eval + no_grad + epsilon=0 + fixed_midpoint_32`、paired seeds `2026083201..3300`，capture/standalone coverage/mixed 各100回合。manifest 明确 `training_or_weight_updates=false`，并已生成900条 records、paired bootstrap 和 `FORMAL_DONE`。
+
+| 模型 | capture / collision | pure CE / CV≤.15 | mixed capture / CE / collision | mean length capture / mixed |
+| --- | --- | --- | --- | --- |
+| Stage2 600k | `.97/.02` | `.05/.20` | `.98/.07/.06` | `235.95/766.84` |
+| Stage3 150k→Stage2 | `.98/.02` | `1.00/.49` | `.98/.97/.03` | `269.27/344.38` |
+| Pure-Coverage warm75→Stage2 | `.80/.13` | `1.00/.79` | `.82/.82/.15` | `428.95/535.46` |
+
+Stage3 与 Stage2 paired：capture `+1pp [-3,+5]pp`、mixed capture `0pp [-4,+4]pp`，不支持更强 capture；capture length 还增加 `33.32 [4.55,61.92]` steps。但 standalone CE `+95pp [90,99]pp`、mixed CE `+90pp [84,96]pp`，且 capture 条件下 mixed CE 为 `.9898` 对 `.0714`。结论：**Stage3 学到了明确可回迁的 capture→coverage joint skill，但没有学到更强/更快的8v2 capture。**
+
+warm75 与 Stage2 paired：capture `-17pp [-25,-9]pp`、capture collision `+11pp [+5,+18]pp`；mixed capture `-16pp [-24,-9]pp`、mixed CE `+75pp [66,83]pp`、mixed collision `+9pp [+1,+18]pp`。一旦 capture，warm75 的82/82 mixed 回合全部CE并 survival；但 capture-only 只有80/100完成2/2，另15个回合只捕获部分 enemy。结论：coverage 与 capture→coverage 转换显著改善，同时存在统计显著但非完全的 selective catastrophic interference；capture rate 相对保留约82.47%，mixed capture 相对保留约83.67%。三模型 stationary capture 均为0。
+
+### 22.3 Support-latency
+
+100回合行为时序确认“support 补位慢”客观存在：support speed 比 direct 低约10%–17%，support→direct/pursuing 约84–115步。warm75 最慢，support→enemy/friend progress 为 `.075/.015`，显著低于 Stage2 的 `.200/.084`。
+
+归因边界：direct/support-target earliest timing 都约第4步，不支持首次 local information delay 为主因；`.5 approach + .5 CE` 两分量符号相反占 support agent-step 的 `.545–.637`，是强相关竞争候选；direct/support rate-limit pressure 均高达 `.948–.990`，说明 VXY inertia 普遍存在但不是 support 独有；clearance≤2m 的 support step 仅 `0–.14%`，轻量证据不支持 collision avoidance 保守是主要来源。该审计不改 reward，也不把相关性写成因果。
+
+Stage3 的2+/3+ episode rate `.98/.40`、time fraction `.1439/.01283` 高于 Stage2 `.90/.25`、`.0761/.00636`，但首次3+没有更早；它更像延长 coverage-like geometry。warm75 对应 `.86/.15`、`.0492/.00236`，与 capture 收尾退化一致。
+
+完整表格、CV/centroid、条件 survival/settling、评估器边界及固定前三同 seeds GIF 见 `docs/IQN_VXY_STAGE2_CROSS_RETENTION_AUDIT_20260903_ZH.md`；formal JSON 位于 `artifacts/2026-09-03_iqn_vxy_stage2_cross_retention_formal100/`。
+
+### 22.4 后续大方向：只登记，未启动
+
+1. **Matched Final IQN-AW / IQN-VXY：** 以 `configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/` 为严格基准，冻结4v1 scratch2M → 8v2 warm700k → 12v3 warm700k及 CR-MS/VCT-LS/CE/support/mixed/replay/recovery；首轮只改 AW9 → body-frame rate-limited VXY9，matched 比较学习速度、best/final、capture、pure/mixed CE、collision、sample efficiency 和多 stage 稳定性。`TODO / NOT_STARTED`。
+2. **IQN → MAPPO policy pretraining/distillation：** 强 IQN-AW → local observation + greedy AW9 dataset → 同 Legacy feature backbone 监督预训练 MAPPO-9 Actor → imitation formal eval → MAPPO-v2 fine-tune → 比较前后 capture/collision/策略退化速度，区分从零发现困难与 PPO 更新破坏。`TODO / NOT_STARTED`。
+
+本回合没有创建上述长训、训练队列或 supervisor。
