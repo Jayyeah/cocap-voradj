@@ -98,3 +98,7 @@ Warm-start在75k就达到20/20 formal CE，证明VXY9 coverage skill本身并非
 - warm selected `step_75000.pt`，SHA-256 `a7e2e930ee9c86fa2156d4d2518c9e060f2b69053d9e31235a2cc0ffb72138d0`；
 - scratch selected `step_500000.pt`，SHA-256 `90707d1c0e8df38d85270e26a364fda9fb526a0bba98174e379606ada9fd3a62`；
 - 两者均有 `formal_manifest.json`、`FORMAL_DONE`、20 records、10 GIF且无 failures。
+
+## 9. 2026-09-03 实际状态复核
+
+`2026-09-03 08:52 CST` 现场核对：queue supervisor 状态仍为 `queue_complete`（最后更新 `2026-09-02 22:15:54 CST`），GPU0 显存 `15/48525 MiB`、无 compute app，未发现 Stage3 或 Pure-Coverage 残留训练/筛选进程。故本线已完全收尾，后续不再给 GPU0 排队 ETA；上述 warm-start/scratch formal 结果可作为最终隔离结论。

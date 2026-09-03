@@ -105,3 +105,19 @@ seed1/seed2均自然完成 `400000/400000`，各16个25k评估节点、轻量che
 两seed的 centralized-Q 拟合和梯度健康，但 deterministic policy没有出现capture；因此当前证据不支持“仅把V换成counterfactual Q就缩小MAPPO gap”。3-seed gate仍不能提前封版，也不能把这两个seed的健康优化误写成算法PASS。
 
 seed3当前未启动，supervisor状态为 `waiting_for_exclusive_gpu1`。GPU1唯一compute app是范围外的 OmniVLA 服务：PID `487833`，命令 `limo_adapter.server_omnivla_full`，占用约17,006 MiB；未对其执行kill或重启。按seed1/2观测，GPU1一旦释放，seed3的400k训练预计约 `8.2–8.5 h`，再加最后评估与gate约数分钟；释放时间本身不可从仓库推定，故当前ETA是“外部GPU1释放后约8.5小时”，不是确定日历时间。supervisor会自动保留等待并在GPU独占后启动。
+
+## 9. 2026-09-03 实际状态复核
+
+截至 `2026-09-03 08:52 CST`，本节只记录现场状态，不改写第8节的结果：
+
+```text
+GPU1: 17029 MiB used / 31511 MiB free / 0% util
+PPO-CF supervisor: tmux=cocap_ppo_cf_supervisor_gpu1, PID=265176
+supervisor state: waiting_for_exclusive_gpu1, seed=3
+blocking compute app: PID=487833, python -m limo_adapter.server_omnivla_full, ~17006 MiB
+seed1: 400k COMPLETE; seed2: 400k COMPLETE; seed3: not started
+```
+
+seed1/2的400k终点评估均为 deterministic capture `0/20`、collision `0/20`；Q chosen/baseline分别约 `12.73/12.73` 与 `9.27/9.26`，Q span `1.34/1.15`，critic loss `.0080/.0203`，explained variance `.976/.826`，`A_CF` std约`.266`，没有出现NaN/Inf、KL/clip或Q/grad失控。结论仍是 `HEALTHY_NO_CLEAR_IMPROVEMENT_OVER_MAPPO9_V2` 的候选，而不是 counterfactual credit PASS；正式三seed gate必须等待seed3。
+
+GPU0已空闲，未发现本线训练子进程。seed3只有在外部PID释放且GPU1独占检查通过后才会自动启动；按seed1/2含评估墙钟约 `8.2–8.5 h`，另加收尾 formal/gate 数分钟。外部服务释放时刻不可从仓库推定，因此不报日历 ETA。当前磁盘约 `40.3 GiB` 可用、RAM available 约 `100.6 GiB`。

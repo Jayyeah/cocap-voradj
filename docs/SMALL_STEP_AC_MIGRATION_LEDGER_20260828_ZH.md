@@ -657,3 +657,19 @@ MAPPO-AW-v2确认continuous AC有学习信号但仍弱于离散父实验后，GP
 ### 20.2 当前结论与剩余线
 
 截至2026-09-02：GPU0 Stage3 12v3已正式PASS；其后Pure-Coverage warm-start正式CE `1.00`、scratch正式CE `.45`，完成“coverage可恢复但scratch较弱”的隔离结论。GPU1 PPO-CF seed1/2均400k COMPLETE、deterministic capture均0且优化健康；seed3因范围外PID `487833` 占用GPU1而处于安全等待，释放后ETA约8.5小时。不得提前用两seed结果封三seed gate。
+
+### 20.3 2026-09-03 快速总状态
+
+现场复核（`08:52 CST`）后的总表：
+
+| 线 | 当前状态 | 已完成结论 | 剩余 ETA |
+| --- | --- | --- | --- |
+| IQN-VXY Stage3 12v3 | COMPLETE | formal capture `.90`、standalone CE `1.00`、mixed capture/CE `.90/.90`；六项 gate checks PASS | 已完成 |
+| IQN-VXY Pure-Coverage warm | COMPLETE | 75k selected，formal CE `1.00`，CV≤.15 `.90`，collision/boundary `0/0` | 已完成 |
+| IQN-VXY Pure-Coverage scratch | COMPLETE | 500k selected，formal CE `.45`，CV≤.15 `.30`，collision/boundary `0/0` | 已完成 |
+| MAPPO-9-v2 | COMPLETE | mean best deterministic capture/collision `21.67%/78.33%`，通过离散 AC 桥接门槛 | 已完成 |
+| MAPPO-AW-v2 | COMPLETE | mean best deterministic capture/collision `8.33%/85.00%`，优化健康但弱于离散父线 | 已完成 |
+| PPO-CF seed1/2 | COMPLETE | 两seed 400k，deterministic capture 均 `0/20`，Q/critic/PPO 数值健康 | 已完成；暂不封三seed gate |
+| PPO-CF seed3 | WAITING | 未启动；supervisor 安全等待 GPU1 独占 | 外部 PID 487833 释放后约 `8.2–8.5 h` + 数分钟 formal/gate |
+
+GPU0 当前显存 `15/48525 MiB`、无 compute app；GPU1 显存 `17029/49140 MiB`，唯一 compute app 为范围外 OmniVLA PID `487833`。PPO-CF supervisor 仍在 tmux `cocap_ppo_cf_supervisor_gpu1`（PID `265176`），不会杀死或重启该外部服务。当前磁盘约 `40.3 GiB` 可用、RAM available 约 `100.6 GiB`。因此剩余唯一实验线是 PPO-CF seed3，ETA 必须写成条件 ETA，不能给出确定日历时间。
