@@ -82,6 +82,43 @@ Matched 证据本身把 **VXY servo/action dynamics** 标为强机制候选：
 - 原dataset/Gate tmux均自然结束；外部 OmniVLA PID `1276759` 未触碰。
 - GPU0 matched 已完成并释放；没有 VXY correction 训练。
 
-当前 PPO 状态：`GATE_PASS / READY_FOR_TWO_BRANCHES`。下一步从同一 SHA 的BC Actor实现/启动 Direct PPO control与critic warm-up主线。
+当前 PPO 状态：`GATE_PASS / TWO_BRANCHES_ACTIVE`。两支均从同一 SHA 的 BC Actor 启动，见第4节。
 
-NEXT WAKE-UP: after the two PPO branches start, first compare their earliest deterministic eval against the frozen BC Gate (`capture=1.00`, `collision=.03`, `length=71.16`).
+## 4. 用户授权长训与 BC 两分支启动（2026-09-03 22:15 CST）
+
+### 4.1 VXY support11 三阶段课程
+
+用户授权首条唯一变量实验已启动：support capture/coverage reward weight 由 `.5/.5` 同时改为 `1/1`，保持二者比例 `1:1`；其余算法、环境、VXY9 servo/action dynamics、阶段继承、fixed-midpoint评估与25k checkpoint合同不变。Stage1/2/3预算均为1,000,000步，严格resolved-config diff测试PASS。Stage1完成后按既有selection与formal合同自动进入Stage2，再进入Stage3；不覆盖历史checkpoint，rolling resume使用独立`/dev/shm/iqn_vxy_support11_1m_20260903/`路径。
+
+```text
+GPU: physical GPU0 / cuda:0
+SUPERVISOR: cocap_vxy_support11_supervisor_gpu0 / PID 1510158
+ACTIVE: cocap_vxy_support11_1m_20260903_s1_4p1e1obs_train / PID 1510169
+SCREEN/FINALIZE: matching Stage1 tmux active, waiting for 25k/final selection
+SNAPSHOT: 2026-09-03 22:17 CST, step=2,000/1,000,000, finite_metrics=true
+CHECKPOINT: 0 milestones；首个step_25000.pt尚未产生
+GPU0: 397 MiB，3% utilization，约53°C
+```
+
+2k仍是replay warm-up，不能用其瞬时速度外推。按既有VXY同规模历史墙钟估计，Stage1约15–20小时，Stage2约18–24小时，Stage3约22–30小时；全课程中央ETA约2.5天（约2026-09-06上午），首个25k后应按真实训练态吞吐收紧。任何阶段失败均由supervisor保留真实Gate记录，不改写为PASS。
+
+### 4.2 同一 BC Actor 的 Direct PPO / critic warm-up 对照
+
+两支严格共享 `distilled_actor.pt` 与 SHA `bb8f971201f6e0a55af3ccb62bcae117f96afa1b07fad2c95c3da1dc552fa35e`，均使用MAPPO-9-v2 exact target环境、fresh central critic、25k checkpoint与resume。Direct预算100k；warm-up总预算110k，其中Actor冻结至少10k，EV≥.20连续2次后可切PPO，最迟25k强制结束warm-up，因此后续PPO预算85k–100k。critic target始终是MAPPO return/value，不复制IQN Q。
+
+```text
+GPU: physical GPU1（CUDA_VISIBLE_DEVICES=1，进程内cuda:0）
+SUPERVISOR: cocap_bc_ppo_supervisor_gpu1 / PID 1510162
+DIRECT: cocap_bc_direct_ppo_gpu1 / PID 1510173 / step 1,000/100,000
+WARM-UP: cocap_bc_warmup_ppo_gpu1 / PID 1510251 / step 1,000/110,000
+DIRECT throughput/ETA: 23.56 step/s / ~70 min
+WARM throughput/ETA: 22.56 step/s / ~81 min
+WARM CONTRACT: critic_only=1，actor_update_l2=0，EV=.2941，尚未到10k最小步数
+CHECKPOINT: 两支均0 milestones；首个25k尚未产生
+```
+
+GPU1同时存在不属于本任务的外部PID `1502230`（约2.45 GiB），未触碰。本任务两支约占6.92/6.03 GiB，总显存15.43/49.14 GiB；22:17瞬时89°C，但`HW/SW Thermal Slowdown`均未激活，slowdown/shutdown阈值95/98°C。supervisor每60秒记录资源；本轮不因单次温度读数打断健康训练。
+
+在两分支结束并完成同合同deterministic formal前不作优劣结论。判读锚点保持冻结BC Gate：capture `1.00`、collision `.03`、2+/3+ `.64/.12`、length `71.16`。若Direct退化而warm-up保持，默认主线转为distillation→critic warm-up→PPO；若二者都退化，下一阶段才讨论annealed teacher KL。
+
+NEXT WAKE-UP: when the BC branches finish (~2026-09-03 23:40 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/supervisor_status.json`, both final checkpoints/formal metrics, and compare them with the frozen BC Gate; also inspect the VXY Stage1 first 25k screening artifact.

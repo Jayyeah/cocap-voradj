@@ -334,4 +334,12 @@ paired 结论：Stage3 capture 仅 `+1pp`，95% bootstrap interval `[-3,+5]pp`�
 
 Stage3 在 capture-only 的2+/3+ episode rate 为 `.98/.40`，高于 Stage2 的 `.90/.25`；2+/3+ time fraction 为 `.1439/.01283`，高于 `.0761/.00636`，但首次3+（仅统计出现回合）为197.90步而非126.64步。这支持“更持久的 coverage-like ring geometry”，不支持“更早完成 capture”。所有 stationary capture 均为0。
 
-完整 formal100、support-latency、paired GIF 和合同/lineage 边界见 `docs/IQN_VXY_STAGE2_CROSS_RETENTION_AUDIT_20260903_ZH.md`。后续 matched Final-AW/VXY 与 IQN→MAPPO distillation 只登记为 TODO，本轮未启动长训。
+完整 formal100、support-latency、paired GIF 和合同/lineage 边界见 `docs/IQN_VXY_STAGE2_CROSS_RETENTION_AUDIT_20260903_ZH.md`。
+
+## 12. Final-AW matched结论归档与support11长训（2026-09-03）
+
+Stage2/Stage3 Final-AW↔VXY formal100 matched audit已完成；完整表、paired区间、teacher/BC Gate与运行状态集中记录在 `docs/IQN_AW_VXY_MATCHED_MAPPO_BC_LEDGER_20260903_ZH.md`。主结论是：Stage2 VXY capture成功率与AW相同但明显更慢；Stage3 VXY相对AW为capture `-10pp`、collision `+10pp`、detect→capture `+118.61`步、support→direct `+22.36`步，同时pure CE仍为`.99`。因此数据直接支持的首要机制候选仍是VXY servo/action dynamics，而非coverage能力不存在。
+
+按用户明确授权，首条唯一变量长训使用support capture/coverage reward weight `1/1`（原`.5/.5`），保持1:1相对比例并将support总信号放大2倍；其他合同不变。三阶段各1M步，配置位于 `configs/experiments/iqn_vxy_support11_1m_20260903/`，由 `tools/supervise_iqn_vxy_support11_1m_20260903.py` 自动串行编排。2026-09-03 22:15 CST已在GPU0启动；22:17 Stage1为2k/1M、finite、无checkpoint，trainer PID `1510169`，supervisor PID `1510158`。首个25k后重估吞吐；全课程历史证据化中央ETA约2.5天。
+
+本实验是用户授权的support-scale因果检验，不能把matched相关性改写成其必然有效；servo correction继续冻结，待support11与原VXY matched比较后再决定。
