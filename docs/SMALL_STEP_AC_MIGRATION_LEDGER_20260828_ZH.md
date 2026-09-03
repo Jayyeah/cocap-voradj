@@ -745,3 +745,13 @@ Stage3 的2+/3+ episode rate `.98/.40`、time fraction `.1439/.01283` 高于 Sta
 2. **IQN → MAPPO policy pretraining/distillation：** 强 IQN-AW → local observation + greedy AW9 dataset → 同 Legacy feature backbone 监督预训练 MAPPO-9 Actor → imitation formal eval → MAPPO-v2 fine-tune → 比较前后 capture/collision/策略退化速度，区分从零发现困难与 PPO 更新破坏。`TODO / NOT_STARTED`。
 
 本回合没有创建上述长训、训练队列或 supervisor。
+
+## 23. Matched Final-AW/VXY 与 IQN→MAPPO BC 启动（2026-09-03）
+
+Final-AW Stage2/3 与 VXY 已按相同合同/seeds/fixed-midpoint formal100。Stage2 capture同为`.97`，但VXY mean length多`148.19 [119.72,180.72]`步；Stage3 VXY相对AW capture `-10pp [-16,-4]pp`、collision `+10pp [+4,+16]pp`、length `+118.98 [106.08,132.78]`步，而pure CE仍为`.99`对`1.00`。证据把servo/action dynamics列为强机制候选；用户随后授权实际首条单变量长训为support capture/coverage权重`.5/.5→1/1`，三阶段各1M、其他合同不变。该变化保持1:1比例，只将support总信号放大2倍；servo不并行修改。
+
+IQN teacher exact-target formal100完成：三个Final-AW均capture `1.00`/collision `.01`，选择2+/3+覆盖最高的Stage2 300k（`.66/.14`）作为teacher。dataset最终600 episodes/171,052 rows；soft-KL Actor validation agreement `.96910`。pre-PPO formal100为capture/collision/2+/3+/length `1.00/.03/.64/.12/71.16`，agreement `.96605`，Gate四项全PASS且PPO update=0；可以从同一Actor SHA进入Direct PPO/critic warm-up双分支。相关测试`12 passed`，外部PID `1276759`未触碰。
+
+完整合同、表格、paired bootstrap、代码路径、PID与ETA见 `docs/IQN_AW_VXY_MATCHED_MAPPO_BC_LEDGER_20260903_ZH.md`；paired artifact为 `artifacts/2026-09-03_iqn_aw_vxy_matched_formal100/paired_report.json`。
+
+NEXT WAKE-UP: after the two PPO branches start, first compare their earliest deterministic eval against the frozen BC Gate (`capture=1.00`, `collision=.03`, `length=71.16`).

@@ -1,0 +1,41 @@
+{
+  "schema": "iqn-aw-teacher-qualification-decision-v1",
+  "exact_target_config": "configs/experiments/mappo9_v2_20260830/seed1.yaml",
+  "policy": "fixed_midpoint_32, epsilon=0, deterministic",
+  "episodes_per_checkpoint": 100,
+  "seed_base": 2026090301,
+  "candidates": {
+    "stage1_4v1": {
+      "capture_rate": 1.0,
+      "collision_rate": 0.01,
+      "episode_2plus_ring_rate": 0.45,
+      "episode_3plus_ring_rate": 0.02,
+      "mean_episode_length": 60.65
+    },
+    "stage2_8v2": {
+      "capture_rate": 1.0,
+      "collision_rate": 0.01,
+      "episode_2plus_ring_rate": 0.66,
+      "episode_3plus_ring_rate": 0.14,
+      "mean_episode_length": 73.25
+    },
+    "stage3_12v3": {
+      "capture_rate": 1.0,
+      "collision_rate": 0.01,
+      "episode_2plus_ring_rate": 0.48,
+      "episode_3plus_ring_rate": 0.02,
+      "mean_episode_length": 63.31
+    }
+  },
+  "selected_teacher": {
+    "label": "stage2_8v2",
+    "checkpoint": "artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage2_8v2_step_300000.pt",
+    "sha256": "ef58ae9bdd018633afee0d16f2242d2f157a6cc18611e41474f115aed254b87e",
+    "reason": "all candidates tie on capture/collision; Stage2 has the strongest 2+/3+ target-state coverage"
+  },
+  "source_formals": {
+    "stage1_4v1": "stage1_4v1.json",
+    "stage2_8v2": "stage2_8v2.json",
+    "stage3_12v3": "stage3_12v3.json"
+  }
+}

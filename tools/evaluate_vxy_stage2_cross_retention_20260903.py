@@ -53,11 +53,18 @@ BINARY_METRICS = {
     ),
 }
 CONTINUOUS_METRICS = {
-    "capture": ("length", "first_2plus_ring_step", "first_3plus_ring_step"),
+    "capture": (
+        "length", "first_detect_to_capture_steps", "first_2plus_ring_step",
+        "first_3plus_ring_step", "two_plus_to_three_plus_steps",
+        "support_to_direct_upgrade_steps_mean", "support_to_pursuing_upgrade_steps_mean",
+        "direct_speed_mean", "support_speed_mean",
+    ),
     "coverage": ("length", "final_cv", "best_cv", "centroid_rms", "centroid_max"),
     "mix": (
         "length", "post_capture_steps", "post_capture_ce_step", "final_cv",
-        "best_cv", "centroid_rms", "centroid_max",
+        "best_cv", "centroid_rms", "centroid_max", "first_detect_to_capture_steps",
+        "two_plus_to_three_plus_steps", "support_to_direct_upgrade_steps_mean",
+        "support_to_pursuing_upgrade_steps_mean", "direct_speed_mean", "support_speed_mean",
     ),
 }
 
@@ -201,7 +208,7 @@ def update_role_audit(
     speeds: Sequence[float], velocities: Sequence[np.ndarray], thetas: Sequence[float],
     clearances: Sequence[float], contexts: Sequence[Mapping[str, Any]],
     after_pursuer_positions: np.ndarray, after_evader_positions: np.ndarray,
-    step: int, grid: np.ndarray, acceleration_budget: float,
+    step: int, grid: np.ndarray | None, acceleration_budget: float,
 ) -> None:
     for index, info in enumerate(infos):
         metadata = dict(info.get("replay_metadata", {}) or {})
@@ -221,7 +228,7 @@ def update_role_audit(
                 audit[key][index] = int(step)
         action = actions[index] if index < len(actions) else None
         velocity_error = None
-        if action is not None:
+        if action is not None and grid is not None:
             desired_world = body_to_world(grid[int(action)], float(thetas[index]))
             velocity_error = float(np.linalg.norm(desired_world - np.asarray(velocities[index], dtype=float)))
         if direct:
@@ -309,26 +316,39 @@ def finish_role_audit(audit: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def prepare_config(base: Mapping[str, Any], scenario: str, episode_index: int) -> tuple[dict[str, Any], str, int]:
+def prepare_config(
+    base: Mapping[str, Any], scenario: str, episode_index: int,
+    *, num_evaders: int = 2, capture_horizon: int = 1000,
+    coverage_horizon: int = 1500, mix_horizon: int = 2500,
+) -> tuple[dict[str, Any], str, int]:
     if scenario == "capture":
-        return scenario_config(dict(base), 2, task_name="voradj"), "", 1000
+        return scenario_config(dict(base), int(num_evaders), task_name="voradj"), "", int(capture_horizon)
     if scenario == "coverage":
         coverage_base, source = coverage_rollout_config(dict(base), int(episode_index))
-        return scenario_config(coverage_base, 0, task_name="voradj_coverage"), source, 1500
-    return scenario_config(dict(base), 2, mix_mode=True, task_name="voradj"), "", 2500
+        return scenario_config(coverage_base, 0, task_name="voradj_coverage"), source, int(coverage_horizon)
+    return scenario_config(dict(base), int(num_evaders), mix_mode=True, task_name="voradj"), "", int(mix_horizon)
 
 
 @torch.no_grad()
 def run_episode(
     model: CoCapIQN, base: Mapping[str, Any], scenario: str, seed: int,
-    episode_index: int, device: str,
+    episode_index: int, device: str, *, action_contract: str = "vxy9",
+    num_evaders: int = 2, capture_horizon: int = 1000,
+    coverage_horizon: int = 1500, mix_horizon: int = 2500,
 ) -> dict[str, Any]:
-    cfg, coverage_source, horizon = prepare_config(base, scenario, episode_index)
+    cfg, coverage_source, horizon = prepare_config(
+        base, scenario, episode_index, num_evaders=num_evaders,
+        capture_horizon=capture_horizon, coverage_horizon=coverage_horizon,
+        mix_horizon=mix_horizon,
+    )
     set_global_config(cfg)
     env = VorAdjEnv(copy.deepcopy(cfg), seed=int(seed))
     observations = env.reset()
     apf_agents = [ApfAgent(evader.a, evader.w) for evader in env.evaders]
-    grid = vxy9_body_grid(float((cfg.get("pursuer", {}) or {}).get("v_max", 3.0)))
+    grid = (
+        vxy9_body_grid(float((cfg.get("pursuer", {}) or {}).get("v_max", 3.0)))
+        if str(action_contract) == "vxy9" else None
+    )
     decision_dt = float(env.pursuers[0].dt) * int(env.pursuers[0].N)
     acceleration_limit = float((cfg.get("action", {}) or {}).get("servo_acceleration_limit", 0.4))
     acceleration_budget = acceleration_limit * decision_dt
@@ -400,11 +420,20 @@ def run_episode(
     post_capture_survival = bool(
         captured and record.get("all_pursuers_active", False) and not post_capture_collision
     )
+    role_result = finish_role_audit(audit)
+    first_detect = role_result["first_direct_enemy_seen_step"]
+    first_2plus = first_step(ring_counts, 2)
+    first_3plus = first_step(ring_counts, 3)
     result = {
         "seed": int(seed), "episode_index": int(episode_index), "scenario": scenario,
         "coverage_init_source": coverage_source, "length": int(record.get("length", env.episode_step)),
         "captured": captured, "normal_capture": bool(normal), "stationary_capture": bool(stationary),
         "capture_types": capture_types, "capture_step": capture_step,
+        "first_detect_to_capture_steps": (
+            int(capture_step - first_detect)
+            if capture_step is not None and first_detect is not None and capture_step >= first_detect
+            else None
+        ),
         "coverage_success": coverage_success, "collision": collision,
         "boundary_collision": bool(record.get("boundary_collision_event", False)),
         "agent_agent_collision": bool(record.get("agent_agent_collision_event", False)),
@@ -428,13 +457,18 @@ def run_episode(
         "episode_end_max_speed": finite_or_none(record.get("episode_end_max_speed")),
         "episode_return_mean": float(np.mean(episode_return)),
         "episode_return_sum": float(np.sum(episode_return)),
-        "first_2plus_ring_step": first_step(ring_counts, 2),
-        "first_3plus_ring_step": first_step(ring_counts, 3),
+        "first_2plus_ring_step": first_2plus,
+        "first_3plus_ring_step": first_3plus,
+        "two_plus_to_three_plus_steps": (
+            int(first_3plus - first_2plus)
+            if first_2plus is not None and first_3plus is not None and first_3plus >= first_2plus
+            else None
+        ),
         "steps_2plus_ring": int(sum(value >= 2 for value in ring_counts)),
         "steps_3plus_ring": int(sum(value >= 3 for value in ring_counts)),
         "max_2plus_ring_hold": max_hold(ring_counts, 2),
         "max_3plus_ring_hold": max_hold(ring_counts, 3),
-        **finish_role_audit(audit),
+        **role_result,
     }
     return result
 
@@ -455,6 +489,7 @@ def summarize(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "steps_2plus_ring", "steps_3plus_ring", "max_2plus_ring_hold", "max_3plus_ring_hold",
         "first_direct_enemy_seen_step", "first_support_pursuing_neighbor_step",
         "first_support_neighbor_visible_target_step", "agents_ever_direct", "agents_ever_support",
+        "first_detect_to_capture_steps", "two_plus_to_three_plus_steps",
         "support_to_direct_upgrade_steps_mean", "support_to_pursuing_upgrade_steps_mean",
         "direct_speed_mean", "support_speed_mean", "support_enemy_progress_mean",
         "support_friend_progress_mean", "support_capture_reward_mean", "support_coverage_reward_mean",
@@ -531,19 +566,38 @@ def parse_model_spec(value: str) -> tuple[str, Path, str]:
 
 
 def validate_stage2_contract(config: Mapping[str, Any]) -> dict[str, bool]:
-    resolved_capture = scenario_config(dict(config), 2, task_name="voradj")
+    return validate_matched_contract(
+        config, expected_pursuers=8, expected_evaders=2, expected_obstacles=2,
+        action_contract="vxy9",
+    )
+
+
+def validate_matched_contract(
+    config: Mapping[str, Any], *, expected_pursuers: int, expected_evaders: int,
+    expected_obstacles: int, action_contract: str,
+) -> dict[str, bool]:
+    resolved_capture = scenario_config(dict(config), int(expected_evaders), task_name="voradj")
     env = dict(resolved_capture.get("env", {}) or {})
     action = dict(config.get("action", {}) or {})
+    pursuer = dict(config.get("pursuer", {}) or {})
     iqn = dict(config.get("iqn", {}) or {})
+    if action_contract not in {"aw9", "vxy9"}:
+        raise ValueError(f"unsupported action contract: {action_contract}")
+    action_ok = (
+        str(action.get("mode", "")) == "discrete_desired_velocity_2d_body"
+        and str(env.get("action_mode", "")) == "vxy9"
+        if action_contract == "vxy9"
+        else str(pursuer.get("action_mode", "unicycle")).lower() in {"unicycle", "unicycle_discrete"}
+    )
     checks = {
-        "8p2e2obs": int(env.get("num_pursuers", -1)) == 8 and int(env.get("num_evaders", -1)) == 2 and int(env.get("num_obstacles", -1)) == 2,
-        "vxy9": str(action.get("mode", "")) == "discrete_desired_velocity_2d_body" and str(env.get("action_mode", "")) == "vxy9",
-        "legacy_collision": str(env.get("collision_semantics", "")) == "legacy_end_step",
+        "stage_shape": int(env.get("num_pursuers", -1)) == int(expected_pursuers) and int(env.get("num_evaders", -1)) == int(expected_evaders) and int(env.get("num_obstacles", -1)) == int(expected_obstacles),
+        "action_contract": bool(action_ok),
+        "legacy_collision": str(env.get("collision_semantics", "legacy_end_step")) == "legacy_end_step",
         "iqn32": int(iqn.get("action_quantile_samples", -1)) == 32,
     }
     failed = [key for key, value in checks.items() if not value]
     if failed:
-        raise ValueError(f"not the frozen Stage2 VXY formal contract: {failed}")
+        raise ValueError(f"not the frozen matched formal contract: {failed}")
     return checks
 
 
@@ -560,7 +614,12 @@ def worker_main(args: argparse.Namespace) -> int:
     for scenario in args.scenarios:
         for episode_index in range(int(args.start_index), int(args.end_index)):
             seed = int(args.seed) + episode_index
-            payload[scenario].append(run_episode(model, base, scenario, seed, episode_index, str(args.device)))
+            payload[scenario].append(run_episode(
+                model, base, scenario, seed, episode_index, str(args.device),
+                action_contract=str(args.action_contract), num_evaders=int(args.expected_evaders),
+                capture_horizon=int(args.capture_horizon), coverage_horizon=int(args.coverage_horizon),
+                mix_horizon=int(args.mix_horizon),
+            ))
     atomic_json(Path(args.worker_output), {
         "schema": SCHEMA, "model": args.worker_model, "start_index": args.start_index,
         "end_index": args.end_index, "records": payload, "wall_seconds": time.time() - started,
@@ -579,6 +638,13 @@ def main() -> int:
     parser.add_argument("--workers-per-model", type=int, default=10)
     parser.add_argument("--scenarios", nargs="+", choices=SCENARIOS, default=list(SCENARIOS))
     parser.add_argument("--baseline", default="stage2_600k")
+    parser.add_argument("--action-contract", choices=("aw9", "vxy9"), default="vxy9")
+    parser.add_argument("--expected-pursuers", type=int, default=8)
+    parser.add_argument("--expected-evaders", type=int, default=2)
+    parser.add_argument("--expected-obstacles", type=int, default=2)
+    parser.add_argument("--capture-horizon", type=int, default=1000)
+    parser.add_argument("--coverage-horizon", type=int, default=1500)
+    parser.add_argument("--mix-horizon", type=int, default=2500)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--checkpoint", help=argparse.SUPPRESS)
     parser.add_argument("--worker-model", help=argparse.SUPPRESS)
@@ -595,7 +661,10 @@ def main() -> int:
 
     config_path = Path(args.config).resolve()
     base = load_config(config_path)
-    checks = validate_stage2_contract(base)
+    checks = validate_matched_contract(
+        base, expected_pursuers=int(args.expected_pursuers), expected_evaders=int(args.expected_evaders),
+        expected_obstacles=int(args.expected_obstacles), action_contract=str(args.action_contract),
+    )
     output_root = Path(args.output_root).resolve()
     output_root.mkdir(parents=True, exist_ok=True)
     model_specs: list[tuple[str, Path, str]] = []
@@ -615,11 +684,12 @@ def main() -> int:
     manifest = {
         "schema": SCHEMA, "status": "running", "created_at": now(), "git_revision": revision,
         "config": str(config_path), "config_file_sha256": sha256_file(config_path),
-        "resolved_config_sha256": stable_hash(base), "stage2_contract_checks": checks,
-        "policy": {"epsilon": 0.0, "quantiles": "fixed_midpoint_32"},
+        "resolved_config_sha256": stable_hash(base), "matched_contract_checks": checks,
+        "policy": {"epsilon": 0.0, "quantiles": "fixed_midpoint_32", "action_contract": str(args.action_contract)},
         "paired_seed_base": int(args.seed), "paired_seeds": [int(args.seed) + i for i in range(int(args.episodes))],
         "episodes_per_model_scenario": int(args.episodes), "scenarios": list(args.scenarios),
-        "caps": {"capture": 1000, "coverage": 1500, "mix": 2500},
+        "stage_shape": {"pursuers": int(args.expected_pursuers), "evaders": int(args.expected_evaders), "obstacles": int(args.expected_obstacles)},
+        "caps": {"capture": int(args.capture_horizon), "coverage": int(args.coverage_horizon), "mix": int(args.mix_horizon)},
         "coverage_initialization": "global episode-index alternating map_random/inner_random_cluster",
         "device": str(args.device), "workers_per_model": int(args.workers_per_model),
         "models": {label: {"checkpoint": str(path), "sha256": sha} for label, path, sha in model_specs},
@@ -645,6 +715,11 @@ def main() -> int:
                 "--start-index", str(start), "--end-index", str(end),
                 "--worker-output", str(worker_output), "--seed", str(args.seed),
                 "--device", str(args.device), "--scenarios", *list(args.scenarios),
+                "--action-contract", str(args.action_contract),
+                "--expected-evaders", str(args.expected_evaders),
+                "--capture-horizon", str(args.capture_horizon),
+                "--coverage-horizon", str(args.coverage_horizon),
+                "--mix-horizon", str(args.mix_horizon),
             ]
             handle = worker_log.open("wb")
             process = subprocess.Popen(command, cwd=ROOT, stdout=handle, stderr=subprocess.STDOUT)
