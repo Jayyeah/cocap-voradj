@@ -134,3 +134,20 @@ GPU0已空闲，未发现本线训练子进程。seed3只有在外部PID释放�
 这支持“centralized-Q 拟合/优化健康，但简单 V→counterfactual Q 尚未带来 capture 改善”的两 seed provisional 判断；不能提前改写成三 seed final negative。seed3 尚未启动，supervisor 为 `waiting_for_exclusive_gpu1`，外部 GPU1 PID `487833` 未被触碰。其条件 ETA 是外部进程释放后约 `8.2–8.5 h`，再加最后 formal/gate 数分钟。
 
 若 seed3 也在健康优化下保持 deterministic capture `0/20`，再将 gate 封为 `HEALTHY_NO_CLEAR_IMPROVEMENT_OVER_MAPPO9_V2`，停止无依据地继续增加 critic 复杂度；若出现 Q/grad/return 尺度失控，则先按实现/尺度问题审计，不能直接解释为算法失败。
+
+## 11. 2026-09-03 用户授权 2-seed 封板
+
+用户已明确要求关闭 PPO-CF seed3，后续不再继续本线。现场已关闭 PPO-CF supervisor 进程组（bash/Python PID `265175/265176`）及 tmux `cocap_ppo_cf_supervisor_gpu1`；外部 OmniVLA PID `487833` 未触碰。seed3 从未启动，因此不产生新的 checkpoint 或 evaluation。
+
+在已完成的两 seed 范围内，正式封板结论为：
+
+```text
+FINAL_SCOPE: 2 seeds (seed1/seed2), 400k each
+seed1 deterministic capture: 0/20
+seed2 deterministic capture: 0/20
+optimization: healthy (finite Q/critic/EV/gradient/KL)
+decision: HEALTHY_NEGATIVE_2SEED_NO_CLEAR_IMPROVEMENT_OVER_MAPPO9_V2
+next_action: stop PPO-CF critic stacking; do not resume seed3
+```
+
+这是一项用户授权的 2-seed final negative result，不等价于原先预声明的三 seed 统计 gate；后续若需三 seed 证据，必须另开新实验并重新声明合同。
