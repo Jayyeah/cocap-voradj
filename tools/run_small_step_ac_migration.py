@@ -375,7 +375,7 @@ def restore(path, trainer, config, algorithm):
     return int(payload["step"]), payload["replay"], payload["rollout"], payload["env"], payload["observations"], rng, payload.get("last_metrics", {})
 
 
-def evaluate(trainer, algorithm, root_config, config, step, run_dir, episodes, max_steps):
+def evaluate(trainer, algorithm, root_config, config, step, run_dir, episodes, max_steps, modes=None, seed=None):
     view = policy_view(trainer, algorithm, config)
     evaluation_root = copy.deepcopy(root_config)
     if algorithm == "iqn_vxy9":
@@ -393,14 +393,16 @@ def evaluate(trainer, algorithm, root_config, config, step, run_dir, episodes, m
         evaluation_root["actor"]["max_pursuers"] = int(config["actor"]["max_pursuers"])
         evaluation_root["tasks"]["capture"].setdefault("actor", {})["max_pursuers"] = int(config["actor"]["max_pursuers"])
     rows = {}
+    evaluation_seed = int(config["small_step_ac"]["evaluation_seed"] if seed is None else seed)
     actor_training = bool(view.actor.training)
     saved_rng = {"python": random.getstate(), "numpy": np.random.get_state(), "torch": torch.get_rng_state(),
                  "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []}
     try:
         view.actor.eval()
-        for mode_index, (deterministic, label) in enumerate(((True, "deterministic"), (False, "stochastic"))):
-            seed_all(int(config["small_step_ac"]["evaluation_seed"]) + mode_index * 1000000)
-            rows[label] = _screen(view, evaluation_root, int(config["small_step_ac"]["evaluation_seed"]), episodes, str(trainer.device),
+        evaluation_modes = modes or ((True, "deterministic"), (False, "stochastic"))
+        for mode_index, (deterministic, label) in enumerate(evaluation_modes):
+            seed_all(evaluation_seed + mode_index * 1000000)
+            rows[label] = _screen(view, evaluation_root, evaluation_seed, episodes, str(trainer.device),
                                   scenes=("capture",), max_steps=max_steps, deterministic=deterministic)
     finally:
         view.actor.train(actor_training); random.setstate(saved_rng["python"]); np.random.set_state(saved_rng["numpy"])
@@ -420,6 +422,8 @@ def parse_args():
     parser.add_argument("--critic-warmup-min-steps", type=int, default=0)
     parser.add_argument("--critic-warmup-ev-threshold", type=float, default=0.0)
     parser.add_argument("--critic-warmup-ev-streak", type=int, default=2)
+    parser.add_argument("--eval-only", action="store_true")
+    parser.add_argument("--eval-seed", type=int)
     return parser.parse_args()
 
 
@@ -465,11 +469,34 @@ def main() -> int:
             raise ValueError("unsupported distilled actor checkpoint schema")
         trainer.actor.load_state_dict(payload["actor_state_dict"], strict=True)
     rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS); set_global_config(config); env = VorAdjEnv(config, seed=int(config["seed"])); observations = env.reset(); step = 0; last_metrics = {}
+    if args.eval_only and not args.resume:
+        raise ValueError("--eval-only requires --resume")
     if args.resume: step, replay, rollout, env, observations, rng, last_metrics = restore(Path(args.resume), trainer, config, algorithm)
     warmup_complete_at = int(last_metrics.get("critic_warmup_complete_at", -1))
     warmup_ev_streak = int(last_metrics.get("critic_warmup_ev_streak", 0))
     warmup_complete = warmup_contract["max_steps"] == 0 or warmup_complete_at >= 0
-    run_dir.mkdir(parents=True, exist_ok=True); (run_dir / "effective_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    run_dir.mkdir(parents=True, exist_ok=True)
+    if args.eval_only:
+        eval_rows = evaluate(
+            trainer, algorithm, root_config, config, step, run_dir,
+            eval_episodes, eval_max_steps, modes=((True, "deterministic"),), seed=args.eval_seed,
+        )
+        atomic_json(run_dir / "formal100_report.json", {
+            "schema": "small-step-ac-deterministic-formal-v1",
+            "status": "complete",
+            "algorithm": algorithm,
+            "step": int(step),
+            "episodes": int(eval_episodes),
+            "evaluation_seed": int(args.eval_seed if args.eval_seed is not None else config["small_step_ac"]["evaluation_seed"]),
+            "checkpoint": str(Path(args.resume).resolve()),
+            "checkpoint_sha256": sha256_file(Path(args.resume).resolve()),
+            "config_hash": stable_hash(config),
+            "bc_ppo_initialization": config.get("bc_ppo_initialization"),
+            "last_training_metrics": last_metrics,
+            "evaluation": eval_rows,
+        })
+        return 0
+    (run_dir / "effective_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     atomic_json(run_dir / "manifest.json", {"schema": SCHEMA, "algorithm": algorithm, "seed": config["seed"], "device": device,
                                             "config": str(config_path), "config_hash": stable_hash(config),
                                             "bc_ppo_initialization": config.get("bc_ppo_initialization"), "pid": os.getpid(), "started": time.time()})
