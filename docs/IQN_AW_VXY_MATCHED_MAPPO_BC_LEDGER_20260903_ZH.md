@@ -94,13 +94,13 @@ Matched 证据本身把 **VXY servo/action dynamics** 标为强机制候选：
 GPU: physical GPU0 / cuda:0
 SUPERVISOR: cocap_vxy_support11_supervisor_gpu0 / PID 1510158
 ACTIVE: cocap_vxy_support11_1m_20260903_s1_4p1e1obs_train / PID 1510169
-SCREEN/FINALIZE: matching Stage1 tmux active, waiting for 25k/final selection
-SNAPSHOT: 2026-09-03 22:17 CST, step=2,000/1,000,000, finite_metrics=true
-CHECKPOINT: 0 milestones；首个step_25000.pt尚未产生
-GPU0: 397 MiB，3% utilization，约53°C
+SCREEN/FINALIZE: matching Stage1 tmux active；25k screening已完成
+SNAPSHOT: 2026-09-03 22:31 CST, step=32,000/1,000,000, finite_metrics=true
+CHECKPOINT: 1 milestone；`stage1_4p1e1obs_support11_1m/checkpoints/step_25000.pt`
+GPU0: 739 MiB，约7–16% utilization，66°C
 ```
 
-2k仍是replay warm-up，不能用其瞬时速度外推。按既有VXY同规模历史墙钟估计，Stage1约15–20小时，Stage2约18–24小时，Stage3约22–30小时；全课程中央ETA约2.5天（约2026-09-06上午），首个25k后应按真实训练态吞吐收紧。任何阶段失败均由supervisor保留真实Gate记录，不改写为PASS。
+首个25k deterministic20仅作早期基线：capture `.10` / collision `.90`，coverage CE `0` / collision `.85`，mix capture `.10` / CE `0` / collision `.95`；这是scratch早期节点，不据此判定support11有效或失败。启动后16分钟到32k的gross throughput约33 step/s；考虑后续训练态与screen开销，Stage1暂估9–14小时，Stage2约18–24小时，Stage3约22–30小时，全课程约2–2.8天（中央约2026-09-06清晨）。任何阶段失败均由supervisor保留真实Gate记录，不改写为PASS。
 
 ### 4.2 同一 BC Actor 的 Direct PPO / critic warm-up 对照
 
@@ -123,4 +123,4 @@ GPU1同时存在不属于本任务的外部PID `1502230`（约2.45 GiB），未�
 
 在两分支结束并完成同合同deterministic formal前不作优劣结论。判读锚点保持冻结BC Gate：capture `1.00`、collision `.03`、2+/3+ `.64/.12`、length `71.16`。若Direct退化而warm-up保持，默认主线转为distillation→critic warm-up→PPO；若二者都退化，下一阶段才讨论annealed teacher KL。
 
-NEXT WAKE-UP: when both BC terminal formal100 reports finish (~2026-09-04 00:30 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/formal100/supervisor_status.json` and compare Direct/Warm with the frozen BC Gate; also inspect the VXY Stage1 first 25k screening artifact.
+NEXT WAKE-UP: when both BC terminal formal100 reports finish (~2026-09-04 00:30 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/formal100/supervisor_status.json` and compare Direct/Warm with the frozen BC Gate; then compare the latest VXY Stage1 screening against the archived 25k baseline.
