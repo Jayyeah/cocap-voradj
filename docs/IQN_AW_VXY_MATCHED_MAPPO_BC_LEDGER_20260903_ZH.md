@@ -109,16 +109,18 @@ GPU0: 397 MiB，3% utilization，约53°C
 ```text
 GPU: physical GPU1（CUDA_VISIBLE_DEVICES=1，进程内cuda:0）
 SUPERVISOR: cocap_bc_ppo_supervisor_gpu1 / PID 1510162
-DIRECT: cocap_bc_direct_ppo_gpu1 / PID 1510173 / step 1,000/100,000
-WARM-UP: cocap_bc_warmup_ppo_gpu1 / PID 1510251 / step 1,000/110,000
-DIRECT throughput/ETA: 23.56 step/s / ~70 min
-WARM throughput/ETA: 22.56 step/s / ~81 min
-WARM CONTRACT: critic_only=1，actor_update_l2=0，EV=.2941，尚未到10k最小步数
+DIRECT: cocap_bc_direct_ppo_gpu1 / PID 1510173 / step 20,000/100,000
+WARM-UP: cocap_bc_warmup_ppo_gpu1 / PID 1510251 / step 19,000/110,000
+DIRECT throughput/ETA: 23.34 step/s / ~57 min
+WARM throughput/ETA: 22.45 step/s / ~68 min
+WARM CONTRACT: step 12,032达到EV≥.20连续2次，Actor随后解冻；19k时ppo_env_steps=6,912
 CHECKPOINT: 两支均0 milestones；首个25k尚未产生
 ```
 
-GPU1同时存在不属于本任务的外部PID `1502230`（约2.45 GiB），未触碰。本任务两支约占6.92/6.03 GiB，总显存15.43/49.14 GiB；22:17瞬时89°C，但`HW/SW Thermal Slowdown`均未激活，slowdown/shutdown阈值95/98°C。supervisor每60秒记录资源；本轮不因单次温度读数打断健康训练。
+GPU1同时存在不属于本任务的外部PID `1502230`（约2.45 GiB），未触碰。本任务两支约占6.92/6.03 GiB，总显存约15.49/49.14 GiB；22:29瞬时90°C，但最近核验的`HW/SW Thermal Slowdown`均未激活，slowdown/shutdown阈值95/98°C。supervisor每60秒记录资源；本轮不因单次温度读数打断健康训练。
+
+训练终点原生评估为deterministic/stochastic各20回合。为与冻结BC Gate公平比较，另启 `cocap_bc_ppo_formal100_supervisor_gpu1` / PID `1523062`：当前为`WAITING_FOR_TRAINING`，待两支自然完成后，按Direct→Warm顺序从各自终点full-resume只读恢复，使用同一seeds `2026090301..0400`串行执行deterministic formal100。该路径不训练、不修改checkpoint，全部完成后停在`WAITING_FOR_RESULT`，不自动猜测下一路线。实现经24项合同测试与历史resume CPU 1回合烟测PASS。
 
 在两分支结束并完成同合同deterministic formal前不作优劣结论。判读锚点保持冻结BC Gate：capture `1.00`、collision `.03`、2+/3+ `.64/.12`、length `71.16`。若Direct退化而warm-up保持，默认主线转为distillation→critic warm-up→PPO；若二者都退化，下一阶段才讨论annealed teacher KL。
 
-NEXT WAKE-UP: when the BC branches finish (~2026-09-03 23:40 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/supervisor_status.json`, both final checkpoints/formal metrics, and compare them with the frozen BC Gate; also inspect the VXY Stage1 first 25k screening artifact.
+NEXT WAKE-UP: when both BC terminal formal100 reports finish (~2026-09-04 00:30 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/formal100/supervisor_status.json` and compare Direct/Warm with the frozen BC Gate; also inspect the VXY Stage1 first 25k screening artifact.
