@@ -245,6 +245,73 @@ def test_mappo_v2_target_kl_value_norm_and_actor_update_metrics() -> None:
     assert "value_norm_mean" in metrics and "value_norm_std" in metrics
 
 
+def test_critic_only_warmup_keeps_actor_bit_exact() -> None:
+    torch.manual_seed(20260903)
+    backbone = LegacyVorAdjFeatureBackbone(
+        LegacyVorAdjFeatureBackboneConfig(
+            hidden_dim=16,
+            num_heads=4,
+            num_layers=1,
+            self_feature_dim=9,
+            max_pursuers=2,
+            max_evaders=1,
+            max_obstacles=1,
+            pursuing_embed_dim=4,
+            dropout=0.0,
+        )
+    )
+    grid = np.asarray(
+        [(a, w) for a in (-0.4, 0.0, 0.4) for w in (-math.pi / 6, 0.0, math.pi / 6)],
+        dtype=np.float32,
+    )
+    actor = CategoricalGridActor(backbone, grid, orthogonal_policy_head=True)
+    value = CentralValueNetwork(
+        hidden_dim=16,
+        num_heads=4,
+        num_layers=1,
+        max_agents=2,
+        max_evaders=1,
+        max_obstacles=1,
+    )
+    trainer = MAPPOTrainer(
+        actor,
+        value,
+        MAPPOConfig(ppo_epochs=2, minibatches=2, critic_lr=3e-4, value_norm=True),
+        "cpu",
+    )
+    steps, agents = 4, 2
+    local_flat = _local_obs(steps * agents)
+    local = {key: item.reshape(steps, agents, *item.shape[1:]) for key, item in local_flat.items()}
+    global_obs = _global_obs(steps, agents)
+    with torch.no_grad():
+        _, log_prob, latent = actor.sample(local_flat, deterministic=False)
+        old_values = value(global_obs)
+    batch = {
+        "local_obs": local,
+        "global_obs": global_obs,
+        "actions": actor.action_grid[latent].reshape(steps, agents, 2),
+        "latent": latent.reshape(steps, agents),
+        "log_prob": log_prob.reshape(steps, agents),
+        "values": old_values,
+        "next_values": torch.zeros(steps, agents),
+        "rewards": torch.ones(steps, agents),
+        "active_mask": torch.ones(steps, agents, dtype=torch.bool),
+        "terminated": torch.zeros(steps, agents, dtype=torch.bool),
+        "truncated": torch.zeros(steps, agents, dtype=torch.bool),
+        "episode_end": torch.zeros(steps, agents, dtype=torch.bool),
+    }
+    actor_before = {key: value.clone() for key, value in actor.state_dict().items()}
+    value_before = {key: value.clone() for key, value in trainer.value.state_dict().items()}
+    metrics = trainer.update_critic_only(batch)
+    for key, expected in actor_before.items():
+        assert torch.equal(actor.state_dict()[key], expected)
+    assert any(not torch.equal(trainer.value.state_dict()[key], expected) for key, expected in value_before.items())
+    assert metrics["critic_only"] == 1.0
+    assert metrics["actor_update_l2"] == 0.0
+    assert metrics["minibatch_updates"] == 4.0
+    assert math.isfinite(metrics["explained_variance"])
+
+
 class _TauSpy(torch.nn.Module):
     def __init__(self):
         super().__init__()

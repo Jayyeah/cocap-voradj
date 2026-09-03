@@ -1,0 +1,18 @@
+extends: ../iqn_vxy_full_migration_20260830/common.yaml
+
+# Support-reward ablation: preserve the full IQN-VXY contract and change only
+# the two VCT-LS support blend weights from 0.5/0.5 to 1.0/1.0.
+output_root: artifacts/2026-09-03_iqn_vxy_support11_1m
+
+reward:
+  support_reward_capture_weight: 1.0
+  support_reward_coverage_weight: 1.0
+
+experiment_metadata:
+  series: iqn_vxy_support11_1m_20260903
+  only_changed_variable: support reward blend 0.5/0.5 -> 1.0/1.0
+  baseline_support_reward_capture_weight: 0.5
+  baseline_support_reward_coverage_weight: 0.5
+  candidate_support_reward_capture_weight: 1.0
+  candidate_support_reward_coverage_weight: 1.0
+  infrastructure_only_changes: 25k model milestones, independent stage paths, and per-stage /dev/shm rolling full-resume

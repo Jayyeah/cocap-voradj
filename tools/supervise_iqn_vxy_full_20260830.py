@@ -24,12 +24,16 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CONFIG_ROOT = ROOT / "configs/experiments/iqn_vxy_full_migration_20260830"
 LOG_ROOT = ROOT / "logs/iqn_vxy_full_20260830"
 RUN_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full"
 SCREEN_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_screening"
 BEST_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_best"
 RUNTIME_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_runtime"
 STATUS_PATH = ROOT / "artifacts/2026-08-30_iqn_vxy_full_supervisor/status.json"
+SESSION_PREFIX = "cocap_vxy_full"
+LINE_LABEL_PREFIX = "iqn_vxy_full"
+AUTO_GATE_OVERRIDE_ALL = False
 INTERVAL = 25_000
 GATE = {
     "capture_success_rate": 0.50,
@@ -49,6 +53,110 @@ STAGES: tuple[dict[str, Any], ...] = (
      "run": "stage3_12p3e3obs_700k", "steps": 700_000, "evaders": 3,
      "coverage_max": 1800, "mix_max": 2800, "screen_seed": 2026083300, "formal_seed": 2026083301},
 )
+
+
+# The support11 profile shares the historical orchestration implementation,
+# but owns separate artifacts, sessions, configs, and rolling full-resume
+# paths.  Keeping this profile data-only makes the legacy default unchanged.
+SUPPORT11_CONFIG_ROOT = ROOT / "configs/experiments/iqn_vxy_support11_1m_20260903"
+SUPPORT11_LOG_ROOT = ROOT / "logs/iqn_vxy_support11_1m_20260903"
+SUPPORT11_RUN_ROOT = ROOT / "artifacts/2026-09-03_iqn_vxy_support11_1m"
+SUPPORT11_SCREEN_ROOT = ROOT / "artifacts/2026-09-03_iqn_vxy_support11_1m_screening"
+SUPPORT11_BEST_ROOT = ROOT / "artifacts/2026-09-03_iqn_vxy_support11_1m_best"
+SUPPORT11_RUNTIME_ROOT = ROOT / "artifacts/2026-09-03_iqn_vxy_support11_1m_runtime"
+SUPPORT11_STATUS_PATH = ROOT / "artifacts/2026-09-03_iqn_vxy_support11_1m_supervisor/status.json"
+SUPPORT11_SESSION_PREFIX = "cocap_vxy_support11_1m_20260903"
+SUPPORT11_LINE_LABEL_PREFIX = "iqn_vxy_support11_1m"
+SUPPORT11_RESUME_ROOT = Path("/dev/shm/iqn_vxy_support11_1m_20260903")
+SUPPORT11_STAGES: tuple[dict[str, Any], ...] = (
+    {
+        "number": 1,
+        "label": "4p1e1obs",
+        "config": "stage1_4p1e1obs_1m.yaml",
+        "run": "stage1_4p1e1obs_support11_1m",
+        "steps": 1_000_000,
+        "evaders": 1,
+        "coverage_max": 1200,
+        "mix_max": 2200,
+        "screen_seed": 2026083100,
+        "formal_seed": 2026083101,
+        "rolling_resume_path": SUPPORT11_RESUME_ROOT / "stage1_4p1e1obs/resume_latest.pt",
+    },
+    {
+        "number": 2,
+        "label": "8p2e2obs",
+        "config": "stage2_8p2e2obs_1m.yaml",
+        "run": "stage2_8p2e2obs_support11_1m",
+        "steps": 1_000_000,
+        "evaders": 2,
+        "coverage_max": 1500,
+        "mix_max": 2500,
+        "screen_seed": 2026083200,
+        "formal_seed": 2026083201,
+        "rolling_resume_path": SUPPORT11_RESUME_ROOT / "stage2_8p2e2obs/resume_latest.pt",
+    },
+    {
+        "number": 3,
+        "label": "12p3e3obs",
+        "config": "stage3_12p3e3obs_1m.yaml",
+        "run": "stage3_12p3e3obs_support11_1m",
+        "steps": 1_000_000,
+        "evaders": 3,
+        "coverage_max": 1800,
+        "mix_max": 2800,
+        "screen_seed": 2026083300,
+        "formal_seed": 2026083301,
+        "rolling_resume_path": SUPPORT11_RESUME_ROOT / "stage3_12p3e3obs/resume_latest.pt",
+    },
+)
+
+
+def activate_profile(name: str) -> None:
+    """Select a named orchestration profile; ``full`` remains the default."""
+    global AUTO_GATE_OVERRIDE_ALL
+    global BEST_ROOT, CONFIG_ROOT, LINE_LABEL_PREFIX, LOG_ROOT
+    global RUN_ROOT, RUNTIME_ROOT, SCREEN_ROOT, SESSION_PREFIX, STAGES, STATUS_PATH
+
+    if name == "full":
+        CONFIG_ROOT = ROOT / "configs/experiments/iqn_vxy_full_migration_20260830"
+        LOG_ROOT = ROOT / "logs/iqn_vxy_full_20260830"
+        RUN_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full"
+        SCREEN_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_screening"
+        BEST_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_best"
+        RUNTIME_ROOT = ROOT / "artifacts/2026-08-30_iqn_vxy_full_runtime"
+        STATUS_PATH = ROOT / "artifacts/2026-08-30_iqn_vxy_full_supervisor/status.json"
+        SESSION_PREFIX = "cocap_vxy_full"
+        LINE_LABEL_PREFIX = "iqn_vxy_full"
+        STAGES = (
+            {"number": 1, "label": "4p1e1obs", "config": "stage1_4p1e1obs_scratch2m.yaml",
+             "run": "stage1_4p1e1obs_scratch2m", "steps": 2_000_000, "evaders": 1,
+             "coverage_max": 1200, "mix_max": 2200, "screen_seed": 2026083100, "formal_seed": 2026083101},
+            {"number": 2, "label": "8p2e2obs", "config": "stage2_8p2e2obs_700k.yaml",
+             "run": "stage2_8p2e2obs_700k", "steps": 700_000, "evaders": 2,
+             "coverage_max": 1500, "mix_max": 2500, "screen_seed": 2026083200, "formal_seed": 2026083201},
+            {"number": 3, "label": "12p3e3obs", "config": "stage3_12p3e3obs_700k.yaml",
+             "run": "stage3_12p3e3obs_700k", "steps": 700_000, "evaders": 3,
+             "coverage_max": 1800, "mix_max": 2800, "screen_seed": 2026083300, "formal_seed": 2026083301},
+        )
+        AUTO_GATE_OVERRIDE_ALL = False
+        return
+    if name == "support11":
+        CONFIG_ROOT = SUPPORT11_CONFIG_ROOT
+        LOG_ROOT = SUPPORT11_LOG_ROOT
+        RUN_ROOT = SUPPORT11_RUN_ROOT
+        SCREEN_ROOT = SUPPORT11_SCREEN_ROOT
+        BEST_ROOT = SUPPORT11_BEST_ROOT
+        RUNTIME_ROOT = SUPPORT11_RUNTIME_ROOT
+        STATUS_PATH = SUPPORT11_STATUS_PATH
+        SESSION_PREFIX = SUPPORT11_SESSION_PREFIX
+        LINE_LABEL_PREFIX = SUPPORT11_LINE_LABEL_PREFIX
+        STAGES = SUPPORT11_STAGES
+        # The user authorized all three stages; a failed numerical gate may
+        # promote a present selected checkpoint, but missing artifacts remain
+        # fail-closed.
+        AUTO_GATE_OVERRIDE_ALL = True
+        return
+    raise ValueError(f"unknown IQN-VXY supervisor profile: {name}")
 
 
 def now() -> str:
@@ -90,10 +198,10 @@ def launch_tmux(name: str, command: list[str], log_path: Path) -> str:
 def stage_paths(stage: dict[str, Any]) -> dict[str, Path]:
     number, label = int(stage["number"]), str(stage["label"])
     return {
-        "config": ROOT / "configs/experiments/iqn_vxy_full_migration_20260830" / str(stage["config"]),
+        "config": CONFIG_ROOT / str(stage["config"]),
         "run": RUN_ROOT / str(stage["run"]),
         "screen": SCREEN_ROOT / f"stage{number}_{label}",
-        "selection": BEST_ROOT / f"iqn_vxy_full_stage{number}_{label}_selection.json",
+        "selection": BEST_ROOT / f"{LINE_LABEL_PREFIX}_stage{number}_{label}_selection.json",
         "runtime": RUNTIME_ROOT / f"stage{number}_{label}.yaml",
         "train_log": LOG_ROOT / f"stage{number}_{label}_train.log",
         "screen_log": LOG_ROOT / f"stage{number}_{label}_screen.log",
@@ -211,16 +319,22 @@ def can_override_stage_gate(
     stage: dict[str, Any],
     gate: dict[str, Any],
     force_promote_stage2: bool,
+    *,
+    allow_all_stages: bool = False,
 ) -> bool:
-    """Allow only the explicitly authorized Stage-2 gate override.
+    """Allow an explicitly authorized gate override when a checkpoint exists.
 
-    The historical metric gate remains failed and unchanged. Promotion is
-    possible only when the selected Stage-2 checkpoint still exists.
+    The historical metric gate remains failed and unchanged. The legacy
+    profile only permits its explicit Stage-2 flag; the support11 profile is
+    separately authorized to complete all three stages. Both modes remain
+    fail-closed when the selected checkpoint is absent.
     """
     checks = gate.get("checks") or {}
+    stage_allowed = allow_all_stages or int(stage["number"]) == 2
+    authorized = allow_all_stages or bool(force_promote_stage2)
     return (
-        bool(force_promote_stage2)
-        and int(stage["number"]) == 2
+        authorized
+        and stage_allowed
         and bool(checks.get("checkpoint", False))
     )
 
@@ -245,7 +359,7 @@ def ensure_stage(
         paths["config"], paths["runtime"], pretrained, full_resume_path
     )
     number, label, total = int(stage["number"]), str(stage["label"]), int(stage["steps"])
-    prefix = f"cocap_vxy_full_s{number}_{label}"
+    prefix = f"{SESSION_PREFIX}_s{number}_{label}"
     final = paths["run"] / "checkpoints" / f"final_step_{total}.pt"
     resume = rolling_resume_path(paths, full_resume_path)
     train_command = ["python3", "train.py", "--config", relative(launch_config), "--device", train_device]
@@ -264,7 +378,7 @@ def ensure_stage(
             prefix + "_finalize",
             ["python3", "tools/finalize_screened_run.py", "--config", relative(paths["config"]),
              "--run-dir", relative(paths["run"]), "--screening-root", relative(paths["screen"]),
-             "--best-root", relative(BEST_ROOT), "--line-label", f"iqn_vxy_full_stage{number}_{label}",
+             "--best-root", relative(BEST_ROOT), "--line-label", f"{LINE_LABEL_PREFIX}_stage{number}_{label}",
              "--total-steps", str(total), "--checkpoint-interval", str(INTERVAL), "--seed",
              str(stage["formal_seed"] if formal_seed is None else int(formal_seed)),
              "--device", eval_device, "--capture-evaders", str(stage["evaders"]),
@@ -276,8 +390,14 @@ def ensure_stage(
     return actions
 
 
-def main() -> int:
+def main(argv: list[str] | None = None, *, profile_override: str | None = None) -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--profile",
+        choices=("full", "support11"),
+        default="full",
+        help="Orchestration profile; the historical full profile is the default.",
+    )
     parser.add_argument("--train-device", default="cuda:0")
     parser.add_argument("--eval-device", default="cuda:0")
     parser.add_argument("--poll-seconds", type=int, default=60)
@@ -294,7 +414,8 @@ def main() -> int:
     )
     parser.add_argument("--stage3-full-resume-path", default="")
     parser.add_argument("--check-once", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    activate_profile(profile_override or args.profile)
     if args.stage3_formal_gif_count < 0:
         parser.error("--stage3-formal-gif-count must be non-negative")
     if args.stage3_formal_workers < 1:
@@ -310,7 +431,15 @@ def main() -> int:
     for stage in STAGES:
         paths = stage_paths(stage)
         number, label = int(stage["number"]), str(stage["label"])
-        full_resume_path = stage3_full_resume_path if number == 3 else None
+        configured_resume = stage.get("rolling_resume_path")
+        if number == 3 and stage3_full_resume_path is not None:
+            full_resume_path = stage3_full_resume_path
+        elif configured_resume:
+            full_resume_path = Path(str(configured_resume)).expanduser()
+            if not full_resume_path.is_absolute():
+                full_resume_path = ROOT / full_resume_path
+        else:
+            full_resume_path = None
         formal_gif_count = args.stage3_formal_gif_count if number == 3 else 0
         formal_workers = args.stage3_formal_workers if number == 3 else 2
         formal_seed = args.stage3_formal_seed if number == 3 and args.stage3_formal_seed else None
@@ -331,7 +460,7 @@ def main() -> int:
             if actions.get("train") == "launched":
                 launch_count += 1
                 restarts = max(0, launch_count - 1)
-            session = f"cocap_vxy_full_s{number}_{label}_train"
+            session = f"{SESSION_PREFIX}_s{number}_{label}_train"
             final = paths["run"] / "checkpoints" / f"final_step_{stage['steps']}.pt"
             latest = last_jsonl(paths["run"] / "metrics.jsonl")
             finite = metrics_are_finite(latest)
@@ -343,7 +472,9 @@ def main() -> int:
                           checkpoint_count=len(list((paths["run"] / "checkpoints").glob("step_*.pt"))),
                           rolling_resume=resume.is_file(),
                           rolling_resume_path=relative(resume),
-                          stage2_gate_override_enabled=bool(args.force_promote_stage2),
+                          stage_gate_override_enabled=bool(
+                              AUTO_GATE_OVERRIDE_ALL or args.force_promote_stage2
+                          ),
                           formal_rollout={
                               "episodes_per_scenario": 20,
                               "gif_count_per_scenario": int(formal_gif_count),
@@ -371,15 +502,24 @@ def main() -> int:
             time.sleep(max(5, args.poll_seconds))
         passed, gate = gate_selection(paths["selection"])
         if not passed:
-            if can_override_stage_gate(stage, gate, args.force_promote_stage2):
+            if can_override_stage_gate(
+                stage,
+                gate,
+                args.force_promote_stage2,
+                allow_all_stages=AUTO_GATE_OVERRIDE_ALL,
+            ):
                 pretrained = ROOT / str(gate["checkpoint"])
                 atomic_status(
                     "stage_gate_overridden",
                     stage=number,
                     label=label,
-                    reason="user_authorized_20260901",
+                    reason=(
+                        "user_authorized_full_curriculum_20260903"
+                        if AUTO_GATE_OVERRIDE_ALL
+                        else "user_authorized_20260901"
+                    ),
                     gate=gate,
-                    next_stage=3,
+                    next_stage=number + 1 if number < len(STAGES) else None,
                     pretrained=relative(pretrained),
                 )
                 continue

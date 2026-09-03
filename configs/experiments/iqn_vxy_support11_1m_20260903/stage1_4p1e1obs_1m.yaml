@@ -1,0 +1,31 @@
+extends: common.yaml
+
+seed: 2026080201
+device: cuda:0
+total_timesteps: 1000000
+run_name: stage1_4p1e1obs_support11_1m
+
+checkpointing:
+  full_resume_path: /dev/shm/iqn_vxy_support11_1m_20260903/stage1_4p1e1obs/resume_latest.pt
+
+iqn:
+  checkpoint_freq: 25000
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+reward:
+  coverage_ce_min_active_pursuers: 4
+  min_active_pursuers: 4
+  post_capture_coverage_window_steps: 500
+
+experiment_metadata:
+  stage: stage1_4p1e1obs
+  training_start: scratch
+  stage_timesteps: 1000000
+  historical_stage_source: iqn_vxy_full_migration_20260830/stage1_4p1e1obs_scratch2m.yaml

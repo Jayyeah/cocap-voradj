@@ -75,6 +75,14 @@ def stable_hash(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def ensure_finite(metrics: Mapping[str, Any]) -> None:
     for key, value in metrics.items():
         if isinstance(value, (int, float, np.number)) and not np.isfinite(float(value)):
@@ -405,7 +413,14 @@ def evaluate(trainer, algorithm, root_config, config, step, run_dir, episodes, m
 def parse_args():
     parser = argparse.ArgumentParser(); parser.add_argument("--config", required=True); parser.add_argument("--resume")
     parser.add_argument("--total-steps", type=int); parser.add_argument("--eval-episodes", type=int); parser.add_argument("--eval-max-steps", type=int)
-    parser.add_argument("--device"); parser.add_argument("--run-dir"); return parser.parse_args()
+    parser.add_argument("--device"); parser.add_argument("--run-dir")
+    parser.add_argument("--actor-init")
+    parser.add_argument("--actor-init-sha256")
+    parser.add_argument("--critic-warmup-max-steps", type=int, default=0)
+    parser.add_argument("--critic-warmup-min-steps", type=int, default=0)
+    parser.add_argument("--critic-warmup-ev-threshold", type=float, default=0.0)
+    parser.add_argument("--critic-warmup-ev-streak", type=int, default=2)
+    return parser.parse_args()
 
 
 def main() -> int:
@@ -413,14 +428,51 @@ def main() -> int:
     algorithm = str(root_config["small_step_ac"]["algorithm"]); assert algorithm in ALGORITHMS
     config = configure_environment(root_config, algorithm); config["seed"] = int(root_config["seed"])
     device = args.device or str(root_config.get("device", "cuda:0")); total = int(args.total_steps or root_config["small_step_ac"]["total_env_steps"])
+    actor_init = Path(args.actor_init).resolve() if args.actor_init else None
+    if actor_init is not None and algorithm != "mappo9_v2":
+        raise ValueError("distilled actor initialization is restricted to mappo9_v2")
+    actor_init_sha = sha256_file(actor_init) if actor_init is not None else None
+    if args.actor_init_sha256 and actor_init_sha != str(args.actor_init_sha256).lower():
+        raise ValueError("distilled actor checkpoint SHA mismatch")
+    warmup_contract = {
+        "max_steps": int(args.critic_warmup_max_steps),
+        "min_steps": int(args.critic_warmup_min_steps),
+        "explained_variance_threshold": float(args.critic_warmup_ev_threshold),
+        "required_streak": int(args.critic_warmup_ev_streak),
+    }
+    if min(warmup_contract["max_steps"], warmup_contract["min_steps"]) < 0:
+        raise ValueError("critic warm-up step bounds must be non-negative")
+    if warmup_contract["min_steps"] > warmup_contract["max_steps"]:
+        raise ValueError("critic warm-up min steps cannot exceed max steps")
+    if warmup_contract["required_streak"] <= 0:
+        raise ValueError("critic warm-up EV streak must be positive")
+    if warmup_contract["max_steps"] and actor_init is None:
+        raise ValueError("critic warm-up requires the shared distilled actor checkpoint")
+    if warmup_contract["max_steps"] and algorithm != "mappo9_v2":
+        raise ValueError("critic warm-up is restricted to mappo9_v2")
+    if actor_init is not None:
+        config["bc_ppo_initialization"] = {
+            "actor_checkpoint": str(actor_init),
+            "actor_checkpoint_sha256": actor_init_sha,
+            "critic_warmup": warmup_contract,
+        }
     interval = int(root_config["small_step_ac"]["checkpoint_interval"]); eval_episodes = int(args.eval_episodes or root_config["small_step_ac"]["eval_episodes"])
     eval_max_steps = args.eval_max_steps; run_dir = Path(args.run_dir).resolve() if args.run_dir else ROOT / str(root_config["small_step_ac"]["run_dir"])
     seed_all(int(config["seed"])); rng = np.random.default_rng(int(config["seed"])); trainer, replay = make_components(config, algorithm, device)
+    if actor_init is not None and not args.resume:
+        payload = torch.load(actor_init, map_location=device, weights_only=True)
+        if payload.get("schema") != "mappo-iqn-distilled-actor-v1":
+            raise ValueError("unsupported distilled actor checkpoint schema")
+        trainer.actor.load_state_dict(payload["actor_state_dict"], strict=True)
     rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS); set_global_config(config); env = VorAdjEnv(config, seed=int(config["seed"])); observations = env.reset(); step = 0; last_metrics = {}
     if args.resume: step, replay, rollout, env, observations, rng, last_metrics = restore(Path(args.resume), trainer, config, algorithm)
+    warmup_complete_at = int(last_metrics.get("critic_warmup_complete_at", -1))
+    warmup_ev_streak = int(last_metrics.get("critic_warmup_ev_streak", 0))
+    warmup_complete = warmup_contract["max_steps"] == 0 or warmup_complete_at >= 0
     run_dir.mkdir(parents=True, exist_ok=True); (run_dir / "effective_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     atomic_json(run_dir / "manifest.json", {"schema": SCHEMA, "algorithm": algorithm, "seed": config["seed"], "device": device,
-                                            "config": str(config_path), "config_hash": stable_hash(config), "pid": os.getpid(), "started": time.time()})
+                                            "config": str(config_path), "config_hash": stable_hash(config),
+                                            "bc_ppo_initialization": config.get("bc_ppo_initialization"), "pid": os.getpid(), "started": time.time()})
     atomic_json(run_dir / "status.json", {"state": "running", "step": step, "total": total,
                                            "pid": os.getpid(), "algorithm": algorithm, "updated": time.time()})
     started = time.time(); sampler = UniformJointReplaySampler(); ppo_horizon = int(config["small_step_ac"]["mappo"]["rollout_length"])
@@ -502,9 +554,34 @@ def main() -> int:
             for key, value in rows:
                 rollout[key].append(value)
             if len(rollout["rewards"]) >= ppo_horizon or step == total:
-                last_metrics = trainer.update(
-                    stack_rollout(rollout), categorical=algorithm in CATEGORICAL_MAPPO_ALGORITHMS
-                ); rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS)
+                rollout_batch = stack_rollout(rollout)
+                if not warmup_complete:
+                    last_metrics = trainer.update_critic_only(rollout_batch)
+                    ev = float(last_metrics["explained_variance"])
+                    if step >= warmup_contract["min_steps"] and ev >= warmup_contract["explained_variance_threshold"]:
+                        warmup_ev_streak += 1
+                    else:
+                        warmup_ev_streak = 0
+                    if step >= warmup_contract["max_steps"] or warmup_ev_streak >= warmup_contract["required_streak"]:
+                        warmup_complete = True
+                        warmup_complete_at = step
+                    last_metrics.update({
+                        "critic_warmup_complete": float(warmup_complete),
+                        "critic_warmup_complete_at": float(warmup_complete_at),
+                        "critic_warmup_ev_streak": float(warmup_ev_streak),
+                        "ppo_env_steps": 0.0,
+                    })
+                else:
+                    last_metrics = trainer.update(
+                        rollout_batch, categorical=algorithm in CATEGORICAL_MAPPO_ALGORITHMS
+                    )
+                    last_metrics.update({
+                        "critic_warmup_complete": 1.0,
+                        "critic_warmup_complete_at": float(max(warmup_complete_at, 0)),
+                        "critic_warmup_ev_streak": float(warmup_ev_streak),
+                        "ppo_env_steps": float(step - max(warmup_complete_at, 0)),
+                    })
+                rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS)
         elif algorithm == "td3_aw":
             roles = np.where(active_pad, 1, 0).astype(np.uint8)
             replay.add(local_obs=local, next_local_obs=next_local, global_state=global_state, next_global_state=next_global,

@@ -321,6 +321,88 @@ class MAPPOTrainer:
         values = self.value(global_value)
         return actions.cpu().numpy(), log_prob.cpu().numpy(), latent.cpu().numpy(), values.cpu().numpy()
 
+    def update_critic_only(self, batch: Mapping[str, Any]) -> dict[str, float]:
+        """Fit centralized V/ValueNorm while keeping the distilled actor bit-exact."""
+
+        central = tensor_tree(batch["global_obs"], self.device)
+        active = torch.as_tensor(batch["active_mask"], dtype=torch.bool, device=self.device)
+        rewards = torch.as_tensor(batch["rewards"], dtype=torch.float32, device=self.device)
+        old_predictions = torch.as_tensor(batch["values"], dtype=torch.float32, device=self.device)
+        next_predictions = torch.as_tensor(batch["next_values"], dtype=torch.float32, device=self.device)
+        old_values = self._denormalize_values(old_predictions)
+        next_values = self._denormalize_values(next_predictions)
+        terminated = torch.as_tensor(batch["terminated"], dtype=torch.bool, device=self.device)
+        truncated = torch.as_tensor(
+            batch.get("truncated", torch.zeros_like(terminated)), dtype=torch.bool, device=self.device
+        )
+        episode_end = torch.as_tensor(
+            batch.get("episode_end", terminated | truncated), dtype=torch.bool, device=self.device
+        )
+        _, returns = compute_gae(
+            rewards,
+            old_values,
+            next_values,
+            terminated,
+            active,
+            gamma=self.config.gamma,
+            gae_lambda=self.config.gae_lambda,
+            truncated=truncated,
+            episode_end=episode_end,
+        )
+        has_active = bool(active.any().item())
+        if self.value_normalizer is not None and has_active:
+            self.value_normalizer.update(returns, active)
+            targets = self.value_normalizer.normalize(returns)
+        else:
+            targets = returns
+        valid_indices = torch.nonzero(active.reshape(-1), as_tuple=False).squeeze(-1)
+        actor_before = [parameter.detach().clone() for parameter in self.actor.parameters()]
+        rows: list[dict[str, float]] = []
+        if len(valid_indices):
+            for _ in range(self.config.ppo_epochs):
+                permutation = valid_indices[torch.randperm(len(valid_indices), device=self.device)]
+                for indices in torch.chunk(permutation, max(1, self.config.minibatches)):
+                    if not len(indices):
+                        continue
+                    prediction = self.value(central).reshape(-1)[indices]
+                    target = targets.reshape(-1)[indices]
+                    value_loss = 0.5 * (prediction - target).square().mean()
+                    self.value_optimizer.zero_grad(set_to_none=True)
+                    (self.config.value_coef * value_loss).backward()
+                    value_grad = float(
+                        torch.nn.utils.clip_grad_norm_(self.value.parameters(), self.config.max_grad_norm)
+                    )
+                    self.value_optimizer.step()
+                    rows.append({"value_loss": float(value_loss.detach()), "value_grad_norm": value_grad})
+        self.update_count += 1
+        with torch.no_grad():
+            prediction = self._denormalize_values(self.value(central))[active]
+            actor_delta_sq = sum(
+                float((parameter - before).square().sum())
+                for parameter, before in zip(self.actor.parameters(), actor_before)
+            )
+        result = {
+            "actor_loss": 0.0,
+            "value_loss": float(np.mean([row["value_loss"] for row in rows])) if rows else 0.0,
+            "entropy": 0.0,
+            "clip_fraction": 0.0,
+            "approx_kl": 0.0,
+            "actor_grad_norm": 0.0,
+            "value_grad_norm": float(np.mean([row["value_grad_norm"] for row in rows])) if rows else 0.0,
+            "explained_variance": explained_variance(prediction, returns[active]) if has_active else 0.0,
+            "kl_early_stop": 0.0,
+            "ppo_epochs_completed": float(self.config.ppo_epochs if rows else 0),
+            "minibatch_updates": float(len(rows)),
+            "actor_update_l2": float(np.sqrt(actor_delta_sq)),
+            "actor_update_relative_l2": 0.0,
+            "critic_only": 1.0,
+            "update_count": float(self.update_count),
+        }
+        if self.value_normalizer is not None:
+            result["value_norm_mean"] = float(self.value_normalizer.mean)
+            result["value_norm_std"] = float(self.value_normalizer.std)
+        return result
+
     def update(self, batch: Mapping[str, Any], categorical: bool) -> dict[str, float]:
         local = tensor_tree(batch["local_obs"], self.device)
         central = tensor_tree(batch["global_obs"], self.device)

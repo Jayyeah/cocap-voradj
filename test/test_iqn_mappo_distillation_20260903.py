@@ -6,6 +6,7 @@ import torch
 
 from tools import collect_iqn_aw_teacher_dataset_20260903 as collector
 from tools import distill_mappo_actor_from_iqn_20260903 as distill
+from tools import supervise_iqn_mappo_ppo_branches_20260903 as branch_supervisor
 
 
 def test_fixed_midpoint_q_uses_deterministic_midpoints(monkeypatch):
@@ -68,3 +69,19 @@ def test_distilled_actor_checkpoint_is_weights_only_safe(tmp_path):
     clone.load_state_dict(payload["actor_state_dict"], strict=True)
     for expected, actual in zip(actor.parameters(), clone.parameters()):
         assert torch.equal(expected, actual)
+
+
+def test_ppo_branches_share_one_actor_and_bound_the_ppo_budget():
+    direct, warm = branch_supervisor.BRANCHES
+    assert branch_supervisor.ACTOR_SHA == "bb8f971201f6e0a55af3ccb62bcae117f96afa1b07fad2c95c3da1dc552fa35e"
+    assert direct["total"] == 100_000
+    assert direct["warmup"] == ()
+    warmup = dict(zip(warm["warmup"][::2], warm["warmup"][1::2]))
+    assert warm["total"] == 110_000
+    assert warmup == {
+        "--critic-warmup-max-steps": "25000",
+        "--critic-warmup-min-steps": "10000",
+        "--critic-warmup-ev-threshold": "0.20",
+        "--critic-warmup-ev-streak": "2",
+    }
+    assert 85_000 <= warm["total"] - int(warmup["--critic-warmup-max-steps"]) <= 100_000
