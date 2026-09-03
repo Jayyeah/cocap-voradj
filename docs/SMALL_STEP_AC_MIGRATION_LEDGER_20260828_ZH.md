@@ -673,3 +673,33 @@ MAPPO-AW-v2确认continuous AC有学习信号但仍弱于离散父实验后，GP
 | PPO-CF seed3 | WAITING | 未启动；supervisor 安全等待 GPU1 独占 | 外部 PID 487833 释放后约 `8.2–8.5 h` + 数分钟 formal/gate |
 
 GPU0 当前显存 `15/48525 MiB`、无 compute app；GPU1 显存 `17029/49140 MiB`，唯一 compute app 为范围外 OmniVLA PID `487833`。PPO-CF supervisor 仍在 tmux `cocap_ppo_cf_supervisor_gpu1`（PID `265176`），不会杀死或重启该外部服务。当前磁盘约 `40.3 GiB` 可用、RAM available 约 `100.6 GiB`。因此剩余唯一实验线是 PPO-CF seed3，ETA 必须写成条件 ETA，不能给出确定日历时间。
+
+## 21. 2026-09-03 阶段结论（最新 artifacts / formal JSON / checkpoint 复核）
+
+本节不是对历史消息的转录，而是重新检查以下证据后形成的阶段性结论：
+
+- IQN-VXY Full 的 Stage1/2/3 formal `all_summaries.json`、selected checkpoint 与 `FORMAL_DONE`；
+- Pure-Coverage warm/scratch 的 `selection.json`、formal `all_summaries.json`、learning curve 与 selected checkpoint；
+- `artifacts/2026-08-30_mappo9_v2/gate_decision.json`、`artifacts/2026-08-31_mappo_aw_v2/gate_decision.json`；
+- PPO-CF seed1/2 `status.json`、400k evaluation 与 supervisor 状态；
+- `artifacts/2026-08-04_crms_vctls_ce_final/{README.md,manifest.json}` 及其 Final-AW 配置；
+- Stage3 训练 `episodes.jsonl`、formal rollout JSON/GIF 的实际字段范围。
+
+### 21.1 逐项核对
+
+| 编号 | 核对结论 | 复核后的表述 |
+| --- | --- | --- |
+| 1 | **确认（带范围）** | VXY9 已不再只是 Pure-Capture diagnostic：在声明的 IQN full-curriculum 合同下，Stage1 4v1 gate PASS；Stage2 8v2 formal capture `.90`、standalone CE `.15`、mixed capture/CE `.95/.05`，仅 mixed CE 未过；Stage3 12v3 formal capture `.90`、pure CE `1.00`、mixed capture/CE `.90/.90`，六项 gate check PASS。因而 VXY9 可作为已成立的正式动作空间用于后续实验，但不把 Stage2 mixed CE 缺口抹掉，也不把 Stage3 的用户授权 override 改写成严格自动晋级。 |
+| 2 | **核心确认，措辞校正** | 8v2 Pure-Coverage warm-start selected `75k` 的 formal CE 为 `1.00`（CV≤`.15` 为 `.90`）；scratch selected `500k` 的 formal CE 为 `.45`（CV≤`.15` 为 `.30`，final CV `.1679`）。这支持 initialization/curriculum/replay exposure 对 VXY coverage 有显著影响，并不支持“VXY 因缺少旋转不变性而不可收敛”。但 scratch 后期曲线是高方差、间歇性回升（不是单调持续改善），因此只能写“后期有回升但尚未稳定”。 |
+| 3 | **确认** | Stage2 standalone CE 已非零，warm-start 75k 即 formal CE `1.00`，Stage3 mixed CE `.90`；因此 Stage2 mixed CE 窄缺口不能简单归因于“没有 coverage skill”。当前更合理的待解释因素仍是 capture→coverage recovery exposure、phase/replay interference、horizon/规模条件与初始化。 |
+| 4 | **确认，但统一用最终 gate 数值** | MAPPO-9-v2 final gate 为 mean best deterministic capture/collision `21.67%/78.33%`，optimization healthy、三 seed 均有非零 capture；MAPPO-AW-v2 最新最终 gate 为 `CONTINUOUS_AC_ROUTE_ESTABLISHED`，mean best deterministic `15.00%/78.33%`，相对旧 MAPPO-AW `5.00%/93.33%` 有改善，但 capture 仍弱于离散父线。故 AC 已证明能学习，不能再写“AC 代码根本训不出来”；同时 IQN→AC 与 discrete→continuous 的性能损失仍明确存在。旧文档中的 `8.33%/85.00%` 是 2026-09-01 10:02、seed3 完成前的中间快照，不是最终 gate。 |
+| 5 | **两 seed 暂定支持，三 seed 未封版** | PPO-CF seed1/2 均完成 `400k`，deterministic capture 均 `0/20`；但 Q chosen/baseline、Q span、critic loss、explained variance、A_CF、梯度与 KL 均 finite/健康（seed1 EV `.976`、Q span `1.34`；seed2 EV `.826`、Q span `1.15`）。seed3 尚未启动，supervisor 仍因外部 GPU1 PID `487833` 等待。因此当前只能记为“healthy negative evidence / provisional”；若 seed3 同样无 capture，才封为 healthy negative result，并停止机械堆更复杂 critic。 |
+| 6 | **确认** | Final IQN-AW 基准统一指 `2026-08-04 Final IQN-AW integrated release`（`CR-MS + VCT-LS + CE`），不是早期 A3。配置明确为 support reward `0.5 × neighbor-visible approach-only + 0.5 × CE`；direct pursuer 使用 `ring_importance_ms_v0`，`omega_approach/mean_shift/front` 均为 `0`。README/manifest 同时确认这是三 stage selected checkpoint release。 |
+| 7 | **现象保留为待审计假设，不作因果结论** | GIF 观察到的“direct 反应较正常、support 补位偏慢/偏谨慎”目前没有足够 formal 时序证据。Stage3 训练日志共 `2276` 个 episode（`1138` mixed `voradj` + `1138` pure coverage）；mixed episode 中只有 `34` 个 aggregate snapshot 出现 `support_candidate_count>0`，且 support blend active 也仅 `34` 个，均值 active ratio `.00839`，support capture/coverage blend sum 均值约 `.01341/-.00979`。这些是 episode 末端/聚合字段，不能当作 role-level timeline。现有 formal rollout 没有 direct/support target availability、role-switch latency、approach progress、距 pursuing neighbor/enemy、速度或 ring-entry time；`batch_role_switch_count` 也只是 replay batch 统计。因此暂不改 `0.5/0.5` reward，下一轮先补逐 transition direct/support instrumentation，再区分 VXY 动力学、support reward 竞争和局部信息延迟。 |
+
+### 21.2 当前实验线状态与 ETA（复核时刻）
+
+- GPU0：IQN-VXY Stage3 与 Pure-Coverage warm/scratch 均已完成，GPU0 当前无 compute app；对应 Pure-Coverage best checkpoint 的 coverage rollout GIF **warm 与 scratch 均已生成**，分别位于 `artifacts/2026-09-01_iqn_vxy_pure_coverage_best/warm_start_step_75000/coverage/` 与 `.../scratch_step_500000/coverage/`。
+- IQN-VXY Stage1/2 best rollout GIF 位于 `artifacts/2026-09-01_iqn_vxy_full_rollouts/best_20rollout10gif/stage1_4p1e1obs_step_1425000/` 与 `.../stage2_8p2e2obs_step_600000/`；Stage3 位于 `artifacts/2026-08-30_iqn_vxy_full_best/iqn_vxy_full_stage3_12p3e3obs_step_150000/`。
+- GPU1：PPO-CF seed1/2 `400k COMPLETE`；seed3 `not started / waiting_for_exclusive_gpu1`，唯一阻塞为外部 OmniVLA PID `487833`。外部进程释放后，按 seed1/2 实测含评估墙钟约 `8.2–8.5 h`，另加数分钟 formal/gate；释放时刻不可从仓库推定，所以这是条件 ETA。
+- 未改变任何现有训练进程、未 kill/restart 外部 PID；当前状态以 `artifacts/2026-09-01_ppo_counterfactual_q/supervisor/status.json` 与现场 `ps/tmux/nvidia-smi` 为准。

@@ -209,3 +209,21 @@ restarts=0; rolling resume present; all health streaks=0
 ```
 
 剩余正式评估为350/375/400k。ETA按seed3迄今包含13轮formal eval的实际wall throughput估算，已包含评估开销；最终400k评估完成后supervisor会自动生成三seed Gate并退出。
+
+## 8. 2026-09-03 最终 gate 复核与旧快照更正
+
+重新读取 `artifacts/2026-08-31_mappo_aw_v2/gate_decision.json` 后，最终三 seed gate 已不是第 7 节中 seed3 尚未完成时的中间快照。最终 JSON 的决定为：
+
+```text
+decision: CONTINUOUS_AC_ROUTE_ESTABLISHED
+total_step: 400000 / seed
+seed1 best: 10% capture @400k, collision 90%
+seed2 best:  5% capture @375k, collision 80%
+seed3 best: 30% capture @350k, collision 65%
+mean best deterministic: 15.00% capture, 78.33% collision
+stable_nonzero_all_seeds: true
+optimization_healthy: true
+old MAPPO-AW: 5.00% capture, 93.33% collision
+```
+
+因此 continuous AC 路线达到本实验声明的“路线建立” gate，并且相对旧 MAPPO-AW 有改善；但 capture 仍低于 MAPPO-9-v2 parent 的 `21.67%`，不能写成已经追平 IQN 或离散 AC。第 7 节的 `8.33%/85.00%` 以及“seed3 仍剩余 75k”的内容保留为 `2026-09-01 10:02` 的历史中间状态，不再作为当前结果引用。

@@ -121,3 +121,16 @@ seed1: 400k COMPLETE; seed2: 400k COMPLETE; seed3: not started
 seed1/2的400k终点评估均为 deterministic capture `0/20`、collision `0/20`；Q chosen/baseline分别约 `12.73/12.73` 与 `9.27/9.26`，Q span `1.34/1.15`，critic loss `.0080/.0203`，explained variance `.976/.826`，`A_CF` std约`.266`，没有出现NaN/Inf、KL/clip或Q/grad失控。结论仍是 `HEALTHY_NO_CLEAR_IMPROVEMENT_OVER_MAPPO9_V2` 的候选，而不是 counterfactual credit PASS；正式三seed gate必须等待seed3。
 
 GPU0已空闲，未发现本线训练子进程。seed3只有在外部PID释放且GPU1独占检查通过后才会自动启动；按seed1/2含评估墙钟约 `8.2–8.5 h`，另加收尾 formal/gate 数分钟。外部服务释放时刻不可从仓库推定，因此不报日历 ETA。当前磁盘约 `40.3 GiB` 可用、RAM available 约 `100.6 GiB`。
+
+## 10. 2026-09-03 阶段结论复核
+
+最新 `status.json` 与 400k evaluation 确认 seed1/seed2 均自然完成，没有 restart 或 health pause，且 deterministic capture 都是 `0/20`。两 seed 末端的数值仍健康：
+
+| seed | critic loss | explained variance | Q chosen / baseline | Q span | A_CF std | approx KL |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | `.0080` | `.976` | `12.73 / 12.73` | `1.34` | `.266` | `.000146` |
+| 2 | `.0203` | `.826` | `9.27 / 9.26` | `1.15` | `.266` | `.000016` |
+
+这支持“centralized-Q 拟合/优化健康，但简单 V→counterfactual Q 尚未带来 capture 改善”的两 seed provisional 判断；不能提前改写成三 seed final negative。seed3 尚未启动，supervisor 为 `waiting_for_exclusive_gpu1`，外部 GPU1 PID `487833` 未被触碰。其条件 ETA 是外部进程释放后约 `8.2–8.5 h`，再加最后 formal/gate 数分钟。
+
+若 seed3 也在健康优化下保持 deterministic capture `0/20`，再将 gate 封为 `HEALTHY_NO_CLEAR_IMPROVEMENT_OVER_MAPPO9_V2`，停止无依据地继续增加 critic 复杂度；若出现 Q/grad/return 尺度失控，则先按实现/尺度问题审计，不能直接解释为算法失败。
