@@ -123,4 +123,12 @@ GPU1同时存在不属于本任务的外部PID `1502230`（约2.45 GiB），未�
 
 在两分支结束并完成同合同deterministic formal前不作优劣结论。判读锚点保持冻结BC Gate：capture `1.00`、collision `.03`、2+/3+ `.64/.12`、length `71.16`。若Direct退化而warm-up保持，默认主线转为distillation→critic warm-up→PPO；若二者都退化，下一阶段才讨论annealed teacher KL。
 
-NEXT WAKE-UP: when both BC terminal formal100 reports finish (~2026-09-04 00:30 CST), first inspect `artifacts/2026-09-03_iqn_mappo_bc/ppo_branches/formal100/supervisor_status.json` and compare Direct/Warm with the frozen BC Gate; then compare the latest VXY Stage1 screening against the archived 25k baseline.
+## 5. 2026-09-07 终态复核
+
+BC两支与同seed deterministic formal100均自然完成：Direct为capture/collision/2+/3+/length `.96/.04/.87/.28/80.32`，Warm为`.92/.08/.92/.27/72.18`，冻结BC为`1.00/.03/.64/.12/71.16`。Direct与Warm都出现capture保持损失，warm-up没有改善且point estimate更差；当前默认保留BC为冻结上限、Direct为最佳PPO分支，teacher-KL只登记为待决候选。
+
+VXY support11线经事后合同审计确认配置层级错误：候选写入`reward.support_reward_*`，环境实际读取`voradj.support_reward_*`，训练仍为`.5/.5`。Stage1 850k/1M checkpoint与旧VXY bitwise一致，故整条线不能作为1/1因果实验。Stage1/2已完成，Stage2 950k formal20四项成功率均1且collision0，可作为原合同延长训练资产；Stage3因2026-09-06 19:53主机重启中断于日志472425，最后持久化checkpoint为450k，`/dev/shm`精确resume已丢失。本轮不恢复。
+
+完整宏观坐标、paired区间、checkpoint SHA与中断证据见 `docs/PROJECT_STATUS_20260907_ZH.md`。2026-09-07现场没有本项目进程或tmux。
+
+NEXT WAKE-UP: first verify `docs/PROJECT_STATUS_20260907_ZH.md` and choose one valid G0 correction plus whether G1 should stop at Direct PPO or test annealed teacher KL; do not resume the mislabeled support11 Stage3 as a valid 1/1 experiment.

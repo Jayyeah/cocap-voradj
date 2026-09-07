@@ -343,3 +343,14 @@ Stage2/Stage3 Final-AW↔VXY formal100 matched audit已完成；完整表、pair
 按用户明确授权，首条唯一变量长训使用support capture/coverage reward weight `1/1`（原`.5/.5`），保持1:1相对比例并将support总信号放大2倍；其他合同不变。三阶段各1M步，配置位于 `configs/experiments/iqn_vxy_support11_1m_20260903/`，由 `tools/supervise_iqn_vxy_support11_1m_20260903.py` 自动串行编排。2026-09-03 22:15 CST已在GPU0启动；22:17 Stage1为2k/1M、finite、无checkpoint，trainer PID `1510169`，supervisor PID `1510158`。首个25k后重估吞吐；全课程历史证据化中央ETA约2.5天。
 
 本实验是用户授权的support-scale因果检验，不能把matched相关性改写成其必然有效；servo correction继续冻结，待support11与原VXY matched比较后再决定。
+
+## 13. support11事后合同审计与中断归档（2026-09-07）
+
+本线的因果标签判定为`INVALID_NOOP`。配置把候选权重写在`reward.support_reward_capture_weight/coverage_weight=1/1`，但环境只读取`voradj.support_reward_capture_weight/coverage_weight`；训练器最终解析中后者仍为`.5/.5`。Stage1 850k与1M checkpoint分别和旧VXY对应点SHA完全相同，screening也逐项相同。因此下述结果只能视为原`.5/.5`合同的延长课程，不能归因于support 1/1。
+
+- Stage1：1M完成，selected 850k；screen capture/coverage CE/mix capture/mix CE为`.45/0/.65/.05`，原Gate FAIL后按预授权override晋级；formal20为`.20/.05/.65/.05`，max collision`.05`。
+- Stage2：1M完成，selected 950k；formal20 capture/coverage CE/mix capture/mix CE均`1.00`，collision0。该checkpoint是强8v2延长训练资产，但不是support correction证据。
+- Stage3：主机在2026-09-06 19:53重启，日志止于472425，18个screen完成至450k；最后checkpoint SHA为`bc4baaa9a670601691ac1783d93d681d00f249eb1c3acda67c8630f34adcbbd0`。450k screen capture/coverage CE/mix capture/mix CE为`.95/0/.95/0`，collision`.05`；300–400k曾出现较强CE，说明过程振荡。`/dev/shm` full-resume已丢失，只能从450k非精确恢复。
+- 2026-09-07现场无本项目PID/tmux；按用户要求不恢复、不finalize、不从未完成Stage3选择best。
+
+完整宏观位置与BC终态见`docs/PROJECT_STATUS_20260907_ZH.md`。若后续重做1/1，必须改为`voradj.support_reward_*=1.0`并新增环境实例级断言；否则应回到matched证据更强的servo/action dynamics候选。
