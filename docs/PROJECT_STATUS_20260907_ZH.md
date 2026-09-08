@@ -1,5 +1,7 @@
 # 项目宏观状态快照（2026-09-07）
 
+> **2026-09-08 canonical main / BC parity补充：** [完整逐项合同表与奖励/信息审计](FINAL_IQN_MAIN_MAPPO_BC_CONTRACT_PARITY_20260908_ZH.md)。main@a5814f4才是Final parent；BC环境是B0/K10 corrected Pure-Capture，未迁移Final完整任务。下一条改为A同合同三策略冻结评估，B Final-transfer随后单独定义；不是直接把旧BC放进混合修改后的“Final-side”环境。
+
 > **2026-09-08 P0 更正，优先于下文历史结论：**见 [最新合同/信息审计](P0_CONTRACT_INFORMATION_AUDIT_20260908_ZH.md)。原 PPO dropout/log-prob 合同不成立；BC 与 native PPO 实际 env seeds 相差10000，撤回 BC↔PPO 配对显著性及“显著 erosion”，warm-up未排除cold-start。旧 AC legacy_voradj 不是 Final 的半径局部敌方感知，BC100%仅在旧AC argmax capture合同有效。旧 outer-ring/首事件 latency不是新 same-target closure。support11仍为无效NOOP，AW/VXY物理预算不等价；仅使用GPU1，暂停所有旧GPU0/长训/teacher-KL路线建议。下文数字作为历史记录保留，不作为新 Gate。
 
 

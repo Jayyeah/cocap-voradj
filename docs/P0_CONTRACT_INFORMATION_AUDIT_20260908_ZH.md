@@ -1,5 +1,7 @@
 # P0 合同修复与信息来源审计（2026-09-08）
 
+> **2026-09-08 canonical main / BC parity补充：** [完整逐项合同表与奖励/信息审计](FINAL_IQN_MAIN_MAPPO_BC_CONTRACT_PARITY_20260908_ZH.md)。main@a5814f4才是Final parent；BC环境是B0/K10 corrected Pure-Capture，未迁移Final完整任务。下一条改为A同合同三策略冻结评估，B Final-transfer随后单独定义；不是直接把旧BC放进混合修改后的“Final-side”环境。
+
 本页覆盖旧台账中有关 PPO 健康、BC/PPO 配对、local execution 和 closure 的过强结论。起点是远端最新 `7725f88ba2cacb5fa2014dad95a005b5b362d9d0`；本轮先 pull，9 月 8 日再次 fetch 确认无更新。未改奖励、物理能力、网络结构或历史 checkpoint；没有启动训练。所有 GPU 工作仅物理 GPU1，GPU0 保持空闲。
 
 ## 1. 证据等级与裁决
