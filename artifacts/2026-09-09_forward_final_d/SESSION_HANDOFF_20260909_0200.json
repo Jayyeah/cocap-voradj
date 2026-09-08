@@ -1,0 +1,103 @@
+{
+  "as_of": "2026-09-09T01:58:59.401134+08:00",
+  "C3": "PASS",
+  "D_smoke_numeric_contract": "PASS",
+  "D_warmup512_task_health": "HOLD_PPO_SCALE: pure coverage P90 196.05 vs BC121.25, ratio1.617",
+  "D_direct512_task_health": "RUNNING",
+  "D_25k": "NOT_STARTED",
+  "jobs": {
+    "bc_parent": {
+      "process": {
+        "pid": 263053,
+        "physical_gpu": 0,
+        "started_at": "2026-09-09T01:52:05.016651+08:00",
+        "command": [
+          "python3",
+          "tools/evaluate_forward_final_ppo_20260909.py",
+          "--output-root",
+          "artifacts/2026-09-09_forward_final_d/smoke_task_eval20/bc_parent",
+          "--episodes",
+          "20",
+          "--device",
+          "cuda:0"
+        ],
+        "source_sha256": {
+          "tools/evaluate_forward_final_ppo_20260909.py": "0b5552ad5994787c90c703b18cf2e607f2508274c6d933de4591a755b377b3c5",
+          "tools/run_forward_final_bridge_20260908.py": "2ba8853a7765adb12544909d2195832672dec7d0d6a9c03f63a76b1d1e26fcc0"
+        }
+      },
+      "progress": {
+        "status": "complete",
+        "completed": 40,
+        "eta_seconds": 0,
+        "elapsed_seconds": 205.87219074500172
+      }
+    },
+    "warmup512": {
+      "process": {
+        "pid": 263054,
+        "physical_gpu": 1,
+        "started_at": "2026-09-09T01:52:05.018027+08:00",
+        "command": [
+          "python3",
+          "tools/evaluate_forward_final_ppo_20260909.py",
+          "--output-root",
+          "artifacts/2026-09-09_forward_final_d/smoke_task_eval20/warmup512",
+          "--episodes",
+          "20",
+          "--device",
+          "cuda:0",
+          "--actor-checkpoint",
+          "artifacts/2026-09-09_forward_final_d/gpu_smoke_warmup/actor_step_000512.pt"
+        ],
+        "source_sha256": {
+          "tools/evaluate_forward_final_ppo_20260909.py": "0b5552ad5994787c90c703b18cf2e607f2508274c6d933de4591a755b377b3c5",
+          "tools/run_forward_final_bridge_20260908.py": "2ba8853a7765adb12544909d2195832672dec7d0d6a9c03f63a76b1d1e26fcc0"
+        }
+      },
+      "progress": {
+        "status": "complete",
+        "completed": 40,
+        "eta_seconds": 0,
+        "elapsed_seconds": 246.32693400700373
+      }
+    },
+    "direct512": {
+      "process": {
+        "pid": 263398,
+        "physical_gpu": 0,
+        "queued_at": "2026-09-09T01:53:01.835402+08:00",
+        "scheduling": "wait for project GPU0 lock held by BC parent eval; then direct512 eval only",
+        "command": [
+          "python3",
+          "tools/evaluate_forward_final_ppo_20260909.py",
+          "--output-root",
+          "artifacts/2026-09-09_forward_final_d/smoke_task_eval20/direct512",
+          "--actor-checkpoint",
+          "artifacts/2026-09-09_forward_final_d/gpu_smoke_direct/actor_step_000512.pt",
+          "--episodes",
+          "20",
+          "--device",
+          "cuda:0"
+        ],
+        "source_sha256": {
+          "tools/evaluate_forward_final_ppo_20260909.py": "0b5552ad5994787c90c703b18cf2e607f2508274c6d933de4591a755b377b3c5",
+          "tools/run_forward_final_bridge_20260908.py": "2ba8853a7765adb12544909d2195832672dec7d0d6a9c03f63a76b1d1e26fcc0"
+        }
+      },
+      "progress": {
+        "status": "running",
+        "completed": 32,
+        "total": 40,
+        "scene": "coverage",
+        "current_step": 131,
+        "elapsed_seconds": 200.38008501900185,
+        "eta_seconds": 50.09502125475046
+      },
+      "worker_pid": 264405,
+      "eta_at": "2026-09-09T01:59:49.496155+08:00"
+    }
+  },
+  "next_wake_up": "2026-09-09 02:05 Asia/Shanghai or direct512/report.json completion",
+  "next_action": "Run summarize_forward_final_d_screen_20260909.py. No automatic25k; first diagnose policy update amplitude/coverage settling. GPU1 idle until explicit bounded next Gate."
+}

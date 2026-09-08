@@ -2,7 +2,7 @@
 
 更新：2026-09-09。起点及额度恢复后再次 `git pull --ff-only` 均为 `f890b33a3ae67722e470f0528fb5ed2b985cc6b7`；远端 main 仍为 `a5814f49fa29d869cdc3fb8d8e0df4722aa11f00`。本页覆盖旧台账的下一实验建议，不修改历史结果。
 
-**当前：C0 PASS；C1 PASS；C2 完成；C3 正在运行，尚无完整迁移 PASS。PPO 未启动。** 旧 Pure-Capture A/B 仅 OPTIONAL_DIAGNOSTIC。双 GPU 仅用于三种冻结策略的明确比较，没有扩展算法树。
+**当前（2026-09-09接续）：C0/C1/C3 PASS；4v1 Forward Final frozen bridge成立。D已实现并完成512步 smoke；25k尚未启动，先检查较大更新KL对应的冻结任务健康度。** 详见 [D台账](FORWARD_FINAL_CORRECTED_PPO_LEDGER_20260909_ZH.md)。 旧 Pure-Capture A/B 仅 OPTIONAL_DIAGNOSTIC。双 GPU 仅用于三种冻结策略的明确比较，没有扩展算法树。
 
 ## 1. Forward contract 与实现边界
 
@@ -82,7 +82,7 @@ Capture 是 mixed 真实轨迹的前缀统计，不另截断 episode 再混用�
 
 Best：`c2_distillation/actor_epoch_030.pt`，SHA **7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd**。其余有效epoch checkpoint均保留。这里只证明监督拟合有信号；是否保住 full-task 闭环行为由 C3 判断。
 
-## 5. C3 formal100：RUNNING，无 PPO Gate 结论
+## 5. C3 formal100：已完成，PASS（下方保留启动协议）
 
 同一个 `run_episode` 执行 IQN greedy / BC argmax / BC sample。fresh base `2026096101`，每种100 mixed +100 pure coverage；coverage加100000。BC两分支同一 SHA。actor每回合验证 eval-forward、all-action zero-update ratio与物理grid；sample按episode独立固定torch seed。配对汇总必须同时匹配 scene/seed/initial-state fingerprint/evaluator SHA。
 
@@ -103,7 +103,7 @@ C0/C1 在本次首次commit前完成，原 evaluator 的完整源码归档于 `s
 
 下一次先读本页末尾运行快照和 C3 comparison/progress。**C3 未 PASS，不接入 D，不做 teacher-KL/continuous/TD3/SAC/VXY/support奖励重训。** 如 C3失败，先用已保存的phase/role agreement、entropy、轨迹失败位置区分head欠拟合与分布偏离，不把结果直接解释为MAPPO表达能力失败。
 
-## 7. 结束会话运行快照 / NEXT WAKE-UP
+## 7. 历史结束会话快照（现已全部结束，旧 NEXT WAKE-UP 失效）
 
 快照时间：2026-09-09T01:00:30.014942+08:00。完整记录：`artifacts/2026-09-08_forward_final/SESSION_HANDOFF_20260909_0100.json`。
 
@@ -113,3 +113,27 @@ C0/C1 在本次首次commit前完成，原 evaluator 的完整源码归档于 `s
 均为detached进程，不用tmux；log/process/launch/runtime/progress保存在 `c3_formal100/<mode>/`，queue log在父目录。GPU0 teacher checkpoint和GPU1 BC checkpoint均已加载，不生成训练step checkpoint。所有source SHA仍与launch一致。
 
 **NEXT WAKE-UP：2026-09-09 01:35 CST（或三份C3 report均完成后）。** GPU0全队列粗估01:25–01:35完成，尾部慢回合可能延后。先读取comparison；如三份report都有但comparison缺失，执行上文aggregate工具。仅按完整paired Gate判定后续；若仍只剩等待，刷新快照并结束，不长期轮询。GPU1唯一当前任务仍是完成BC sample formal100；不预启动D。
+
+## 8. C3完成后的裁决
+
+三份报告各200回合，scene/seed/fingerprint逐项匹配，BC parent SHA及evaluator SHA一致；`c3_formal100/completion_audit.json`独立复核。工程 Gate **PASS**，不是统计非劣效或12v3课程泛化证明。
+
+| full-task指标 | IQN greedy | BC argmax | BC sample |
+|---|---:|---:|---:|
+| mixed normal capture | 100/100 | 99/100 | 99/100 |
+| mixed CE / safe mission | 99/100 | 98/100 | 98/100 |
+| mixed collision / boundary | 1/100 | 1/100 | 2/100 |
+| mixed mission mean / P50 / P90，秒 | 114.48 / 105 / 160.9 | 117.02 / 114.25 / 163.55 | 112.98 / 111.5 / 157.9 |
+| capture mean，秒 | 43.37 | 42.86 | 43.32 |
+| capture→CE mean，秒 | 71.11 | 74.01 | 69.69 |
+| pure CE / safe mission | 99/100 | 100/100 | 100/100 |
+| pure collision | 0/100 | 0/100 | 0/100 |
+| pure mission P50 / P90，秒 | 63 / 106.3 | 62.5 / 102.2 | 64 / 102 |
+
+任务时间按成功条件统计；同种子共同safe子集的BC−IQN平均任务时间差为argmax +1.51秒（97对）、sample −1.62秒（98对），不足以宣称sample优于teacher。mixed safe率差均−1百分点，argmax paired95% bootstrap区间[−5,+2]百分点，sample[−3,0]百分点。normal=total，stationary均0。
+
+closure 2→3 已知起点完成时间均值6.015 / 6.586 / 6.146秒；支援→direct约16.03 / 15.88 / 16.01秒，完整/未完成机会均保留。具体失败seed、阶段及action/entropy桶见`mechanism_and_failures.json`：IQN有一次纯coverage horizon未收敛；BC argmax有一次捕获后window未达CE；BC两种执行均在seed2026096170捕获前碰边界。不是所有失败都来自capture能力。
+
+**CONFIRMED：** 固定teacher representation的categorical Actor在当前完整4v1任务分布保住了主要性能；sample没有出现此前担心的显著效率鸿沟。**UNPROVEN：** MAPPO优化增益、严格总体非劣效、困难场景/大规模泛化、历史recovery训练池分布上的完全保真。
+
+BC argmax实际访问状态的IQN动作一致率88.64%，sample75.09%，仍有上述任务性能。因此停止单纯为了提高动作一致率而追加C2预算。D的价值问题转为：PPO是否能保住这种策略并改善安全完整任务效率。
