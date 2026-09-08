@@ -1,5 +1,8 @@
 # 小步 Actor-Critic 迁移实验台账（2026-08-28）
 
+> **2026-09-08 P0 更正，优先于下文历史结论：**见 [最新合同/信息审计](P0_CONTRACT_INFORMATION_AUDIT_20260908_ZH.md)。原 PPO dropout/log-prob 合同不成立；BC 与 native PPO 实际 env seeds 相差10000，撤回 BC↔PPO 配对显著性及“显著 erosion”，warm-up未排除cold-start。旧 AC legacy_voradj 不是 Final 的半径局部敌方感知，BC100%仅在旧AC argmax capture合同有效。旧 outer-ring/首事件 latency不是新 same-target closure。support11仍为无效NOOP，AW/VXY物理预算不等价；仅使用GPU1，暂停所有旧GPU0/长训/teacher-KL路线建议。下文数字作为历史记录保留，不作为新 Gate。
+
+
 ## 1. 当前结论与状态
 
 本轮不是继续调 MASAC，而是用四条最小差异线拆开两个问题：Actor-Critic 本身是否可行，以及连续 `(a,w)` 是否是主要退化源。代码、12 份正式配置、双 GPU 串行 supervisor、双评估、完整 resume 和三种子汇总已经实现。截至 2026-08-30，MAPPO-9、MAPPO-AW、IQN-VXY9、TD3-AW 四线三种子均已自然完成 300k；TD3 seed3 final capture 0%、collision 65%，所以 TD3-AW“三种子原配方失败”的结论已封版。后续 fixed-τ复评、reward-tail审计、IQN-VXY Full 与 MAPPO-9-v2 的最新状态见第18节。

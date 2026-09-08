@@ -1,0 +1,581 @@
+{
+  "schema": "mappo-iqn-distillation-formal-gate-v1",
+  "status": "complete",
+  "created_at": "2026-09-08T14:05:49+08:00",
+  "decision": "STOCHASTIC_EVAL_COMPLETE_REVIEW_REQUIRED",
+  "checks": {
+    "action_agreement": false,
+    "capture_retention": true,
+    "collision_retention": true,
+    "capture_length": false
+  },
+  "thresholds": {
+    "min_agreement": 0.9,
+    "max_capture_drop": 0.1,
+    "max_collision_increase": 0.05,
+    "max_length_ratio": 1.5
+  },
+  "contract_audit": {
+    "passed": true,
+    "checks": {
+      "num_pursuers": true,
+      "num_evaders": true,
+      "num_obstacles": true,
+      "horizon_1000": true,
+      "pre_capture_horizon_1000": true,
+      "moving_apf": true,
+      "local_enemy": true,
+      "legacy_voradj": true,
+      "k_required_3": true,
+      "stationary_fallback": true,
+      "min_active_2": true,
+      "coverage_min_active_2": true,
+      "k10_effective_role": true,
+      "capture_terminal": true,
+      "continuous_aw": true,
+      "postfix_collision": true
+    }
+  },
+  "policy": {
+    "teacher": "fixed_midpoint_32 epsilon=0",
+    "student": "categorical sample, eval-mode forward"
+  },
+  "paired_seeds": [
+    2026090301,
+    2026090302
+  ],
+  "teacher": {
+    "episodes": 100,
+    "normal_capture_count": 100,
+    "stationary_capture_count": 0,
+    "capture_count": 100,
+    "collision_count": 1,
+    "normal_capture_rate": 1.0,
+    "stationary_capture_rate": 0.0,
+    "capture_rate": 1.0,
+    "collision_rate": 0.01,
+    "episodes_with_2plus_ring": 66,
+    "episodes_with_3plus_ring": 14,
+    "episode_2plus_ring_rate": 0.66,
+    "episode_3plus_ring_rate": 0.14,
+    "mean_fraction_steps_2plus_in_ring": 0.059374450247481864,
+    "mean_fraction_steps_3plus_in_ring": 0.007588217212824092,
+    "max_3plus_ring_hold_steps": 14,
+    "mean_episode_length": 73.25,
+    "collision_type_counts": {
+      "boundary": 1
+    },
+    "action_index_histogram_all_steps": {
+      "0": 250,
+      "1": 662,
+      "2": 925,
+      "3": 2724,
+      "4": 0,
+      "5": 0,
+      "6": 5721,
+      "7": 10830,
+      "8": 8145
+    },
+    "action_index_histogram_near_capture": {
+      "0": 185,
+      "1": 285,
+      "2": 568,
+      "3": 1160,
+      "4": 0,
+      "5": 0,
+      "6": 1107,
+      "7": 1417,
+      "8": 1750
+    },
+    "near_capture_steps": 1619
+  },
+  "student": {
+    "episodes": 2,
+    "safe_capture_rate": 1.0,
+    "mission_event_summary": {
+      "capture_region_2_to_3": {
+        "opportunities": 4,
+        "completed": 2,
+        "completion_rate": 0.5,
+        "outcomes": {
+          "coalition_lost": 2,
+          "completed": 2
+        },
+        "completed_mean_seconds": 1.25,
+        "left_censored": 0
+      },
+      "capture_region_2_to_geometry": {
+        "opportunities": 4,
+        "completed": 2,
+        "completion_rate": 0.5,
+        "outcomes": {
+          "coalition_lost": 2,
+          "completed": 2
+        },
+        "completed_mean_seconds": 1.75,
+        "left_censored": 0
+      },
+      "support_to_capture_region": {
+        "opportunities": 5,
+        "completed": 2,
+        "completion_rate": 0.4,
+        "outcomes": {
+          "completed": 2,
+          "support_lost": 1,
+          "target_removed": 2
+        },
+        "completed_mean_seconds": 45.5,
+        "left_censored": 2
+      },
+      "support_to_direct": {
+        "opportunities": 10,
+        "completed": 7,
+        "completion_rate": 0.7,
+        "outcomes": {
+          "completed": 7,
+          "support_lost": 1,
+          "target_removed": 2
+        },
+        "completed_mean_seconds": 12.714285714285714,
+        "left_censored": 2
+      }
+    },
+    "capture_rate": 1.0,
+    "normal_capture_rate": 1.0,
+    "stationary_capture_rate": 0.0,
+    "collision_rate": 0.0,
+    "visited_2plus_rate": 1.0,
+    "visited_3plus_rate": 0.0,
+    "mean_capture_length": 112.5,
+    "mean_episode_length": 112.5,
+    "mean_action_agreement": 0.30337389380530977,
+    "mean_support_action_agreement": 0.25216450216450215,
+    "mean_direct_action_agreement": null,
+    "max_3plus_hold": 0,
+    "agent_steps": 900,
+    "collision_type_counts": {}
+  },
+  "actor_checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-03_iqn_mappo_bc/distillation/distilled_actor.pt",
+  "actor_checkpoint_sha256": "bb8f971201f6e0a55af3ccb62bcae117f96afa1b07fad2c95c3da1dc552fa35e",
+  "records": [
+    {
+      "seed": 2026090301,
+      "initial_state_fingerprint": "ff4492258d3b786bdfca94fa90ebf1db5e69248b07684855e5571cfd240ccb41",
+      "seed_semantics": "exact_environment_seed",
+      "mission_events": {
+        "schema": "same-target-mission-events-v1",
+        "decision_dt": 0.5,
+        "events": [
+          {
+            "metric": "support_to_capture_region",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 0,
+            "end_step": 36,
+            "duration_steps": 36,
+            "duration_seconds": 18.0,
+            "outcome": "support_lost",
+            "left_censored": true,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 0,
+            "end_step": 36,
+            "duration_steps": 36,
+            "duration_seconds": 18.0,
+            "outcome": "support_lost",
+            "left_censored": true,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 36,
+            "end_step": 76,
+            "duration_steps": 40,
+            "duration_seconds": 20.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 41,
+            "end_step": 80,
+            "duration_steps": 39,
+            "duration_seconds": 19.5,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_geometry",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 81,
+            "end_step": 96,
+            "duration_steps": 15,
+            "duration_seconds": 7.5,
+            "outcome": "coalition_lost",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_3",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 81,
+            "end_step": 96,
+            "duration_steps": 15,
+            "duration_seconds": 7.5,
+            "outcome": "coalition_lost",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_capture_region",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 36,
+            "end_step": 106,
+            "duration_steps": 70,
+            "duration_seconds": 35.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_3",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 106,
+            "end_step": 110,
+            "duration_steps": 4,
+            "duration_seconds": 2.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_capture_region",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 41,
+            "end_step": 112,
+            "duration_steps": 71,
+            "duration_seconds": 35.5,
+            "outcome": "target_removed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 82,
+            "end_step": 112,
+            "duration_steps": 30,
+            "duration_seconds": 15.0,
+            "outcome": "target_removed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_geometry",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 106,
+            "end_step": 112,
+            "duration_steps": 6,
+            "duration_seconds": 3.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          }
+        ],
+        "summary": {
+          "capture_region_2_to_3": {
+            "opportunities": 2,
+            "completed": 1,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "coalition_lost": 1,
+              "completed": 1
+            },
+            "completed_mean_seconds": 2.0,
+            "left_censored": 0
+          },
+          "capture_region_2_to_geometry": {
+            "opportunities": 2,
+            "completed": 1,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "coalition_lost": 1,
+              "completed": 1
+            },
+            "completed_mean_seconds": 3.0,
+            "left_censored": 0
+          },
+          "support_to_capture_region": {
+            "opportunities": 3,
+            "completed": 1,
+            "completion_rate": 0.3333333333333333,
+            "outcomes": {
+              "completed": 1,
+              "support_lost": 1,
+              "target_removed": 1
+            },
+            "completed_mean_seconds": 35.0,
+            "left_censored": 1
+          },
+          "support_to_direct": {
+            "opportunities": 4,
+            "completed": 2,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "completed": 2,
+              "support_lost": 1,
+              "target_removed": 1
+            },
+            "completed_mean_seconds": 19.75,
+            "left_censored": 1
+          }
+        }
+      },
+      "captured": true,
+      "normal_capture": true,
+      "stationary_capture": false,
+      "collision": false,
+      "collision_type_counts": {},
+      "length": 112,
+      "visited_2plus": true,
+      "visited_3plus": false,
+      "max_3plus_hold": 0,
+      "action_agreement": 0.3125,
+      "support_action_agreement": 0.24242424242424243,
+      "direct_action_agreement": null,
+      "agent_steps": 448
+    },
+    {
+      "seed": 2026090302,
+      "initial_state_fingerprint": "a8faf9dd66679057e075e81ad5e9c0aed6f79348d7869df5d1c59ae2a115e8ce",
+      "seed_semantics": "exact_environment_seed",
+      "mission_events": {
+        "schema": "same-target-mission-events-v1",
+        "decision_dt": 0.5,
+        "events": [
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 42,
+            "end_step": 46,
+            "duration_steps": 4,
+            "duration_seconds": 2.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 52,
+            "end_step": 58,
+            "duration_steps": 6,
+            "duration_seconds": 3.0,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_geometry",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 79,
+            "end_step": 81,
+            "duration_steps": 2,
+            "duration_seconds": 1.0,
+            "outcome": "coalition_lost",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_3",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 79,
+            "end_step": 81,
+            "duration_steps": 2,
+            "duration_seconds": 1.0,
+            "outcome": "coalition_lost",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 0,
+            "end_step": 87,
+            "duration_steps": 87,
+            "duration_seconds": 43.5,
+            "outcome": "completed",
+            "left_censored": true,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 88,
+            "end_step": 89,
+            "duration_steps": 1,
+            "duration_seconds": 0.5,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 90,
+            "end_step": 91,
+            "duration_steps": 1,
+            "duration_seconds": 0.5,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_capture_region",
+            "target_id": 0,
+            "agent_id": 1,
+            "start_step": 0,
+            "end_step": 112,
+            "duration_steps": 112,
+            "duration_seconds": 56.0,
+            "outcome": "completed",
+            "left_censored": true,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_capture_region",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 42,
+            "end_step": 113,
+            "duration_steps": 71,
+            "duration_seconds": 35.5,
+            "outcome": "target_removed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "support_to_direct",
+            "target_id": 0,
+            "agent_id": 3,
+            "start_step": 65,
+            "end_step": 113,
+            "duration_steps": 48,
+            "duration_seconds": 24.0,
+            "outcome": "target_removed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_geometry",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 112,
+            "end_step": 113,
+            "duration_steps": 1,
+            "duration_seconds": 0.5,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          },
+          {
+            "metric": "capture_region_2_to_3",
+            "target_id": 0,
+            "agent_id": null,
+            "start_step": 112,
+            "end_step": 113,
+            "duration_steps": 1,
+            "duration_seconds": 0.5,
+            "outcome": "completed",
+            "left_censored": false,
+            "right_censored": false
+          }
+        ],
+        "summary": {
+          "capture_region_2_to_3": {
+            "opportunities": 2,
+            "completed": 1,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "coalition_lost": 1,
+              "completed": 1
+            },
+            "completed_mean_seconds": 0.5,
+            "left_censored": 0
+          },
+          "capture_region_2_to_geometry": {
+            "opportunities": 2,
+            "completed": 1,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "coalition_lost": 1,
+              "completed": 1
+            },
+            "completed_mean_seconds": 0.5,
+            "left_censored": 0
+          },
+          "support_to_capture_region": {
+            "opportunities": 2,
+            "completed": 1,
+            "completion_rate": 0.5,
+            "outcomes": {
+              "completed": 1,
+              "target_removed": 1
+            },
+            "completed_mean_seconds": 56.0,
+            "left_censored": 1
+          },
+          "support_to_direct": {
+            "opportunities": 6,
+            "completed": 5,
+            "completion_rate": 0.8333333333333334,
+            "outcomes": {
+              "completed": 5,
+              "target_removed": 1
+            },
+            "completed_mean_seconds": 9.9,
+            "left_censored": 1
+          }
+        }
+      },
+      "captured": true,
+      "normal_capture": true,
+      "stationary_capture": false,
+      "collision": false,
+      "collision_type_counts": {},
+      "length": 113,
+      "visited_2plus": true,
+      "visited_3plus": false,
+      "max_3plus_hold": 0,
+      "action_agreement": 0.2942477876106195,
+      "support_action_agreement": 0.2619047619047619,
+      "direct_action_agreement": null,
+      "agent_steps": 452
+    }
+  ],
+  "ppo_updates_performed": 0
+}

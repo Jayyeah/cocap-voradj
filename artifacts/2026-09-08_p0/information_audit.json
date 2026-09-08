@@ -1,0 +1,126 @@
+{
+  "schema": "p0-information-audit-v1",
+  "device": "cpu",
+  "profiles": {
+    "final": {
+      "runtime": {
+        "topology": "friendly_voronoi_comm_v0",
+        "enemy_token_rule": "surface_radius",
+        "global_enemy_flag": false,
+        "support_capture_weight": 0.5,
+        "support_coverage_weight": 0.5,
+        "support_blend_enabled": true,
+        "action_mode": "unicycle_discrete",
+        "decision_dt": 0.5,
+        "physics_dt": 0.05,
+        "collision_semantics": "legacy_end_step",
+        "capture_radius": 8.0,
+        "capture_k": 3,
+        "capture_reward_mode": "ring_importance_ms_v0",
+        "pursuers": 4,
+        "evaders": 1,
+        "enemy_radius": 20.0,
+        "yaw_held_for_vxy": false,
+        "a_longitudinal_max": 0.4,
+        "omega_max": 0.5235987755982988,
+        "v_max": 3.0,
+        "drag": 0.13333333333333333,
+        "servo_acceleration_limit": 0.4,
+        "adapter_a_max": null,
+        "adapter_w_max": null
+      },
+      "initial_enemy_surface_clearances": [
+        43.01876601843926,
+        40.284515273438814,
+        40.284515273438814,
+        37.361911768946875
+      ],
+      "initial_enemy_token_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hidden_enemy_move": {
+        "max_token_delta_by_agent": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "focal_policy_score_max_delta": 0.0
+      },
+      "known_map_outside_sensor_move": {
+        "focal_centroid_feature_delta": [
+          -0.001708589494228363,
+          0.0010253563523292542
+        ],
+        "focal_obstacle_token_count": 0
+      },
+      "visible_enemy_positive_control_token_count": 1
+    },
+    "ac": {
+      "runtime": {
+        "topology": "legacy_voradj",
+        "enemy_token_rule": "voronoi_adjacency_not_radius",
+        "global_enemy_flag": false,
+        "support_capture_weight": 1.0,
+        "support_coverage_weight": 1.0,
+        "support_blend_enabled": false,
+        "action_mode": "acceleration_angular_velocity_body",
+        "decision_dt": 0.5,
+        "physics_dt": 0.05,
+        "collision_semantics": "synchronized_swept_v1",
+        "capture_radius": 8.0,
+        "capture_k": 3,
+        "capture_reward_mode": "legacy",
+        "pursuers": 4,
+        "evaders": 1,
+        "enemy_radius": 20.0,
+        "yaw_held_for_vxy": false,
+        "a_longitudinal_max": 0.4,
+        "omega_max": 0.5235987755982988,
+        "v_max": 3.0,
+        "drag": 0.13333333333333333,
+        "servo_acceleration_limit": 0.4,
+        "adapter_a_max": 0.4,
+        "adapter_w_max": 0.5235987755982988
+      },
+      "initial_enemy_surface_clearances": [
+        43.01876601843926,
+        40.284515273438814,
+        40.284515273438814,
+        37.361911768946875
+      ],
+      "initial_enemy_token_counts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hidden_enemy_move": {
+        "max_token_delta_by_agent": [
+          1.0,
+          0.08380323648452759,
+          0.11654257774353027,
+          0.11942887306213379
+        ],
+        "focal_policy_score_max_delta": 0.5082283020019531
+      },
+      "known_map_outside_sensor_move": {
+        "focal_centroid_feature_delta": [
+          0.0,
+          0.0
+        ],
+        "focal_obstacle_token_count": 0
+      },
+      "visible_enemy_positive_control_token_count": 1
+    }
+  },
+  "valid_support_runtime_diff": [
+    "support_capture_weight",
+    "support_coverage_weight"
+  ],
+  "invalid_namespace_rejected": "ignored reward namespace keys ['support_reward_capture_weight']; use voradj.support_reward_* instead",
+  "limits": "Controlled perturbations verify these scenes; static source audit establishes broader information dependencies. No training or GPU use."
+}

@@ -138,6 +138,7 @@ def min_surface_clearance(env: VorAdjEnv, pursuer_index: int) -> float:
 
 
 def ring_count(env: VorAdjEnv) -> int:
+    """Legacy outer-annulus diagnostic; NOT same-target capture closure."""
     active_evaders = [evader for evader in env.evaders if not evader.deactivated]
     if not active_evaders:
         return 0
@@ -344,6 +345,9 @@ def run_episode(
     set_global_config(cfg)
     env = VorAdjEnv(copy.deepcopy(cfg), seed=int(seed))
     observations = env.reset()
+    from cocap_voradj.evaluation.mission_events import MissionEventTracker, snapshot
+    mission_tracker = MissionEventTracker(env.pursuers[0].dt * env.pursuers[0].N)
+    mission_tracker.observe(snapshot(env, observations), 0)
     apf_agents = [ApfAgent(evader.a, evader.w) for evader in env.evaders]
     grid = (
         vxy9_body_grid(float((cfg.get("pursuer", {}) or {}).get("v_max", 3.0)))
@@ -396,6 +400,7 @@ def run_episode(
         if (scenario == "coverage" or captured_before) and cv is not None:
             cv_values.append(cv)
         observations = outcome.observations
+        mission_tracker.observe(snapshot(env, observations), step, env.last_capture_events)
         if scenario == "capture" and captured_now:
             break
         if all(outcome.dones):
@@ -426,6 +431,8 @@ def run_episode(
     first_3plus = first_step(ring_counts, 3)
     result = {
         "seed": int(seed), "episode_index": int(episode_index), "scenario": scenario,
+        "mission_events": mission_tracker.finish(step),
+        "legacy_latency_warning": "outer annulus / first-ever agent diagnostics; use mission_events for same-target closure/support",
         "coverage_init_source": coverage_source, "length": int(record.get("length", env.episode_step)),
         "captured": captured, "normal_capture": bool(normal), "stationary_capture": bool(stationary),
         "capture_types": capture_types, "capture_step": capture_step,
@@ -498,8 +505,11 @@ def summarize(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "support_rate_limit_pressure_rate", "support_near_hazard_rate",
         "support_speed_near_hazard_mean", "support_speed_clear_mean",
     })
+    from cocap_voradj.evaluation.mission_events import summarize_events
     return {
         "episodes": episodes,
+        "legacy_latency_warning": "Use mission_event_summary; old outer-ring and first-ever means are not same-target closure/support.",
+        "mission_event_summary": summarize_events([e for row in records for e in row.get("mission_events", {}).get("events", [])]),
         "coverage_init_counts": dict(Counter(str(row.get("coverage_init_source", "")) for row in records)),
         **{f"{key}_rate": float(np.mean([bool(row.get(key, False)) for row in records])) for key in rate_keys},
         **{f"mean_{key}": mean_present(records, key) for key in mean_keys},

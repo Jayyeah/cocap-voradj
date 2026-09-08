@@ -36,6 +36,8 @@ from tools.evaluate_iqn_corrected_capture import (
     validate_corrected_capture_contract,
 )
 from tools.evaluate_vxy_stage2_cross_retention_20260903 import ring_count
+from cocap_voradj.evaluation.mission_events import MissionEventTracker, snapshot, summarize_events
+from cocap_voradj.training.runtime_semantics import assert_runtime, initial_state_fingerprint
 from tools.probe_cf3_policy_temperature import apply_collision_semantics_override
 from tools.run_small_step_ac_migration import configure_environment, make_components
 
@@ -70,7 +72,7 @@ def max_hold(values: list[int], threshold: int) -> int:
 
 
 @torch.no_grad()
-def actions_for_state(teacher, actor, observations, env, device: str):
+def actions_for_state(teacher, actor, observations, env, device: str, stochastic: bool = False):
     active = [index for index, obs in enumerate(observations) if obs is not None]
     active_obs = [observations[index] for index in active]
     if not active:
@@ -83,7 +85,8 @@ def actions_for_state(teacher, actor, observations, env, device: str):
         {key: np.stack([np.asarray(obs[key]) for obs in active_obs]) for key in active_obs[0]},
         torch.device(device),
     )
-    student_action = actor.distribution(student_batch).logits.argmax(dim=-1)
+    distribution = actor.distribution(student_batch)
+    student_action = distribution.sample() if stochastic else distribution.logits.argmax(dim=-1)
     grid = action_grid_from_config(env.config)
     commands: list[np.ndarray | None] = [None] * len(observations)
     for row, agent_index in enumerate(active):
@@ -97,11 +100,17 @@ def actions_for_state(teacher, actor, observations, env, device: str):
     )
 
 
-def run_episode(teacher, actor, root_config, seed: int, device: str) -> dict[str, Any]:
+def run_episode(teacher, actor, root_config, seed: int, device: str, stochastic: bool = False) -> dict[str, Any]:
     config = scene_config(root_config, "capture")
     set_global_config(config)
     env = VorAdjEnv(copy.deepcopy(config), seed=int(seed))
     observations = list(env.reset())
+    initial_fingerprint = initial_state_fingerprint(env)
+    actor.eval()
+    assert_runtime(env, actor, categorical=True)
+    torch.manual_seed(int(seed) + 1000000)
+    tracker = MissionEventTracker(env.pursuers[0].dt * env.pursuers[0].N)
+    tracker.observe(snapshot(env, observations), 0)
     apf_agents = [ApfAgent(evader.a, evader.w) for evader in env.evaders]
     agreements: list[bool] = []
     support_agreements: list[bool] = []
@@ -110,9 +119,9 @@ def run_episode(teacher, actor, root_config, seed: int, device: str) -> dict[str
     capture_types: list[str] = []
     collision_types: Counter[str] = Counter()
     collision = False
-    for _ in range(int(config["env"]["episode_max_length"])):
+    for step in range(1, int(config["env"]["episode_max_length"]) + 1):
         commands, active, teacher_actions, student_actions = actions_for_state(
-            teacher, actor, observations, env, device
+            teacher, actor, observations, env, device, stochastic=stochastic
         )
         outcome = env.step(commands, current_apf_actions(env, apf_agents))
         hits = teacher_actions == student_actions
@@ -132,6 +141,7 @@ def run_episode(teacher, actor, root_config, seed: int, device: str) -> dict[str
         collision_types.update(str(event.get("type", "unknown")) for event in events)
         ring_counts.append(int(ring_count(env)))
         observations = list(outcome.observations)
+        tracker.observe(snapshot(env, observations), step, env.last_capture_events)
         if all(outcome.dones):
             break
     record = env.episode_record(task="capture")
@@ -140,6 +150,9 @@ def run_episode(teacher, actor, root_config, seed: int, device: str) -> dict[str
     stationary = bool(captured and any(value == "stationary" for value in capture_types))
     return {
         "seed": int(seed),
+        "initial_state_fingerprint": initial_fingerprint,
+        "seed_semantics": "exact_environment_seed",
+        "mission_events": tracker.finish(step),
         "captured": captured,
         "normal_capture": normal,
         "stationary_capture": stationary,
@@ -167,6 +180,8 @@ def summarize(records):
         collision_types.update(row["collision_type_counts"])
     return {
         "episodes": len(records),
+        "safe_capture_rate": float(np.mean([row["captured"] and not row["collision"] for row in records])),
+        "mission_event_summary": summarize_events([e for row in records for e in row.get("mission_events", {}).get("events", [])]),
         "capture_rate": float(np.mean([row["captured"] for row in records])),
         "normal_capture_rate": float(np.mean([row["normal_capture"] for row in records])),
         "stationary_capture_rate": float(np.mean([row["stationary_capture"] for row in records])),
@@ -192,6 +207,7 @@ def main() -> int:
     parser.add_argument("--actor-checkpoint", required=True)
     parser.add_argument("--teacher-formal", required=True)
     parser.add_argument("--output-root", required=True)
+    parser.add_argument("--policy-mode", choices=("argmax", "sample"), default="argmax")
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--seed", type=int, default=2026090301)
     parser.add_argument("--device", default="cuda:1")
@@ -221,10 +237,20 @@ def main() -> int:
     actor.eval()
     teacher = CoCapIQN.load(str(teacher_path), device=str(args.device)).eval()
 
-    records = [
-        run_episode(teacher, actor, evaluation_root, int(args.seed) + index, str(args.device))
-        for index in range(int(args.episodes))
-    ]
+    output_root = Path(args.output_root).resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+    set_global_config(configured)
+    probe_env = VorAdjEnv(copy.deepcopy(configured), seed=int(args.seed))
+    probe_env.reset()
+    atomic_json(output_root / "runtime_preflight.json", assert_runtime(probe_env, actor, categorical=True))
+    records = []
+    import time
+    started = time.monotonic()
+    for index in range(int(args.episodes)):
+        records.append(run_episode(teacher, actor, evaluation_root, int(args.seed) + index, str(args.device), stochastic=args.policy_mode == "sample"))
+        elapsed = time.monotonic() - started
+        atomic_json(output_root / "progress.json", {"status": "running", "completed": len(records), "total": args.episodes, "elapsed_seconds": elapsed, "eta_seconds": elapsed / len(records) * (args.episodes - len(records)), "partial_summary": summarize(records)})
+        atomic_json(output_root / "records_partial.json", {"records": records})
     student = summarize(records)
     teacher_formal = json.loads(Path(args.teacher_formal).read_text(encoding="utf-8"))
     teacher_summary = dict(teacher_formal["summary"])
@@ -240,7 +266,7 @@ def main() -> int:
             and float(student["mean_capture_length"]) <= teacher_length * float(args.max_length_ratio)
         ),
     }
-    decision = "PASS_TO_PPO_BRANCHES" if all(checks.values()) else "FAIL_STOP_BEFORE_PPO"
+    decision = ("STOCHASTIC_EVAL_COMPLETE_REVIEW_REQUIRED" if args.policy_mode == "sample" else ("PASS_TO_PPO_BRANCHES" if all(checks.values()) else "FAIL_STOP_BEFORE_PPO"))
     output_root = Path(args.output_root).resolve()
     report = {
         "schema": "mappo-iqn-distillation-formal-gate-v1",
@@ -255,7 +281,7 @@ def main() -> int:
             "max_length_ratio": float(args.max_length_ratio),
         },
         "contract_audit": contract,
-        "policy": {"teacher": "fixed_midpoint_32 epsilon=0", "student": "deterministic categorical argmax"},
+        "policy": {"teacher": "fixed_midpoint_32 epsilon=0", "student": "categorical sample, eval-mode forward" if args.policy_mode == "sample" else "deterministic categorical argmax"},
         "paired_seeds": [int(args.seed) + index for index in range(int(args.episodes))],
         "teacher": teacher_summary,
         "student": student,
@@ -267,7 +293,8 @@ def main() -> int:
     atomic_json(output_root / "gate_report.json", report)
     (output_root / "FORMAL_DONE").write_text(now() + "\n", encoding="utf-8")
     print(json.dumps({key: report[key] for key in ("decision", "checks", "student")}, indent=2, ensure_ascii=False))
-    return 0 if decision == "PASS_TO_PPO_BRANCHES" else 2
+    atomic_json(output_root / "progress.json", {"status": "complete", "completed": len(records), "total": args.episodes, "eta_seconds": 0, "summary": student})
+    return 0 if args.policy_mode == "sample" or decision == "PASS_TO_PPO_BRANCHES" else 2
 
 
 if __name__ == "__main__":

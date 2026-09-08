@@ -65,6 +65,7 @@ from tools.run_continuous_ctde_training import (
 
 SCHEMA = "small-step-ac-full-v1"
 PPO_CF_ROLLOUT_SCHEMA = "ppo-cf-rollout-v1"
+POLICY_FORWARD_CONTRACT = "mappo-eval-forward-v1"
 ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "ppo_cf", "iqn_vxy9", "td3_aw"}
 MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "mappo_aw", "mappo_aw_v2", "ppo_cf"}
 CATEGORICAL_MAPPO_ALGORITHMS = {"mappo9", "mappo9_v2", "ppo_cf"}
@@ -327,6 +328,7 @@ def checkpoint(path: Path, *, config, algorithm, step, trainer, replay, rollout,
     )
     payload = {"schema": SCHEMA, "config_hash": stable_hash(config), "algorithm": algorithm, "step": int(step),
                "rollout_schema": PPO_CF_ROLLOUT_SCHEMA if algorithm in PPO_CF_ALGORITHMS else None,
+               "policy_forward_contract": POLICY_FORWARD_CONTRACT if isinstance(trainer, MAPPOTrainer) else None,
                "trainer": trainer.state_dict(), "replay": replay, "rollout": rollout, "env": env, "observations": observations,
                "rng": {"python": random.getstate(), "numpy": np.random.get_state(), "runner": rng.bit_generator.state,
                        "torch": torch.get_rng_state(), "cuda": cuda_rng,
@@ -354,8 +356,10 @@ def finalize_resume_checkpoint(path: Path, retain: bool) -> None:
         path.unlink()
 
 
-def restore(path, trainer, config, algorithm):
+def restore(path, trainer, config, algorithm, *, allow_legacy_policy=False):
     payload = torch.load(path, map_location=trainer.device, weights_only=False)
+    if isinstance(trainer, MAPPOTrainer) and not allow_legacy_policy and payload.get("policy_forward_contract") != POLICY_FORWARD_CONTRACT:
+        raise ValueError("legacy PPO resume uses incompatible dropout/log-prob contract; eval-only or explicit fresh rollout required")
     if payload.get("schema") != SCHEMA or payload.get("algorithm") != algorithm or payload.get("config_hash") != stable_hash(config):
         raise ValueError("resume checkpoint contract mismatch")
     if algorithm in PPO_CF_ALGORITHMS and payload.get("rollout_schema") != PPO_CF_ROLLOUT_SCHEMA:
@@ -396,18 +400,18 @@ def evaluate(trainer, algorithm, root_config, config, step, run_dir, episodes, m
     evaluation_seed = int(config["small_step_ac"]["evaluation_seed"] if seed is None else seed)
     actor_training = bool(view.actor.training)
     saved_rng = {"python": random.getstate(), "numpy": np.random.get_state(), "torch": torch.get_rng_state(),
-                 "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []}
+                 "cuda": torch.cuda.get_rng_state(trainer.device) if trainer.device.type == "cuda" else None}
     try:
         view.actor.eval()
         evaluation_modes = modes or ((True, "deterministic"), (False, "stochastic"))
         for mode_index, (deterministic, label) in enumerate(evaluation_modes):
             seed_all(evaluation_seed + mode_index * 1000000)
             rows[label] = _screen(view, evaluation_root, evaluation_seed, episodes, str(trainer.device),
-                                  scenes=("capture",), max_steps=max_steps, deterministic=deterministic)
+                                  scenes=("capture",), max_steps=max_steps, deterministic=deterministic, exact_env_seeds=True)
     finally:
         view.actor.train(actor_training); random.setstate(saved_rng["python"]); np.random.set_state(saved_rng["numpy"])
         torch.set_rng_state(saved_rng["torch"].cpu())
-        if torch.cuda.is_available() and saved_rng["cuda"]: torch.cuda.set_rng_state_all([state.cpu() for state in saved_rng["cuda"]])
+        if saved_rng["cuda"] is not None: torch.cuda.set_rng_state(saved_rng["cuda"].cpu(), trainer.device)
     atomic_json(run_dir / "evaluations" / f"step_{step:09d}.json", {"step": step, **rows})
     return rows
 
@@ -471,11 +475,13 @@ def main() -> int:
     rollout = empty_rollout(algorithm in PPO_CF_ALGORITHMS); set_global_config(config); env = VorAdjEnv(config, seed=int(config["seed"])); observations = env.reset(); step = 0; last_metrics = {}
     if args.eval_only and not args.resume:
         raise ValueError("--eval-only requires --resume")
-    if args.resume: step, replay, rollout, env, observations, rng, last_metrics = restore(Path(args.resume), trainer, config, algorithm)
+    if args.resume: step, replay, rollout, env, observations, rng, last_metrics = restore(Path(args.resume), trainer, config, algorithm, allow_legacy_policy=args.eval_only)
     warmup_complete_at = int(last_metrics.get("critic_warmup_complete_at", -1))
     warmup_ev_streak = int(last_metrics.get("critic_warmup_ev_streak", 0))
     warmup_complete = warmup_contract["max_steps"] == 0 or warmup_complete_at >= 0
     run_dir.mkdir(parents=True, exist_ok=True)
+    from cocap_voradj.training.runtime_semantics import assert_runtime
+    atomic_json(run_dir / "runtime_preflight.json", assert_runtime(env, getattr(trainer, "actor", None), categorical=isinstance(trainer, MAPPOTrainer) and algorithm in CATEGORICAL_MAPPO_ALGORITHMS))
     if args.eval_only:
         eval_rows = evaluate(
             trainer, algorithm, root_config, config, step, run_dir,

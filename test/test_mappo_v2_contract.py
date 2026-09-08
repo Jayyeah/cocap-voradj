@@ -208,7 +208,7 @@ def test_mappo_v2_target_kl_value_norm_and_actor_update_metrics() -> None:
         MAPPOConfig(
             ppo_epochs=4,
             minibatches=1,
-            actor_lr=3e-4,
+            actor_lr=3e-2,
             critic_lr=3e-4,
             target_kl=1e-4,
             value_norm=True,
@@ -225,7 +225,7 @@ def test_mappo_v2_target_kl_value_norm_and_actor_update_metrics() -> None:
         "global_obs": _global_obs(steps, agents),
         "actions": actor.action_grid[latent].reshape(steps, agents, 2),
         "latent": latent.reshape(steps, agents),
-        "log_prob": (current_log_prob + 2.0).reshape(steps, agents),
+        "log_prob": current_log_prob.reshape(steps, agents),
         "values": torch.zeros(steps, agents),
         "next_values": torch.zeros(steps, agents),
         "rewards": torch.arange(steps * agents, dtype=torch.float32).reshape(steps, agents) / 10.0,
@@ -236,8 +236,8 @@ def test_mappo_v2_target_kl_value_norm_and_actor_update_metrics() -> None:
     }
     metrics = trainer.update(batch, categorical=True)
     assert metrics["kl_early_stop"] == 1.0
-    assert metrics["ppo_epochs_completed"] == 1.0
-    assert metrics["minibatch_updates"] == 1.0
+    assert 1 < metrics["ppo_epochs_completed"] < 4
+    assert 1 < metrics["minibatch_updates"] < 4
     assert metrics["approx_kl_max"] > 1e-4
     assert metrics["actor_update_l2"] > 0.0
     assert metrics["actor_update_relative_l2"] > 0.0

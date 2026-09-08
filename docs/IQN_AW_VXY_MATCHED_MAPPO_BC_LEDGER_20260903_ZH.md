@@ -1,5 +1,8 @@
 # Final-IQN-AW ↔ VXY matched 与 IQN→MAPPO BC 台账（2026-09-03）
 
+> **2026-09-08 P0 更正，优先于下文历史结论：**见 [最新合同/信息审计](P0_CONTRACT_INFORMATION_AUDIT_20260908_ZH.md)。原 PPO dropout/log-prob 合同不成立；BC 与 native PPO 实际 env seeds 相差10000，撤回 BC↔PPO 配对显著性及“显著 erosion”，warm-up未排除cold-start。旧 AC legacy_voradj 不是 Final 的半径局部敌方感知，BC100%仅在旧AC argmax capture合同有效。旧 outer-ring/首事件 latency不是新 same-target closure。support11仍为无效NOOP，AW/VXY物理预算不等价；仅使用GPU1，暂停所有旧GPU0/长训/teacher-KL路线建议。下文数字作为历史记录保留，不作为新 Gate。
+
+
 ## 1. 范围与冻结合同
 
 本轮基于远端最新 `0f72614b6cd15d0cfc8c295337abe310e3ae976d`。GPU0 只做冻结 checkpoint formal100；未重训 AW、未改 checkpoint、未按 GIF 改 reward。AW/VXY 均为 fixed midpoint 32 quantiles、epsilon=0、相同 scene/seed/horizon；Stage2 seeds `2026083201..3300`，Stage3 seeds `2026083301..3400`。完整 paired JSON：

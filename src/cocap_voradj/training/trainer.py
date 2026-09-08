@@ -584,6 +584,8 @@ class CoCapTrainer:
         cfg = self._task_config(task)
         set_global_config(cfg)
         if task in {"voradj", "voradj_coverage"}:
+            from cocap_voradj.training.runtime_semantics import assert_config_namespaces
+            assert_config_namespaces(cfg)
             return VorAdjEnv(cfg, seed=self.seed + (43 if task == "voradj" else 47))
         return CoCapEnv(cfg, task=task, seed=self.seed + (17 if task == "coverage" else 31))
 
@@ -649,6 +651,12 @@ class CoCapTrainer:
             env.env_cfg["pursuer_spawn_mode"] = "map_random"
         try:
             obs = env.reset(initial_pursuer_positions=initial_positions, initial_pursuer_active=initial_active)
+            if isinstance(env, VorAdjEnv):
+                from cocap_voradj.training.runtime_semantics import assert_runtime
+                facts = assert_runtime(env)
+                runtime_path = self.run_dir / f"runtime_preflight_{task}.json"
+                if not runtime_path.exists():
+                    runtime_path.write_text(safe_json_dumps(facts, indent=2), encoding="utf-8")
         finally:
             if original_spawn_mode is not None:
                 env.env_cfg["pursuer_spawn_mode"] = original_spawn_mode

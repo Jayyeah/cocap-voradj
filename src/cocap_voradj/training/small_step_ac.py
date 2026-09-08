@@ -281,6 +281,8 @@ class MAPPOTrainer:
     def __init__(self, actor: nn.Module, value: CentralValueNetwork, config: MAPPOConfig, device: str):
         self.device = torch.device(device)
         self.actor = actor.to(self.device)
+        # eval() disables dropout, not autograd. Exploration is action sampling.
+        self.actor.eval()
         self.value = value.to(self.device)
         self.config = config
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
@@ -311,6 +313,7 @@ class MAPPOTrainer:
 
     @torch.no_grad()
     def act(self, local_obs: Mapping[str, Any], global_obs: Mapping[str, Any], deterministic: bool = False):
+        self.actor.eval()
         local = tensor_tree(local_obs, self.device)
         global_value = tensor_tree(global_obs, self.device)
         actions, log_prob, latent = self.actor.sample(local, deterministic=deterministic)
@@ -320,6 +323,30 @@ class MAPPOTrainer:
         # value re-normalized after the running statistics have changed.
         values = self.value(global_value)
         return actions.cpu().numpy(), log_prob.cpu().numpy(), latent.cpu().numpy(), values.cpu().numpy()
+
+    @torch.no_grad()
+    def assert_behavior_log_probs(self, batch: Mapping[str, Any], atol: float = 1e-4) -> float:
+        """Fail before updating stale/off-contract categorical rollout data.
+
+        Only active rows enter the check. No RNG, parameters, or gradients
+        are changed. Chunking bounds the memory cost for real rollouts.
+        """
+        self.actor.eval()
+        local, _ = flatten_local(tensor_tree(batch["local_obs"], self.device))
+        active = torch.as_tensor(batch["active_mask"], device=self.device, dtype=torch.bool).reshape(-1)
+        indices = torch.nonzero(active, as_tuple=False).squeeze(-1)
+        actions = torch.as_tensor(batch["latent"], device=self.device).reshape(-1).long()
+        old = torch.as_tensor(batch["log_prob"], device=self.device).reshape(-1)
+        maximum = 0.0
+        for ids in indices.split(256):
+            if not ids.numel():
+                continue
+            new, _ = self.actor.evaluate_indices({k: v[ids] for k, v in local.items()}, actions[ids])
+            error = (new - old[ids]).abs()
+            if not torch.isfinite(error).all() or float(error.max()) > atol:
+                raise ValueError("PPO zero-update log-prob contract failed: stale policy, forward mode, or rollout likelihood")
+            maximum = max(maximum, float(error.max()))
+        return maximum
 
     def update_critic_only(self, batch: Mapping[str, Any]) -> dict[str, float]:
         """Fit centralized V/ValueNorm while keeping the distilled actor bit-exact."""
@@ -404,6 +431,9 @@ class MAPPOTrainer:
         return result
 
     def update(self, batch: Mapping[str, Any], categorical: bool) -> dict[str, float]:
+        self.actor.eval()
+        if categorical:
+            self.assert_behavior_log_probs(batch)
         local = tensor_tree(batch["local_obs"], self.device)
         central = tensor_tree(batch["global_obs"], self.device)
         flat_local, (steps, agents) = flatten_local(local)

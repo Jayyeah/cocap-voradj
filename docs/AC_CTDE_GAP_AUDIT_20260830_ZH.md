@@ -1,5 +1,8 @@
 # AC / CTDE Gap 系统审计（2026-08-30）
 
+> **2026-09-08 P0 更正，优先于下文历史结论：**见 [最新合同/信息审计](P0_CONTRACT_INFORMATION_AUDIT_20260908_ZH.md)。原 PPO dropout/log-prob 合同不成立；BC 与 native PPO 实际 env seeds 相差10000，撤回 BC↔PPO 配对显著性及“显著 erosion”，warm-up未排除cold-start。旧 AC legacy_voradj 不是 Final 的半径局部敌方感知，BC100%仅在旧AC argmax capture合同有效。旧 outer-ring/首事件 latency不是新 same-target closure。support11仍为无效NOOP，AW/VXY物理预算不等价；仅使用GPU1，暂停所有旧GPU0/长训/teacher-KL路线建议。下文数字作为历史记录保留，不作为新 Gate。
+
+
 ## 1. 状态与结论
 
 `STATUS: AUDIT_COMPLETE / MAPPO-9-v2_THREE_SEED_COMPLETE_GATE_PASS / TD3_THREE_SEED_COMPLETE`

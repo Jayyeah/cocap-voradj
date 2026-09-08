@@ -680,6 +680,7 @@ def _screen(
     max_steps: int | None = None,
     deterministic: bool = True,
     reward_tail_windows: Tuple[int, ...] = (),
+    exact_env_seeds: bool = False,
 ) -> Dict[str, Any]:
     if int(episodes) <= 0:
         return {}
@@ -690,8 +691,14 @@ def _screen(
         records = []
         scene_role_rows: List[Dict[str, Any]] = []
         for episode in range(int(episodes)):
-            env = VorAdjEnv(config, seed=seed + 10000 + scene_index * 100 + episode)
-            env.reset()
+            environment_seed = seed + scene_index * max(100, int(episodes)) + episode if exact_env_seeds else seed + 10000 + scene_index * 100 + episode
+            env = VorAdjEnv(config, seed=environment_seed)
+            initial_observations = env.reset()
+            from cocap_voradj.evaluation.mission_events import MissionEventTracker, snapshot
+            from cocap_voradj.training.runtime_semantics import initial_state_fingerprint
+            initial_fingerprint = initial_state_fingerprint(env)
+            mission_tracker = MissionEventTracker(env.pursuers[0].dt * env.pursuers[0].N)
+            mission_tracker.observe(snapshot(env, initial_observations), 0)
             apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders] if bool(((config.get("evader", {}) or {}) or {}).get("autonomous", False)) else None
             adapter = env.action_adapter
             speed_limited_count = 0
@@ -748,6 +755,7 @@ def _screen(
                     deterministic=bool(deterministic),
                 )
                 outcome = env.step(actions.tolist(), _evader_actions_for_env(env, apf_agents))
+                mission_tracker.observe(snapshot(env, outcome.observations), step_idx + 1, env.last_capture_events)
                 episode_return += np.asarray(outcome.rewards, dtype=np.float64)
                 geometry = _pursuit_step_geometry(env, actions)
                 if geometry is not None:
@@ -810,6 +818,10 @@ def _screen(
                 flush=True,
             )
             episode_payload = {
+                    "seed": int(environment_seed),
+                    "initial_state_fingerprint": initial_fingerprint,
+                    "seed_semantics": "exact_per_scene_v1" if exact_env_seeds else "legacy_plus10000",
+                    "mission_events": mission_tracker.finish(env.episode_step),
                     "length": int(record["length"]),
                     "episode_return_by_agent": episode_return.tolist(),
                     "episode_return_mean": float(np.mean(episode_return)),
@@ -920,7 +932,10 @@ def _screen(
                         )
                     },
                 }
+        from cocap_voradj.evaluation.mission_events import summarize_events
         result[scene] = {
+            "legacy_ring_warning": "outer annulus counts are not capture-region closure; use mission_event_summary",
+            "mission_event_summary": summarize_events([e for row in records for e in row.get("mission_events", {}).get("events", [])]),
             "episodes": len(records),
             "success_rate": float(np.mean([bool(item["episode_success"]) for item in records])) if records else 0.0,
             "capture_rate": float(np.mean([bool(item["captured"]) for item in records])) if records else 0.0,
