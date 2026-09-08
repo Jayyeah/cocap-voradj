@@ -1,0 +1,112 @@
+{
+  "as_of": "2026-09-09T01:00:30.014942+08:00",
+  "base_commit": "f890b33a3ae67722e470f0528fb5ed2b985cc6b7",
+  "C0": "PASS",
+  "C1": "PASS",
+  "C2": "COMPLETE_SUPERVISED_ONLY",
+  "C3": "RUNNING",
+  "D": "NOT_STARTED",
+  "jobs": [
+    {
+      "physical_gpu": 0,
+      "queue": {
+        "status": "running",
+        "stage": "C3 frozen formal100 per scene",
+        "mode": "iqn_greedy",
+        "pid": 246769,
+        "queue_pid": 246733,
+        "started_at": "2026-09-09T00:52:12.418797+08:00",
+        "physical_gpu": 0,
+        "command": [
+          "/usr/local/anaconda3/bin/python3",
+          "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/tools/evaluate_forward_final_actor_20260908.py",
+          "--output-root",
+          "artifacts/2026-09-08_forward_final/c3_formal100/iqn_greedy",
+          "--mode",
+          "iqn_greedy",
+          "--actor-checkpoint",
+          "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+          "--episodes",
+          "100",
+          "--seed",
+          "2026096101",
+          "--device",
+          "cuda:0"
+        ],
+        "source_sha256": {
+          "tools/run_forward_final_bridge_20260908.py": "2ba8853a7765adb12544909d2195832672dec7d0d6a9c03f63a76b1d1e26fcc0",
+          "tools/evaluate_forward_final_actor_20260908.py": "10fa07ef7a94308375385cdcb5149e347e0d4eefd70276a9a433d485a53477f5",
+          "src/cocap_voradj/training/forward_final.py": "09e4e004914bf1ee42a94ec8e5610a91215abb8dd558febfc2577e2d20d49f6e"
+        },
+        "modes": [
+          "iqn_greedy",
+          "bc_argmax"
+        ]
+      },
+      "progress": {
+        "status": "running",
+        "completed": 105,
+        "total": 200,
+        "scene": "coverage",
+        "current_step": 100,
+        "elapsed_seconds": 493.91414624999743,
+        "eta_seconds": 446.87470374999765
+      },
+      "completed_episodes_per_minute": 12.75525321117492,
+      "checkpoint": "Final Stage1@2m teacher; queued argmax uses same C2 checkpoint",
+      "eta_current_mode_at": "2026-09-09T01:07:56.889646+08:00",
+      "remaining_queue_note": "IQN completes then BC argmax200 episodes, additional roughly16–25 minutes; empirical ETA not guarantee"
+    },
+    {
+      "physical_gpu": 1,
+      "queue": {
+        "status": "running",
+        "stage": "C3 frozen formal100 per scene",
+        "mode": "bc_sample",
+        "pid": 246770,
+        "queue_pid": 246734,
+        "started_at": "2026-09-09T00:52:12.425270+08:00",
+        "physical_gpu": 1,
+        "command": [
+          "/usr/local/anaconda3/bin/python3",
+          "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/tools/evaluate_forward_final_actor_20260908.py",
+          "--output-root",
+          "artifacts/2026-09-08_forward_final/c3_formal100/bc_sample",
+          "--mode",
+          "bc_sample",
+          "--actor-checkpoint",
+          "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+          "--episodes",
+          "100",
+          "--seed",
+          "2026096101",
+          "--device",
+          "cuda:0"
+        ],
+        "source_sha256": {
+          "tools/run_forward_final_bridge_20260908.py": "2ba8853a7765adb12544909d2195832672dec7d0d6a9c03f63a76b1d1e26fcc0",
+          "tools/evaluate_forward_final_actor_20260908.py": "10fa07ef7a94308375385cdcb5149e347e0d4eefd70276a9a433d485a53477f5",
+          "src/cocap_voradj/training/forward_final.py": "09e4e004914bf1ee42a94ec8e5610a91215abb8dd558febfc2577e2d20d49f6e"
+        },
+        "modes": [
+          "bc_sample"
+        ]
+      },
+      "progress": {
+        "status": "running",
+        "completed": 104,
+        "total": 200,
+        "scene": "coverage",
+        "current_step": 125,
+        "elapsed_seconds": 492.05791257100645,
+        "eta_seconds": 454.2073039116982
+      },
+      "completed_episodes_per_minute": 12.681434116963898,
+      "checkpoint": "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+      "eta_current_mode_at": "2026-09-09T01:08:04.222246+08:00",
+      "remaining_queue_note": "Only BC sample; no downstream training"
+    }
+  ],
+  "next_wake_up": "2026-09-09 01:35 Asia/Shanghai, or after all three C3 report.json exist",
+  "next_action": "Read C3 comparison.json; if absent and all three reports complete, run evaluate_forward_final_actor_20260908.py --aggregate --output-root artifacts/2026-09-08_forward_final/c3_formal100. Verify fingerprints and Gate. Do not infer PASS from partials; no automatic PPO."
+}

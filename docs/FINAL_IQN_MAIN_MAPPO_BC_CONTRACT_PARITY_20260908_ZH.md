@@ -1,5 +1,7 @@
 # main Final IQN-AW ↔ 当前 MAPPO-BC Contract Parity Audit
 
+> **路线更新（用户确认，2026-09-08/09）：** 本文保留历史审计事实；第7节原 A/B 必经 Gate 和 GPU1-only 调度已失效。A/B 现为 `OPTIONAL_DIAGNOSTIC`。当前主线是 Forward Final C0→C1→C2→C3，允许双 GPU，进度见 [Forward Final bridge 台账](FORWARD_FINAL_MAPPO_BRIDGE_LEDGER_20260908_ZH.md)。不得按本页旧 NEXT WAKE-UP 重启 Pure-Capture formal100。
+
 审计日期：2026-09-08。已 pull/fetch；canonical 是远端 **main@a5814f49fa29d869cdc3fb8d8e0df4722aa11f00**（2026-08-04 Final integrated release）；实验分支起点为 **4bf3c6935917d2515c50132ad088c991125226a8**。不能用实验分支名字或 teacher 文件名替代这两个身份。本页更新 P0 中“下一步直接做 Final-side 冻结比较”的建议：先完成下文 A，再安排明确定义的 B。
 
 ## 1. 核心裁决与历史意图
