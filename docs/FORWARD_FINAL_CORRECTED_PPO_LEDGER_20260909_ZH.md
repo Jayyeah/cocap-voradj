@@ -217,3 +217,12 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **EXPERIMENT RESULT：** P0冻结120条全部完成。共同safe mixed18对PPO慢10.639秒，但discounted return也降1.137；recovery reward–time关联弱，不能把退化写成普遍“拖延刷reward”。P0允许critic-only进一步定位，不是严格时间目标对齐PASS。continuous mean/sample80条全部safe且0collision，但mean pure P90=170.45秒未过效率Gate，`HOLD_CONTINUOUS_REPRESENTATION`，支线STOP。
 
 **CODE FACT / 运行协议：** 50维critic-only phase/time/history schema已实现，Actor输入不变。GPU0最小context对照重放原40条MC bank并逐bit校验geometry/target，再以原100更新/同batch训练；GPU1结束。详见[root-cause第8–10节及末节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。25k仍HOLD，P3尚不具备前提。
+
+
+## 16. 最新状态：context对照工程中断，已修复来源追踪
+
+**RUNTIME FACT：** 原context worker PID586169已退出，29/40回合、critic更新0。中断来自“capture snapshot来源必须等于reset后坐标”的错误断言；原生reset会按新障碍/间距约束修复坐标。不是context V训练负结果，也没有context calibration结论。
+
+**CODE FACT / 验证：** 已改为reset前记录实际选中snapshot对象SHA，保留reset后是否修复作为诊断；原bank逐bitparity和split隔离断言继续保留。故意无效snapshot的source/RNG/初态对照及其余相关测试共5 passed。未重启实验，旧运行快照与NEXT WAKE-UP失效；无本项目GPU任务运行。
+
+下一步仅重跑同一40episode/100更新context诊断，然后按phase/heldout/baseline决定后续；25k PPO HOLD，continuous支线STOP。具体结论、修复及命令见[root-cause第12节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。

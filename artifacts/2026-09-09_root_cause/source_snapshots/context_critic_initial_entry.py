@@ -19,31 +19,6 @@ from cocap_voradj.training.small_step_ac import tensor_tree
 def content_hash(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
-class RecordedSourceStream(old.FinalMissionStream):
-    """Observe the selected snapshot before native reset may repair its positions."""
-    def reset(self):
-        originals={task:env.reset for task,env in self.envs.items()}
-        self.selected_capture_source_hash=None
-        self.capture_positions_preserved=None
-        def observe(task,original):
-            def reset(*args,**kwargs):
-                positions=kwargs.get('initial_pursuer_positions')
-                if positions is not None:
-                    selected=[item for item in self.recovery_init_pool if positions is item.get('positions')]
-                    assert len(selected)==1,'record the exact selected pool object before reset'
-                    self.selected_capture_source_hash=content_hash(selected[0])
-                    requested=np.asarray(positions).copy()
-                result=original(*args,**kwargs)
-                if positions is not None:
-                    self.capture_positions_preserved=bool(np.array_equal(requested,np.asarray([[p.x,p.y] for p in self.envs[task].pursuers])))
-                return result
-            return reset
-        for task,env in self.envs.items():env.reset=observe(task,originals[task])
-        try:return super().reset()
-        finally:
-            for task,env in self.envs.items():env.reset=originals[task]
-
-
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--device',default='cuda:0');a=p.parse_args();out=a.out
     assert not (out/'launch.json').exists(),'fresh output required'
@@ -61,17 +36,16 @@ def main():
                 seen.add(stream.episode);pool=list(stream.recovery_init_pool);hashes=[content_hash(s) for s in pool];snapshots.update(hashes)
                 matching=[h for h,s in zip(hashes,pool) if np.array_equal(np.asarray(s['positions']),np.asarray([[p.x,p.y] for p in env.pursuers]))]
                 source=stream.last_reset_source[stream.task]
-                if source=='capture_snapshot':assert stream.selected_capture_source_hash in hashes,'selected source must belong to this split pool'
-                lineage.append({'episode':stream.episode,'task':stream.task,'initial_fingerprint':initial_state_fingerprint(env),'reset_source':source,'capture_source_hashes':[stream.selected_capture_source_hash] if source=='capture_snapshot' else [],'post_reset_position_matching_hashes':matching,'capture_positions_preserved':stream.capture_positions_preserved,'pool_snapshot_hashes':hashes})
+                if source=='capture_snapshot':assert matching,'capture source must match actual reset positions'
+                lineage.append({'episode':stream.episode,'task':stream.task,'initial_fingerprint':initial_state_fingerprint(env),'reset_source':source,'capture_source_hashes':matching,'pool_snapshot_hashes':hashes})
             context.append(value_context(env));assert env.reward_cfg['coverage_ce_speed_weight']==.0005
             return original(t,stream)
         old.collect_transition=hook
         def progress(n):
             elapsed=time.monotonic()-start
             atomic_json(out/'progress.json',{'status':'collecting_context','split':split,'completed':n+(30 if split=='heldout' else 0),'total':40,'elapsed_seconds':elapsed,'episodes_per_minute':60*(n+(30 if split=='heldout' else 0))/max(elapsed,1),'eta_seconds':elapsed/max(n+(30 if split=='heldout' else 0),1)*(40-n-(30 if split=='heldout' else 0))+15})
-        original_stream=old.FinalMissionStream;old.FinalMissionStream=RecordedSourceStream
         try:central,data=old.collect(trainer,seed,count,out/split,progress)
-        finally:old.collect_transition=original;old.FinalMissionStream=original_stream
+        finally:old.collect_transition=original
         prior=dict(np.load(base/split/'fixed_bank.npz'));assert len(context)==len(data['episode'])
         for k,v in data.items():np.testing.assert_array_equal(v,prior[k])
         for k,v in central.items():np.testing.assert_array_equal(v,prior['global_'+k])

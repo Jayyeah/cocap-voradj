@@ -2,7 +2,7 @@
 
 事实起点：2026-09-09 同步 `origin/experiment/small-step-ac-migration-20260828`，`git fetch --prune` + `git merge --ff-only @{u}` 后 HEAD=`22046dd4fea91497b04f7dffb15e216c74a6cc31`。该提交在 `515d54d` 之后，已经包含 fixed-MC critic 100-update 拟合与完整 GIF 结果。`f890b33` / `f9532d2` / `515d54d` 均为祖先。用户本阶段指令覆盖旧台账下一实验建议及 AGENTS 中旧预算顺序。C3 PASS 保留，不重证 Actor/BC 迁移。
 
-**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；critic-only context对照按第10节进行，状态见末节。
+**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；critic-only context对照在拟合前因来源追踪断言中断，已修复并测试，尚未重启（第12节）。
 
 所有新增结论采用 CODE FACT / RUNTIME FACT / EXPERIMENT RESULT / LITERATURE-BACKED INTERPRETATION / HYPOTHESIS。历史台账中的 CONFIRMED 等标签不回写。
 
@@ -162,3 +162,24 @@ mean pure P90超过同seed BC argmax的1.25倍预声明门槛，`HOLD_CONTINUOUS
 快照时间：2026-09-09T19:08:08.594633+08:00。GPU0 tmux=`cocap_context_critic_20260909`，PID=586169，alive=True；实际阶段`collecting_context`，critic update=0，采集完成=25/40。throughput=12.931678193716923 episodes/min；ETA=2026-09-09T19:09:33.191168+08:00。**NEXT WAKE-UP：2026-09-09T19:10:33.191168+08:00，或report出现时。** 这是运行快照，不是Gate完成；episode内部step在本collector未上报，不能假称已完成100更新。GPU1已结束，continuous HOLD后STOP；P0已完成。完整状态见`artifacts/2026-09-09_root_cause/SESSION_HANDOFF.json`。
 
 作业启动源码另在`source_snapshots/`归档并逐SHA匹配launch；P0运行时加载的是22046dd原evaluator，continuous加载的是新增物理policy接口版本。22项相关测试通过，`git diff --check`通过。所有后台任务仅本项目，未占用或停止其它用户进程。
+
+
+## 12. 快速状态更新：context对照中断，非算法负结果
+
+**最新状态覆盖第11节快照：无本项目后台任务运行；旧NEXT WAKE-UP失效。** GPU0另有PID590300占约17GB，非本context作业，本轮未占用或停止它；GPU1 continuous评估早已结束。
+
+**RUNTIME FACT：** PID586169在train episode29（第30回合）开始时触发`capture source must match actual reset positions`，只完成29/40回合。**Actor更新0、critic更新0**；无新context critic checkpoint/report。因此不得写作“context fitting失败/无效”，本轮只有工程中断，context修复的价值尚未检验。原progress残留running现已更正，`failure_audit.json`保存旧快照及日志SHA。
+
+**CODE FACT：** `envs/base.py::reset`接收capture snapshot位置后，会按新障碍和pursuer最小间距重新验证，冲突时重采样位置。于是`reset_source=capture_snapshot`表示初始化来源，不保证最终坐标原样保留。此前诊断工具用最终坐标反查source并硬断言相等，是错误的provenance假设。原Final环境语义未改，此发现不推翻P0/C3结果或已有state-aliasing反例。
+
+**修复及验证：** `RecordedSourceStream`在调用原生env.reset前，从`initial_pursuer_positions`的实际来源对象记录选中snapshot SHA；之后另存`capture_positions_preserved`和坐标匹配列表，允许原生修复。继续要求source属于本split pool，保留原MC bank的geometry/target逐bit匹配及train/heldout source disjoint断言，没有绕过真正的数据隔离Gate。新增故意无效snapshot测试，验证修复前source身份准确、reset后初态fingerprint与Python RNG逐项等于未加记录的原生stream。相关**5 tests passed**；无新训练。
+
+**LITERATURE-BACKED INTERPRETATION：** 目前最强证据仍是“缺context确实存在”以及“复杂geometry V的heldout recovery不胜简单phase/time baseline”；它们支持先修state再校准，但仍不能证明PPO变慢由critic aliasing引起。P0未显示mixed策略普遍用效率换更高return；continuous的纯coverage长尾门槛未过。二者均不支持跳入新RL算法。
+
+**唯一下一步：** 在fresh目录重跑修复后的同一40episode/100更新context对照，先过原bank逐bitparity，再看train/heldout pre/post/pure/closure的RMSE、MAE、EV、calibration与baseline。此次快速更新未启动重跑，不新增超参或预算。若context后post训练仍仅学均值，先对固定bank做phase梯度贡献/信号诊断；若train好heldout差，先数据多样性；若两边改善，仍须补failure/outcome校准后再讨论P3。25k继续HOLD。
+
+重新执行入口（先核对空闲GPU；下例仅指定当时空闲的GPU1，不自动启动）：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fit_forward_final_context_critic_20260909.py --out artifacts/2026-09-09_root_cause/context_critic_lineage_fixed --device cuda:0
+```

@@ -54,3 +54,25 @@ def test_critic_context_distinguishes_timers_without_changing_actor_observation(
         new=extended({k:torch.as_tensor(v[None]) for k,v in batch.items()})
     torch.testing.assert_close(original,new,rtol=0,atol=1e-6)
     assert extended.self_feature_dim==9+len(NAMES)
+
+
+def test_capture_source_recording_survives_native_position_repair(tmp_path):
+    import random
+    from tools.fit_forward_final_context_critic_20260909 import RecordedSourceStream,content_hash
+    from tools.train_forward_final_ppo_20260909 import FinalMissionStream
+    from cocap_voradj.training.runtime_semantics import initial_state_fingerprint
+    # Deliberately invalid snapshot: native reset must repair it. The source identity
+    # remains exact and instrumentation must preserve both reset output and RNG.
+    snapshot={'step':7,'positions':[[0.,0.]]*4,'active_mask':[True]*4}
+    results=[]
+    for cls,name in [(FinalMissionStream,'plain'),(RecordedSourceStream,'recorded')]:
+        random.seed(2026099991)
+        stream=cls(2026099991,tmp_path/name)
+        stream.recovery_init_pool.append(snapshot);stream.recovery_from_capture_ratio=1.
+        stream.reset()
+        assert stream.last_reset_source[stream.task]=='capture_snapshot'
+        results.append((initial_state_fingerprint(stream.env),random.getstate()))
+        if name=='recorded':
+            assert stream.selected_capture_source_hash==content_hash(snapshot)
+            assert stream.capture_positions_preserved is False
+    assert results[0]==results[1]
