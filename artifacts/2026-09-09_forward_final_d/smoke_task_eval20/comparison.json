@@ -1,0 +1,691 @@
+{
+  "gate": {
+    "min_per_scene": 20,
+    "min_safe_success": 0.9,
+    "max_reliability_drop": 0.1,
+    "max_collision_increase": 0.1,
+    "max_mission_p90_ratio": 1.25,
+    "interpretation": "short update-health screen; point estimates only; 256-step smoke warm-up cannot establish the benefit of planned4096-step warm-up"
+  },
+  "branches": {
+    "direct512": {
+      "decision": "SMOKE_HEALTH_PASS",
+      "failed_checks": [],
+      "paired": {
+        "mixed": {
+          "safe_complete": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "captured": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "collision": {
+            "student_minus_teacher": -0.05,
+            "paired_bootstrap_95ci": [
+              -0.15,
+              0.0
+            ]
+          },
+          "boundary": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "ce_success": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "mission_seconds_delta_common_safe": {
+            "n": 19,
+            "mean": 31.57894736842105,
+            "p50": 24.5,
+            "p90": 82.79999999999993
+          },
+          "common_safe_pairs": 19,
+          "total_pairs": 20
+        },
+        "coverage": {
+          "safe_complete": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "captured": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "collision": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "boundary": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "ce_success": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "mission_seconds_delta_common_safe": {
+            "n": 20,
+            "mean": 6.825,
+            "p50": 9.25,
+            "p90": 43.60000000000002
+          },
+          "common_safe_pairs": 20,
+          "total_pairs": 20
+        }
+      }
+    },
+    "warmup512": {
+      "decision": "HOLD_PPO_SCALE",
+      "failed_checks": [
+        "coverage/mission_p90"
+      ],
+      "paired": {
+        "mixed": {
+          "safe_complete": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "captured": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "collision": {
+            "student_minus_teacher": -0.05,
+            "paired_bootstrap_95ci": [
+              -0.15,
+              0.0
+            ]
+          },
+          "boundary": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "ce_success": {
+            "student_minus_teacher": 0.05,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.15
+            ]
+          },
+          "mission_seconds_delta_common_safe": {
+            "n": 19,
+            "mean": 12.921052631578947,
+            "p50": 23.0,
+            "p90": 73.69999999999999
+          },
+          "common_safe_pairs": 19,
+          "total_pairs": 20
+        },
+        "coverage": {
+          "safe_complete": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "captured": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "collision": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "boundary": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "ce_success": {
+            "student_minus_teacher": 0.0,
+            "paired_bootstrap_95ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "mission_seconds_delta_common_safe": {
+            "n": 20,
+            "mean": 22.7,
+            "p50": 3.75,
+            "p90": 108.95000000000003
+          },
+          "common_safe_pairs": 20,
+          "total_pairs": 20
+        }
+      }
+    }
+  },
+  "summary": {
+    "bc_parent": {
+      "mixed": {
+        "episodes": 20,
+        "captured_rate": 0.95,
+        "normal_capture_rate": 0.95,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.05,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 0.95,
+        "safe_complete_rate": 0.95,
+        "full_mission_seconds_completed": {
+          "n": 19,
+          "mean": 118.5,
+          "p50": 106.0,
+          "p90": 158.99999999999997
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 114.075,
+          "p50": 102.0,
+          "p90": 153.25000000000009
+        },
+        "capture_seconds_completed": {
+          "n": 19,
+          "mean": 47.8421052631579,
+          "p50": 46.5,
+          "p90": 69.5
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 19,
+          "mean": 70.65789473684211,
+          "p50": 63.5,
+          "p90": 106.19999999999999
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 19,
+          "mean": 29.07894736842105,
+          "p50": 28.0,
+          "p90": 37.0
+        },
+        "mission_event_summary": {
+          "capture_region_2_to_3": {
+            "completed_known_start_mean_seconds": 6.342105263157895,
+            "completed_known_start_count": 19,
+            "opportunities": 24,
+            "completed": 19,
+            "completion_rate": 0.7916666666666666,
+            "outcomes": {
+              "coalition_lost": 5,
+              "completed": 19
+            },
+            "completed_mean_seconds": 6.342105263157895,
+            "left_censored": 0
+          },
+          "capture_region_2_to_geometry": {
+            "completed_known_start_mean_seconds": 6.394736842105263,
+            "completed_known_start_count": 19,
+            "opportunities": 24,
+            "completed": 19,
+            "completion_rate": 0.7916666666666666,
+            "outcomes": {
+              "coalition_lost": 5,
+              "completed": 19
+            },
+            "completed_mean_seconds": 6.394736842105263,
+            "left_censored": 0
+          },
+          "support_to_capture_region": {
+            "completed_known_start_mean_seconds": 22.91176470588235,
+            "completed_known_start_count": 34,
+            "opportunities": 73,
+            "completed": 39,
+            "completion_rate": 0.5342465753424658,
+            "outcomes": {
+              "completed": 39,
+              "episode_end": 2,
+              "support_lost": 13,
+              "target_removed": 19
+            },
+            "completed_mean_seconds": 23.384615384615383,
+            "left_censored": 10
+          },
+          "support_to_direct": {
+            "completed_known_start_mean_seconds": 17.157894736842106,
+            "completed_known_start_count": 38,
+            "opportunities": 73,
+            "completed": 43,
+            "completion_rate": 0.589041095890411,
+            "outcomes": {
+              "completed": 43,
+              "episode_end": 1,
+              "support_lost": 13,
+              "target_removed": 16
+            },
+            "completed_mean_seconds": 17.53488372093023,
+            "left_censored": 10
+          }
+        },
+        "safe_completion_curve": {
+          "30": 0.0,
+          "60": 0.0,
+          "120": 0.55,
+          "180": 0.85,
+          "300": 0.95,
+          "600": 0.95,
+          "1500": 0.95
+        },
+        "right_censored_or_failed_episodes": 1,
+        "capture_prefix_collision_rate": 0.05
+      },
+      "coverage": {
+        "episodes": 20,
+        "captured_rate": 0.0,
+        "normal_capture_rate": 0.0,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.0,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 1.0,
+        "safe_complete_rate": 1.0,
+        "full_mission_seconds_completed": {
+          "n": 20,
+          "mean": 79.9,
+          "p50": 74.25,
+          "p90": 121.25000000000001
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 79.9,
+          "p50": 74.25,
+          "p90": 121.25000000000001
+        },
+        "capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "mission_event_summary": {},
+        "safe_completion_curve": {
+          "30": 0.0,
+          "60": 0.35,
+          "120": 0.85,
+          "180": 1.0,
+          "300": 1.0,
+          "600": 1.0,
+          "1500": 1.0
+        },
+        "right_censored_or_failed_episodes": 0
+      }
+    },
+    "direct512": {
+      "mixed": {
+        "episodes": 20,
+        "captured_rate": 1.0,
+        "normal_capture_rate": 1.0,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.0,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 1.0,
+        "safe_complete_rate": 1.0,
+        "full_mission_seconds_completed": {
+          "n": 20,
+          "mean": 147.35,
+          "p50": 137.25,
+          "p90": 192.95000000000007
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 147.35,
+          "p50": 137.25,
+          "p90": 192.95000000000007
+        },
+        "capture_seconds_completed": {
+          "n": 20,
+          "mean": 47.725,
+          "p50": 47.25,
+          "p90": 67.95
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 20,
+          "mean": 99.625,
+          "p50": 91.75,
+          "p90": 145.3000000000001
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 20,
+          "mean": 31.825,
+          "p50": 28.25,
+          "p90": 47.55
+        },
+        "mission_event_summary": {
+          "capture_region_2_to_3": {
+            "completed_known_start_mean_seconds": 6.625,
+            "completed_known_start_count": 20,
+            "opportunities": 31,
+            "completed": 20,
+            "completion_rate": 0.6451612903225806,
+            "outcomes": {
+              "coalition_lost": 11,
+              "completed": 20
+            },
+            "completed_mean_seconds": 6.625,
+            "left_censored": 0
+          },
+          "capture_region_2_to_geometry": {
+            "completed_known_start_mean_seconds": 6.725,
+            "completed_known_start_count": 20,
+            "opportunities": 31,
+            "completed": 20,
+            "completion_rate": 0.6451612903225806,
+            "outcomes": {
+              "coalition_lost": 11,
+              "completed": 20
+            },
+            "completed_mean_seconds": 6.725,
+            "left_censored": 0
+          },
+          "support_to_capture_region": {
+            "completed_known_start_mean_seconds": 22.66176470588235,
+            "completed_known_start_count": 34,
+            "opportunities": 74,
+            "completed": 40,
+            "completion_rate": 0.5405405405405406,
+            "outcomes": {
+              "completed": 40,
+              "support_lost": 14,
+              "target_removed": 20
+            },
+            "completed_mean_seconds": 24.1625,
+            "left_censored": 10
+          },
+          "support_to_direct": {
+            "completed_known_start_mean_seconds": 16.25,
+            "completed_known_start_count": 38,
+            "opportunities": 75,
+            "completed": 44,
+            "completion_rate": 0.5866666666666667,
+            "outcomes": {
+              "completed": 44,
+              "support_lost": 14,
+              "target_removed": 17
+            },
+            "completed_mean_seconds": 17.34090909090909,
+            "left_censored": 10
+          }
+        },
+        "safe_completion_curve": {
+          "30": 0.0,
+          "60": 0.0,
+          "120": 0.25,
+          "180": 0.85,
+          "300": 1.0,
+          "600": 1.0,
+          "1500": 1.0
+        },
+        "right_censored_or_failed_episodes": 0,
+        "capture_prefix_collision_rate": 0.0
+      },
+      "coverage": {
+        "episodes": 20,
+        "captured_rate": 0.0,
+        "normal_capture_rate": 0.0,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.0,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 1.0,
+        "safe_complete_rate": 1.0,
+        "full_mission_seconds_completed": {
+          "n": 20,
+          "mean": 86.725,
+          "p50": 91.0,
+          "p90": 119.55000000000003
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 86.725,
+          "p50": 91.0,
+          "p90": 119.55000000000003
+        },
+        "capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "mission_event_summary": {},
+        "safe_completion_curve": {
+          "30": 0.05,
+          "60": 0.1,
+          "120": 0.9,
+          "180": 1.0,
+          "300": 1.0,
+          "600": 1.0,
+          "1500": 1.0
+        },
+        "right_censored_or_failed_episodes": 0
+      }
+    },
+    "warmup512": {
+      "mixed": {
+        "episodes": 20,
+        "captured_rate": 1.0,
+        "normal_capture_rate": 1.0,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.0,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 1.0,
+        "safe_complete_rate": 1.0,
+        "full_mission_seconds_completed": {
+          "n": 20,
+          "mean": 130.85,
+          "p50": 120.25,
+          "p90": 176.95000000000005
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 130.85,
+          "p50": 120.25,
+          "p90": 176.95000000000005
+        },
+        "capture_seconds_completed": {
+          "n": 20,
+          "mean": 46.25,
+          "p50": 42.5,
+          "p90": 68.95
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 20,
+          "mean": 84.6,
+          "p50": 78.25,
+          "p90": 120.50000000000001
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 20,
+          "mean": 28.725,
+          "p50": 27.5,
+          "p90": 36.0
+        },
+        "mission_event_summary": {
+          "capture_region_2_to_3": {
+            "completed_known_start_mean_seconds": 4.925,
+            "completed_known_start_count": 20,
+            "opportunities": 26,
+            "completed": 20,
+            "completion_rate": 0.7692307692307693,
+            "outcomes": {
+              "coalition_lost": 6,
+              "completed": 20
+            },
+            "completed_mean_seconds": 4.925,
+            "left_censored": 0
+          },
+          "capture_region_2_to_geometry": {
+            "completed_known_start_mean_seconds": 4.925,
+            "completed_known_start_count": 20,
+            "opportunities": 26,
+            "completed": 20,
+            "completion_rate": 0.7692307692307693,
+            "outcomes": {
+              "coalition_lost": 6,
+              "completed": 20
+            },
+            "completed_mean_seconds": 4.925,
+            "left_censored": 0
+          },
+          "support_to_capture_region": {
+            "completed_known_start_mean_seconds": 23.0,
+            "completed_known_start_count": 35,
+            "opportunities": 72,
+            "completed": 40,
+            "completion_rate": 0.5555555555555556,
+            "outcomes": {
+              "completed": 40,
+              "support_lost": 12,
+              "target_removed": 20
+            },
+            "completed_mean_seconds": 23.4875,
+            "left_censored": 10
+          },
+          "support_to_direct": {
+            "completed_known_start_mean_seconds": 16.81081081081081,
+            "completed_known_start_count": 37,
+            "opportunities": 72,
+            "completed": 42,
+            "completion_rate": 0.5833333333333334,
+            "outcomes": {
+              "completed": 42,
+              "support_lost": 12,
+              "target_removed": 18
+            },
+            "completed_mean_seconds": 17.19047619047619,
+            "left_censored": 10
+          }
+        },
+        "safe_completion_curve": {
+          "30": 0.0,
+          "60": 0.0,
+          "120": 0.5,
+          "180": 0.9,
+          "300": 1.0,
+          "600": 1.0,
+          "1500": 1.0
+        },
+        "right_censored_or_failed_episodes": 0,
+        "capture_prefix_collision_rate": 0.0
+      },
+      "coverage": {
+        "episodes": 20,
+        "captured_rate": 0.0,
+        "normal_capture_rate": 0.0,
+        "stationary_capture_rate": 0.0,
+        "collision_rate": 0.0,
+        "boundary_rate": 0.0,
+        "ce_success_rate": 1.0,
+        "safe_complete_rate": 1.0,
+        "full_mission_seconds_completed": {
+          "n": 20,
+          "mean": 102.6,
+          "p50": 81.25,
+          "p90": 196.05
+        },
+        "observed_episode_seconds_all": {
+          "n": 20,
+          "mean": 102.6,
+          "p50": 81.25,
+          "p90": 196.05
+        },
+        "capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "capture_to_ce_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "detection_to_capture_seconds_completed": {
+          "n": 0,
+          "mean": null,
+          "p50": null,
+          "p90": null
+        },
+        "mission_event_summary": {},
+        "safe_completion_curve": {
+          "30": 0.0,
+          "60": 0.25,
+          "120": 0.7,
+          "180": 0.85,
+          "300": 1.0,
+          "600": 1.0,
+          "1500": 1.0
+        },
+        "right_censored_or_failed_episodes": 0
+      }
+    }
+  },
+  "decision": "HOLD_PPO_SCALE"
+}

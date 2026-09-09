@@ -137,3 +137,5 @@ closure 2→3 已知起点完成时间均值6.015 / 6.586 / 6.146秒；支援→
 **CONFIRMED：** 固定teacher representation的categorical Actor在当前完整4v1任务分布保住了主要性能；sample没有出现此前担心的显著效率鸿沟。**UNPROVEN：** MAPPO优化增益、严格总体非劣效、困难场景/大规模泛化、历史recovery训练池分布上的完全保真。
 
 BC argmax实际访问状态的IQN动作一致率88.64%，sample75.09%，仍有上述任务性能。因此停止单纯为了提高动作一致率而追加C2预算。D的价值问题转为：PPO是否能保住这种策略并改善安全完整任务效率。
+
+后续状态（2026-09-09）：C3 PASS保留；D512及低LR冻结screen暴露mixed recovery效率问题，4096critic-only留出校准仍HOLD，尚未扩25k。最新证据和唯一下一诊断见[corrected PPO台账第8–12节](FORWARD_FINAL_CORRECTED_PPO_LEDGER_20260909_ZH.md)。

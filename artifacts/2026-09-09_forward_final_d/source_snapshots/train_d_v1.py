@@ -84,13 +84,13 @@ def local_and_global(stream):
     return local,central
 
 
-def make_trainer(device,seed,actor_lr=3e-5):
+def make_trainer(device,seed):
     assert sha256_file(BC)==BC_SHA
     actor,_=load_actor(BC,device)
     for p in actor.parameters():p.requires_grad_(True)
     torch.manual_seed(seed)  # Exactly the same initial V in Direct and Warm-up.
     value=CentralValueNetwork(hidden_dim=256,num_heads=8,num_layers=4,self_feature_dim=9,max_agents=4,max_evaders=8,max_obstacles=5)
-    config=MAPPOConfig(ppo_epochs=3,minibatches=2,actor_lr=float(actor_lr),critic_lr=1e-4,target_kl=.02,value_norm=True)
+    config=MAPPOConfig(ppo_epochs=3,minibatches=2,actor_lr=3e-5,critic_lr=1e-4,target_kl=.02,value_norm=True)
     return MAPPOTrainer(actor,value,config,device)
 
 
@@ -105,28 +105,6 @@ def collect_transition(trainer,stream):
     row={'local_obs':local,'global_obs':central,'actions':physical,'latent':indices,'log_prob':logp,'values':values[0],'next_values':next_values,'rewards':np.asarray(outcome.rewards,np.float32),'active_mask':active,'terminated':term,'truncated':trunc,'episode_end':term|trunc}
     episode=stream.finish() if all(outcome.dones) else None
     return row,episode
-
-
-@torch.no_grad()
-def rollout_log_probs(trainer,batch):
-    local={k:np.asarray(v).reshape(-1,*np.asarray(v).shape[2:]) for k,v in batch['local_obs'].items()}
-    ids=np.flatnonzero(np.asarray(batch['active_mask']).reshape(-1))
-    result=[]
-    trainer.actor.eval()
-    for start in range(0,len(ids),256):
-        take=ids[start:start+256]
-        obs=tensor_tree({k:v[take] for k,v in local.items()},trainer.device)
-        result.append(trainer.actor.distribution(obs).logits.detach().cpu())
-    return torch.cat(result)
-
-
-def exact_update_diagnostics(before,after):
-    # Full categorical expectation, not an estimator using the sampled action only.
-    p=before.double().softmax(-1);lp=before.double().log_softmax(-1);lq=after.double().log_softmax(-1)
-    kl=(p*(lp-lq)).sum(-1).clamp_min(0)
-    return {'exact_full_batch_kl_old_new':float(kl.mean()),'exact_full_batch_kl_p90':float(torch.quantile(kl,.9)),
-        'exact_full_batch_kl_max':float(kl.max()),'full_batch_argmax_flip_rate':float((before.argmax(-1)!=after.argmax(-1)).double().mean()),
-        'full_batch_entropy_before':float(-(p*lp).sum(-1).mean()),'full_batch_entropy_after':float(-(lq.exp()*lq).sum(-1).mean())}
 
 
 def save_checkpoint(out,step,trainer,stream,launch,rollout,last_metrics):
@@ -145,20 +123,18 @@ def save_checkpoint(out,step,trainer,stream,launch,rollout,last_metrics):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output-root',type=Path,required=True);p.add_argument('--branch',choices=('direct','warmup'),required=True)
     p.add_argument('--steps',type=int,default=25000);p.add_argument('--warmup-steps',type=int,default=4096);p.add_argument('--rollout-length',type=int,default=256)
-    p.add_argument('--actor-lr',type=float,default=3e-5);p.add_argument('--seed',type=int,default=2026097101);p.add_argument('--device',default='cuda:0');p.add_argument('--smoke',action='store_true');args=p.parse_args();out=args.output_root
+    p.add_argument('--seed',type=int,default=2026097101);p.add_argument('--device',default='cuda:0');p.add_argument('--smoke',action='store_true');args=p.parse_args();out=args.output_root
     assert 0<args.steps<=25000,'25k first Gate; do not silently extend to 50k'
-    assert args.rollout_length>0 and args.warmup_steps>=0 and np.isfinite(args.actor_lr) and args.actor_lr>0
+    assert args.rollout_length>0 and args.warmup_steps>=0
     if not args.smoke:assert args.steps==25000 and args.rollout_length==256 and args.warmup_steps==4096
     if (out/'launch.json').exists():raise ValueError('Fresh output required; no silent checkpoint overwrite/resume')
     c3=json.loads((ROOT/'artifacts/2026-09-08_forward_final/c3_formal100/comparison.json').read_text())
     assert c3['decision'] in ('PASS','PASS_WITH_STOCHASTIC_EFFICIENCY_GAP') and c3['actor_sha256']==BC_SHA and c3['initial_state_fingerprints_verified']
     atomic_json(out/'frozen_contract_preflight.json',preflight())
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
-    trainer=make_trainer(args.device,args.seed,args.actor_lr);stream=FinalMissionStream(args.seed,out)
+    trainer=make_trainer(args.device,args.seed);stream=FinalMissionStream(args.seed,out)
     parent_hash=tensor_hash(trainer.actor.state_dict());critic_hash=tensor_hash(trainer.value.state_dict());warm=args.warmup_steps if args.branch=='warmup' else 0
     launch={'schema':SCHEMA,'policy_contract':POLICY_CONTRACT,'contract':CONTRACT,'bc_parent_sha256':BC_SHA,'c3_comparison_sha256':sha256_file(ROOT/'artifacts/2026-09-08_forward_final/c3_formal100/comparison.json'),'actor_initial_tensor_sha256':parent_hash,'critic_initial_tensor_sha256':critic_hash,'initial_fingerprint':initial_state_fingerprint(stream.env),'branch':args.branch,'warmup_steps':warm,'total_env_steps':args.steps,'budget':'warm-up counts within the common 25k total interaction budget; D2 has 4096 fewer actor-update interaction steps','seed':args.seed,'rollout_length':args.rollout_length,'ppo_config':dataclasses.asdict(trainer.config),'actor_backbone':'all parameters trainable for PPO; entire actor unchanged during warm-up','reward_schedule_clock':'teacher Stage1 age 2m + online steps; effective CE speed .0005, same in both branches','reset':'native Final trainer reset; alternating mixed/coverage; own online capture pool initially empty, cap1000, capture .75, map-random among noncapture .5','runtime':{task:check_env(env) for task,env in stream.envs.items()},'zero_update_probe':assert_runtime(stream.env,trainer.actor,categorical=True),'smoke':args.smoke,'gpu_visible':os.environ.get('CUDA_VISIBLE_DEVICES')}
-    launch['update_diagnostics']='all-active-row exact categorical KL(old||new), before vs after entire update; eval/no RNG; all nine actions'
-    assert all(group['lr']==args.actor_lr for group in trainer.actor_optimizer.param_groups)
     atomic_json(out/'launch.json',launch)
     rollout=empty_rollout();start=time.monotonic();updates=[];checkpoint={};episode_counts=Counter()
     for step in range(1,args.steps+1):
@@ -170,12 +146,10 @@ def main():
         boundary=len(rollout['rewards'])>=args.rollout_length or step==args.steps or step==warm
         if boundary:
             batch=stack_rollout(rollout);error=trainer.assert_behavior_log_probs(batch)
-            before_logp=rollout_log_probs(trainer,batch)
             if step<=warm:
                 metrics=trainer.update_critic_only(batch)
                 assert tensor_hash(trainer.actor.state_dict())==parent_hash,'Warm-up changed the actor'
             else:metrics=trainer.update(batch,categorical=True)
-            metrics.update(exact_update_diagnostics(before_logp,rollout_log_probs(trainer,batch)))
             assert all(np.isfinite(v) for v in metrics.values()),'Nonfinite PPO metrics'
             metrics.update({'step':step,'zero_update_max_log_prob_error':error,'critic_only':int(step<=warm),'ppo_env_steps':max(step-warm,0),'ce_speed_weight':stream.current_coverage_ce_speed_weight})
             updates.append(metrics);rollout=empty_rollout();atomic_json(out/'updates.json',updates)

@@ -52,3 +52,17 @@ def test_warmup_preserves_actor_and_checkpoint_is_restorable(tmp_path):
         torch.testing.assert_close(clone.actor.distribution(obs).logits,trainer.actor.distribution(obs).logits)
     result=trainer.update(batch,categorical=True)
     assert result['actor_update_l2']>0 and tensor_hash(trainer.actor.state_dict())!=before
+
+
+def test_exact_kl_probe_is_rng_and_parameter_neutral(tmp_path):
+    from tools.train_forward_final_ppo_20260909 import rollout_log_probs,exact_update_diagnostics
+    trainer=make_trainer('cpu',73,actor_lr=3e-6);stream=FinalMissionStream(73,tmp_path)
+    row,_=collect_transition(trainer,stream);rollout=empty_rollout()
+    for k,v in row.items():rollout[k].append(v)
+    batch=stack_rollout(rollout);rng=torch.get_rng_state().clone();weight=tensor_hash(trainer.actor.state_dict())
+    a=rollout_log_probs(trainer,batch);b=rollout_log_probs(trainer,batch)
+    assert torch.equal(rng,torch.get_rng_state()) and tensor_hash(trainer.actor.state_dict())==weight
+    assert exact_update_diagnostics(a,b)['exact_full_batch_kl_old_new']==0
+    assert trainer.actor_optimizer.param_groups[0]['lr']==3e-6
+    shifted=b.clone();shifted[:,0]+=1
+    assert exact_update_diagnostics(a,shifted)['exact_full_batch_kl_old_new']>0
