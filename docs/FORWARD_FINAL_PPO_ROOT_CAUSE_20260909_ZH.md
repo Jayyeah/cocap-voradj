@@ -2,7 +2,7 @@
 
 事实起点：2026-09-09 同步 `origin/experiment/small-step-ac-migration-20260828`，`git fetch --prune` + `git merge --ff-only @{u}` 后 HEAD=`22046dd4fea91497b04f7dffb15e216c74a6cc31`。该提交在 `515d54d` 之后，已经包含 fixed-MC critic 100-update 拟合与完整 GIF 结果。`f890b33` / `f9532d2` / `515d54d` 均为祖先。用户本阶段指令覆盖旧台账下一实验建议及 AGENTS 中旧预算顺序。C3 PASS 保留，不重证 Actor/BC 迁移。
 
-**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；critic-only context对照在拟合前因来源追踪断言中断，已修复并测试，尚未重启（第12节）。
+**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；首次context对照在拟合前中断；来源追踪已修复，现按同预算在GPU1重跑（第13节）。
 
 所有新增结论采用 CODE FACT / RUNTIME FACT / EXPERIMENT RESULT / LITERATURE-BACKED INTERPRETATION / HYPOTHESIS。历史台账中的 CONFIRMED 等标签不回写。
 
@@ -183,3 +183,12 @@ mean pure P90超过同seed BC argmax的1.25倍预声明门槛，`HOLD_CONTINUOUS
 ```bash
 CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fit_forward_final_context_critic_20260909.py --out artifacts/2026-09-09_root_cause/context_critic_lineage_fixed --device cuda:0
 ```
+
+
+## 13. P2已修复并重跑（用户授权）
+
+**CODE FACT / 验证：** 来源追踪保持reset前实际source身份、允许原生坐标修复；5项相关测试通过。新增GPU preflight验证50维context零初始化后，64个真实bank joint-state上的初始V最大误差=0；无policy更新。检查normalizer状态可保存。另修复异常退出遗留running进度：本进程拥有的run将保存failure_audit并标记failed；重复使用已有输出目录被拒绝时不修改其中任何文件，独立保护测试PASS。
+
+**RUNTIME FACT：** 新目录`context_critic_lineage_fixed`，GPU1/process-local cuda:0，tmux=`cocap_p2_retry_20260909`。同原30train+10heldout种子、独立pool、原geometry/target逐bitparity、同100更新/64 batch/LR/归一化/Actor冻结全部保留；无新超参，不覆盖首次失败目录。启动源码按launch SHA归档。
+
+运行快照 2026-09-09T20:46:58.625414+08:00：PID=641168；阶段=collecting_context，采集21/40，critic update=0，throughput=12.458263111867833 episode/min；ETA=2026-09-09T20:48:45.130946+08:00。**NEXT WAKE-UP：2026-09-09T20:49:45.130946+08:00，或完整report生成时。** 不按进度提前判P2 PASS。CPU检查结束，按约定不在线等待；后续先读取新目录report/failure_audit，25k仍HOLD。

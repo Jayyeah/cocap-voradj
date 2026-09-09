@@ -226,3 +226,8 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **CODE FACT / 验证：** 已改为reset前记录实际选中snapshot对象SHA，保留reset后是否修复作为诊断；原bank逐bitparity和split隔离断言继续保留。故意无效snapshot的source/RNG/初态对照及其余相关测试共5 passed。未重启实验，旧运行快照与NEXT WAKE-UP失效；无本项目GPU任务运行。
 
 下一步仅重跑同一40episode/100更新context诊断，然后按phase/heldout/baseline决定后续；25k PPO HOLD，continuous支线STOP。具体结论、修复及命令见[root-cause第12节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+
+## 17. 修复后P2重跑已启动
+
+来源追踪修复及5项测试通过，GPU上初始V函数误差=0；新增已有输出保护及失败状态记录。按用户授权在空闲GPU1启动`context_critic_lineage_fixed`，仍是同40回合/100次critic更新、Actor冻结。任务未完成时不得宣称context校准通过；最新PID/进度/ETA/NEXT WAKE-UP见[root-cause第13节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)与`SESSION_HANDOFF.json`。原失败目录保留，25k继续HOLD。
