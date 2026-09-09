@@ -1,0 +1,21 @@
+{
+  "pid": 501310,
+  "gpu_visible": "1",
+  "bc_parent_sha256": "7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd",
+  "source_sha256": "d4f1bd58e42b2b14a61526468ad877dee67d266ebd97b8c2462007555f68fcde",
+  "engine_sha256": "ad96deb20a1cf4d7d1d92edbb3a0c6abe092143a13ce62580ad7eb0697edf76b",
+  "dataset_manifest_sha256": "4f99ebf016fb30ad940ea0f87f0c200aca006fbf31510389f76fd0fca8661996",
+  "backbone_sha256": "cd9ce487bf80ccfc73fedab713579f2b7b728a6fc9ea2c80330f0e8a9b7d8b98",
+  "label": "teacher greedy AW9 physical center, never probability-weighted center",
+  "loss": "MSE on normalized hard-greedy physical command",
+  "epochs": 30,
+  "batch": 2048,
+  "lr": 0.0003,
+  "selection": "minimum validation MSE; 30 fixed epochs; no heldout rollout selection",
+  "sample_std_normalized": 0.05,
+  "sample_rule": "clip(mean_normalized + independent N(0,.05^2), -1,1); boundary mass explicitly measured",
+  "eval_seed": 2026096101,
+  "eval_episodes_per_scene_per_mode": 20,
+  "gate": "both mean/sample per-scene safe>=.9, capture mixed>=.9, collision<=.1; mean mission P90<=1.25 paired frozen BC argmax reference. Otherwise HOLD/FAIL representation; no RL in either case",
+  "ppo_updates": 0
+}

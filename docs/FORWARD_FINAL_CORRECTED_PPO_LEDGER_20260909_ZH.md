@@ -2,7 +2,9 @@
 
 起点 `f9532d2dcc49aad36d729bfc8e0eb393e4ed59c8`，本次pull确认远端无更新。C3三种冻结策略formal100已全部完成并PASS；详见 [bridge台账](FORWARD_FINAL_MAPPO_BRIDGE_LEDGER_20260908_ZH.md)。本页只记录新增D，不重新审计旧Pure-Capture。
 
-**当前（2026-09-09）：C3 bridge PASS保留；D扩预算HOLD。固定BC完整回报critic诊断已完成，phase校准门槛仍未全过；未启动25k PPO。BC与既有PPO-512各40rollout/20GIF已全部完成，详见文末及GIF台账。此前运行状态/NEXT WAKE-UP为历史快照。**
+**本阶段最新入口：[PPO root-cause台账](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。P0/P1先行；已证实critic context aliasing，25k继续HOLD。旧第12/13节下一实验建议被本阶段Gate覆盖。**
+
+**历史至22046dd（2026-09-09）：C3 bridge PASS保留；D扩预算HOLD。固定BC完整回报critic诊断已完成，phase校准门槛仍未全过；未启动25k PPO。BC与既有PPO-512各40rollout/20GIF已全部完成，详见文末及GIF台账。此前运行状态/NEXT WAKE-UP为历史快照。**
 
 ## 1. D共同parent、Final训练语义与预算
 
@@ -198,3 +200,20 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 生产目录为`artifacts/2026-09-09_forward_final_visual/{bc_sample,ppo_low_lr512_sample}/`；startup两次记录单独保留，不混入统计。两卡后台任务正常后继续文档/CPU分析；本轮结束时进度/ETA见该目录的最新SESSION_HANDOFF，不在线等待GIF完成。
 
 结束状态（2026-09-09 13:58 CST）：BC与PPO各40/40回合、20/20张GIF完成，逐回合reference parity PASS，双方初态配对一致；GPU0/GPU1任务均结束。总计80 rollout/40 GIF，统计均复现既有eval20，不增加独立样本量。预览根入口`artifacts/2026-09-09_forward_final_visual/index.html`，对应run内有全部20张图。ETA=0，无定时NEXT WAKE-UP；不再启动任何训练。
+
+
+## 15. 新阶段：P0 reward / P1 state / fixed-BC calibration
+
+从远端`22046dd4fea91497b04f7dffb15e216c74a6cc31`重新接手，先读最新代码/artifacts，不重证C3。文献检索、reward公式与runtime context审计、旧fixed-MC bank统计补全见[新台账](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+- **RUNTIME FACT：** 相同critic输入和动作，post计数10/499导致下一步继续/终止；相同CE几何、hold0/29导致继续/成功终止；release counter1/9在同raw label下产生不同next role。`STATE ALIASING / NON-MARKOV CRITIC INPUT`已证实，不等于已证明PPO退化因果。
+- **EXPERIMENT RESULT：** 原40episode fixed-MC bank零新训练；train-only phase/elapsed-time baseline在heldout post RMSE5.218优于原V5.731，pure5.379优于5.601；pre/closure原V较好。新增MAE、EV、calibration slope/intercept、rank、closure与outcome桶；原bank无失败，collision校准仍不可判。
+- **LITERATURE-BACKED INTERPRETATION：** 当前优先D类缺context，不能按train EV宣布critic健康，也不先实施旧phase-weighting建议。
+- GPU0补采已有BC/PPO及同seed IQN冻结reward轨迹；GPU1只做greedy物理中心continuous head蒸馏+frozen mean/sample eval。两条均无PPO。完整结果、Gate与结束运行状态以新台账末节为准。
+
+
+### 第15节完成结果补充
+
+**EXPERIMENT RESULT：** P0冻结120条全部完成。共同safe mixed18对PPO慢10.639秒，但discounted return也降1.137；recovery reward–time关联弱，不能把退化写成普遍“拖延刷reward”。P0允许critic-only进一步定位，不是严格时间目标对齐PASS。continuous mean/sample80条全部safe且0collision，但mean pure P90=170.45秒未过效率Gate，`HOLD_CONTINUOUS_REPRESENTATION`，支线STOP。
+
+**CODE FACT / 运行协议：** 50维critic-only phase/time/history schema已实现，Actor输入不变。GPU0最小context对照重放原40条MC bank并逐bit校验geometry/target，再以原100更新/同batch训练；GPU1结束。详见[root-cause第8–10节及末节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。25k仍HOLD，P3尚不具备前提。

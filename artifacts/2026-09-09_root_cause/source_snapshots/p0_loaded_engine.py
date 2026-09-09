@@ -60,11 +60,11 @@ def c0_gate(summary):
 
 
 @torch.no_grad()
-def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None,env_factory=None,physical_policy=None):
+def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None):
     if policy_mode not in ('iqn_greedy','bc_argmax','bc_sample'):raise ValueError(policy_mode)
     if (actor is None)!=(policy_mode=='iqn_greedy'):raise ValueError('Policy mode/actor mismatch')
     if actor is not None and on_transition is not None:raise ValueError('Teacher dataset collection must remain greedy IQN')
-    env,observations=(env_factory or make_env)(scene,seed)
+    env,observations=make_env(scene,seed)
     if actor is not None:
         from cocap_voradj.training.runtime_semantics import assert_runtime
         assert_runtime(env,actor,categorical=True)
@@ -89,12 +89,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         if on_transition:
             from cocap_voradj.training.continuous.central_schema import build_central_global_obs
             global_state=build_central_global_obs(env,max_agents=4,max_evaders=8,max_obstacles=5,self_feature_dim=9)
-        chosen=greedy;entropy=np.zeros(len(active));physical_commands=None
-        if physical_policy is not None:
-            if actor is not None or on_transition is not None:raise ValueError('Continuous frozen evaluation cannot collect AW9 teacher data')
-            physical_commands,chosen=physical_policy(local,q)
-            physical_commands=np.asarray(physical_commands)
-            assert physical_commands.shape==(len(active),2) and np.isfinite(physical_commands).all()
+        chosen=greedy;entropy=np.zeros(len(active))
         if actor is not None:
             from cocap_voradj.training.small_step_ac import tensor_tree
             batch=tensor_tree({k:np.stack([o[k] for o in local]) for k in local[0]},torch.device(device))
@@ -105,7 +100,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         policy_stats['rows']+=len(active);policy_stats['agreement_hits']+=int(hits.sum());policy_stats['entropy_sum']+=float(entropy.sum())
         policy_stats['action_histogram']=(np.asarray(policy_stats['action_histogram'])+np.bincount(chosen,minlength=9)).tolist()
         commands=[None]*len(observations)
-        for j,(i,a) in enumerate(zip(active,chosen)):commands[i]=int(a) if physical_commands is None else physical_commands[j]
+        for i,a in zip(active,chosen):commands[i]=int(a)
         outcome=env.step(commands,act_evaders(env,apf))
         for row,i in enumerate(active):
             meta=outcome.infos[i]['replay_metadata']
