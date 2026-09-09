@@ -231,3 +231,10 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 ## 17. 修复后P2重跑已启动
 
 来源追踪修复及5项测试通过，GPU上初始V函数误差=0；新增已有输出保护及失败状态记录。按用户授权在空闲GPU1启动`context_critic_lineage_fixed`，仍是同40回合/100次critic更新、Actor冻结。任务未完成时不得宣称context校准通过；最新PID/进度/ETA/NEXT WAKE-UP见[root-cause第13节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)与`SESSION_HANDOFF.json`。原失败目录保留，25k继续HOLD。
+
+
+## 18. 修复后P2完成：HOLD_CONTEXT_VALUE_CALIBRATION
+
+**EXPERIMENT RESULT：** 40回合/100critic更新完整完成，Actor逐bit不变，原bank数组逐bit一致，train/heldout初态与source池隔离通过。heldout RMSE geometry→context：pre51.971→50.610，post5.731→5.875，pure5.601→5.708；post/pure仍未胜简单baseline5.218/5.379。MAE有改善，不能称完全无学习。train post EV仍约.0042，预声明6checks仅train/pure通过。
+
+**结论：** 已识别context缺失成立，但补context+同100更新尚未解决校准，未证明它单独解释PPO变慢。下一方向是同bank的phase残差/bias及实际梯度贡献审计，不先扫参数或追加PPO。failure桶仍无样本，P3与25k继续HOLD。无本项目运行任务，NEXT WAKE-UP取消；完整结果及证据边界见[root-cause第14节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。

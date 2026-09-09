@@ -2,7 +2,7 @@
 
 事实起点：2026-09-09 同步 `origin/experiment/small-step-ac-migration-20260828`，`git fetch --prune` + `git merge --ff-only @{u}` 后 HEAD=`22046dd4fea91497b04f7dffb15e216c74a6cc31`。该提交在 `515d54d` 之后，已经包含 fixed-MC critic 100-update 拟合与完整 GIF 结果。`f890b33` / `f9532d2` / `515d54d` 均为祖先。用户本阶段指令覆盖旧台账下一实验建议及 AGENTS 中旧预算顺序。C3 PASS 保留，不重证 Actor/BC 迁移。
 
-**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；首次context对照在拟合前中断；来源追踪已修复，现按同预算在GPU1重跑（第13节）。
+**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；修复后的context对照已完成，校准仍HOLD（第14节），无本项目运行任务。
 
 所有新增结论采用 CODE FACT / RUNTIME FACT / EXPERIMENT RESULT / LITERATURE-BACKED INTERPRETATION / HYPOTHESIS。历史台账中的 CONFIRMED 等标签不回写。
 
@@ -192,3 +192,23 @@ CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fi
 **RUNTIME FACT：** 新目录`context_critic_lineage_fixed`，GPU1/process-local cuda:0，tmux=`cocap_p2_retry_20260909`。同原30train+10heldout种子、独立pool、原geometry/target逐bitparity、同100更新/64 batch/LR/归一化/Actor冻结全部保留；无新超参，不覆盖首次失败目录。启动源码按launch SHA归档。
 
 运行快照 2026-09-09T20:46:58.625414+08:00：PID=641168；阶段=collecting_context，采集21/40，critic update=0，throughput=12.458263111867833 episode/min；ETA=2026-09-09T20:48:45.130946+08:00。**NEXT WAKE-UP：2026-09-09T20:49:45.130946+08:00，或完整report生成时。** 不按进度提前判P2 PASS。CPU检查结束，按约定不在线等待；后续先读取新目录report/failure_audit，25k仍HOLD。
+
+
+## 14. P2 context对照完成：仍HOLD，补输入本身未解决校准
+
+**最新状态覆盖第13节运行快照：** GPU1任务已结束，40/40回合、100/100次critic更新，约190.65秒。`context_critic_lineage_fixed/report.json`裁决 **HOLD_CONTEXT_VALUE_CALIBRATION**。无本项目后台任务，旧NEXT WAKE-UP失效。
+
+**RUNTIME FACT / EXPERIMENT RESULT：** Actor逐bit不变；train/heldout所有原bank数组（global geometry/MC target/phase/episode/active）逐bit一致；初始V函数差0；train/heldout初态与capture source snapshot SHA无交集。完成后再次独立检查bank全部数组、context形状和checkpoint SHA，见`completion_audit.json`。来源追踪修复成功通过此前中断点。
+
+| phase | train geometry→context RMSE | heldout geometry→context RMSE | heldout简单baseline RMSE | heldout geometry→context MAE |
+|---|---:|---:|---:|---:|
+| pre | 53.812→52.490 | 51.971→50.610 | 55.762 | 41.897→40.231 |
+| post | 5.826→6.004 | 5.731→5.875 | **5.218** | 2.929→2.586 |
+| pure | 3.804→4.017 | 5.601→5.708 | **5.379** | 2.886→2.336 |
+| closure末10步 | 49.202→47.989 | 54.630→54.644 | 65.487 | 43.662→42.812 |
+
+**EXPERIMENT RESULT：** 预声明6个checks仅train/pure通过。train post EV=.0042（geometry .0040），仍几乎没有within-phase回报区分；heldout post EV=.1151（原.0974），pure=.1013（原.1079）。context后的post/pure heldout RMSE都未胜baseline。40回合全safe，failure-tail仍不可判，不能凭无碰撞样本宣布失败价值健康。
+
+**解释边界：** context不是完全无学习：pre与多个MAE/rank指标改善；但输入可辨识性修复不自动产生健康V，也没有证明aliasing是PPO退化的充分解释。post heldout EV改善但RMSE变差，必须分离bias与中心化误差，不能直接把变化全归因于大误差尾部；该分解已保存在completion_audit。样本按episode相关，指标差不是独立逐行显著性证据。
+
+**HYPOTHESIS / 下一方向：** 目前更贴近A类的post训练拟合不足，尚不能只判B类泛化差；保留目标尺度、实际梯度分配、优化及MC随机噪声等候选。下一步复用同bank做不更新参数的phase残差/bias与实际梯度贡献审计，区分pre的高MSE是否真的压制post/pure梯度，以及新增time/history输入是否被模型利用。不要把平方误差份额直接当梯度份额；先取得证据，再决定是否做一个固定预算的critic-only loss尺度对照。暂不追加warm-up/epochs/width sweep，不进入P3或25k PPO。
