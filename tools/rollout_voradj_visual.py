@@ -799,7 +799,7 @@ def render_frame(
     axis.set_title(
         f"{label} | phase {snapshot.get('phase')} | step {int(snapshot.get('global_step', 0))}/{int(frames[-1].get('global_step', len(frames) - 1))}\n"
         f"capture success {capture_status} | coverage success {coverage_status} | "
-        f"episode success {episode_status} | voronoi cv {cv_text}{ce_text}",
+        f"episode success {episode_status}\nvoronoi cv {cv_text}{ce_text}",
         fontsize=8.4,
     )
     axis.set_xlabel("x")

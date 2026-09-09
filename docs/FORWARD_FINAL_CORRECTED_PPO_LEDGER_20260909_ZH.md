@@ -2,7 +2,7 @@
 
 起点 `f9532d2dcc49aad36d729bfc8e0eb393e4ed59c8`，本次pull确认远端无更新。C3三种冻结策略formal100已全部完成并PASS；详见 [bridge台账](FORWARD_FINAL_MAPPO_BRIDGE_LEDGER_20260908_ZH.md)。本页只记录新增D，不重新审计旧Pure-Capture。
 
-**当前（2026-09-09）：C3 bridge PASS保留；D扩预算HOLD。低LR512完整eval20仍未保持mixed效率；4096步critic-only warm-up虽训练EV≈.81，独立完整回报校准未通过。Actor在整个校准阶段逐bit不变，未启动25k PPO。第4/7节的运行状态及NEXT WAKE-UP均为历史快照；以文末最新交接为准。**
+**当前（2026-09-09）：C3 bridge PASS保留；D扩预算HOLD。固定BC完整回报critic诊断已完成，phase校准门槛仍未全过；未启动25k PPO。BC与既有PPO-512各40rollout/20GIF已全部完成，详见文末及GIF台账。此前运行状态/NEXT WAKE-UP为历史快照。**
 
 ## 1. D共同parent、Final训练语义与预算
 
@@ -167,3 +167,34 @@ GPU1执行既定D2的前4096步，只训练central V/ValueNorm；零Actor/PPO更
 不再开LR/warm-up时长网格，不进入25k/50k、teacher-KL、continuous或VXY。GPU0空闲；GPU1的4096critic-only及两次冻结校准均完成，当前本项目无待运行GPU任务。ETA=0。**NEXT WAKE-UP：下次会话落实上述唯一critic诊断；没有需要定时轮询的任务。**
 
 本轮最终回归：D4项 + P010项 + critic校准3项，共 **17 passed**（仅既有protobuf弃用警告）。校准新增测试覆盖真实terminal完整回报、EV不能遮蔽常量bias、失败回合分层保留平方误差。两次`git diff --check`通过。
+
+
+## 13. 固定BC完整MC回报拟合完成：存在学习，phase校准仍不足
+
+使用`tools/fit_forward_final_mc_critic_20260909.py`，GPU1从同一初始central V开始；Actor始终冻结C3 BC；Forward Final实际训练reset/reward（CE speed=.0005）。train seed2026099201与heldout seed2027099201，两个独立stream/capture pool。30train+10heldout完整回合，19360+7384 active-agent行；分别15+15、5+5 mixed/pure。无truncation，**40回合都安全完成，没有失败样本**，所以本次不能检验collision-tail的V校准。
+
+保存每一步global state、完整gamma.99 MC return、active/phase/episode及各回合reset source。不是拿C1 teacher IQN数据冒充BC数据，不是在训练/留出之间共享capture snapshot。ValueNorm只从train目标更新一次后冻结，mean17.0289/std47.1809；heldout不参与统计、梯度或checkpoint选择。固定100个critic minibatch update（每批64个完整joint-state），约188秒，无Actor optimizer动作。模型和预测已保存，bank/模型文件本地保留，JSON/SHA可复核。
+
+| phase | train cold→fit RMSE | train within-phase EV | heldout cold→fit RMSE | heldout within-phase EV |
+|---|---:|---:|---:|---:|
+| pre-capture | 102.530→53.812 | .271 | 93.937→51.971 | .136 |
+| post-capture | 7.028→5.826 | .004 | 7.352→5.731 | .097 |
+| pure coverage | 5.968→3.804 | .374 | 7.105→5.601 | .108 |
+
+预声明post/pure的RMSE≤cold.75倍、EV>0门槛仅train/pure通过：**HOLD_MC_FIT_CALIBRATION**。不能事后把heldout约.780/.788比值改阈值称PASS；同时不能把这一启发式门槛未过等同算法完全失败。均值bias明显改善（heldout post+4.21→+.34、pure+3.94→−.49）；训练post EV≈.004提示目前主要学到阶段平均水平，尚未充分区分该phase内部的回报。
+
+CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只占train行数23.3%，却占fit后平方误差 **97.2%**；post占行数42.5%但误差仅2.1%；pure占行数34.2%但误差仅.7%。**CONFIRMED**是MSE贡献严重不均；**LIKELY**是单一总体归一化下的损失尺度值得优先检查；**UNPROVEN**是梯度被怎样主导、是否因此造成PPO效率下降、调整权重是否有效。平方误差份额不等于梯度范数。
+
+相比前次bootstrap warm-up，这次target/data/update流程均有变化，不是target-only A/B；MC仍是单次随机回报，不能把残差都视为可消除的V误差。也不据此设计新Transformer或改变Final reward。
+
+**下一研究诊断建议（尚未启动）：** 复用这份固定bank、同critic初值/100更新/相同batch索引，仅对critic MSE按train phase回报尺度加权，检查post/pure拟合能否改善且pre-capture不过度损失；仍然冻结Actor。权重只来自训练集，不修改环境reward，不使用heldout调参。它用于区分loss尺度与表示/优化问题，不自动转为正式PPO改法。当前先完成下述可视化，不启动新GPU学习任务。
+
+## 14. BC / PPO rollout GIF与本轮验证
+
+用户要求增加可视化：每个模型mixed20/10GIF、coverage20/10GIF，默认sample；BC与已有低LR512均用同seed/evaluator。新入口复用C3 transition engine与历史renderer，只加入可选快照hook、共用Actor loader、隔离快照及输出编排；renderer仅为防CE标题裁切增加换行。没有复刻旧AC环境，也没有再跑PPO训练。
+
+标准配置、两卡后台调用命令、输出与易错点见[GIF台账](FORWARD_FINAL_ROLLOUT_GIF_20260909_ZH.md)。实际可视化检查确认770×726、100ms、CE指标完整；短smoke保留首尾、绘出友军Voronoi/感知圈/CE centroid。共享代码相关回归 **28 passed**，包括C0/C1/C2合同、P0/D、critic统计、快照RNG/动作/事件不变及事件列表无序比较（改变事件内容仍拒绝）。本批实际每个rollout再核验现成eval20的fingerprint、任务指标、事件内容和action histogram。
+
+生产目录为`artifacts/2026-09-09_forward_final_visual/{bc_sample,ppo_low_lr512_sample}/`；startup两次记录单独保留，不混入统计。两卡后台任务正常后继续文档/CPU分析；本轮结束时进度/ETA见该目录的最新SESSION_HANDOFF，不在线等待GIF完成。
+
+结束状态（2026-09-09 13:58 CST）：BC与PPO各40/40回合、20/20张GIF完成，逐回合reference parity PASS，双方初态配对一致；GPU0/GPU1任务均结束。总计80 rollout/40 GIF，统计均复现既有eval20，不增加独立样本量。预览根入口`artifacts/2026-09-09_forward_final_visual/index.html`，对应run内有全部20张图。ETA=0，无定时NEXT WAKE-UP；不再启动任何训练。

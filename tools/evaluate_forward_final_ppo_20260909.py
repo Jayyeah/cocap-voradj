@@ -13,18 +13,25 @@ from tools.evaluate_forward_final_actor_20260908 import policy_summary,paired_de
 from tools.collect_iqn_aw_teacher_dataset_20260903 import sha256_file
 
 
+def load_frozen_actor(checkpoint,device):
+    actor,_=load_actor(BC,device)
+    sha=BC_SHA;step=0
+    if checkpoint:
+        payload=torch.load(checkpoint,map_location='cpu',weights_only=True)
+        assert payload['schema']==SCHEMA and payload['policy_contract']==POLICY_CONTRACT
+        assert payload['contract']==CONTRACT and payload['bc_parent_sha256']==BC_SHA and payload['teacher_sha256']==TEACHER_SHA
+        actor.load_state_dict(payload['actor_state_dict'],strict=True);sha=sha256_file(checkpoint);step=payload['step']
+    actor.eval()
+    return actor,sha,step
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output-root',type=Path,required=True);p.add_argument('--actor-checkpoint',type=Path)
     p.add_argument('--episodes',type=int,default=20);p.add_argument('--seed',type=int,default=2026098101);p.add_argument('--device',default='cuda:0')
     args=p.parse_args();out=args.output_root
     if (out/'launch.json').exists():raise ValueError('Fresh output required')
-    atomic_json(out/'runtime_preflight.json',preflight());actor,_=load_actor(BC,args.device)
-    sha=BC_SHA;step=0
-    if args.actor_checkpoint:
-        payload=torch.load(args.actor_checkpoint,map_location='cpu',weights_only=True)
-        assert payload['schema']==SCHEMA and payload['policy_contract']==POLICY_CONTRACT
-        assert payload['contract']==CONTRACT and payload['bc_parent_sha256']==BC_SHA and payload['teacher_sha256']==TEACHER_SHA
-        actor.load_state_dict(payload['actor_state_dict'],strict=True);sha=sha256_file(args.actor_checkpoint);step=payload['step']
+    atomic_json(out/'runtime_preflight.json',preflight())
+    actor,sha,step=load_frozen_actor(args.actor_checkpoint,args.device)
     actor.eval();teacher=CoCapIQN.load(str(TEACHER),device=args.device).eval()
     launch={'contract':CONTRACT,'bc_parent_sha256':BC_SHA,'actor_sha256':sha,'actor_checkpoint':str(args.actor_checkpoint or BC),'training_steps':step,'mode':'bc_sample','episodes_per_scene':args.episodes,'seed_base':args.seed,'evaluator_sha256':sha256_file(ROOT/'tools/run_forward_final_bridge_20260908.py'),'gpu_visible':os.environ.get('CUDA_VISIBLE_DEVICES'),'scope':'finite-budget frozen health screen, not formal100 or PPO advancement PASS'}
     atomic_json(out/'launch.json',launch);records=[];start=time.monotonic()

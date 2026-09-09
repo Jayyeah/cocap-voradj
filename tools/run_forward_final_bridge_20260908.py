@@ -60,7 +60,7 @@ def c0_gate(summary):
 
 
 @torch.no_grad()
-def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy"):
+def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None):
     if policy_mode not in ('iqn_greedy','bc_argmax','bc_sample'):raise ValueError(policy_mode)
     if (actor is None)!=(policy_mode=='iqn_greedy'):raise ValueError('Policy mode/actor mismatch')
     if actor is not None and on_transition is not None:raise ValueError('Teacher dataset collection must remain greedy IQN')
@@ -77,6 +77,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
     capture_step=None;ce_step=None;capture_types=[];collision=False;boundary=False;prefix_collision=False
     apf=[ApfAgent(e.a,e.w) for e in env.evaders]
     horizon=min(env.episode_max_length,max_steps) if max_steps else env.episode_max_length
+    if on_snapshot:on_snapshot(env,0)
     for step in range(1,horizon+1):
         active=[i for i,o in enumerate(observations) if o is not None]
         if not active:raise RuntimeError('No active observations before environment termination')
@@ -120,6 +121,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         if on_transition:
             on_transition(env,local,global_state,q,greedy,active,state,phase,step,outcome)
         observations=outcome.observations
+        if on_snapshot:on_snapshot(env,step)
         if on_progress and step%100==0:on_progress(step)
         if all(outcome.dones):break
     record=env.episode_record(task='coverage' if scene=='coverage' else 'mix')
