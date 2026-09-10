@@ -212,3 +212,96 @@ CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fi
 **解释边界：** context不是完全无学习：pre与多个MAE/rank指标改善；但输入可辨识性修复不自动产生健康V，也没有证明aliasing是PPO退化的充分解释。post heldout EV改善但RMSE变差，必须分离bias与中心化误差，不能直接把变化全归因于大误差尾部；该分解已保存在completion_audit。样本按episode相关，指标差不是独立逐行显著性证据。
 
 **HYPOTHESIS / 下一方向：** 目前更贴近A类的post训练拟合不足，尚不能只判B类泛化差；保留目标尺度、实际梯度分配、优化及MC随机噪声等候选。下一步复用同bank做不更新参数的phase残差/bias与实际梯度贡献审计，区分pre的高MSE是否真的压制post/pure梯度，以及新增time/history输入是否被模型利用。不要把平方误差份额直接当梯度份额；先取得证据，再决定是否做一个固定预算的critic-only loss尺度对照。暂不追加warm-up/epochs/width sweep，不进入P3或25k PPO。
+
+
+## 15. Fixed-BC phase residual / loss / gradient审计（2026-09-10落账）
+
+**最新状态：P3 HOLD、25k PPO HOLD、continuous HOLD/STOP。** 本次只读取已有fixed-BC bank与context checkpoint；Actor更新0、critic更新0、rollout新增0。审计计算已于2026-09-09结束（32.56秒），随后额度阻断了交接；2026-09-10继续核对远端仍为`259bc32`后落账。没有新的policy训练或扫参。
+
+**RUNTIME FACT：** 主报告为[`critic_gradient_audit_v2/report.json`](../artifacts/2026-09-09_root_cause/critic_gradient_audit_v2/report.json)，CPU分解为[`derived_summary.json`](../artifacts/2026-09-09_root_cause/critic_gradient_audit_v2/derived_summary.json)。沿用30 train/10 heldout完整BC回合、独立source pools和全部原MC target。checkpoint SHA=`53af9775acc2e04d1527c55310468822453c74603c4c9504640b695e73d7a1fe`；所有源bank/context/predictions/checkpoint读前读后SHA一致，模型参数state hash也不变。全40回合safe，failure分布仍不可判。
+
+**CODE FACT / 口径：** 精确匹配原critic fitting损失：`L = sum_active 0.5*(V_norm − (G−17.028923)/47.180908)^2 / N_active`，value_coef=1。`g_phase = ∇[sum_phase loss / N_all_active]`，不是把各phase均值直接相加。trunk含全部encoder/type embedding/attention；head含整个`value_head.*`。报告的是global clipping和Adam之前的真实autograd梯度；另附within-phase mean norm和signed projection。梯度范数不具有可加性，norm-mass share不能冒充“贡献了多少实际参数更新”。heldout梯度仅供诊断，不参与训练。
+
+### 15.1 Target与残差
+
+**EXPERIMENT RESULT：** count为active agent-transition数，同一时刻多agent与相邻时间高度相关，不是独立episode数；std采用population口径。
+
+| split / phase | count | target mean ± std | P10 / P50 / P90 |
+|---|---:|---:|---:|
+| train / pre_capture | 4516 | 82.263 ± 62.428 | -2.409 / 95.889 / 159.636 |
+| train / post_capture | 8220 | -2.972 ± 5.831 | -7.331 / -1.177 / -0.171 |
+| train / pure_coverage | 6624 | -2.626 ± 4.790 | -7.298 / -0.833 / -0.104 |
+| heldout / pre_capture | 1540 | 76.635 ± 55.582 | -4.353 / 86.350 / 144.882 |
+| heldout / post_capture | 3220 | -3.267 ± 6.022 | -8.551 / -1.214 / -0.183 |
+| heldout / pure_coverage | 2624 | -2.989 ± 5.907 | -6.378 / -1.206 / -0.151 |
+
+| split / phase | V−G mean / median | RMSE / MAE | global loss占比 |
+|---|---:|---:|---:|
+| train / pre_capture | -1.163 / -1.901 | 52.490 / 44.754 | 96.861% |
+| train / post_capture | +1.480 / +0.175 | 6.004 / 2.499 | 2.307% |
+| train / pure_coverage | +1.280 / +0.379 | 4.017 / 1.945 | 0.832% |
+| heldout / pre_capture | +1.127 / -4.190 | 50.610 / 40.231 | 95.252% |
+| heldout / post_capture | +1.557 / +0.120 | 5.875 / 2.586 | 2.684% |
+| heldout / pure_coverage | +1.102 / -0.037 | 5.707 / 2.336 | 2.064% |
+
+**EXPERIMENT RESULT / 解释：** post在两split呈正的平均与中位残差；pure两split平均也高估，但heldout median≈−.037，不能称所有pure状态都普遍高估。pre train平均略低估；heldout平均略高估但median为负，不能用单一偏差方向概括。pre目标std约为post/pure的10倍；train仅占23.33%的active rows，却占96.86%的MSE。这个尺度不均事实成立，但不能据此推出96.86%的gradient支配。
+
+### 15.2 实际gradient：冲突与小批次尺度不均同时存在
+
+**EXPERIMENT RESULT：** 以下norm已按全split active count加权，可直接相加为该split global gradient。
+
+| split / phase | trunk gradient norm | value head gradient norm |
+|---|---:|---:|
+| train / pre_capture | 0.110985 | 0.100325 |
+| train / post_capture | 0.072508 | 0.182588 |
+| train / pure_coverage | 0.047702 | 0.126158 |
+| heldout / pre_capture | 0.150766 | 0.172290 |
+| heldout / post_capture | 0.078850 | 0.197177 |
+| heldout / pure_coverage | 0.043524 | 0.113228 |
+
+| split / group | pre↔post cosine | pre↔pure cosine | post↔pure cosine |
+|---|---:|---:|---:|
+| train / trunk | -0.4936 | -0.4820 | +0.9746 |
+| train / head | -0.7416 | -0.7394 | +0.9948 |
+| heldout / trunk | -0.1797 | -0.1911 | +0.9728 |
+| heldout / head | -0.0545 | -0.0706 | +0.9938 |
+
+**EXPERIMENT RESULT：** 完整train bank的pre norm-mass share为trunk48.00%、head24.53%、全参数31.11%，不是97%。train head中pre对global梯度的signed projection为−.2173，post为+.7200，pure为+.4973；这三个数可加为1。全参数pre projection也为−.0973。故在当前checkpoint上，完整bank的联合原始负梯度反而会一阶增大pre loss、降低post/pure loss，不能说“此刻完整bank仍全由pre驱动、持续推高recovery V”。
+
+**EXPERIMENT RESULT：** 冲突不只来自最后一个bias：train attention pre↔post/pre↔pure cosine为−.519/−.506，head隐藏层为−.656/−.653。post/pure在attention与head分别约+.986/+.990。heldout同向/反向结构仍在，但pre↔recovery head冲突很弱（约−.05到−.07）；不得把train冲突强度外推到所有状态。
+
+**EXPERIMENT RESULT：** 在最终checkpoint固定不动的条件下，重算原batch seed序列的前16个64-joint-state minibatch（100个原索引SHA完全匹配）。pre norm-mass share中位数：trunk78.69%、head57.81%、全参数65.23%。pre↔post和pre↔pure在trunk分别8/16、9/16次负cosine，head为7/16、8/16；post↔pure仅1/16次为负。说明小批次pre尺度偏大与间歇方向冲突共存，并非每步都冲突。全库平均掩盖了一部分batch波动。**这些是固定终点的重算，不是训练100步中的历史梯度日志。** 16批中10批的原始联合梯度超过clip=.5；沿全参数联合负梯度，post/pure各有6/16批会一阶增大自己的loss，而pre为0/16。此符号只表示固定终点的局部原始梯度干扰，不是已执行的更新结果；没有执行SGD、Adam或任何参数步。Adam历史动量/二阶预条件会改变实际更新方向，不能由原始梯度夹角直接还原它。
+
+**EXPERIMENT RESULT：** 同初始化、同训练期frozen normalizer的initial V中pre全参数norm-mass仅9.27%，post/pure合90.73%；pre与二者cosine约−.958/−.952。这说明“pre从初始化起就单方面梯度支配”也不成立。此initial是进入normalized拟合时的函数，不是历史报告中未经此normalizer的raw cold预测。
+
+### 15.3 为什么phase/time baseline仍胜post/pure
+
+**CODE FACT：** baseline仅以train `E[G | phase, floor(elapsed_phase_steps/50)]`查表，heldout未见bin回退train phase均值。这里time是已经经过的phase时间，不是未来完成时间。context里的post_remaining和pure episode_remaining在当前bank可给出等价时间信息；不能把差距简单写成baseline拥有critic没有的未来信息。
+
+**EXPERIMENT RESULT：** heldout post：phase常量RMSE6.029 → phase/time5.218，复杂context V5.875；pure为5.919 → 5.379，而context V5.707。baseline确实利用了可泛化的时间信号，并非只靠更好的phase常量。train post baseline5.162也优于critic6.004；**train pure则是critic4.017优于baseline4.218**，不可误写为两split全部失败。
+
+| heldout早期0–49步 | target mean | context V mean | train-only phase/time mean |
+|---|---:|---:|---:|
+| post | −8.006 | −2.572 | −6.525 |
+| pure | −6.343 | −2.666 | −5.118 |
+
+**EXPERIMENT RESULT：** 恢复初期的负return轮廓被复杂V明显压平。heldout前50步占post/pure样本31.06%/38.11%，却贡献各phase平方误差96.78%/95.78%；train对应早期平方误差份额也为96.46%/95.71%。这不是collision贡献，因为本bank全safe。heldout post/pure prediction std为1.887/1.820，而target std为6.022/5.907，baseline std为2.608/2.217。只有欠分散本身不足以判错（条件期望本来就可比G波动小），但它结合早期平均误差和baseline优胜，证明至少一部分可预测时间结构没有拟合好。仅减去train同phase平均残差后，heldout post/pure RMSE仍约5.665/5.603，仍差于baseline5.218/5.379；不能靠统一bias校正解释全部差距。pure heldout MAE反而是critic2.336优于baseline2.379，因此本裁决针对MSE/return calibration，不是所有统计量全面落后。
+
+### 15.4 结果分类、因果边界与唯一下一建议
+
+**EXPERIMENT RESULT：** 已确认①phase target/loss尺度差，②终点共享参数中pre↔recovery局部梯度冲突，③minibatch pre梯度尺度偏大，④恢复初期平均负回报欠拟合。未发现本次mask、归一化、phase归属或checkpoint预测读取不一致：模型重算与既有predictions最大误差train3.81e−5、heldout4.58e−5；phase梯度之和与独立mixed batch直接反传相对L2差7.46e−7。
+
+**HYPOTHESIS / 分类：优先检验共享value拟合的phase干扰，伴随minibatch尺度不均；不是纯粹global scale domination。** 不能仅凭负cosine宣称它就是PPO变慢的原因，也不能排除100更新预算下的普通优化不足。post训练EV≈.0042表明训练拟合就有问题；pure同时有train→heldout差距。phase/time baseline的heldout增益证明存在未利用的可预测结构，但不能识别剩余方差是否irreducible：本bank没有同条件重复MC样本，且failure缺样。当前不裁决“target本身不可预测”。
+
+**唯一下一建议（仅方案，未实施/未启动）：做一次pre / recovery两组phase-specific value head的固定预算critic-only对照。** recovery合并post+pure，因为两者gradient高度同向；不拆三套、不增加loss weighting/PopArt/新context或预算。共享trunk和初始化、50维context、同bank/split、同normalizer、同100批索引/LR/100更新保持一致，两个head从同一原head逐bit复制，保证初始V不变，仅按已知phase路由。此对照只检验共享head干扰，不声称消除了trunk冲突；额外head参数也是解释边界。评价仍以train/heldout分phase calibration、baseline及pre保持情况为准，并重看head/trunk梯度。如果负结果，记录为这一个机制干预未获支持，不自动展开更多head/权重/预算树。此建议比直接按97% MSE加权更贴近已经量到的冲突结构，但仍需因果对照验证。
+
+**Gate：** P2仍HOLD，P3/25k PPO/continuous继续HOLD。本轮没有执行上述修复，也没有新的policy或critic训练。
+
+**工程记录 / 验证：** 首次`critic_gradient_audit`在train梯度完成后，写artifact相对路径时异常（相对路径调用absolute ROOT.relative_to）；仅修复输出目录resolve，在fresh `_v2`重跑。首次failed进度保留，非算法负结果。新增2项数学测试验证active mask排除、chunk不变性、phase梯度加和与train-only baseline unseen-bin回退，全部通过；仅既有protobuf弃用警告。审计脚本及摘要脚本、JSON报告/派生数据随本次提交；NPZ梯度向量遵循原artifact忽略规则留本地，layout/SHA在报告内，可按下列命令重算（输出须用fresh目录）。
+
+```bash
+CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/audit_forward_final_critic_gradients_20260909.py --out artifacts/2026-09-09_root_cause/critic_gradient_audit_reproduction --device cuda:0
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/summarize_forward_final_critic_gradients_20260909.py
+```
+
+摘要脚本默认读取本次`critic_gradient_audit_v2`；复现其它目录时可调用其`summarize(Path(...))`。原bank/checkpoint与所有来源SHA见report；没有把本地二进制文件宣称为GitHub已上传artifact。最新运行状态见`SESSION_HANDOFF.json`。

@@ -238,3 +238,12 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **EXPERIMENT RESULT：** 40回合/100critic更新完整完成，Actor逐bit不变，原bank数组逐bit一致，train/heldout初态与source池隔离通过。heldout RMSE geometry→context：pre51.971→50.610，post5.731→5.875，pure5.601→5.708；post/pure仍未胜简单baseline5.218/5.379。MAE有改善，不能称完全无学习。train post EV仍约.0042，预声明6checks仅train/pure通过。
 
 **结论：** 已识别context缺失成立，但补context+同100更新尚未解决校准，未证明它单独解释PPO变慢。下一方向是同bank的phase残差/bias及实际梯度贡献审计，不先扫参数或追加PPO。failure桶仍无样本，P3与25k继续HOLD。无本项目运行任务，NEXT WAKE-UP取消；完整结果及证据边界见[root-cause第14节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+
+## 19. Fixed-bank梯度审计完成：共享phase干扰优先验证，继续HOLD
+
+**EXPERIMENT RESULT：** 无新增rollout/Actor/critic更新。train pre占96.86% critic loss，但完整bank的gradient norm-mass仅trunk48.00%、head24.53%；pre↔post/pure cosine在trunk为−.494/−.482、head为−.742/−.739，post↔pure分别+.975/+.995。固定终点16个原minibatch中，pre trunk norm-mass中位数78.69%，pre↔recovery约半数batch冲突；不能把全库平均或loss占比等同历史Adam更新。
+
+**EXPERIMENT RESULT：** heldout恢复前50步post target均值−8.006、critic−2.572、baseline−6.525；pure为−6.343/−2.666/−5.118。去掉train估计的phase bias后仍未胜heldout baseline；存在可预测时间轮廓欠拟合，不能判target不可预测。train pure的RMSE实际优于baseline，避免全盘失败叙述。
+
+**HYPOTHESIS / 唯一下一建议：** 优先验证pre与recovery共享value head干扰：仅提出一个pre/recovery两head、同bank/初始化/normalizer/batches/100更新的critic-only对照，post与pure合组；未实施、未启动。尺度不均共存、共享trunk冲突和普通优化不足仍是边界。P2/P3/25k/continuous继续HOLD。全部phase target/residual/loss/实际gradient表、复现与证据边界见[root-cause第15节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
