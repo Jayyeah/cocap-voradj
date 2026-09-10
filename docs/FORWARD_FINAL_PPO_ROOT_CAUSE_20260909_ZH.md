@@ -305,3 +305,102 @@ OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/summarize_forward_final_c
 ```
 
 摘要脚本默认读取本次`critic_gradient_audit_v2`；复现其它目录时可调用其`summarize(Path(...))`。原bank/checkpoint与所有来源SHA见report；没有把本地二进制文件宣称为GitHub已上传artifact。最新运行状态见`SESSION_HANDOFF.json`。
+
+
+## 16. Same-bank two-head结构性对照完成：CASE 3，停止拆head方向
+
+**最新裁决：`CASE_3_STOP_HEAD_SPLITTING_NO_RECOVERY_CALIBRATION_BENEFIT`。P2、P3、25k PPO、continuous继续HOLD。** 此节覆盖第15节的“待实施two-head建议”：该唯一对照已按用户授权完成，不再建议重复拆head或加预算。100次critic更新、Actor更新0、新rollout 0；GPU1作业PID886255已结束，总耗时29.25秒。随后额度限制曾阻断落账，继续会话仅补分析/核验/提交，没有重跑训练。
+
+**RUNTIME FACT / 同条件断言：** 复用原30 train/10 heldout bank与全部50维context。原bank/context/SHA、train/heldout初态fingerprint与source pool隔离再次通过；Actor tensor hash不变。原始初始context V state SHA=`2e50472c2294de5b83278dac5dd04c7c2dc706a15e0bfb20b36db3a7ecc2dd4d`；复制pre/recovery两个head后，**全train+heldout bank初始V最大误差=0**。原100批索引SHA=`c2124f2eb0f5a866e38f5cd11105d5e570bca50a89f57825aea4af0b74727254`。
+
+**CODE FACT：** 新增实验包装器`TwoHeadCentralValue`，不改原`CentralValueNetwork.forward`或任何trunk结构。`shared.value_head`为V_pre，`recovery_head`逐bit复制同一初始head；真实phase 0路由pre，1/2路由recovery。使用functional parameter substitution复用原forward；同一组trunk参数计算两次，只有选中输出进入loss，增加计算量但不增加trunk参数。trunk按原流程可训练，未额外冻结；“trunk保持不变”指结构、forward、初始权重和训练规则，不是要求最终权重固定。模型未接入PPO部署。
+
+**RUNTIME FACT：** 使用原checkpoint实际optimizer配置创建空状态Adam，LR1e−4、eps1e−5、betas(.9,.999)、weight_decay=0，其余flags逐项保存。train-only ValueNorm仍为mean17.028923/std47.180908，原始global active mean的0.5 normalized MSE、value_coef=1、global clip=.5，100次更新，无phase weighting/采样变化/reward变化。全部参数optimizer step均为100。启动前声明的5% recovery RMSE改善/2% pre容忍仅是筛查标准，不是统计显著性；完整原始变化和episode bootstrap均报告。
+
+原始证据：[`report.json`](../artifacts/2026-09-09_root_cause/two_head_value_20260910/report.json)、[`analysis.json`](../artifacts/2026-09-09_root_cause/two_head_value_20260910/analysis.json)、[`validation.json`](../artifacts/2026-09-09_root_cause/two_head_value_20260910/validation.json)；完整runtime config/semantic assertion见同目录`runtime_preflight.json`与`launch.json`。
+
+### 16.1 全phase拟合：recovery整体退化
+
+**EXPERIMENT RESULT：** 以下箭头均为single→two；baseline列为同train-only phase/time predictor。MAE、EV、calibration、rank及全部episode分项也保存在raw report，无aggregate EV替代。
+
+| split / phase | RMSE single→two | baseline RMSE | MAE single→two | EV single→two |
+|---|---:|---:|---:|---:|
+| train / pre_capture | 52.490 → 53.550 | 61.956 | 44.754 → 45.792 | 0.2934 → 0.2662 |
+| train / post_capture | 6.004 → 7.128 | 5.162 | 2.499 → 5.925 | 0.0042 → 0.0134 |
+| train / pure_coverage | 4.017 → 6.082 | 4.218 | 1.945 → 5.672 | 0.3682 → 0.2495 |
+| heldout / pre_capture | 50.610 → 51.185 | 55.762 | 40.231 → 40.486 | 0.1713 → 0.1525 |
+| heldout / post_capture | 5.875 → 6.974 | 5.218 | 2.586 → 5.962 | 0.1151 → 0.0757 |
+| heldout / pure_coverage | 5.707 → 7.026 | 5.379 | 2.336 → 5.874 | 0.1013 → 0.0955 |
+
+| split / phase | residual bias single→two | calibration slope single→two | intercept single→two |
+|---|---:|---:|---:|
+| train / pre_capture | -1.163 → -2.812 | 0.980 → 0.920 | +2.812 → +9.153 |
+| train / post_capture | +1.480 → -4.155 | 0.527 → 0.782 | -2.186 → +2.602 |
+| train / pure_coverage | +1.280 → -4.446 | 1.761 → 3.062 | -0.256 → +19.033 |
+| heldout / pre_capture | +1.127 → +1.264 | 0.752 → 0.720 | +18.149 → +20.580 |
+| heldout / post_capture | +1.557 → -3.888 | 1.086 → 1.946 | -1.409 → +10.656 |
+| heldout / pure_coverage | +1.102 → -4.219 | 1.034 → 2.261 | -1.038 → +13.305 |
+
+calibration方向与原台账一致：`G = slope × V + intercept`。理想slope1/intercept0；该回归仅报告校准，不据此修改任何预测或checkpoint。
+
+**EXPERIMENT RESULT：** heldout pre RMSE+1.14%，train pre+2.02%（略过2%容忍）；结论不依赖这一细小阈值差，因为recovery明显失败：heldout post/pure RMSE分别+18.71%/+23.10%，train分别+18.72%/+51.42%。heldout每phase仅5个episode；配对episode bootstrap的two−single RMSE区间：pre[+.148,+1.169]，post[+.388,+1.912]，pure[+.096,+2.781]。这是此固定bank的证据，不包含训练seed变异，不外推为所有任务的统计定律。
+
+### 16.2 前50步局部改善，后期严重低估：不是学好了recovery时间轮廓
+
+**EXPERIMENT RESULT：** 前50步使用phase起点后的0–49步，两个模型及baseline使用相同mask。
+
+| split / phase 前50步 | RMSE single→two | baseline RMSE | MAE single→two | EV single→two | bias single→two |
+|---|---:|---:|---:|---:|---:|
+| train / post_capture | 9.761 → 8.630 | 8.467 | 4.942 → 5.771 | -0.0482 → -0.0269 | +4.487 → -0.923 |
+| train / pure_coverage | 5.839 → 6.078 | 6.232 | 3.275 → 5.227 | 0.3233 → 0.2126 | +2.795 → -2.522 |
+| heldout / post_capture | 10.371 → 8.838 | 9.104 | 6.199 → 6.185 | 0.0332 → 0.0351 | +5.434 → +0.494 |
+| heldout / pure_coverage | 9.048 → 8.309 | 8.572 | 4.305 → 5.594 | 0.0504 → 0.0627 | +3.677 → -1.252 |
+
+| heldout stratum | target mean | single V mean | two V mean | RMSE single→two |
+|---|---:|---:|---:|---:|
+| post_capture / first_50 | -8.006 | -2.572 | -7.512 | 10.371 → 8.838 |
+| post_capture / after_50 | -1.133 | -1.323 | -6.995 | 1.270 → 5.947 |
+| pure_coverage / first_50 | -6.343 | -2.666 | -7.595 | 9.048 → 8.309 |
+| pure_coverage / after_50 | -0.924 | -1.407 | -6.970 | 1.489 → 6.103 |
+
+**EXPERIMENT RESULT：** heldout post/pure early50 RMSE下降14.78%/8.17%，不能忽略此局部变化；但V_recovery相对single整体下移5.445/5.321，状态间差值std仅1.090/1.054。后50步target已约−1，two-head却仍预测约−7，导致后期RMSE升到5.947/6.103。heldout post/pure的MSE增加分别约90%/99%来自bias²增大，中心化误差方差32.089→33.518、31.360→31.564也未改善。train pure前50步RMSE还上升4.09%。因此这不是稳定的early-recovery表征改善，而主要表现为阶段整体预测偏移；MAE与时间轮廓直接揭示代价。
+
+### 16.3 梯度：head隔离成功，整体trunk冲突减小，但value未健康
+
+**EXPERIMENT RESULT：** head的pre与recovery梯度使用互不重叠参数，因此cosine=0是结构保证，不是学习成功的证据。实际反传检查pre样本对recovery head gradient norm=0，post/pure对pre head norm=0。其余范数与角度如下（均按全split active count加权）：
+
+| split / phase | trunk norm single→two | head norm single→two |
+|---|---:|---:|
+| train / pre_capture | 0.110985 → 0.138637 | 0.100325 → 0.217381 |
+| train / post_capture | 0.072508 → 0.133994 | 0.182588 → 0.499240 |
+| train / pure_coverage | 0.047702 → 0.115042 | 0.126158 → 0.430573 |
+| heldout / pre_capture | 0.150766 → 0.132987 | 0.172290 → 0.177634 |
+| heldout / post_capture | 0.078850 → 0.127773 | 0.197177 → 0.478893 |
+| heldout / pure_coverage | 0.043524 → 0.113771 | 0.113228 → 0.424515 |
+
+| split / group | pre↔post cosine single→two | pre↔pure cosine single→two | post↔pure cosine single→two |
+|---|---:|---:|---:|
+| train / trunk | -0.4936 → +0.5115 | -0.4820 → +0.4997 | +0.9746 → +0.9857 |
+| train / head | -0.7416 → +0.0000 | -0.7394 → +0.0000 | +0.9948 → +0.9994 |
+| heldout / trunk | -0.1797 → +0.0913 | -0.1911 → +0.0776 | +0.9728 → +0.9818 |
+| heldout / head | -0.0545 → +0.0000 | -0.0706 → +0.0000 | +0.9938 → +0.9986 |
+
+**EXPERIMENT RESULT：** 同原16批索引、在各自最终checkpoint重新测量：pre trunk norm-mass中位数78.69%→46.67%；pre↔post/pre↔pure负cosine频次8/16→5/16、9/16→6/16，中位cosine转为+.281/+.275。仍有小批次冲突，但完整train/heldout trunk均转正，不能声称当前证据要求PCGrad。均为clip/Adam之前的局部autograd，不是历史optimizer轨迹。实际phase梯度之和与独立mixed-batch直接反传的relative L2误差2.38e−5，通过原1e−4门槛。
+
+### 16.4 分类与唯一下一建议
+
+**EXPERIMENT RESULT / CASE 3：** 在指定100-update协议内，解除直接head参数竞争未带来recovery全阶段校准增益；没有“recovery明显改善且pre保持”的CASE 1证据，也不符合“仍明显整体trunk冲突”的CASE 2优先条件。前50步局部RMSE改善不足以覆盖晚期回报失真。**停止这一拆head方向，不启动very-short PPO、不做PCGrad/GradNorm、partial trunk separation或更多结构/预算对照。**
+
+**HYPOTHESIS：** 当前更像phase/time回报形状尚未学到，head独立性主要改变了整体偏置；不能据此确定missing state、MC return构造还是有限更新下的普通优化问题。该干预新增head参数，也改变global clipping/Adam轨迹，故不能把任何百分比误差严格归因于“共享head贡献多少”；能确认的是本协议没有检验到正增益。梯度冲突存在是事实，但这个最小对照未支持“去掉head冲突足以修复当前critic”的解释，也未测试PPO效率恢复。全部40条仍是safe样本，failure校准不可判。
+
+**唯一下一建议：进行无训练的early-recovery transition state / full-return construction审计。** 聚焦capture→post切换与pure reset后前50步，并以后期作为对照；追踪同一时刻的pre-action context、reward、phase切换/CE hold/release状态、terminal/truncation及MC target时间对齐，核对`G_t = r_t + .99 G_{t+1}`及真正终止处的边界规则，区分状态缺失与target/event-order问题。先复用现有bank及其引用的raw artifacts；若原bank缺必要逐步日志，后续只允许匹配已有seed的frozen-BC诊断重放，不做policy/critic更新。本轮仅提出此下一审计，未启动。
+
+**验证与保存：** 4项相关测试通过（初始函数、初始共享梯度加和、真实phase路由/零cross-head梯度、state reload，以及已有mask/baseline数学测试）；仅既有protobuf警告。最终checkpoint独立CPU重载，在train/heldout各phase取8个joint-state，预测最大误差≤3.06e−5。全部源SHA复核通过。checkpoint SHA=`24dd07485108c88b6a8bcf1bbd565f4d42a752413cff01796026b70ad9703e61`，含value/Adam/normalizer、原batch索引及Python/NumPy/Torch/CUDA RNG完整状态；PT与NPZ沿用原忽略规则留本地，GitHub提交源码及JSON证据，不宣称二进制已上传。
+
+复现入口（fresh目录，不在本轮重复执行）：
+
+```bash
+CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fit_forward_final_two_head_critic_20260910.py --out artifacts/2026-09-09_root_cause/two_head_reproduction --device cuda:0
+```
+
+最新交接以`SESSION_HANDOFF.json`为准：本作业已结束，无待观察GPU训练、无NEXT WAKE-UP。

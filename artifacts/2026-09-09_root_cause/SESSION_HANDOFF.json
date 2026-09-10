@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-10T08:40:00.110290+08:00",
+  "timestamp": "2026-09-10T16:20:47.642684+08:00",
   "project_jobs_running": false,
   "context_critic": {
     "run": "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed",
@@ -14,19 +14,15 @@
     "checkpoint_sha256": "53af9775acc2e04d1527c55310468822453c74603c4c9504640b695e73d7a1fe"
   },
   "gpu1": {
-    "status": "idle at handoff",
-    "utilization_percent": 0,
-    "memory_MiB": 15
+    "status": "two-head job ended; no further training scheduled"
   },
   "gpu0": {
-    "status": "idle at handoff",
-    "utilization_percent": 0,
-    "memory_MiB": 15
+    "status": "no project job; hardware usage reported separately if observed"
   },
   "ppo_25k": "HOLD",
   "continuous": "STOP_HOLD_CONTINUOUS_REPRESENTATION",
   "next_wake_up": null,
-  "next_action": "One matched-budget pre/recovery phase-specific value-head critic-only control; proposal only, not implemented or started",
+  "next_action": "Audit early-recovery transition state and full-return construction, including phase-boundary/reset event order and MC recurrence; no further critic architecture or optimizer intervention in this run.",
   "p3": "HOLD",
   "critic_gradient_audit": {
     "run": "artifacts/2026-09-09_root_cause/critic_gradient_audit_v2",
@@ -35,7 +31,20 @@
     "actor_updates": 0,
     "critic_updates": 0,
     "new_rollouts": 0,
-    "next_repair_implemented": false,
-    "note": "Prior audit PID662623 ended; no pending tmux/GPU job/step/ETA. Audit finished September9; ledger and GitHub handoff resumed September10 after usage limit interruption."
+    "next_repair_implemented": true,
+    "note": "Prior audit PID662623 ended; no pending tmux/GPU job/step/ETA. Audit finished September9; ledger and GitHub handoff resumed September10 after usage limit interruption.",
+    "next_repair_result": "two-head control complete, CASE 3; see two_head_critic"
+  },
+  "two_head_critic": {
+    "run": "artifacts/2026-09-09_root_cause/two_head_value_20260910",
+    "status": "complete",
+    "decision": "CASE_3_STOP_HEAD_SPLITTING_NO_RECOVERY_CALIBRATION_BENEFIT",
+    "critic_updates": 100,
+    "actor_updates": 0,
+    "new_rollouts": 0,
+    "elapsed_seconds": 29.24859471898526,
+    "checkpoint_sha256": "24dd07485108c88b6a8bcf1bbd565f4d42a752413cff01796026b70ad9703e61",
+    "pid_ended": 886255,
+    "next_audit_started": false
   }
 }

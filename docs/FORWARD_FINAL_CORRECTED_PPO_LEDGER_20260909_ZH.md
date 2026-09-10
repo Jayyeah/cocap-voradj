@@ -247,3 +247,12 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **EXPERIMENT RESULT：** heldout恢复前50步post target均值−8.006、critic−2.572、baseline−6.525；pure为−6.343/−2.666/−5.118。去掉train估计的phase bias后仍未胜heldout baseline；存在可预测时间轮廓欠拟合，不能判target不可预测。train pure的RMSE实际优于baseline，避免全盘失败叙述。
 
 **HYPOTHESIS / 唯一下一建议：** 优先验证pre与recovery共享value head干扰：仅提出一个pre/recovery两head、同bank/初始化/normalizer/batches/100更新的critic-only对照，post与pure合组；未实施、未启动。尺度不均共存、共享trunk冲突和普通优化不足仍是边界。P2/P3/25k/continuous继续HOLD。全部phase target/residual/loss/实际gradient表、复现与证据边界见[root-cause第15节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+
+## 20. Two-head同条件对照完成：CASE 3，停止拆head
+
+**EXPERIMENT RESULT：** same bank/init/100批索引/Adam/ValueNorm/global loss/clip/100 updates均通过断言，Actor逐bit冻结，初始全bank V差0。heldout RMSE single→two：pre50.610→51.185，post5.875→6.974，pure5.707→7.026；train recovery也变差。early50局部RMSE改善，但recovery整体V下移约5.3–5.4，后期target≈−1却预测≈−7，整体校准失败。
+
+**EXPERIMENT RESULT：** cross-head cosine按路由归零，train trunk pre↔post/pure cosine由−.494/−.482转为+.512/+.500，heldout也转正。冲突减小并不等于critic健康。归类CASE 3；不支持继续PCGrad或拆trunk，不启动very-short PPO。
+
+**HYPOTHESIS / 唯一下一建议：** 停止head结构方向，改做无训练的early-recovery transition state/full-return construction审计，核对phase边界、context/reward/MC target对齐及真实terminal规则。未实施该下一审计。P2/P3/25k/continuous继续HOLD；4项相关测试及独立checkpoint重载通过，全部结果和边界见[root-cause第16节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。

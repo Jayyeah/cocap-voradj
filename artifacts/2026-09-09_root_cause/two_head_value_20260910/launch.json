@@ -1,0 +1,65 @@
+{
+  "pid": 886255,
+  "gpu_visible": "1",
+  "schema": "forward-final-two-head-value-v1",
+  "base_commit": "dad17b4",
+  "actor_parent_file_sha256": "7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd",
+  "sources": {
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/context_critic_100.pt": "53af9775acc2e04d1527c55310468822453c74603c4c9504640b695e73d7a1fe",
+    "artifacts/2026-09-09_root_cause/critic_gradient_audit_v2/report.json": "d2aff91276d6893733c79e16d1e3c8ea2cc00a846876367ce69cb3a2d7b93f7c",
+    "tools/fit_forward_final_two_head_critic_20260910.py": "431f8a0e345705309b016cc65410acbf593617e4e7a7b6c89f08995ae335a12f",
+    "src/cocap_voradj/models/forward_final_two_head_value.py": "28d86ac5635332f445d64f5ca119bcfa62e6225b637ca4e3ef0f1f7ad39c992a",
+    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
+    "src/cocap_voradj/training/forward_final_value_context.py": "fad404335351a5b6a05c8a1e9f0be7a17e72223919c4b0b132e85900c43c95c5",
+    "tools/audit_forward_final_critic_gradients_20260909.py": "2f2641a317e47d05450c9af6fa150a900a61c6c5f41019c878f0043eec095ca1",
+    "artifacts/2026-09-09_forward_final_d/fixed_mc_critic/train/fixed_bank.npz": "ef7793403941b15ecec0a8121bb5b3bd1499efd6d4b40b53158384a4537e102e",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/train/context.npz": "936b2cf213d77bc6fb3170ae608eeeca66a9e2c4b23fbcf6955e00a0fa392a1a",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/train/context_manifest.json": "6f4668d66adb34cb2cdcb97981b485bab8833cf768432353bfdbaf4a3c5cfc0e",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/train/predictions.npz": "eda4dbfe933ea9d4214190dbc14c8c54b929cfebfc4aaadde6391c6cee845fb6",
+    "artifacts/2026-09-09_forward_final_d/fixed_mc_critic/heldout/fixed_bank.npz": "218e10bf6ee4b5ef96aac732fedb7a42c04d5a224a5595ad98904f7be0ed3568",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/heldout/context.npz": "795c4c7afe4f274df651ed814c914c44c8e2065d4309986e57226e31ebf3b988",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/heldout/context_manifest.json": "96d77b9ea4f58dc32e7afaae856ab54b361e2bd203ffe97b49f105b5646320d3",
+    "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed/heldout/predictions.npz": "b3607cc159effe107a1abd5169318cd2f46d2e1fe92de522503b31894e628fb9"
+  },
+  "initial_single_state_sha256": "2e50472c2294de5b83278dac5dd04c7c2dc706a15e0bfb20b36db3a7ecc2dd4d",
+  "batch_indices_sha256": "c2124f2eb0f5a866e38f5cd11105d5e570bca50a89f57825aea4af0b74727254",
+  "optimizer": {
+    "lr": 0.0001,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-05,
+    "weight_decay": 0,
+    "amsgrad": false,
+    "maximize": false,
+    "foreach": null,
+    "capturable": false,
+    "differentiable": false,
+    "fused": null,
+    "decoupled_weight_decay": false
+  },
+  "optimizer_initial_state": "empty, as original 100-update run",
+  "normalization": [
+    17.02892303466797,
+    47.180908203125
+  ],
+  "loss": "same global active mean normalized 0.5 MSE; value_coef=1; max_grad_norm=.5",
+  "updates": 100,
+  "batch": 64,
+  "actor_updates": 0,
+  "new_rollouts": 0,
+  "trunk": "same class/forward/initial parameters; trainable exactly as single-head baseline",
+  "routing": "true phase 0 -> original copied pre head; phases 1/2 -> identical cloned recovery head",
+  "only_intervention": "independent pre/recovery value-head parameters and hard phase routing; trunk executes twice through unchanged original forward",
+  "screen_not_population_significance": {
+    "meaningful_recovery_rmse_reduction": 0.05,
+    "pre_rmse_tolerance": 0.02,
+    "scope": "full phase and early50 train/heldout; report raw values and paired episode uncertainty; no automatic PPO"
+  },
+  "gates": {
+    "p3": "HOLD",
+    "ppo_25k": "HOLD",
+    "continuous": "HOLD"
+  }
+}
