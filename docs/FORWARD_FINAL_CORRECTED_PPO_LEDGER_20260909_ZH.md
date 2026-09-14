@@ -267,3 +267,18 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **裁决：`P1 TRANSITION/RETURN SEMANTICS: PASS`（修复后），允许继续P2固定策略诊断，既有P2校准HOLD保持；P3/25k+ PPO不放行。** 不证明critic aliasing或这四个bug就是历史效率退化主因。新runtime/checkpoint另记`terminal-priority-truncation-bootstrap-weighted-ce-v2`，旧C3/P2及历史main不能重标为已用新边界语义。无正式训练、无后台等待。
 
 详细分类与逐transition表见[独立审计](FORWARD_FINAL_TRANSITION_RETURN_AUDIT_20260914_ZH.md)及[root-cause第17节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+<!-- OVERNIGHT_20260914_BEGIN -->
+
+## Overnight bounded diagnostic（最新自动快照）
+
+快照：2026-09-14T23:11:33.506420+08:00。两条均为 `EXPLORATORY_NON_GATE`，用户显式授权的非正式预算例外；不覆盖既有科学裁决。
+
+P1 transition/return：四类修复后 PASS；central-V state aliasing：UNRESOLVED；P2 FAIL/HOLD；P3 INCONCLUSIVE/HOLD；formal PPO / formal Scratch：HOLD。
+
+- scratch: `step0_evaluation`，decision=`PENDING`，step=0；PID 622682，tmux `cocap_overnight_scratch_20260914`；[run](../artifacts/2026-09-14_overnight/scratch_seed1)。
+- bc_ppo: `training`，decision=`PENDING`，step=700；PID 622686，tmux `cocap_overnight_bc_ppo_20260914`；[run](../artifacts/2026-09-14_overnight/bc_ppo_seed1)。
+
+[逐 checkpoint 指标与 matched delta](../artifacts/2026-09-14_overnight/MASTER_SUMMARY.json)；[启动协议及 morning handoff](FORWARD_FINAL_OVERNIGHT_DIAGNOSTIC_20260914_ZH.md)。BC 5k 仅在全部 operational checks 成立时续至 10k；Scratch 100k 硬停，25k/50k 零 capture 不早停。禁止自动 25k PPO、>100k Scratch、200k 或新 seeds。任何正结果只提出下一 Gate，负结果不证明算法不可行。
+
+<!-- OVERNIGHT_20260914_END -->
