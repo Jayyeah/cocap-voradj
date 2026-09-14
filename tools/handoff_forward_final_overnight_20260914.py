@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime, timezone, timedelta
 import gzip
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -29,6 +30,8 @@ def write(path,value):
 def snapshot():
     now=datetime.now(timezone(timedelta(hours=8))).isoformat()
     runs={}
+    previous=read(BASE/'MASTER_SUMMARY.json',{}).get('runs',{})
+    gpu_rows=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True).strip().splitlines()
     for gpu,kind in [(0,'scratch'),(1,'bc_ppo')]:
         out=BASE/(kind+'_seed1')
         launch=read(out/'launch.json',{})
@@ -50,7 +53,19 @@ def snapshot():
                 eval_env_steps=ev.get('eval_env_steps') if ev else None,
                 matched_delta=read(out/f'matched_step_{step:06d}.json'),
                 training=read(out/f'training_step_{step:06d}.json'))
-        runs[kind]=dict(gpu=gpu,pid=pid,alive=alive,tmux=f'cocap_overnight_{kind}_20260914',
+        learning=out/'learning.jsonl'
+        updates=[json.loads(line) for line in learning.read_text().splitlines()] if learning.exists() else []
+        log_bytes=learning.stat().st_size if learning.exists() else 0
+        learning_finite=all(math.isfinite(value) for row in updates for value in row.values())
+        previous_bytes=previous.get(kind,{}).get('startup_validation',{}).get('learning_log_bytes',0)
+        startup=dict(learning_updates=len(updates),learning_log_bytes=log_bytes,
+            learning_log_grew=log_bytes>previous_bytes,all_logged_metrics_finite=learning_finite,
+            first_real_update_verified=bool(updates) and learning_finite,
+            gpu_process_records=[line for line in gpu_rows if line.split(',')[0].strip()==str(pid)],
+            step0_checkpoint_exists=(out/'step_000000.pt').exists())
+        if startup['first_real_update_verified'] and not (out/'startup_verified.json').exists():
+            write(out/'startup_verified.json',dict(timestamp=now,pid=pid,**startup))
+        runs[kind]=dict(startup_validation=startup,gpu=gpu,pid=pid,alive=alive,tmux=f'cocap_overnight_{kind}_20260914',
             run=str(out.relative_to(ROOT)),target_step=100000 if kind=='scratch' else 10000,
             next_gate_step=25000 if kind=='scratch' else 5000,
             status=status,classification=LABEL,decision=report.get('decision') if report else 'PENDING',

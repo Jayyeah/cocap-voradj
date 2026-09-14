@@ -1,8 +1,19 @@
 {
-  "timestamp": "2026-09-14T23:11:33.506420+08:00",
+  "timestamp": "2026-09-14T23:12:57.211766+08:00",
   "classification": "EXPLORATORY_NON_GATE",
   "runs": {
     "scratch": {
+      "startup_validation": {
+        "learning_updates": 0,
+        "learning_log_bytes": 0,
+        "learning_log_grew": false,
+        "all_logged_metrics_finite": true,
+        "first_real_update_verified": false,
+        "gpu_process_records": [
+          "622682, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 366 MiB"
+        ],
+        "step0_checkpoint_exists": true
+      },
       "gpu": 0,
       "pid": 622682,
       "alive": true,
@@ -102,10 +113,10 @@
       },
       "eval_progress": {
         "step": 0,
-        "complete": 14,
+        "complete": 19,
         "total": 80,
-        "eval_env_steps": 12165,
-        "elapsed_seconds": 262.85845505700854
+        "eval_env_steps": 17807,
+        "elapsed_seconds": 381.92409581800166
       },
       "report": null,
       "stages": {
@@ -158,6 +169,17 @@
       }
     },
     "bc_ppo": {
+      "startup_validation": {
+        "learning_updates": 13,
+        "learning_log_bytes": 14589,
+        "learning_log_grew": true,
+        "all_logged_metrics_finite": true,
+        "first_real_update_verified": true,
+        "gpu_process_records": [
+          "622686, GPU-71b66566-de04-56b5-4331-8c12d4967672, 2104 MiB"
+        ],
+        "step0_checkpoint_exists": true
+      },
       "gpu": 1,
       "pid": 622686,
       "alive": true,
@@ -173,66 +195,67 @@
         "status": "training",
         "classification": "EXPLORATORY_NON_GATE",
         "pid": 622686,
-        "step": 700,
+        "step": 3400,
         "total_steps": 10000,
-        "steps_per_second": 2.3436275422514954,
-        "elapsed_seconds": 298.6822724090016,
-        "eta_seconds": 3968.207333433878,
+        "steps_per_second": 8.854882748928155,
+        "elapsed_seconds": 383.9689464450057,
+        "eta_seconds": 745.3514842755994,
         "last_update": {
-          "actor_loss": 0.005491112358868122,
-          "value_loss": 0.43395212292671204,
-          "entropy": 0.49060679972171783,
-          "clip_fraction": 0.1767578125,
-          "approx_kl": 0.0274986459990032,
-          "actor_grad_norm": 14.376627922058105,
-          "value_grad_norm": 2.75746887922287,
-          "explained_variance": 0.18271106481552124,
-          "value_norm_mean": 8.197368621826172,
-          "value_norm_std": 22.07464027404785,
-          "kl_early_stop": 1.0,
-          "ppo_epochs_completed": 1.0,
-          "minibatch_updates": 2.0,
-          "actor_update_l2": 0.040285328660175514,
-          "actor_update_relative_l2": 0.00033325601081392824,
-          "approx_kl_max": 0.054997291415929794,
-          "update_count": 2.0,
-          "exact_full_batch_kl_old_new": 0.019326001395317566,
-          "exact_full_batch_kl_p90": 0.03410150478139262,
-          "exact_full_batch_kl_max": 1.5712315847917795,
-          "full_batch_argmax_flip_rate": 0.0390625,
-          "full_batch_entropy_before": 0.509323948674593,
-          "full_batch_entropy_after": 0.5107665306453177,
-          "step": 512,
-          "zero_update_max_log_prob_error": 4.315376281738281e-05,
-          "raw_gae_min": -18.646240234375,
-          "raw_gae_max": 139.11648559570312,
-          "raw_return_min": -10.074732780456543,
-          "raw_return_max": 150.72671508789062,
+          "actor_loss": -0.013428390646974245,
+          "value_loss": 0.0011145438087017585,
+          "entropy": 0.4711882720390956,
+          "clip_fraction": 0.115234375,
+          "approx_kl": 0.010053005263519784,
+          "actor_grad_norm": 11.85234522819519,
+          "value_grad_norm": 0.3830694481730461,
+          "explained_variance": 0.5228508710861206,
+          "value_norm_mean": 8.289722442626953,
+          "value_norm_std": 20.41504669189453,
+          "kl_early_stop": 0.0,
+          "ppo_epochs_completed": 3.0,
+          "minibatch_updates": 6.0,
+          "actor_update_l2": 0.04174358938568434,
+          "actor_update_relative_l2": 0.0003453180218897179,
+          "approx_kl_max": 0.017397236078977585,
+          "update_count": 13.0,
+          "exact_full_batch_kl_old_new": 0.025381760316163404,
+          "exact_full_batch_kl_p90": 0.056203869890752524,
+          "exact_full_batch_kl_max": 0.6262136752256727,
+          "full_batch_argmax_flip_rate": 0.08203125,
+          "full_batch_entropy_before": 0.49387706011549604,
+          "full_batch_entropy_after": 0.4525755915979612,
+          "step": 3328,
+          "zero_update_max_log_prob_error": 1.6570091247558594e-05,
+          "raw_gae_min": -5.142385482788086,
+          "raw_gae_max": 2.57883620262146,
+          "raw_return_min": -3.4002699851989746,
+          "raw_return_max": 2.541146755218506,
           "rollout_steps": 256
         },
-        "partial_rollout_steps": 188,
+        "partial_rollout_steps": 72,
         "training": {
           "cumulative": {
-            "env_steps": 700,
-            "active_rows": 2800,
-            "ring2_steps": 38,
-            "ring3_steps": 2,
-            "support_rows": 169,
-            "loose_capture_events": 2
+            "env_steps": 3400,
+            "active_rows": 13600,
+            "ring2_steps": 89,
+            "ring3_steps": 6,
+            "support_rows": 590,
+            "loose_capture_events": 6
           },
           "phase_steps": {
-            "pre_capture": 164,
-            "post_capture": 285,
-            "pure_coverage": 251
+            "pre_capture": 549,
+            "post_capture": 1053,
+            "pure_coverage": 1798
           },
           "reset_source_distribution": {
-            "environment_default": 2,
-            "capture_snapshot": 2
+            "environment_default": 6,
+            "capture_snapshot": 5,
+            "ordinary_map_random": 1
           },
-          "real_capture_snapshots": 2,
-          "episodes_completed": 3,
+          "real_capture_snapshots": 6,
+          "episodes_completed": 11,
           "current_episode": {
-            "length": 120,
+            "length": 1014,
             "ring2_steps": 0,
             "ring3_steps": 0,
             "ring3_run": 0,
@@ -240,62 +263,62 @@
           },
           "scenes": {
             "voradj": {
-              "episodes": 2,
-              "capture": 2,
-              "ce_success": 2,
-              "collision": 0,
-              "boundary": 0,
+              "episodes": 6,
+              "capture": 6,
+              "ce_success": 5,
+              "collision": 1,
+              "boundary": 1,
               "episode_length": {
-                "n": 2,
-                "mean": 224.5,
+                "n": 6,
+                "mean": 267.0,
                 "p50": 224.5,
-                "p90": 239.3
+                "p90": 408.0
               },
               "area_cv": {
-                "n": 2,
-                "mean": 0.06373001201896529,
-                "p50": 0.06373001201896529,
-                "p90": 0.08382313703697418
+                "n": 6,
+                "mean": 0.15355580244464806,
+                "p50": 0.08514783862079593,
+                "p90": 0.3404974806022019
               },
               "ce_rms": {
-                "n": 2,
-                "mean": 0.029071469054687965,
-                "p50": 0.029071469054687965,
-                "p90": 0.030593627312078098
+                "n": 6,
+                "mean": 0.06055344906804954,
+                "p50": 0.03270904293605528,
+                "p90": 0.12577543275258102
               },
               "ring3_max_hold": {
-                "n": 2,
+                "n": 6,
                 "mean": 1.0,
                 "p50": 1.0,
                 "p90": 1.0
               }
             },
             "voradj_coverage": {
-              "episodes": 1,
+              "episodes": 5,
               "capture": 0,
-              "ce_success": 1,
+              "ce_success": 5,
               "collision": 0,
               "boundary": 0,
               "episode_length": {
-                "n": 1,
-                "mean": 131.0,
+                "n": 5,
+                "mean": 156.8,
                 "p50": 131.0,
-                "p90": 131.0
+                "p90": 242.0
               },
               "area_cv": {
-                "n": 1,
-                "mean": 0.03318857049271636,
+                "n": 5,
+                "mean": 0.05174630497859346,
                 "p50": 0.03318857049271636,
-                "p90": 0.03318857049271636
+                "p90": 0.09117924094760556
               },
               "ce_rms": {
-                "n": 1,
-                "mean": 0.02262407346459276,
-                "p50": 0.02262407346459276,
-                "p90": 0.02262407346459276
+                "n": 5,
+                "mean": 0.03511093147334736,
+                "p50": 0.03817127331015389,
+                "p90": 0.04510332098990361
               },
               "ring3_max_hold": {
-                "n": 1,
+                "n": 5,
                 "mean": 0.0,
                 "p50": 0.0,
                 "p90": 0.0
