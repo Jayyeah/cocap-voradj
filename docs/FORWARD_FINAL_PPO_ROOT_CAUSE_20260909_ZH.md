@@ -419,3 +419,15 @@ CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fi
 - **验证/版本：** 前三类6个预期失败、inactive类另1个失败，最终相关57 tests passed；Actor/V/normalizer诊断更新0，未启动任何正式训练。新runtime/checkpoint标识`terminal-priority-truncation-bootstrap-weighted-ce-v2`；基础CONTRACT仅保留谱系。不能把新代码的boundary reward认作历史main/C3/P2原合同逐步等价；旧artifact保留。
 
 **下一阶段：允许继续P2固定策略诊断，但P2校准没有通过；P3与25k+ PPO继续HOLD。** 不因新bug自动重训、追加预算或重启head拆分。当前无本项目后台训练，无NEXT WAKE-UP。
+
+## 18. P2/P3 frozen-BC critic–advantage诊断（2026-09-14）
+
+**最新独立诊断：** [P2/P3 Critic–Advantage Diagnostic](FORWARD_FINAL_P2_P3_CRITIC_ADVANTAGE_DIAGNOSTIC_20260914_ZH.md)。在HEAD=`75e3361`、`terminal-priority-truncation-bootstrap-weighted-ce-v2`下冻结BC Actor运行10个held-out episodes，Actor hash逐bit不变，optimizer steps=0；结果不是正式PPO。
+
+- `P2 VALUE CALIBRATION: FAIL`：early recovery的MC target mean/std=`-14.00/10.95`，V mean/std=`-3.21/3.12`，V−MC bias=`+10.79`，RMSE=`14.99`，EV=`.097`；late recovery对应RMSE=`2.37`、target std=`2.40`。因此early recovery相对late是真实校准热点，但与pure coverage early一样属于高方差早期段，不能说是唯一异常。
+- target不是明显空/正号错误：GAE target在early recovery mean=`-11.01`，且P1修复后post/pure MC逐bit不变。更可信的是V时间轮廓/上下文欠拟合，加上target variance、phase imbalance和有限5个mixed episodes；不是本轮证据支持的reward改动。
+- `P3 ADVANTAGE SEMANTICS: INCONCLUSIVE`：early recovery raw A mean=`-7.80`，sign agreement with MC−V=`.913`，positive-A-but-worse=`.025`，Spearman=`.963`；capture transition为`.950`但只有20行。没有系统性“正advantage奖励拖慢recovery”的证据，但late/steady负向误配仍存在，且C1没有同状态counterfactual empirical ranking。
+- 当前C1 teacher contract合法；146,612 rows上BC action与teacher greedy mismatch=`10.82%`，teacher-Q gap中位数=`0`、p90约`2.08e-4`，更像近tie而非频繁gross inversion。C1只有单条realized action/trajectory，故empirical short-horizon action ranking“不足以支持”。
+- per-256 normalization整体raw→normalized sign flip=`.241`，窗口内排序保持；early recovery flip=`.045`，未见关键段额外排序破坏。fast/slow episode各3条，不能证明拖慢得到系统性正优势。
+
+**Gate：** P2 FAIL；P3 INCONCLUSIVE；Direct PPO 5k继续不允许。下一项最小诊断是固定BC的matched-state action permutation probe（capture-near/transition/early-recovery，1–5 step short-horizon/MC outcome + teacher-Q rank），不训练Actor/Critic、不改reward、不引入新architecture。
