@@ -1,0 +1,284 @@
+{
+  "schema": "scratch-contract-audit-v1",
+  "formal_training": "HOLD",
+  "reference_commit": "75e336109a88b9f4183f2bb340f1404a0fe579b9",
+  "remote_at_start": "75e336109a88b9f4183f2bb340f1404a0fe579b9",
+  "gate": {
+    "P1_transition_return": "PASS",
+    "P1_state_aliasing": "UNRESOLVED",
+    "P2": "FAIL",
+    "P3": "INCONCLUSIVE",
+    "formal_allowed": false
+  },
+  "gate_note": "No separate MASTER file found; latest root-cause and local P2/P3 diagnostic control; local pre-existing diagnostic not changed by this work.",
+  "classification_counts": {
+    "SAME": 24,
+    "SCRATCH_REQUIRED": 3,
+    "IMPLEMENTATION_ONLY": 4,
+    "UNEXPLAINED": 0
+  },
+  "parity": [
+    {
+      "item": "环境入口",
+      "reference": "Forward Stage1 YAML + `scene_config`",
+      "scratch": "同一入口，禁止旧 AC configure_environment",
+      "classification": "SAME"
+    },
+    {
+      "item": "地图、规模、spawn、APF",
+      "reference": "120×120、4v1/4v0、1obs，Final APF v2_fixed",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "observation",
+      "reference": "self9、friend8×7、enemy8×7、obstacle5×5；robot-frame、sqrt(N) centroid",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "sensing / topology",
+      "reference": "own enemy/obstacle20m surface；pursuer-only Voronoi/free-mask；允许邻居role、已知map/全友军构图",
+      "scratch": "不变；critic信息不进入actor",
+      "classification": "SAME"
+    },
+    {
+      "item": "动作/物理",
+      "reference": "integer AW9，a±.4、w±π/6，vmax3、drag .4/3、dt.05×10",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "collision",
+      "reference": "synchronized_swept_v1",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "transition revision",
+      "reference": "terminal-priority-truncation-bootstrap-weighted-ce-v2",
+      "scratch": "锁定同一新版本",
+      "classification": "SAME"
+    },
+    {
+      "item": "direct reward",
+      "reference": "CR-MS/ring_importance_ms_v0，weight2；旧项0",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "support reward",
+      "reference": ".5 approach-only neighbor-visible + .5 CE",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "coverage reward",
+      "reference": "centroid energy/PBRS scale10，gamma.99；正确的加权reset correction",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "safety/capture bonus",
+      "reference": "原安全成本、capture参与者终奖",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "reward clock",
+      "reference": "2m+online，CE speed=.0005",
+      "scratch": "仍为2m+online、.0005；只是数值时间锚，不读取teacher年龄资产",
+      "classification": "SAME"
+    },
+    {
+      "item": "capture / role",
+      "reference": "R8/K3/角度条件、stationary min2/hold10；K10 release",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "Full-Task结束",
+      "reference": "capture后继续；horizon3000、post window500、min active4、CE hold30",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "episode task cycle",
+      "reference": "mixed / coverage 逐回合交替，不保证步数各半",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "native recovery reset",
+      "reference": "pool1000、capture比例.75、剩余map-random .5；池初始为空",
+      "scratch": "同机制；只接受本策略在线capture snapshot",
+      "classification": "SAME"
+    },
+    {
+      "item": "实际访问/池填充速度",
+      "reference": "BC自身轨迹",
+      "scratch": "random policy自身轨迹；不是人为重采样/预填池",
+      "classification": "SCRATCH_REQUIRED"
+    },
+    {
+      "item": "actor backbone/head结构",
+      "reference": "local Legacy decision Transformer256/8/4 + categorical9 head",
+      "scratch": "原结构、dropout配置.1；PPO eval模式关闭dropout",
+      "classification": "SAME"
+    },
+    {
+      "item": "actor权重",
+      "reference": "C3 BC parent（含复制的IQN backbone）",
+      "scratch": "全部参数随机初始化；允许常规bias0/LayerNorm1，不加载已训练tensor",
+      "classification": "SCRATCH_REQUIRED"
+    },
+    {
+      "item": "actor可训练性",
+      "reference": "Direct中全部参数可训练",
+      "scratch": "不变；不冻结backbone",
+      "classification": "SAME"
+    },
+    {
+      "item": "central V",
+      "reference": "action-free geometry V_i(s)，256/8/4，4/8/5 padding，自身9维",
+      "scratch": "同类同schema，fresh；同seed逐位相同initial V",
+      "classification": "SAME"
+    },
+    {
+      "item": "PPO/GAE",
+      "reference": "rollout256；γ.99/λ.95；clip.2；epochs3/minibatches2",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "optimizer/entropy",
+      "reference": "Adam eps1e-5；actor3e-5/critic1e-4；entropy.01/value1/grad.5/targetKL.02",
+      "scratch": "不变",
+      "classification": "SAME"
+    },
+    {
+      "item": "ValueNorm",
+      "reference": "beta.99999/eps1e-5，var floor.01；raw GAE、normalized V clipping",
+      "scratch": "不变；全零统计、初始std1",
+      "classification": "SAME"
+    },
+    {
+      "item": "optimizer初始状态",
+      "reference": "Direct cold Adam state={}、update_count0",
+      "scratch": "不变；不是加载resume启动新seed",
+      "classification": "SAME"
+    },
+    {
+      "item": "warm-up/teacher loss",
+      "reference": "Direct无warm-up，PPO无teacher损失，但parent来自BC",
+      "scratch": "无warm-up；无任何imitation/KL/Q监督",
+      "classification": "SAME"
+    },
+    {
+      "item": "资产加载/启动gate",
+      "reference": "BC factory加载IQN再BC；启动检查C3 parent hash",
+      "scratch": "直接建网；拒绝IQN执行/旧artifact读取；正式gate独立保持HOLD",
+      "classification": "SCRATCH_REQUIRED"
+    },
+    {
+      "item": "冻结eval",
+      "reference": "actor路径仍无条件算teacher Q来记agreement",
+      "scratch": "同Final环境、AW9与APF，argmax/sample仅算actor；不生成teacher agreement",
+      "classification": "IMPLEMENTATION_ONLY"
+    },
+    {
+      "item": "checkpoint谱系",
+      "reference": "导出包含teacher/BC SHA；完整trainer/RNG/stream",
+      "scratch": "专用scratch schema/config/seed/完整状态；不伪造teacher parent",
+      "classification": "IMPLEMENTATION_ONLY"
+    },
+    {
+      "item": "preflight预算",
+      "reference": "历史512步等独立smoke",
+      "scratch": "40个unique training steps、16步rollout，只验证工程；未来仍256",
+      "classification": "IMPLEMENTATION_ONLY"
+    },
+    {
+      "item": "未来预算/gate",
+      "reference": "BC保持性的25k起步gate",
+      "scratch": "25k评估cadence、100k首learnability审查、最多分段到400k",
+      "classification": "IMPLEMENTATION_ONLY"
+    }
+  ],
+  "source_sha256": {
+    "configs/experiments/forward_final_scratch_mappo_20260914/canonical.yaml": "9e392c5380f383ff64d39abf29a18955915eed6af86f3739950c6fe91b9dc4fd",
+    "configs/experiments/forward_final_mappo_20260908/stage1_4v1.yaml": "0058b446593a73f67cfdac6392fadcbd2acd9655559559308fd7feb49823c11a",
+    "configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/stage1_4p1e1obs_scratch2m.yaml": "60255159734f42544bf44f8040122f64fc141712c06579891a4fe192aeb93d59",
+    "src/cocap_voradj/training/forward_final.py": "d35b522158070a1a594b44178758c28d757b2b3c0a73fa8f4469d1a9b166f645",
+    "src/cocap_voradj/training/trainer.py": "ffc8d83c902491efeb93539a14ca48fdde29b3d57a87f39c69ac6cb65fee1bcd",
+    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
+    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
+    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "b99901a935e23f62d576e1fdb71a168fd9b29454966b760023ea779ac69735b5",
+    "src/cocap_voradj/training/continuous/central_schema.py": "a10f4910acb812cb5f223069b625905ddbb3675462e6a73c3a75b99c5f4eaf24",
+    "src/cocap_voradj/envs/voronoi_adjacency.py": "865440b7ff0580866dfaa7ab8cec7b52b8ebe36dffafef238c80d9f75b3604cb",
+    "tools/train_forward_final_ppo_20260909.py": "31fc544d7f6f969101f44f6dc413da797c3f4f896129ca05237d2d132345d3d8",
+    "tools/preflight_forward_final_scratch_20260914.py": "984741b925e9368d9ee758a312766c9720cacec1734cad58e576836c6f1952f7",
+    "test/test_forward_final_scratch_preflight_20260914.py": "988bfd03fb68530e5ef708888fce55732e091bd0b3b0ec63255bce35eda77653",
+    "docs/FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md": "c8b3e9016d829f163840c1a17b4dfebb5019a5cf257e8ecfdbb5cd22c5f13dd2",
+    "docs/FORWARD_FINAL_P2_P3_CRITIC_ADVANTAGE_DIAGNOSTIC_20260914_ZH.md": "fd24a959ee38e15d903aed84288186becf1832f544821a5937dbecf56a6962d6",
+    "docs/FORWARD_FINAL_CORRECTED_PPO_LEDGER_20260909_ZH.md": "7141c5f263e4476dab4bae3191a1d26f0e2598423560c8fffc361db9ef8d0b4a"
+  },
+  "runs": {
+    "occupancy_seed1": {
+      "status": "COMPLETE",
+      "source_sha256": "b823456afa9b73a8da2f357abb592ecf03d0e18cbd319d3025f861dd11a6c04a",
+      "report_sha256": "3e57fd7b387c7b95e66b7cc41b7d75dbbf96a363bad9a07deac030cd72d145a9",
+      "completion": {
+        "status": "COMPLETE",
+        "elapsed_seconds": 336.53781662799884
+      }
+    },
+    "cpu_smoke_v2": {
+      "status": "SMOKE_PASS",
+      "source_sha256": "3cc76b0cc48ab48bde6bb5d3d915888d16e83e4b4541a28acd5cb249c8a317f3",
+      "report_sha256": "25c68b8d1a90e34692638885bd784974c9214c904a5b45f04871be328e9fbf17",
+      "completion": {
+        "status": "SMOKE_PASS",
+        "elapsed_seconds": 11.992110997001873
+      }
+    },
+    "cuda_smoke": {
+      "status": "SMOKE_PASS",
+      "source_sha256": "3cc76b0cc48ab48bde6bb5d3d915888d16e83e4b4541a28acd5cb249c8a317f3",
+      "report_sha256": "0017a76620f623bd885bdea57f7b3246da0cc0573504a77ed2f7bb0f20db1ab9",
+      "completion": {
+        "status": "SMOKE_PASS",
+        "elapsed_seconds": 5.3121142180025345
+      }
+    },
+    "cpu_smoke_final": {
+      "status": "SMOKE_PASS",
+      "source_sha256": "984741b925e9368d9ee758a312766c9720cacec1734cad58e576836c6f1952f7",
+      "report_sha256": "5f3bb35287e689fddf1170f0e3feee93d9b5df103fa6213962fa5591d04ed62d",
+      "completion": {
+        "status": "SMOKE_PASS",
+        "elapsed_seconds": 11.95033195099677
+      }
+    },
+    "cuda_smoke_final": {
+      "status": "SMOKE_PASS",
+      "source_sha256": "984741b925e9368d9ee758a312766c9720cacec1734cad58e576836c6f1952f7",
+      "report_sha256": "f7915ac3bd438b411ee88eaa279eb15e12784924844545b37d6f3db618416c88",
+      "completion": {
+        "status": "SMOKE_PASS",
+        "elapsed_seconds": 5.307693232010934
+      }
+    }
+  },
+  "occupancy_functions_unchanged_during_eval_fix": true,
+  "initial_failed_cpu_smoke": "cpu_smoke/failure.json",
+  "tests": "39 passed, 2 deprecation warnings",
+  "restrictions": [
+    "No formal training mode",
+    "No IQN/BC checkpoint reads or teacher inference in scratch commands",
+    "No BC dataset, teacher-Q/KL or imitation losses",
+    "No curriculum or architecture change",
+    "No existing experiment GPU preemption"
+  ],
+  "science_decision": "PHASE VISITATION BOTTLENECK; finite sample, not proof of inability to learn"
+}

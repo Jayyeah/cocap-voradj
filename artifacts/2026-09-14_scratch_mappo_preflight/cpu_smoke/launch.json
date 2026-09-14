@@ -1,0 +1,99 @@
+{
+  "config": {
+    "schema": "forward-final-scratch-preflight-v1",
+    "formal_training": "HOLD",
+    "scope": "Forward-Final Full-Task Scratch MAPPO Stage1 4v1",
+    "reference_commit": "75e336109a88b9f4183f2bb340f1404a0fe579b9",
+    "environment_config": "configs/experiments/forward_final_mappo_20260908/stage1_4v1.yaml",
+    "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2",
+    "initialization": "random",
+    "teacher_checkpoint": null,
+    "bc_actor": null,
+    "bc_dataset": null,
+    "teacher_q": false,
+    "teacher_kl": false,
+    "imitation_loss": false,
+    "actor": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "self_feature_dim": 9,
+      "max_pursuers": 8,
+      "max_evaders": 8,
+      "max_obstacles": 5,
+      "pursuing_embed_dim": 8,
+      "dropout": 0.1
+    },
+    "actor_head": {
+      "orthogonal_policy_head": true,
+      "output_gain": 0.01
+    },
+    "critic": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "self_feature_dim": 9,
+      "max_agents": 4,
+      "max_evaders": 8,
+      "max_obstacles": 5
+    },
+    "ppo": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_param": 0.2,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "actor_lr": 3e-05,
+      "critic_lr": 0.0001,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 1e-05
+    },
+    "rollout_length": 256,
+    "reward_clock_offset": 2000000,
+    "ce_speed_weight": 0.0005,
+    "reset": {
+      "cycle": [
+        "mixed",
+        "coverage"
+      ],
+      "pool_initial_size": 0,
+      "pool_capacity": 1000,
+      "captured_state_ratio": 0.75,
+      "map_random_ratio_within_non_capture": 0.5
+    },
+    "future_gate_design_only": {
+      "requires_latest_master": [
+        "P1_PASS",
+        "P2_PASS",
+        "P3_PASS"
+      ],
+      "seed": 2026091401,
+      "checkpoint_eval_cadence": 25000,
+      "first_learnability_gate": 100000,
+      "trend_review_limit": 200000,
+      "positive_trend_extension_limit": 400000,
+      "multi_seed_count_after_single_seed_gate": 3,
+      "eval_episodes_per_scene_per_mode": 20,
+      "eval_modes": [
+        "argmax",
+        "sample"
+      ],
+      "baseline_seed_base": 2026092401,
+      "independent_confirmation_seed_base": 2026102401,
+      "automatic_launch": false
+    }
+  },
+  "mode": "smoke",
+  "seed": 2026091401,
+  "device": "cpu",
+  "pid": 601478,
+  "formal_training": "HOLD",
+  "teacher_execution_blocked": true,
+  "external_artifact_reads_blocked": true,
+  "source_sha256": "b823456afa9b73a8da2f357abb592ecf03d0e18cbd319d3025f861dd11a6c04a"
+}
