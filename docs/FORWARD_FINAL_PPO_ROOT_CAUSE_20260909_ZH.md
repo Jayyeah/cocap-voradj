@@ -436,12 +436,12 @@ CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fi
 
 ## Overnight bounded diagnostic（最新自动快照）
 
-快照：2026-09-14T23:12:57.211766+08:00。两条均为 `EXPLORATORY_NON_GATE`，用户显式授权的非正式预算例外；不覆盖既有科学裁决。
+快照：2026-09-15T04:38:04.867623+08:00。两条均为 `EXPLORATORY_NON_GATE`，用户显式授权的非正式预算例外；不覆盖既有科学裁决。
 
 P1 transition/return：四类修复后 PASS；central-V state aliasing：UNRESOLVED；P2 FAIL/HOLD；P3 INCONCLUSIVE/HOLD；formal PPO / formal Scratch：HOLD。
 
-- scratch: `step0_evaluation`，decision=`PENDING`，step=0；PID 622682，tmux `cocap_overnight_scratch_20260914`；[run](../artifacts/2026-09-14_overnight/scratch_seed1)。
-- bc_ppo: `training`，decision=`PENDING`，step=3400；PID 622686，tmux `cocap_overnight_bc_ppo_20260914`；[run](../artifacts/2026-09-14_overnight/bc_ppo_seed1)。
+- scratch: `COMPLETE_BUDGET_STOP`，decision=`NEGATIVE_DIAGNOSTIC_NOT_ALGORITHM_FAILURE`，step=100000；PID 622682，tmux `cocap_overnight_scratch_20260914`；[run](../artifacts/2026-09-14_overnight/scratch_seed1)。
+- bc_ppo: `STOP_BC_PPO_AT_5K`，decision=`REGRESSED`，step=5000；PID 622686，tmux `cocap_overnight_bc_ppo_20260914`；[run](../artifacts/2026-09-14_overnight/bc_ppo_seed1)。
 
 [逐 checkpoint 指标与 matched delta](../artifacts/2026-09-14_overnight/MASTER_SUMMARY.json)；[启动协议及 morning handoff](FORWARD_FINAL_OVERNIGHT_DIAGNOSTIC_20260914_ZH.md)。BC 5k 仅在全部 operational checks 成立时续至 10k；Scratch 100k 硬停，25k/50k 零 capture 不早停。禁止自动 25k PPO、>100k Scratch、200k 或新 seeds。任何正结果只提出下一 Gate，负结果不证明算法不可行。
 
