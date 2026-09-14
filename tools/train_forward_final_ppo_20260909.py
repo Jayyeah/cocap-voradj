@@ -96,7 +96,15 @@ def make_trainer(device,seed,actor_lr=3e-5):
 
 def collect_transition(trainer,stream):
     local,central=local_and_global(stream);active=central['active_mask'].copy()
-    physical,logp,indices,values=trainer.act(local,{k:v[None] for k,v in central.items()})
+    # A capture+casualty snapshot can reset coverage with inactive roster slots.
+    # All-masked local tokens are not valid Actor inputs; retain their agent IDs
+    # in storage while sampling only live actors. Central V keeps the joint mask.
+    actor_local={k:v[active] for k,v in local.items()}
+    live_physical,live_logp,live_indices,values=trainer.act(actor_local,{k:v[None] for k,v in central.items()})
+    indices=np.full(len(active),4,dtype=live_indices.dtype)  # AW9 neutral action
+    logp=np.zeros(len(active),dtype=live_logp.dtype)
+    physical=np.zeros((len(active),2),dtype=live_physical.dtype)
+    indices[active]=live_indices;logp[active]=live_logp;physical[active]=live_physical
     np.testing.assert_allclose(physical,trainer.actor.action_grid.detach().cpu().numpy()[indices],atol=1e-6)
     outcome=stream.step(indices);term,trunc=_split_termination_flags(outcome.dones,outcome.infos)
     # Obtain the last physical state BEFORE any reset, including timeout bootstrap.
@@ -132,7 +140,7 @@ def exact_update_diagnostics(before,after):
 def save_checkpoint(out,step,trainer,stream,launch,rollout,last_metrics):
     name=out/f'step_{step:06d}.pt'
     if name.exists():raise ValueError('Never overwrite a valid checkpoint')
-    payload={'schema':SCHEMA,'policy_contract':POLICY_CONTRACT,'contract':CONTRACT,'step':step,'launch':launch,'trainer':trainer.state_dict(),'stream_state':stream.__dict__,'rollout':rollout,'last_metrics':last_metrics,'python_rng':random.getstate(),'numpy_rng':np.random.get_state(),'torch_rng':torch.get_rng_state(),'cuda_rng':torch.cuda.get_rng_state(trainer.device) if trainer.device.type=='cuda' else None}
+    payload={'schema':SCHEMA,'transition_semantics':stream.env.transition_semantics,'policy_contract':POLICY_CONTRACT,'contract':CONTRACT,'step':step,'launch':launch,'trainer':trainer.state_dict(),'stream_state':stream.__dict__,'rollout':rollout,'last_metrics':last_metrics,'python_rng':random.getstate(),'numpy_rng':np.random.get_state(),'torch_rng':torch.get_rng_state(),'cuda_rng':torch.cuda.get_rng_state(trainer.device) if trainer.device.type=='cuda' else None}
     temp=name.with_suffix('.tmp');torch.save(payload,temp)
     verified=torch.load(temp,map_location='cpu',weights_only=False)
     assert verified['step']==step and verified['policy_contract']==POLICY_CONTRACT

@@ -1,0 +1,102 @@
+2026-09-14 17:05:39,029 - logger - INFO - Process 502372 Train logger is successfully set up.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_native_capture_casualty_snapshot_reset_samples_only_active_agents ____
+
+tmp_path = PosixPath('/tmp/pytest-of-yjq/pytest-3/test_native_capture_casualty_s0')
+
+    def test_native_capture_casualty_snapshot_reset_samples_only_active_agents(tmp_path):
+        import random
+        from tools.train_forward_final_ppo_20260909 import FinalMissionStream,make_trainer,collect_transition,empty_rollout,stack_rollout
+        random.seed(19);np.random.seed(19)
+        s=FinalMissionStream(19,tmp_path);capture_fixture(s)
+        p=s.env.pursuers[3];p.x=119.;p.y=20.;p.theta=0.;p.speed=3.;p.velocity=np.array([3.,0.])
+        s.env._invalidate_voronoi_cache();s.observations=s.env.get_observations()
+        s.recovery_from_capture_ratio=1.
+        result=s.step([4]*4)
+        assert s.env.last_capture_events and all(result.dones)
+        assert s.env.capture_snapshot['active_mask']==[True,True,True,False]
+        s.finish()
+        assert s.last_reset_source['voradj_coverage']=='capture_snapshot'
+        assert [o is not None for o in s.observations]==[True,True,True,False]
+        trainer=make_trainer('cpu',19)
+>       row,done=collect_transition(trainer,s)
+
+test/test_forward_final_transition_semantics_20260914.py:116:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tools/train_forward_final_ppo_20260909.py:99: in collect_transition
+    physical,logp,indices,values=trainer.act(local,{k:v[None] for k,v in central.items()})
+/usr/local/anaconda3/lib/python3.12/site-packages/torch/utils/_contextlib.py:120: in decorate_context
+    return func(*args, **kwargs)
+src/cocap_voradj/training/small_step_ac.py:319: in act
+    actions, log_prob, latent = self.actor.sample(local, deterministic=deterministic)
+src/cocap_voradj/models/small_step_ac.py:51: in sample
+    distribution = self.distribution(obs)
+src/cocap_voradj/models/small_step_ac.py:48: in distribution
+    return Categorical(logits=self.logits_head(self.policy(_context(self.encoder, obs))))
+/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributions/categorical.py:81: in __init__
+    super().__init__(batch_shape, validate_args=validate_args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = Categorical(logits: torch.Size([4, 9])), batch_shape = torch.Size([4])
+event_shape = torch.Size([]), validate_args = None
+
+    def __init__(
+        self,
+        batch_shape: torch.Size = torch.Size(),
+        event_shape: torch.Size = torch.Size(),
+        validate_args: Optional[bool] = None,
+    ) -> None:
+        self._batch_shape = batch_shape
+        self._event_shape = event_shape
+        if validate_args is not None:
+            self._validate_args = validate_args
+        if self._validate_args:
+            try:
+                arg_constraints = self.arg_constraints
+            except NotImplementedError:
+                arg_constraints = {}
+                warnings.warn(
+                    f"{self.__class__} does not define `arg_constraints`. "
+                    + "Please set `arg_constraints = {}` or initialize the distribution "
+                    + "with `validate_args=False` to turn off validation."
+                )
+            for param, constraint in arg_constraints.items():
+                if constraints.is_dependent(constraint):
+                    continue  # skip constraints that cannot be checked
+                if param not in self.__dict__ and isinstance(
+                    getattr(type(self), param), lazy_property
+                ):
+                    continue  # skip checking lazily-constructed args
+                value = getattr(self, param)
+                valid = constraint.check(value)
+                if not torch._is_all_true(valid):
+>                   raise ValueError(
+                        f"Expected parameter {param} "
+                        f"({type(value).__name__} of shape {tuple(value.shape)}) "
+                        f"of distribution {repr(self)} "
+                        f"to satisfy the constraint {repr(constraint)}, "
+                        f"but found invalid values:\n{value}"
+                    )
+E                   ValueError: Expected parameter logits (Tensor of shape (4, 9)) of distribution Categorical(logits: torch.Size([4, 9])) to satisfy the constraint IndependentConstraint(Real(), 1), but found invalid values:
+E                   tensor([[-9.4971e+00, -1.0746e+01, -1.0995e+01, -5.1858e+00, -1.1158e+01,
+E                            -7.8762e+00, -1.8503e-01, -2.0280e+00, -3.4669e+00],
+E                           [-1.9135e+01, -1.6097e+01, -8.6820e+00, -1.5625e+01, -1.6487e+01,
+E                            -9.7337e+00, -1.4112e+01, -8.3699e+00, -4.6158e-04],
+E                           [-9.0617e+00, -1.2358e+01, -1.5573e+01, -5.1567e+00, -1.4214e+01,
+E                            -1.3610e+01, -6.2017e-03, -8.1314e+00, -1.2242e+01],
+E                           [        nan,         nan,         nan,         nan,         nan,
+E                                    nan,         nan,         nan,         nan]])
+
+/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributions/distribution.py:77: ValueError
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  Warning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  Warning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_native_capture_casualty_snapshot_reset_samples_only_active_agents
+1 failed, 8 deselected, 2 warnings in 3.87s

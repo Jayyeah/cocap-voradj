@@ -24,6 +24,8 @@ class VorAdjEnv(CoCapEnv):
     intentionally isolated from the legacy CoCapEnv coverage/encirclement paths.
     """
 
+    transition_semantics = "terminal-priority-truncation-bootstrap-weighted-ce-v2"
+
     def __init__(self, config: Dict[str, Any], seed: int = 0):
         super().__init__(config, task="voradj", seed=seed)
         self.coverage_hold_reward_claim_steps = 0
@@ -1895,6 +1897,7 @@ class VorAdjEnv(CoCapEnv):
         reward_support_blend_coverage_component = np.zeros(len(self.pursuers), dtype=float)
         support_reward_blend_flags = np.zeros(len(self.pursuers), dtype=bool)
         ce_reward_applied = np.zeros(len(self.pursuers), dtype=bool)
+        ce_reward_scales = np.zeros(len(self.pursuers), dtype=float)
         ce_pbrs_reset_reasons = ["none"] * len(self.pursuers)
         support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
         support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
@@ -1995,11 +1998,14 @@ class VorAdjEnv(CoCapEnv):
         def apply_ce_pbrs_reset(index: int, center_cost: float, reason: str) -> None:
             if not ce_reward_applied[index] or ce_pbrs_reset_reasons[index] != "none":
                 return
-            correction = self._ce_terminal_pbrs_correction(center_cost)
+            # Clear the same weighted potential that entered this transition.
+            correction = ce_reward_scales[index] * self._ce_terminal_pbrs_correction(center_cost)
             rewards[index] += correction
             reward_coverage_component[index] += correction
             reward_ce_pbrs_component[index] += correction
             reward_ce_terminal_correction_component[index] += correction
+            if support_reward_blend_flags[index]:
+                reward_support_blend_coverage_component[index] += correction
             ce_pbrs_reset_reasons[index] = reason
         infos = [
             {
@@ -2212,6 +2218,7 @@ class VorAdjEnv(CoCapEnv):
             if not ce_terms or scale == 0.0:
                 return
             ce_reward_applied[index] = True
+            ce_reward_scales[index] = scale
             reward_ce_center_component[index] += scale * float(ce_terms.get("base_center", 0.0))
             reward_ce_control_component[index] += scale * float(ce_terms.get("control", 0.0))
             reward_ce_pbrs_component[index] += scale * float(ce_terms.get("pbrs", 0.0))
@@ -2678,7 +2685,6 @@ class VorAdjEnv(CoCapEnv):
             coverage_phase_done
             or capture_terminal_done
             or zone_breach_done
-            or pre_capture_timeout
             or (post_capture_phase and self.post_capture_started and not self.post_capture_coverage_success and self.post_capture_step >= post_window)
         )
         # Replay phase describes the state in which the stored action was
@@ -2688,12 +2694,18 @@ class VorAdjEnv(CoCapEnv):
         dones: List[bool] = []
         too_few = sum(not q.deactivated for q in self.pursuers) < int(self.reward_cfg.get("min_active_pursuers", 2))
         for i, p in enumerate(self.pursuers):
-            done = bool(p.deactivated or timeout or voradj_done or evader_lost or too_few)
-            if done and self._ce_pbrs_reset_mode() == "phase_and_all_terminal":
+            # A mission/death terminal wins over a simultaneous sampling limit.
+            # Pure time limits retain the physical next state's potential/value.
+            terminated = bool(p.deactivated or voradj_done or evader_lost or too_few)
+            truncated = bool((timeout or pre_capture_timeout) and not terminated)
+            done = terminated or truncated
+            infos[i]["terminated"] = terminated
+            infos[i]["truncated"] = truncated
+            if terminated and self._ce_pbrs_reset_mode() == "phase_and_all_terminal":
                 apply_ce_pbrs_reset(i, float(after_cov[i]), "terminal")
-            if timeout and infos[i]["state"] == "normal":
+            if truncated and timeout and infos[i]["state"] == "normal":
                 infos[i]["state"] = "too long episode"
-            elif pre_capture_timeout and infos[i]["state"] == "normal":
+            elif truncated and pre_capture_timeout and infos[i]["state"] == "normal":
                 infos[i]["state"] = "pre-capture timeout"
             elif capture_terminal_done and infos[i]["state"] == "normal":
                 infos[i]["state"] = "capture completed"
@@ -2703,7 +2715,12 @@ class VorAdjEnv(CoCapEnv):
                 infos[i]["state"] = "voradj completed"
             elif evader_lost and infos[i]["state"] == "normal":
                 infos[i]["state"] = "evader collision"
+            elif too_few and infos[i]["state"] == "normal":
+                infos[i]["state"] = "too few active pursuers"
             infos[i]["replay_metadata"] = {
+                "terminated": terminated,
+                "truncated": truncated,
+                "transition_semantics": self.transition_semantics,
                 "task_label": before_labels[i],
                 "next_task_label": next_labels[i],
                 "task_switched": bool(before_labels[i] != next_labels[i]),

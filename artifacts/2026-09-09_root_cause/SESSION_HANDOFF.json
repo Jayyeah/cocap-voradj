@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-10T16:20:47.642684+08:00",
+  "timestamp": "2026-09-14T17:14:44.420421+08:00",
   "project_jobs_running": false,
   "context_critic": {
     "run": "artifacts/2026-09-09_root_cause/context_critic_lineage_fixed",
@@ -14,7 +14,7 @@
     "checkpoint_sha256": "53af9775acc2e04d1527c55310468822453c74603c4c9504640b695e73d7a1fe"
   },
   "gpu1": {
-    "status": "two-head job ended; no further training scheduled"
+    "status": "frozen transition audit ended; no training or wake-up scheduled"
   },
   "gpu0": {
     "status": "no project job; hardware usage reported separately if observed"
@@ -22,7 +22,7 @@
   "ppo_25k": "HOLD",
   "continuous": "STOP_HOLD_CONTINUOUS_REPRESENTATION",
   "next_wake_up": null,
-  "next_action": "Audit early-recovery transition state and full-return construction, including phase-boundary/reset event order and MC recurrence; no further critic architecture or optimizer intervention in this run.",
+  "next_action": "P1 transition/return audit complete; continue P2 diagnostic reasoning only. P3/25k PPO HOLD. See independent audit and validation.json.",
   "p3": "HOLD",
   "critic_gradient_audit": {
     "run": "artifacts/2026-09-09_root_cause/critic_gradient_audit_v2",
@@ -45,6 +45,25 @@
     "elapsed_seconds": 29.24859471898526,
     "checkpoint_sha256": "24dd07485108c88b6a8bcf1bbd565f4d42a752413cff01796026b70ad9703e61",
     "pid_ended": 886255,
-    "next_audit_started": false
+    "next_audit_started": true,
+    "next_audit_status": "complete"
+  },
+  "transition_return_audit": {
+    "status": "complete",
+    "base_head": "7e6596fc498f2e32bec504e36d0510400de81614",
+    "run": "artifacts/2026-09-09_root_cause/transition_audit_20260914",
+    "confirmed_bug_classes": 4,
+    "fixed": 4,
+    "decision": "P1_TRANSITION_RETURN_PASS_AFTER_FIX",
+    "actor_updates": 0,
+    "critic_updates": 0,
+    "normalizer_updates": 0,
+    "natural_episode_identity": "original heldout seed stream 2027099201 episode 0..3; repeated for before/after parity",
+    "natural_steps_per_replay": 586,
+    "final_regression_tests_passed": 57,
+    "p2": "diagnostics permitted; calibration HOLD",
+    "p3": "HOLD",
+    "ppo_25k": "HOLD",
+    "runtime_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2"
   }
 }

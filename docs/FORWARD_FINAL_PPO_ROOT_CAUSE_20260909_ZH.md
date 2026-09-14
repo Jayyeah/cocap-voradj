@@ -2,7 +2,7 @@
 
 事实起点：2026-09-09 同步 `origin/experiment/small-step-ac-migration-20260828`，`git fetch --prune` + `git merge --ff-only @{u}` 后 HEAD=`22046dd4fea91497b04f7dffb15e216c74a6cc31`。该提交在 `515d54d` 之后，已经包含 fixed-MC critic 100-update 拟合与完整 GIF 结果。`f890b33` / `f9532d2` / `515d54d` 均为祖先。用户本阶段指令覆盖旧台账下一实验建议及 AGENTS 中旧预算顺序。C3 PASS 保留，不重证 Actor/BC 迁移。
 
-**当前裁决：25k PPO HOLD。P1 已证实 critic state aliasing；现有 critic 的 heldout post/pure RMSE 未稳定胜出简单 phase/time baseline。没有新 PPO、没有 critic loss weighting、没有 LR/warm-up/width sweep。** P0与continuous均已完成（第8/9节）；修复后的context对照已完成，校准仍HOLD（第14节），无本项目运行任务。
+**当前裁决（2026-09-14）：25k/P3 HOLD。P1 transition/return审计已完成，4类confirmed bug修复后PASS（第17节）；既有critic state aliasing与P2校准HOLD仍成立。无新增policy/critic训练、无后台任务。**
 
 所有新增结论采用 CODE FACT / RUNTIME FACT / EXPERIMENT RESULT / LITERATURE-BACKED INTERPRETATION / HYPOTHESIS。历史台账中的 CONFIRMED 等标签不回写。
 
@@ -404,3 +404,18 @@ CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python3 tools/fi
 ```
 
 最新交接以`SESSION_HANDOFF.json`为准：本作业已结束，无待观察GPU训练、无NEXT WAKE-UP。
+
+
+## 17. P1 transition / return semantics审计完成（2026-09-14）
+
+**最新裁决：接手HEAD=`7e6596fc498f2e32bec504e36d0510400de81614`，发现4类CONFIRMED BUG，均已最小修复。`P1 TRANSITION/RETURN SEMANTICS: PASS`（修复后）。P1 state aliasing与P2校准HOLD仍保留，P3/25k PPO不放行。** 本节覆盖第16节“尚未实施transition审计”的状态，不改写已有two-head负结果。
+
+完整证据、逐环节裁决、最小复现及因果边界见[独立审计](FORWARD_FINAL_TRANSITION_RETURN_AUDIT_20260914_ZH.md)、[逐transition表](../artifacts/2026-09-09_root_cause/transition_audit_20260914/TRANSITION_TABLE_ZH.md)、[独立验证JSON](../artifacts/2026-09-09_root_cause/transition_audit_20260914/validation.json)。
+
+- **CONFIRMED BUG：** ①timeout奖励清零末态CE势函数却又bootstrap；②CE成功/post deadline/too_few等真正终止与timeout重合时，字符串优先级误判truncation；③support的CE乘.5但phase/terminal correction加完整权重，且support分量漏记correction；④capture+casualty原生snapshot导致pure reset含inactive slot，collector向全零Actor输入采样产生NaN。修复限定在真实terminal优先/显式flags、correction与当步CE同权重、active-only actor采样及原索引回填。
+- **RUNTIME FACT：** frozen BC重放原heldout seed stream的4回合、586 transition/2344 active rows。修复前geometry/phase/MC target逐bit复现原bank，修复后所有state/action/context/value与修复前一致；50维context也逐bit等于原context bank。两个真实capture support reward分别减少.139109/.018685，**post/pure MC target逐bit不变**。未证明该缺陷解释early-recovery欠拟合。
+- **SEMANTICS CORRECT：** capture奖励属于pre行，post第一动作从下一行开始；reset前V_next、GAE跨reset阻断、pre-action active mask与死亡reward、phase/role衔接、MC episode分段和flatten索引通过。实际PPO/critic-only GAE均在ValueNorm更新前还原raw V；独立GAE误差最大4.01e−5。没有把context缺失误报为one-step lag。
+- **SUSPICIOUS BUT UNPROVEN：** 四缺陷对历史PPO退化的发生率/因果贡献、failure value、目标/ValueNorm/普通优化贡献仍未证实。构造timeout/失败probe不增加自然failure校准样本；生产geometry critic仍未接入50维context。
+- **验证/版本：** 前三类6个预期失败、inactive类另1个失败，最终相关57 tests passed；Actor/V/normalizer诊断更新0，未启动任何正式训练。新runtime/checkpoint标识`terminal-priority-truncation-bootstrap-weighted-ce-v2`；基础CONTRACT仅保留谱系。不能把新代码的boundary reward认作历史main/C3/P2原合同逐步等价；旧artifact保留。
+
+**下一阶段：允许继续P2固定策略诊断，但P2校准没有通过；P3与25k+ PPO继续HOLD。** 不因新bug自动重训、追加预算或重启head拆分。当前无本项目后台训练，无NEXT WAKE-UP。

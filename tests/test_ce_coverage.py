@@ -305,7 +305,7 @@ def test_final_capture_resets_pbrs_and_post_capture_starts_next_transition(
     assert second.infos[0]["replay_metadata"]["phase"] == "post_capture"
 
 
-def test_ce_timeout_applies_generic_terminal_pbrs_correction() -> None:
+def test_ce_timeout_keeps_potential_for_external_bootstrap() -> None:
     config = _ce_env_config(env={"episode_max_length": 1})
     set_global_config(config)
     env = VorAdjEnv(config, seed=47)
@@ -314,5 +314,6 @@ def test_ce_timeout_applies_generic_terminal_pbrs_correction() -> None:
 
     assert all(result.dones)
     metadata = [info["replay_metadata"] for info in result.infos]
-    assert all(item["coverage_ce_pbrs_reset_reason"] == "terminal" for item in metadata)
-    assert all(item["reward_ce_terminal_correction"] >= 0.0 for item in metadata)
+    assert all(info["truncated"] and not info["terminated"] for info in result.infos)
+    assert all(item["coverage_ce_pbrs_reset_reason"] == "none" for item in metadata)
+    assert all(item["reward_ce_terminal_correction"] == 0.0 for item in metadata)

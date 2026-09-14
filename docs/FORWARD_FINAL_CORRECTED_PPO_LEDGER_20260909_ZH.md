@@ -2,7 +2,7 @@
 
 起点 `f9532d2dcc49aad36d729bfc8e0eb393e4ed59c8`，本次pull确认远端无更新。C3三种冻结策略formal100已全部完成并PASS；详见 [bridge台账](FORWARD_FINAL_MAPPO_BRIDGE_LEDGER_20260908_ZH.md)。本页只记录新增D，不重新审计旧Pure-Capture。
 
-**本阶段最新入口：[PPO root-cause台账](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。P0/P1先行；已证实critic context aliasing，25k继续HOLD。旧第12/13节下一实验建议被本阶段Gate覆盖。**
+**本阶段最新入口：[PPO root-cause台账](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)与[2026-09-14 transition/return独立审计](FORWARD_FINAL_TRANSITION_RETURN_AUDIT_20260914_ZH.md)。时间语义4类bug修复后PASS；critic state aliasing及校准HOLD保留，P3/25k继续HOLD。旧下一实验建议以文末更新为准。**
 
 **历史至22046dd（2026-09-09）：C3 bridge PASS保留；D扩预算HOLD。固定BC完整回报critic诊断已完成，phase校准门槛仍未全过；未启动25k PPO。BC与既有PPO-512各40rollout/20GIF已全部完成，详见文末及GIF台账。此前运行状态/NEXT WAKE-UP为历史快照。**
 
@@ -256,3 +256,14 @@ CPU读取同一bank/prediction的`phase_loss_audit.json`发现：pre-capture只�
 **EXPERIMENT RESULT：** cross-head cosine按路由归零，train trunk pre↔post/pure cosine由−.494/−.482转为+.512/+.500，heldout也转正。冲突减小并不等于critic健康。归类CASE 3；不支持继续PCGrad或拆trunk，不启动very-short PPO。
 
 **HYPOTHESIS / 唯一下一建议：** 停止head结构方向，改做无训练的early-recovery transition state/full-return construction审计，核对phase边界、context/reward/MC target对齐及真实terminal规则。未实施该下一审计。P2/P3/25k/continuous继续HOLD；4项相关测试及独立checkpoint重载通过，全部结果和边界见[root-cause第16节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。
+
+
+## 21. P1 transition / return：4类bug修复后PASS，P3继续HOLD（2026-09-14）
+
+**CONFIRMED BUG：** timeout CE终止correction与bootstrap冲突；真正终止恰逢timeout被误判truncation；support boundary correction未乘.5且分量漏记；capture+casualty snapshot的inactive reset row仍送入Actor造成NaN。最小修复、7个修复前失败用例及最终57 tests passed已保存。本页第1节的boundary语义是期望合同，本次发现原env/collector没有在上述边界完全实现它。
+
+**RUNTIME FACT：** 原heldout四回合586 transition冻结重放，原bank geometry/phase/MC目标逐bit复现。修复后所有物理状态/动作/context/value与修复前一致；仅两次capture support reward减少.139109/.018685，post/pure MC目标不变。实际生产GAE入口、ValueNorm尺度、reset前V_next、episode/agent隔离通过；inactive reset路径修复后也可正确存储。
+
+**裁决：`P1 TRANSITION/RETURN SEMANTICS: PASS`（修复后），允许继续P2固定策略诊断，既有P2校准HOLD保持；P3/25k+ PPO不放行。** 不证明critic aliasing或这四个bug就是历史效率退化主因。新runtime/checkpoint另记`terminal-priority-truncation-bootstrap-weighted-ce-v2`，旧C3/P2及历史main不能重标为已用新边界语义。无正式训练、无后台等待。
+
+详细分类与逐transition表见[独立审计](FORWARD_FINAL_TRANSITION_RETURN_AUDIT_20260914_ZH.md)及[root-cause第17节](FORWARD_FINAL_PPO_ROOT_CAUSE_20260909_ZH.md)。

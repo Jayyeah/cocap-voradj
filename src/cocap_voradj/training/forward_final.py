@@ -56,7 +56,7 @@ def check_env(env):
     for mapping in (env._capture_voronoi_map(),env._coverage_voronoi_map()):
         assert all(k[0]=='pursuer' for k in mapping['keys'])
     np.testing.assert_allclose(env.pursuers[0].action_list,[(a,w) for a in (-.4,0,.4) for w in (-np.pi/6,0,np.pi/6)])
-    facts.update({'ce_enabled':True,'pure_capture_override':False,'episode_horizon':env.episode_max_length,
+    facts.update({'transition_semantics':env.transition_semantics,'ce_enabled':True,'pure_capture_override':False,'episode_horizon':env.episode_max_length,
                   'capture_terminal':False,'post_capture_window':500,'min_active':4,
                   'ce_speed_weight_at_reset':env.reward_cfg['coverage_ce_speed_weight'],
                   'capture_sites':env._capture_voronoi_map()['keys']})

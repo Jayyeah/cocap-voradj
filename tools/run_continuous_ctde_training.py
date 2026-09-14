@@ -391,7 +391,11 @@ def _split_termination_flags(
     truncated_states = {"too long episode", "pre-capture timeout"}
     truncated = np.asarray(
         [
-            bool(done and info.get("state") in truncated_states)
+            bool(done and (
+                info["truncated"] and not info["terminated"]
+                if "terminated" in info and "truncated" in info
+                else info.get("state") in truncated_states
+            ))
             for done, info in zip(done_array, infos)
         ],
         dtype=bool,

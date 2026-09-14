@@ -1,0 +1,174 @@
+2026-09-14 16:56:42,846 - logger - INFO - Process 499165 Train logger is successfully set up.
+FFFFFF..                                                                 [100%]
+=================================== FAILURES ===================================
+____________ test_external_timeout_preserves_continuing_pbrs_reward ____________
+
+    def test_external_timeout_preserves_continuing_pbrs_reward():
+        env,_=make_env('coverage',19)
+        env.episode_step=2999
+        continuing=copy.deepcopy(env);continuing.episode_step=2998
+        a=env.step([4]*4,[]);b=continuing.step([4]*4,[])
+        term,trunc=_split_termination_flags(a.dones,a.infos)
+        assert trunc.all() and not term.any() and not any(b.dones)
+>       np.testing.assert_allclose(a.rewards,b.rewards,atol=1e-12)
+
+test/test_forward_final_transition_semantics_20260914.py:24:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (<function assert_allclose.<locals>.compare at 0x770fd9146de0>, array([-5.55111512e-17,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00]), array([-0.48356374, -0.08379829, -0.1427057 , -0.1732057 ]))
+kwds = {'equal_nan': True, 'err_msg': '', 'header': 'Not equal to tolerance rtol=1e-07, atol=1e-12', 'verbose': True}
+
+    @wraps(func)
+    def inner(*args, **kwds):
+        with self._recreate_cm():
+>           return func(*args, **kwds)
+E           AssertionError:
+E           Not equal to tolerance rtol=1e-07, atol=1e-12
+E
+E           Mismatched elements: 4 / 4 (100%)
+E           Max absolute difference: 0.48356374
+E           Max relative difference: 1.
+E            x: array([-5.551115e-17,  0.000000e+00,  0.000000e+00,  0.000000e+00])
+E            y: array([-0.483564, -0.083798, -0.142706, -0.173206])
+
+/usr/local/anaconda3/lib/python3.12/contextlib.py:81: AssertionError
+__________ test_true_terminal_wins_when_time_limit_coincides[success] __________
+
+cause = 'success'
+
+    @pytest.mark.parametrize('cause',['success','post_window','too_few','collision'])
+    def test_true_terminal_wins_when_time_limit_coincides(cause):
+        env,_=make_env('mixed' if cause=='post_window' else 'coverage',19)
+        if cause=='success':converge_fixture(stream(env))
+        elif cause=='post_window':
+            capture_fixture(stream(env));env.step([4]*4,[4])
+            env.post_capture_started=True;env.post_capture_step=499
+        elif cause=='too_few':env.pursuers[0].deactivated=True
+        else:
+            env.pursuers[0].x=env.pursuers[1].x;env.pursuers[0].y=env.pursuers[1].y
+        env.episode_step=2999;env._invalidate_voronoi_cache()
+        outcome=env.step([4]*4,[None]*len(env.evaders))
+        term,trunc=_split_termination_flags(outcome.dones,outcome.infos)
+>       assert term.all() and not trunc.any()
+E       assert (False)
+E        +  where False = <built-in method all of numpy.ndarray object at 0x770fd8efb870>()
+E        +    where <built-in method all of numpy.ndarray object at 0x770fd8efb870> = array([False, False, False, False]).all
+
+test/test_forward_final_transition_semantics_20260914.py:41: AssertionError
+________ test_true_terminal_wins_when_time_limit_coincides[post_window] ________
+
+cause = 'post_window'
+
+    @pytest.mark.parametrize('cause',['success','post_window','too_few','collision'])
+    def test_true_terminal_wins_when_time_limit_coincides(cause):
+        env,_=make_env('mixed' if cause=='post_window' else 'coverage',19)
+        if cause=='success':converge_fixture(stream(env))
+        elif cause=='post_window':
+            capture_fixture(stream(env));env.step([4]*4,[4])
+            env.post_capture_started=True;env.post_capture_step=499
+        elif cause=='too_few':env.pursuers[0].deactivated=True
+        else:
+            env.pursuers[0].x=env.pursuers[1].x;env.pursuers[0].y=env.pursuers[1].y
+        env.episode_step=2999;env._invalidate_voronoi_cache()
+        outcome=env.step([4]*4,[None]*len(env.evaders))
+        term,trunc=_split_termination_flags(outcome.dones,outcome.infos)
+>       assert term.all() and not trunc.any()
+E       assert (False)
+E        +  where False = <built-in method all of numpy.ndarray object at 0x770fd9173ed0>()
+E        +    where <built-in method all of numpy.ndarray object at 0x770fd9173ed0> = array([False, False, False, False]).all
+
+test/test_forward_final_transition_semantics_20260914.py:41: AssertionError
+__________ test_true_terminal_wins_when_time_limit_coincides[too_few] __________
+
+cause = 'too_few'
+
+    @pytest.mark.parametrize('cause',['success','post_window','too_few','collision'])
+    def test_true_terminal_wins_when_time_limit_coincides(cause):
+        env,_=make_env('mixed' if cause=='post_window' else 'coverage',19)
+        if cause=='success':converge_fixture(stream(env))
+        elif cause=='post_window':
+            capture_fixture(stream(env));env.step([4]*4,[4])
+            env.post_capture_started=True;env.post_capture_step=499
+        elif cause=='too_few':env.pursuers[0].deactivated=True
+        else:
+            env.pursuers[0].x=env.pursuers[1].x;env.pursuers[0].y=env.pursuers[1].y
+        env.episode_step=2999;env._invalidate_voronoi_cache()
+        outcome=env.step([4]*4,[None]*len(env.evaders))
+        term,trunc=_split_termination_flags(outcome.dones,outcome.infos)
+>       assert term.all() and not trunc.any()
+E       assert (False)
+E        +  where False = <built-in method all of numpy.ndarray object at 0x770fd8ef3a50>()
+E        +    where <built-in method all of numpy.ndarray object at 0x770fd8ef3a50> = array([False, False, False, False]).all
+
+test/test_forward_final_transition_semantics_20260914.py:41: AssertionError
+_________ test_true_terminal_wins_when_time_limit_coincides[collision] _________
+
+cause = 'collision'
+
+    @pytest.mark.parametrize('cause',['success','post_window','too_few','collision'])
+    def test_true_terminal_wins_when_time_limit_coincides(cause):
+        env,_=make_env('mixed' if cause=='post_window' else 'coverage',19)
+        if cause=='success':converge_fixture(stream(env))
+        elif cause=='post_window':
+            capture_fixture(stream(env));env.step([4]*4,[4])
+            env.post_capture_started=True;env.post_capture_step=499
+        elif cause=='too_few':env.pursuers[0].deactivated=True
+        else:
+            env.pursuers[0].x=env.pursuers[1].x;env.pursuers[0].y=env.pursuers[1].y
+        env.episode_step=2999;env._invalidate_voronoi_cache()
+        outcome=env.step([4]*4,[None]*len(env.evaders))
+        term,trunc=_split_termination_flags(outcome.dones,outcome.infos)
+>       assert term.all() and not trunc.any()
+E       assert (False)
+E        +  where False = <built-in method all of numpy.ndarray object at 0x770fd8efae50>()
+E        +    where <built-in method all of numpy.ndarray object at 0x770fd8efae50> = array([ True,  True, False, False]).all
+
+test/test_forward_final_transition_semantics_20260914.py:41: AssertionError
+_________ test_support_capture_correction_uses_same_half_weight_as_ce __________
+
+    def test_support_capture_correction_uses_same_half_weight_as_ce():
+        env,_=make_env('mixed',19);capture_fixture(stream(env))
+        cost=env._voradj_coverage_potentials(
+            np.asarray([[p.x,p.y] for p in env.pursuers]),np.asarray([[e.x,e.y] for e in env.evaders]),data=env._coverage_voronoi_map())
+        result=env.step([4]*4,[4]);meta=result.infos[3]['replay_metadata']
+        assert env.last_capture_events and not any(result.dones)
+        assert meta['reward_role']=='support' and meta['coverage_ce_pbrs_reset_reason']=='capture_phase_boundary'
+        expected=.5*env._ce_terminal_pbrs_correction(float(cost[3]))
+>       np.testing.assert_allclose(meta['reward_ce_terminal_correction'],expected,atol=1e-12)
+
+test/test_forward_final_transition_semantics_20260914.py:57:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+args = (<function assert_allclose.<locals>.compare at 0x770fd9146de0>, array(0.17783567), array(0.08891783))
+kwds = {'equal_nan': True, 'err_msg': '', 'header': 'Not equal to tolerance rtol=1e-07, atol=1e-12', 'verbose': True}
+
+    @wraps(func)
+    def inner(*args, **kwds):
+        with self._recreate_cm():
+>           return func(*args, **kwds)
+E           AssertionError:
+E           Not equal to tolerance rtol=1e-07, atol=1e-12
+E
+E           Mismatched elements: 1 / 1 (100%)
+E           Max absolute difference: 0.08891783
+E           Max relative difference: 1.
+E            x: array(0.177836)
+E            y: array(0.088918)
+
+/usr/local/anaconda3/lib/python3.12/contextlib.py:81: AssertionError
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  Warning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  Warning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_external_timeout_preserves_continuing_pbrs_reward
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_true_terminal_wins_when_time_limit_coincides[success]
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_true_terminal_wins_when_time_limit_coincides[post_window]
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_true_terminal_wins_when_time_limit_coincides[too_few]
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_true_terminal_wins_when_time_limit_coincides[collision]
+FAILED test/test_forward_final_transition_semantics_20260914.py::test_support_capture_correction_uses_same_half_weight_as_ce
+6 failed, 2 passed, 2 warnings in 3.45s
