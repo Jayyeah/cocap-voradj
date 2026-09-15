@@ -97,4 +97,52 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 
 <!-- AUTO_SINGLE_TASK_RESULTS -->
 
-尚未启动完整预算。因果结论PENDING。
+## 最新自动结果
+
+状态：`IN_PROGRESS`。最终因果结论：`PENDING — 尚无最终结论`。
+
+| 任务 | 当前 corrected baseline | 历史/归因对照 | R2 |
+|---|---|---|---|
+| Capture | PENDING / None | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |
+| Coverage | PENDING / None | Probes pending or not required | NOT_STARTED |
+
+### Capture best / terminal / sustained window
+
+| 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |
+|---|---|---|---|---|
+
+### 运行交接
+
+```json
+{
+  "capture": {
+    "pid": 827847,
+    "alive": true,
+    "returncode": null,
+    "step": 0,
+    "checkpoint": "NONE",
+    "throughput": null,
+    "eta_seconds": null,
+    "status": "STARTING"
+  },
+  "coverage": {
+    "pid": 827848,
+    "alive": true,
+    "returncode": null,
+    "step": 0,
+    "checkpoint": "NONE",
+    "throughput": null,
+    "eta_seconds": null,
+    "status": "STARTING"
+  },
+  "supervisor": {
+    "pid": 827802,
+    "next_wake_up": "2026-09-15T12:16:46.237391+08:00"
+  },
+  "causal_conclusion": null
+}
+```
+
+机器可读完整结果：[MASTER](../artifacts/2026-09-15_single_task/MASTER.json)。
+历史完整曲线与窗口：[historical_reference](../artifacts/2026-09-15_single_task/historical_reference.json)。
+未经完整预算和所有必要 gate，不形成五类最终结论。
