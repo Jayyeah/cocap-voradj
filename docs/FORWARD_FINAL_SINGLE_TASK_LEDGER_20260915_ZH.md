@@ -129,8 +129,8 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 
 | 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |
 |---|---|---|---|---|
-| argmax | 0.0% (25000) | 0.0% (75000) | 0.0% / 0.0% | 0.0% |
-| sample | 0.0% (75000) | 0.0% (75000) | 0.0% / 0.0% | 60.0% |
+| argmax | 0.0% (25000) | 0.0% (100000) | 0.0% / 0.0% | 0.0% |
+| sample | 0.0% (75000) | 0.0% (100000) | 0.0% / 0.0% | 40.0% |
 
 ### 运行交接
 
@@ -140,10 +140,10 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
     "pid": 827847,
     "alive": true,
     "returncode": null,
-    "step": 97100,
-    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_075000.pt",
-    "throughput": 9.44324248832202,
-    "eta_seconds": 42665.429856137445,
+    "step": 101800,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_100000.pt",
+    "throughput": 7.835748105772929,
+    "eta_seconds": 50818.376832025664,
     "status": "training"
   },
   "coverage": {
@@ -158,7 +158,7 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T15:08:16.000007+08:00"
+    "next_wake_up": "2026-09-15T15:53:25.030904+08:00"
   },
   "causal_conclusion": null
 }
