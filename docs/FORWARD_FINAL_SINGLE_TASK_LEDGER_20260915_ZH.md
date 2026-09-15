@@ -94,7 +94,7 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 | 任务 | corrected baseline | historical reference | supervised representation | reward separability | R2 |
 |---|---|---|---|---|---|
 | Capture | [500k逐checkpoint双模式评估](../artifacts/2026-09-15_single_task/capture/)；best/terminal/所有3点窗口分别统计 | [MAPPO-9-v2三seed best/terminal/窗口](../artifacts/2026-09-15_single_task/historical_reference.json) | 不适用 | 不适用 | 不适用 |
-| Coverage | [Pure-Coverage 结果文档](FORWARD_FINAL_PURE_COVERAGE_RESULTS_20260915_ZH.md)；[200k逐checkpoint评估](../artifacts/2026-09-15_single_task/coverage/) | 当前Final reward合同 | 不启动：baseline已清晰学习 | 不启动：baseline已清晰学习 | 不启动：baseline已清晰学习 |
+| Coverage | [Pure-Coverage 结果文档](FORWARD_FINAL_PURE_COVERAGE_RESULTS_20260915_ZH.md)；[200k逐checkpoint评估](../artifacts/2026-09-15_single_task/coverage/)；[V/return/ValueNorm诊断](../artifacts/2026-09-15_single_task/coverage/value_diagnostic.json) | 当前Final reward合同 | 不启动：baseline已清晰学习 | 不启动：baseline已清晰学习 | 不启动：baseline已清晰学习 |
 
 ## 最终MASTER规则
 
@@ -123,20 +123,14 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 | 任务 | 当前 corrected baseline | 历史/归因对照 | R2 |
 |---|---|---|---|
 | Capture | RUNNING / None | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |
-| Coverage | COMPLETE / PURE_COVERAGE_LEARNABLE | [Pure-Coverage 结果文档](FORWARD_FINAL_PURE_COVERAGE_RESULTS_20260915_ZH.md)；baseline 已清晰学习，Probe A/B 按 gate 不启动 | R2 不启动 |
-
-### Pure-Coverage baseline result
-
-200k 终点 argmax/sample 均为 `20/20` strict CE success、`0/20` collision/boundary；CE RMS mean `.02076/.02459`，area CV mean `.04859/.06761`，strict hold mean `30/30`，time-to-CE mean `83.35/48.75s`。sample 从50k起连续成功，argmax从75k起持续改善，分类为 `PURE_COVERAGE_LEARNABLE`。完整趋势、奖励分量和 PPO 健康范围见 [Pure-Coverage 结果文档](FORWARD_FINAL_PURE_COVERAGE_RESULTS_20260915_ZH.md)。
-
-Probe A、Probe B、R2 全部不启动；下一核心问题是等待 Pure-Capture 完成后再讨论 Full-Task capture/coverage gradient interference。
+| Coverage | COMPLETE / PURE_COVERAGE_LEARNABLE | Probes pending or not required | NOT_STARTED |
 
 ### Capture best / terminal / sustained window
 
 | 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |
 |---|---|---|---|---|
-| argmax | 0.0% (25000) | 0.0% (125000) | 0.0% / 0.0% | 0.0% |
-| sample | 0.0% (75000) | 0.0% (125000) | 0.0% / 0.0% | 40.0% |
+| argmax | 0.0% (25000) | 0.0% (150000) | 0.0% / 0.0% | 0.0% |
+| sample | 0.0% (75000) | 0.0% (150000) | 0.0% / 0.0% | 50.0% |
 
 ### 运行交接
 
@@ -146,10 +140,10 @@ Probe A、Probe B、R2 全部不启动；下一核心问题是等待 Pure-Captur
     "pid": 827847,
     "alive": true,
     "returncode": null,
-    "step": 136300,
-    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_125000.pt",
-    "throughput": 8.207581407985106,
-    "eta_seconds": 44312.68871072768,
+    "step": 151000,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_150000.pt",
+    "throughput": 7.820593140366625,
+    "eta_seconds": 44625.771183340075,
     "status": "training"
   },
   "coverage": {
@@ -164,7 +158,7 @@ Probe A、Probe B、R2 全部不启动；下一核心问题是等待 Pure-Captur
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T16:53:39.073755+08:00"
+    "next_wake_up": "2026-09-15T17:38:40.372714+08:00"
   },
   "causal_conclusion": null
 }
