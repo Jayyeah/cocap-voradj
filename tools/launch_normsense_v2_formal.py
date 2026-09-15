@@ -505,6 +505,7 @@ def eval_fullmix(actor, out: Path, step: int, alpha: float, seed_base: int, epis
 
 def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
     gate, config, manifest, manifest_sha, parity = gate_and_spec(kind)
+    parity_sha = sha256_file(PARITY_PATH)
     contract = scratch.load_contract()
     if contract["transition_semantics"] != SEMANTICS:
         raise RuntimeError("Unexpected transition semantics")
@@ -551,7 +552,7 @@ def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
             "stop_at": manifest["stop_at"], "alpha_capture": manifest["alpha_capture"],
             "sensing_policy": POLICY, "k": 0.8715, "radius_floor": 20.0,
             "transition_semantics": SEMANTICS, "initial_hashes": actual,
-            "manifest_sha256": manifest_sha, "parity_sha256": sha256_file(PARITY_PATH),
+            "manifest_sha256": manifest_sha, "parity_sha256": parity_sha,
             "source_sha256": sources, "git_head": subprocess.check_output(
                 ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
             "pid": os.getpid(), "gpu_visible": os.environ.get("CUDA_VISIBLE_DEVICES"),
