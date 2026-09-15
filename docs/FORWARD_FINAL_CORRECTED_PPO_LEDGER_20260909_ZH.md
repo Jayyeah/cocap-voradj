@@ -282,3 +282,5 @@ P1 transition/return：四类修复后 PASS；central-V state aliasing：UNRESOL
 [逐 checkpoint 指标与 matched delta](../artifacts/2026-09-14_overnight/MASTER_SUMMARY.json)；[启动协议及 morning handoff](FORWARD_FINAL_OVERNIGHT_DIAGNOSTIC_20260914_ZH.md)。BC 5k 仅在全部 operational checks 成立时续至 10k；Scratch 100k 硬停，25k/50k 零 capture 不早停。禁止自动 25k PPO、>100k Scratch、200k 或新 seeds。任何正结果只提出下一 Gate，负结果不证明算法不可行。
 
 <!-- OVERNIGHT_20260914_END -->
+
+本次 bounded diagnostic 的完整数据与历史性能测试核验见 [独立结果页](FORWARD_FINAL_OVERNIGHT_RESULTS_20260915_ZH.md).
