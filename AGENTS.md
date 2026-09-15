@@ -1,3 +1,16 @@
+# New experiment default (user, 2026-09-15, Density-Normalized V2)
+
+- All NEW Forward-Final experiments use `cocap_voradj.training.forward_final_v2`
+  and `configs/experiments/forward_final_normsense_v2_20260915/default.yaml`.
+- Historical modules/configs remain R20 reproduction entries. Do not use their
+  legacy defaults for a new experiment. Friendly VorAdj stays historical/global;
+  local-friendly is deferred to V3.
+- Never modify, stop, resume, or contaminate the running OLD Pure-Capture 500k.
+- V2 delivery must be committed and pushed before a later training launch.
+  This task authorizes offline diagnostics only, no formal training launch.
+- Respect `artifacts/2026-09-15_normsense_v2/contracts.json` readiness/blockers.
+  A transfer break requires MASTER review; do not start Coverage retraining.
+
 # Current single-task authorization (user, 2026-09-15)
 
 - Latest task supersedes the old route and budget restrictions below: corrected

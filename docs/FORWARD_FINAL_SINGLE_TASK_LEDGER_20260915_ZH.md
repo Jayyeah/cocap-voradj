@@ -167,3 +167,10 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 机器可读完整结果：[MASTER](../artifacts/2026-09-15_single_task/MASTER.json)。
 历史完整曲线与窗口：[historical_reference](../artifacts/2026-09-15_single_task/historical_reference.json)。
 未经完整预算和所有必要 gate，不形成五类最终结论。
+
+
+## 2026-09-15 Density-Normalized Sensing V2 交付 Gate
+
+新基础合同与完整证据见 [Density-Normalized Sensing V2](FORWARD_FINAL_DENSITY_NORMALIZED_SENSING_V2_20260915_ZH.md)。k=.8715，enemy/obstacle共享surface radius，friendly VorAdj未改。Pure-Coverage200k冻结20 seeds×双模式：Legacy数值重放误差0；V2 argmax成功10%/碰撞75%，sample成功100%/碰撞0但时间增加，分类 `COVERAGE_TRANSFER_BREAKS_POLICY`。是否补Coverage V2由MASTER决定，本轮不重训。
+
+完整Full-Mix实际窗口的robust capture/coverage Actor梯度比=.266528；最终alpha_capture=1，capture↔coverage cosine=−.00199895，未见整体capture dominance，建议取消重复RewardBalanced臂。两个Full-Mix HOLD；NormSense-PureCapture合同READY、严格sensing-only parity，须交付commit+push后另行启动。当前OLD Pure-Capture500k保持运行且不受修改/停止/resume。本节不改变OLD尚未完成的single-task最终因果结论。

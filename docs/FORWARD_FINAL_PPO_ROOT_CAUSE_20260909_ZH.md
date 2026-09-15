@@ -448,3 +448,10 @@ P1 transition/return：四类修复后 PASS；central-V state aliasing：UNRESOL
 <!-- OVERNIGHT_20260914_END -->
 
 晨间完整结果、历史性能完整性核验与不补测决定见 [独立结果页](FORWARD_FINAL_OVERNIGHT_RESULTS_20260915_ZH.md)。
+
+
+## 2026-09-15 Density-Normalized Sensing V2 交付 Gate
+
+新基础合同与完整证据见 [Density-Normalized Sensing V2](FORWARD_FINAL_DENSITY_NORMALIZED_SENSING_V2_20260915_ZH.md)。k=.8715，enemy/obstacle共享surface radius，friendly VorAdj未改。Pure-Coverage200k冻结20 seeds×双模式：Legacy数值重放误差0；V2 argmax成功10%/碰撞75%，sample成功100%/碰撞0但时间增加，分类 `COVERAGE_TRANSFER_BREAKS_POLICY`。是否补Coverage V2由MASTER决定，本轮不重训。
+
+完整Full-Mix实际窗口的robust capture/coverage Actor梯度比=.266528；最终alpha_capture=1，capture↔coverage cosine=−.00199895，未见整体capture dominance，建议取消重复RewardBalanced臂。两个Full-Mix HOLD；NormSense-PureCapture合同READY、严格sensing-only parity，须交付commit+push后另行启动。当前OLD Pure-Capture500k保持运行且不受修改/停止/resume。本节不改变OLD尚未完成的single-task最终因果结论。

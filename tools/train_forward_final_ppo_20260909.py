@@ -32,9 +32,9 @@ def tensor_hash(state):
 
 class FinalMissionStream:
     """Reuse the actual Final trainer reset/schedule methods without its IQN learner."""
-    def __init__(self,seed,run_dir):
-        self.config=scene_config('mixed');self.train_mode='voradj_mixed_coverage';self.run_dir=Path(run_dir);self.run_dir.mkdir(parents=True,exist_ok=True)
-        self.envs={task:make_env(scene,seed+delta)[0] for task,scene,delta in [('voradj','mixed',0),('voradj_coverage','coverage',100000)]}
+    def __init__(self,seed,run_dir, *, sensing_policy='legacy-r20', alpha_capture=1.):
+        self.config=scene_config('mixed',sensing_policy=sensing_policy,alpha_capture=alpha_capture);self.train_mode='voradj_mixed_coverage';self.run_dir=Path(run_dir);self.run_dir.mkdir(parents=True,exist_ok=True)
+        self.envs={task:make_env(scene,seed+delta,sensing_policy=sensing_policy,alpha_capture=alpha_capture)[0] for task,scene,delta in [('voradj','mixed',0),('voradj_coverage','coverage',100000)]}
         recovery=self.config['voradj']['recovery']
         self.recovery_init_pool=deque(maxlen=int(recovery['capture_state_pool_capacity']))
         self.recovery_from_capture_ratio=float(recovery['captured_state_ratio'])

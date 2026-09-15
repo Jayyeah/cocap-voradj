@@ -1,0 +1,68 @@
+schema: forward-final-normsense-run-v2
+sensing_policy: forward-final-density-normalized-sensing-v2
+seed: 2026091401
+initial_hashes:
+  actor: 54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39
+  value: 10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027
+  value_norm: 17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515
+ppo:
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_param: 0.2
+  ppo_epochs: 3
+  minibatches: 2
+  actor_lr: 3.0e-05
+  critic_lr: 0.0001
+  entropy_coef: 0.01
+  value_coef: 1.0
+  max_grad_norm: 0.5
+  target_kl: 0.02
+  value_norm: true
+  value_norm_beta: 0.99999
+  value_norm_epsilon: 1.0e-05
+actor:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_pursuers: 8
+  max_evaders: 8
+  max_obstacles: 5
+  pursuing_embed_dim: 8
+  dropout: 0.1
+critic:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_agents: 4
+  max_evaders: 8
+  max_obstacles: 5
+actor_head:
+  orthogonal_policy_head: true
+  output_gain: 0.01
+rollout_length: 256
+reward_clock_offset: 2000000
+scene_schedule:
+  cycle:
+  - mixed
+  - coverage
+  pool_initial_size: 0
+  pool_capacity: 1000
+  captured_state_ratio: 0.75
+  map_random_ratio_within_non_capture: 0.5
+eval_seed_base: 2026092401
+eval_confirmation_seed_base: 2026102401
+eval_episodes_per_scene_mode: 20
+formal_training: NOT_STARTED
+requires_published_delivery: true
+initialization: random
+teacher_dependency: 0
+name: NormSense-RewardBalanced-FullMix
+alpha_capture: 1.0
+blockers:
+- MASTER_COVERAGE_V2_TRANSFER_BREAKS_POLICY_REVIEW
+- NO_CAPTURE_DOMINANCE_ALPHA_1_DUPLICATES_ORIGINAL_RECOMMEND_CANCEL
+READY: false
+publication_gate: commit + push required before any launch; no launch in this tool
+resolved_manifest: artifacts/2026-09-15_normsense_v2/NormSense-RewardBalanced-FullMix.json

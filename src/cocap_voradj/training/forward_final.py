@@ -25,19 +25,31 @@ def flatten(value, prefix=''):
     return out
 
 
-def scene_config(scene, *, historical=False):
+def scene_config(scene, *, historical=False, sensing_policy='legacy-r20', alpha_capture=1.):
     if scene not in ('mixed','coverage'):raise ValueError('Full-task scenes are mixed and coverage; capture is a mixed prefix diagnostic')
     root=load_config(str(HISTORICAL if historical else CONFIG))
     task='voradj_coverage' if scene=='coverage' else 'voradj'
-    return deep_update(root,root['tasks'][task])
+    cfg = deep_update(root,root['tasks'][task])
+    if sensing_policy != 'legacy-r20':
+        from cocap_voradj.envs.density_sensing import POLICY, enable_v2
+        if sensing_policy != POLICY or historical: raise ValueError('Invalid sensing policy')
+        cfg = enable_v2(cfg)
+    if alpha_capture != 1.:
+        if sensing_policy == 'legacy-r20': raise ValueError('Reward balance requires V2')
+        cfg['reward']['static_capture_scale'] = float(alpha_capture)
+    return cfg
 
 
 def check_env(env):
+    radius = 20.
+    if 'onboard_sensing' in env.config.get('voradj', {}):
+        from cocap_voradj.envs.density_sensing import runtime_metadata
+        radius = runtime_metadata(env)['resolved_onboard_radius']
     facts=assert_runtime(env,expected={
         'topology':'friendly_voronoi_comm_v0','enemy_token_rule':'surface_radius',
         'global_enemy_flag':False,'support_capture_weight':.5,'support_coverage_weight':.5,
         'support_blend_enabled':True,'capture_reward_mode':'ring_importance_ms_v0',
-        'capture_radius':8.,'capture_k':3,'enemy_radius':20.,'pursuers':4,
+        'capture_radius':8.,'capture_k':3,'enemy_radius':radius,'pursuers':4,
         'action_mode':'unicycle_discrete','decision_dt':.5,'physics_dt':.05,
         'a_longitudinal_max':.4,'omega_max':float(np.pi/6),'v_max':3.,
         'drag':.4/3,'collision_semantics':'synchronized_swept_v1'})
@@ -46,7 +58,7 @@ def check_env(env):
     assert env._ce_coverage_enabled() and env._ring_importance_ms_enabled()
     assert env._support_reward_capture_component_mode()=='approach_only'
     assert env._support_reward_capture_target_mode()=='neighbor_visible'
-    assert env._vct_ls_sensing_radius('obstacle')==20
+    assert env._vct_ls_sensing_radius('obstacle')==radius
     assert env._vct_ls_voronoi_obstacle_mode()=='free_mask_projected'
     assert env.episode_max_length==3000
     assert not env.config['voradj'].get('capture_episode_ends_on_capture',False)
@@ -63,8 +75,8 @@ def check_env(env):
     return facts
 
 
-def make_env(scene,seed):
-    cfg=scene_config(scene);set_global_config(cfg)
+def make_env(scene,seed, *, sensing_policy='legacy-r20', alpha_capture=1.):
+    cfg=scene_config(scene, sensing_policy=sensing_policy, alpha_capture=alpha_capture);set_global_config(cfg)
     env=VorAdjEnv(copy.deepcopy(cfg),seed=int(seed));obs=env.reset()
     check_env(env)
     return env,obs

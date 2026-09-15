@@ -60,24 +60,32 @@ def task_config(task):
 
 
 def check_env(env, task, actor=None):
+    radius = 20.
+    expected_config = task_config(task)
+    sensing_metadata = None
+    if 'onboard_sensing' in env.config.get('voradj', {}):
+        from cocap_voradj.envs.density_sensing import runtime_metadata, enable_v2
+        sensing_metadata = runtime_metadata(env)
+        radius = sensing_metadata['resolved_onboard_radius']
+        expected_config = enable_v2(expected_config)
     facts = assert_runtime(env, actor, categorical=actor is not None, expected={
         'pursuers':4, 'evaders':int(task=='capture'), 'topology':'friendly_voronoi_comm_v0',
         'enemy_token_rule':'surface_radius', 'global_enemy_flag':False,
         'support_capture_weight':1., 'support_coverage_weight':0.,
         'support_blend_enabled':task=='capture', 'capture_reward_mode':'ring_importance_ms_v0',
-        'capture_radius':8., 'capture_k':3, 'enemy_radius':20.,
+        'capture_radius':8., 'capture_k':3, 'enemy_radius':radius,
         'action_mode':'unicycle_discrete', 'decision_dt':.5, 'physics_dt':.05,
         'a_longitudinal_max':.4, 'omega_max':float(np.pi/6), 'v_max':3., 'drag':.4/3,
         'collision_semantics':'synchronized_swept_v1'})
     assert env.transition_semantics == SEMANTICS
-    assert env.config == task_config(task), 'Resolved runtime configuration drift'
+    assert env.config == expected_config, 'Resolved runtime configuration drift'
     assert env.episode_max_length == 3000 and env.reward_cfg['min_active_pursuers'] == 4
     assert env._ce_coverage_enabled() and env._ring_importance_ms_enabled()
     assert not env._pure_capture_all_capture_enabled(), 'Historical reward override forbidden'
     assert env._support_reward_capture_component_mode() == 'approach_only'
     assert env._support_reward_capture_target_mode() == 'neighbor_visible'
     assert env._pursuing_release_delay_steps == 10 and env._vct_ls_apply_release_delay()
-    assert env._vct_ls_sensing_radius('obstacle') == 20
+    assert env._vct_ls_sensing_radius('obstacle') == radius
     assert env.env_cfg['width'] == env.env_cfg['height'] == 120
     assert len(env.obstacles) == 1
     assert env.env_cfg['pursuer_spawn_mode'] == 'map_random'

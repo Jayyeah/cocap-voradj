@@ -72,6 +72,9 @@ class VorAdjEnv(CoCapEnv):
         self.zone_evader_targets: List[Optional[np.ndarray]] = []
         self.zone_evader_target_reached: List[bool] = []
         self.zone_pursuer_left_inner_event = False
+        self._static_capture_scale = float(self.reward_cfg.get("static_capture_scale", 1.0))
+        if not 0.25 <= self._static_capture_scale <= 1.0:
+            raise ValueError("Static capture scale must be in [0.25, 1]")
         self._validate_pure_capture_all_capture_contract()
 
     def reset(self, *args, **kwargs):
@@ -393,8 +396,17 @@ class VorAdjEnv(CoCapEnv):
             )
         )
 
+    def _capture_scale(self) -> float:
+        value = float(self.reward_cfg.get("static_capture_scale", 1.0))
+        if value != getattr(self, "_static_capture_scale", 1.0):
+            raise ValueError("Online capture scale changes are forbidden")
+        return value
+
     def _vct_ls_sensing_radius(self, entity_type: str) -> float:
         cfg = self.config.get("voradj", {}) or {}
+        if "onboard_sensing" in cfg and entity_type in ("enemy", "obstacle"):
+            from .density_sensing import runtime_metadata
+            return runtime_metadata(self)["resolved_onboard_radius"]
         if entity_type == "enemy":
             value = cfg.get("enemy_sensing_radius", cfg.get("vct_ls_enemy_sensing_radius", self.per_cfg.get("range", 20.0)))
         elif entity_type == "obstacle":
@@ -434,9 +446,9 @@ class VorAdjEnv(CoCapEnv):
             pursuer_positions = np.asarray([self._position(p) for p in self.pursuers], dtype=float)
         if evader_positions is None:
             evader_positions = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2), dtype=float)
+        radius = self._vct_ls_sensing_radius("enemy")
         if bool(self.per_cfg.get("global_evader_visibility", False)):
             return [j for j, evader in enumerate(self.evaders) if not evader.deactivated]
-        radius = self._vct_ls_sensing_radius("enemy")
         ids: List[int] = []
         ppos = np.asarray(pursuer_positions[pursuer_idx], dtype=float)
         for j, evader in enumerate(self.evaders):
@@ -2264,13 +2276,13 @@ class VorAdjEnv(CoCapEnv):
                 reward_capture_mean_shift_component[i] += mean_shift_reward
                 reward_capture_front_component[i] += front_reward
             elif reward_roles[i] == "capture" and active_targets:
-                task_reward = capture_task_reward(i, capture_reward_candidates(i, support_mode=False))
+                task_reward = self._capture_scale() * capture_task_reward(i, capture_reward_candidates(i, support_mode=False))
                 rewards[i] += task_reward
                 reward_capture_component[i] += task_reward
             elif support_reward_blend_active(i):
                 capture_reward = support_capture_task_reward(i, capture_reward_candidates(i, support_mode=True))
                 coverage_reward, ce_terms = coverage_task_reward(i)
-                blended_capture = support_capture_weight * capture_reward
+                blended_capture = self._capture_scale() * support_capture_weight * capture_reward
                 blended_coverage = support_coverage_weight * coverage_reward
                 rewards[i] += blended_capture + blended_coverage
                 reward_capture_component[i] += blended_capture
@@ -2405,7 +2417,7 @@ class VorAdjEnv(CoCapEnv):
                     else event["participants"]
                 )
                 for i in terminal_recipients:
-                    terminal_reward = float(self.env_cfg.get("goal_reward", 120.0)) * factor
+                    terminal_reward = self._capture_scale() * float(self.env_cfg.get("goal_reward", 120.0)) * factor
                     rewards[i] += terminal_reward
                     reward_terminal_component[i] += terminal_reward
             if self.capture_snapshot is None and all(e.deactivated for e in self.evaders):
