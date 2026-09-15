@@ -21,10 +21,18 @@ def write_ledger_snapshot(root,result,status):
     marker='<!-- AUTO_SINGLE_TASK_RESULTS -->'
     text=LEDGER.read_text().split(marker)[0]
     c=result['capture'];v=result['coverage'];rep=result['attribution'];r2=result['r2']
+    coverage_status = (
+        'baseline已清晰学习，Probe A/B/R2 按 gate 不启动'
+        if v.get('decision') == 'PURE_COVERAGE_LEARNABLE'
+        else (rep['representation']['decision'] if rep else 'Probes pending or not required')
+    )
     lines=[marker,'','## 最新自动结果','',f"状态：`{result['status']}`。最终因果结论：`{result['causal_conclusion'] or 'PENDING — 尚无最终结论'}`。",'',
         '| 任务 | 当前 corrected baseline | 历史/归因对照 | R2 |','|---|---|---|---|',
         f"| Capture | {c['status']} / {c.get('decision')} | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |",
-        f"| Coverage | {v['status']} / {v.get('decision')} | {(rep['representation']['decision'] if rep else 'Probes pending or not required')} | {r2['status']} |",'',
+        f"| Coverage | {v['status']} / {v.get('decision')} | {coverage_status} | {r2['status']} |",'',
+        '### Pure-Coverage baseline result','',
+        '完整结果：[Pure-Coverage 结果文档](FORWARD_FINAL_PURE_COVERAGE_RESULTS_20260915_ZH.md)。',
+        '200k 终点 argmax/sample 均为20/20 strict CE success、0/20 collision；Probe A、Probe B、R2 均未启动。','',
         '### Capture best / terminal / sustained window','',
         '| 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |',
         '|---|---|---|---|---|']
