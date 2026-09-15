@@ -103,7 +103,21 @@ def value_norm_hash(value_norm) -> str:
 
 
 def finite_tree(value) -> None:
-    scratch.finite_tree(value)
+    if torch.is_tensor(value):
+        if not bool(torch.isfinite(value).all()):
+            raise FloatingPointError("non-finite tensor in formal training state")
+    elif isinstance(value, np.ndarray):
+        if not bool(np.isfinite(value).all()):
+            raise FloatingPointError("non-finite ndarray in formal training state")
+    elif isinstance(value, dict):
+        for child in value.values():
+            finite_tree(child)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            finite_tree(child)
+    elif isinstance(value, (float, np.floating)):
+        if not bool(np.isfinite(value)):
+            raise FloatingPointError("non-finite scalar in formal training state")
 
 
 def source_hashes(config: Path) -> dict[str, str]:

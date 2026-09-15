@@ -4,7 +4,14 @@
   "source_head": "42bb9bc",
   "delivery_branch": "experiment/density-normalized-sensing-v2-20260915",
   "audit_commit_required_before_launch": true,
-  "training_started": false,
+  "training_started": true,
+  "launch_override": {
+    "authorized_by_user": true,
+    "instruction": "直接启动，不 push",
+    "local_launch_head": "cd8a5c9",
+    "remote_push_performed": false,
+    "latest_locally_verified_audit_ref": "origin/experiment/density-normalized-sensing-v2-20260915@2ebfde3ff0b753cf0a8895916c0652c03bfc266b"
+  },
   "final_gate": {
     "SENSING_V2_CONTRACT": "PASS",
     "NORM_PURE_CAPTURE_PARITY": "PASS",
@@ -56,5 +63,36 @@
     "pure_capture_parity": "artifacts/2026-09-15_normsense_v2/pure_capture_parity_audit.json",
     "gradient_logging": "artifacts/2026-09-15_normsense_v2/gradient_logging_schema.json"
   },
-  "next_agent": "Agent C may launch only after verifying this committed/pushed handoff and the three run manifests; no training was launched by the independent audit agent."
+  "execution_snapshot": {
+    "recorded_at": "2026-09-16T00:20:00+08:00",
+    "status": "THREE_NEW_RUNS_RUNNING_INITIAL_EVAL",
+    "old_pure_capture": "LEGACY_R20_PURE_CAPTURE remains untouched",
+    "runs": {
+      "NormSense-PureCapture": {
+        "pid": 1108314,
+        "tmux": "normsense_pure_20260916",
+        "gpu_visible": "0",
+        "step": 0,
+        "checkpoint": "runs/2026-09-15_normsense_v2/NormSense-PureCapture/step_000000.pt",
+        "resume_metadata": "runs/2026-09-15_normsense_v2/NormSense-PureCapture/step_000000.json"
+      },
+      "NormSense-Original-FullMix": {
+        "pid": 1103790,
+        "tmux": "normsense_original_20260916",
+        "gpu_visible": "1",
+        "step": 0,
+        "checkpoint": "runs/2026-09-15_normsense_v2/NormSense-Original-FullMix/step_000000.pt",
+        "resume_metadata": "runs/2026-09-15_normsense_v2/NormSense-Original-FullMix/step_000000.json"
+      },
+      "NormSense-CaptureDownweight05-FullMix": {
+        "pid": 1103798,
+        "tmux": "normsense_downweight05_20260916",
+        "gpu_visible": "1",
+        "step": 0,
+        "checkpoint": "runs/2026-09-15_normsense_v2/NormSense-CaptureDownweight05-FullMix/step_000000.pt",
+        "resume_metadata": "runs/2026-09-15_normsense_v2/NormSense-CaptureDownweight05-FullMix/step_000000.json"
+      }
+    }
+  },
+  "next_agent": "Three new formal runs were launched locally under the user-authorized no-push override. Continue low-frequency monitoring; stop at the fixed budgets and produce the matched report. Do not launch any forbidden follow-up."
 }
