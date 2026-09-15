@@ -67,6 +67,67 @@ step0 和 5k 都完成固定 seed 的 argmax/sample × mixed/coverage、每组 2
 
 因此没有“大量或关键性能测试”缺失，不启动补测。5k BC 的共同安全时间样本不足、Scratch 的共同安全时间为零，已经作为数据中的 `common_safe_n`/`null` 明确记录；重新随机抽样只为制造共同成功会破坏预声明 matched seed 设计，不能作为补测。若未来要补充时间效应，应由 MASTER 明确新的独立确认 seed/episode 计划，而不是修改本夜结果。
 
+## BC→PPO 退化的逐项数值复核
+
+下面的数字直接来自 [matched_step_005000.json](../artifacts/2026-09-14_overnight/bc_ppo_seed1/matched_step_005000.json)、[eval_step_000000.json](../artifacts/2026-09-14_overnight/bc_ppo_seed1/eval_step_000000.json) 和 [eval_step_005000.json](../artifacts/2026-09-14_overnight/bc_ppo_seed1/eval_step_005000.json)。每个格子都是固定 matched seed 的 20 局；百分数是完成局数/20，return 是每局 discounted return 均值。
+
+| 组别 | 指标 | step0 → 5k | 变化 |
+|---|---|---:|---:|
+| argmax/mixed | capture | 100% → 100% | 0 pp |
+| argmax/mixed | CE / safe / post-CE | 100% / 100% / 100% → 0% / 0% / 0% | 各 −100 pp |
+| argmax/mixed | collision | 0% → 0% | 0 pp |
+| argmax/mixed | discounted return | 57.4148 → 65.4421 | +8.0274 |
+| sample/mixed | capture | 100% → 100% | 0 pp |
+| sample/mixed | CE / safe / post-CE | 100% / 100% / 100% → 0% / 0% / 0% | 各 −100 pp |
+| sample/mixed | collision | 0% → 0% | 0 pp |
+| sample/mixed | discounted return | 51.9287 → 58.0078 | +6.0791 |
+| argmax/coverage | CE / safe | 100% / 100% → 0% / 0% | 各 −100 pp |
+| argmax/coverage | collision | 0% → 0% | 0 pp |
+| argmax/coverage | discounted return | −17.0345 → −19.3983 | −2.3638 |
+| sample/coverage | CE / safe | 100% / 100% → 15% / 15% | 各 −85 pp |
+| sample/coverage | collision | 0% → 0% | 0 pp |
+| sample/coverage | discounted return | −17.6949 → −20.1662 | −2.4713 |
+| sample/coverage | common-safe mission time | 85.1667 s → 593.6667 s（共同样本 n=3） | +508.5000 s，+597.06% |
+
+mixed 两组的 capture 仍是 100%，退化发生在 capture 之后：post phase 各 20 局均未完成 CE，因此 safe completion 从 20/20 变为 0/20。coverage 的 argmax 为 20/20→0/20，sample 为 20/20→3/20；coverage 的共同成功时间只有 3 对，故只能报告这个极小样本的实际值，不能当作稳定时间效应。return 变好不抵消任务完成链条崩溃，因为 Gate 同时检查 post-CE/safe。所有组 collision 都保持 0%，不存在“退化来自碰撞上升”的解释。
+
+5k 触发的实际硬失败为四组 safe 下降超过 5 pp；mixed 另有 post-recovery collapse，两 coverage 组另有一致 return 恶化。因而 `continue_to_10k=false`，没有 10k 或 25k 结果；这条线的结论是 bounded diagnostic `REGRESSED`，不是 formal PPO Gate 结论。
+
+## Scratch MAPPO 的历史最佳与 Final 对比
+
+### 历史最佳是哪一次
+
+在当前仓库可审计的 scratch MAPPO 历史记录中，最佳相关测试是 **2026-08-30 的 MAPPO-9-v2 三 seed 正式桥接运行**，而不是本次 2026-09-14 Final Scratch。配置和原始产物分别在 [mappo9_v2 common.yaml](../configs/experiments/mappo9_v2_20260830/common.yaml) 与 [2026-08-30_mappo9_v2](../artifacts/2026-08-30_mappo9_v2/)；完整审计见 [AC/CTDE gap audit §10–11](AC_CTDE_GAP_AUDIT_20260830_ZH.md)。它是 3 个 random-init seed、每 seed 400k env steps、每 25k checkpoint、deterministic20 + stochastic20，并以 `PASS_TO_MAPPO_AW_V2` 通过了“离散 MAPPO 桥接最低门槛”。这个 PASS 不是强策略成功结论。
+
+| 历史 seed | 最佳 checkpoint | deterministic capture | 同点 collision | 2+ / 3+ visitation | 最长 3+ hold |
+|---|---:|---:|---:|---:|---:|
+| 2026083001 | 250k | 2/20 = 10% | 18/20 = 90% | 8/20 = 40% / 0/20 = 0% | 0 |
+| 2026083002 | **250k（最佳单点）** | **10/20 = 50%** | **10/20 = 50%** | 16/20 = 80% / 2/20 = 10% | 3 steps |
+| 2026083003 | 400k | 1/20 = 5% | 19/20 = 95% | 9/20 = 45% / 1/20 = 5% | 1 |
+| 三 seed best 的均值 | — | **21.67%** | **78.33%** | — | — |
+
+因此，“历史最佳测试”有两个口径：若指一整条历史实验链，是 MAPPO-9-v2 的 3×400k gate；若指单个最好 checkpoint，是 seed2@250k 的 50% capture / 50% collision。该历史 run 的 terminal checkpoint capture 为 seed1/2/3=`0%/5%/5%`，不能只看最佳点宣称持续性能。
+
+### 与本次 Final Scratch 的配置差异
+
+| 维度 | 历史 MAPPO-9-v2 | 本次 Final Scratch | 是否只是 bug 修复 |
+|---|---|---|---|
+| 任务/场景 | corrected **Pure-Capture**；`scene_cycle=[capture]`；capture 是任务终止；没有 pure-coverage、post-capture transition | Final **Full-Task**；`cycle=[mixed, coverage]`；capture 后继续 500-step recovery/coverage，另有纯 coverage episode，horizon 3000 | 否，任务合同变化 |
+| 目标与奖励 | pure-capture direct/informed reward；旧合同明确禁止 coverage reward/PBRS 路径（resolved YAML 中的继承 coverage 字段在该场景不可达） | CR-MS ring reward、support capture/coverage blend、CE PBRS、pure/post CE；`reward_clock_offset=2,000,000`，CE speed weight `.0005` | 否，奖励/信用分配变化 |
+| reset / recovery | capture-only reset；没有 Final 的 mixed/coverage 交替和真实 capture snapshot 暴露 | pool 初始 0、capacity 1000、capture snapshot ratio `.75`、非 capture map-random `.5`；本夜 100k 实际 pool size 仍为 0 | 否，训练分布变化 |
+| transition / collision | 运行在旧 terminal/truncation/reward contract；collision 为 synchronized swept v1 | 固定 `terminal-priority-truncation-bootstrap-weighted-ce-v2`；四类 transition/return bug 已修复，collision 仍为 synchronized swept v1 | transition 部分是已知 bug 修复 |
+| actor | categorical AW9、Legacy-VorAdj decision-feature backbone；256 hidden / 8 heads / 4 layers / self 9 / pursuing embed 8，正交 head gain `.01` | 同为 categorical AW9 和同一 backbone 形状/正交 head gain `.01`；canonical scratch 明确 dropout `.1` | 主要相同 |
+| critic | centralized action-free V，但历史 resolved central schema 使用 `max_agents=12` padding | fresh centralized V，`max_agents=4`（当前 4v1 Final contract） | 否，schema 也有差异 |
+| PPO/GAE/ValueNorm | rollout256；γ=.99、λ=.95、clip=.2、3 epochs/2 minibatches、actor 3e−5、critic 1e−4、entropy .01、value 1、grad .5、target-KL .02、ValueNorm β=.99999 | 完全相同 | 否，基本不是差异来源 |
+| 预算与评估 | 3 seeds × 400k；每 25k；pure-capture deterministic/stochastic 20 | 1 seed × 100k bounded diagnostic；0/25/50/75/100k；Full-Task argmax/sample × mixed/coverage | 否，证据量与 metric 不同 |
+| teacher / 初始化 | random actor、fresh V/Adam/ValueNorm；没有 BC warm-start | random actor、fresh V/Adam/ValueNorm；`teacher_dependency=0`，禁止 IQN/BC/dataset/teacher-Q/tensor 读取 | 相同的 scratch 初始化 |
+
+### “最大差异是不是只有 pure-capture？”
+
+**Pure-Capture 是最大的一项单一差异，但不是唯一差异。** 更准确地说，最大变化是完整的 **任务目标/终止方式/训练分布**：历史策略只需要在 capture 终止前学会围捕；Final 策略必须先捕获，再在 post phase 完成 CE/recovery，同时还要在没有 evader 的 pure-coverage 分布上完成 CE。这个变化同时带来 episode horizon、phase credit、coverage/support reward、reset/recovery pool 和可见 visitation 的改变。
+
+所以历史 50% capture 不能直接与本次 Final 的 0% Full-Task capture/post 结果作同一 Gate 的数值比较：前者是在 capture-only、terminal-on-capture 的任务上测得，后者是在 mixed/coverage、capture 后继续任务的任务上测得。历史结果能证明“该 backbone + MAPPO 配方在旧 Pure-Capture 上曾产生过有限 scratch 信号”，不能证明 Final Full-Task 的 coverage/post-capture learnability。当前 Final Scratch 100k 的真实 pool size 为 0、mixed post action/CE 为 0，这正是本次 Full-Task 的 phase-visitation bottleneck 证据，而不是把算法写成失败。
+
 ## 交接与 gate 保持
 
 机器可读交接：[MASTER_SUMMARY.json](../artifacts/2026-09-14_overnight/MASTER_SUMMARY.json)、[SESSION_HANDOFF.json](../artifacts/2026-09-14_overnight/SESSION_HANDOFF.json)、[stage_gate.json](../artifacts/2026-09-09_root_cause/stage_gate.json)。实现与协议：[overnight diagnostic contract](FORWARD_FINAL_OVERNIGHT_DIAGNOSTIC_20260914_ZH.md)。本夜结果只作为下一 Gate 的候选输入；formal PPO、formal Scratch、P2/P3、PPO 25k 均继续 HOLD。
