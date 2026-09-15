@@ -123,7 +123,7 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 | 任务 | 当前 corrected baseline | 历史/归因对照 | R2 |
 |---|---|---|---|
 | Capture | RUNNING / None | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |
-| Coverage | PENDING / None | Probes pending or not required | NOT_STARTED |
+| Coverage | COMPLETE / PURE_COVERAGE_LEARNABLE | Probes pending or not required | NOT_STARTED |
 
 ### Capture best / terminal / sustained window
 
@@ -140,25 +140,25 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
     "pid": 827847,
     "alive": true,
     "returncode": null,
-    "step": 79600,
+    "step": 97100,
     "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_075000.pt",
-    "throughput": 8.228552062139842,
-    "eta_seconds": 51090.39802206399,
+    "throughput": 9.44324248832202,
+    "eta_seconds": 42665.429856137445,
     "status": "training"
   },
   "coverage": {
     "pid": 827848,
-    "alive": true,
-    "returncode": null,
-    "step": 187200,
-    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_175000.pt",
-    "throughput": 19.350908074557225,
-    "eta_seconds": 661.4676660486839,
-    "status": "training"
+    "alive": false,
+    "returncode": 0,
+    "step": 200000,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_200000.pt",
+    "throughput": 19.631008740613584,
+    "eta_seconds": 0.0,
+    "status": "COMPLETE_BUDGET"
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T14:58:07.540050+08:00"
+    "next_wake_up": "2026-09-15T15:08:16.000007+08:00"
   },
   "causal_conclusion": null
 }
