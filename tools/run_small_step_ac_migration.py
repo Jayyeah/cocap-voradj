@@ -303,6 +303,13 @@ def empty_rollout(counterfactual: bool = False) -> dict[str, list[Any]]:
     keys = [
         "local_obs", "global_obs", "actions", "latent", "log_prob", "values",
         "next_values", "rewards", "active_mask", "terminated", "truncated", "episode_end",
+        # Optional phase/reward decomposition consumed by the NormSense
+        # gradient logger. Generic MAPPO updates ignore these side-channel
+        # fields, so older callers retain their original update contract.
+        "gradient_phase", "reward_capture_component", "reward_coverage_component",
+        "reward_safety_component", "reward_terminal_component", "reward_ce_center_component",
+        "reward_ce_control_component", "reward_ce_pbrs_component",
+        "reward_support_blend_capture", "reward_support_blend_coverage",
     ]
     return {key: [] for key in keys}
 
@@ -310,6 +317,11 @@ def empty_rollout(counterfactual: bool = False) -> dict[str, list[Any]]:
 def stack_rollout(rollout):
     result = {}
     for key, values in rollout.items():
+        # Optional side-channel fields may be absent from legacy/manual
+        # callers. Do not attempt to stack an empty list; the PPO update only
+        # consumes the canonical rollout fields.
+        if not values:
+            continue
         if key in {"local_obs", "global_obs", "next_local_obs", "next_global_obs"}:
             result[key] = {name: np.stack([item[name] for item in values]) for name in values[0]}
         elif key == "truncated" and not values:

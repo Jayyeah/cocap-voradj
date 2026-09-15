@@ -1,0 +1,60 @@
+{
+  "schema": "normsense-v2-session-handoff-v2",
+  "created_for": "Agent C",
+  "source_head": "42bb9bc",
+  "delivery_branch": "experiment/density-normalized-sensing-v2-20260915",
+  "audit_commit_required_before_launch": true,
+  "training_started": false,
+  "final_gate": {
+    "SENSING_V2_CONTRACT": "PASS",
+    "NORM_PURE_CAPTURE_PARITY": "PASS",
+    "FULLMIX_ORIGINAL_VS_DOWNWEIGHT05_PARITY": "PASS",
+    "ALPHA1_REWARDBALANCED": "SUPERSEDED_NO_EFFECT",
+    "COVERAGE_V2_FROZEN_TRANSFER": "BREAKS_POLICY_NONBLOCKING_FOR_SCRATCH_AB",
+    "THREE_NEW_RUNS": "READY"
+  },
+  "launch_queue": [
+    {
+      "name": "NormSense-PureCapture",
+      "budget": 250000,
+      "eval_interval": 25000,
+      "at_250k": "MASTER decides whether to extend to 500k",
+      "automatic_extension": false,
+      "zero_capture_early_stop": false
+    },
+    {
+      "name": "NormSense-Original-FullMix",
+      "budget": 100000,
+      "eval_interval": 25000,
+      "stop_at": 100000,
+      "automatic_extension": false
+    },
+    {
+      "name": "NormSense-CaptureDownweight05-FullMix",
+      "budget": 100000,
+      "eval_interval": 25000,
+      "stop_at": 100000,
+      "automatic_extension": false,
+      "alpha_capture": 0.5,
+      "intervention": "predeclared causal downweight ablation"
+    }
+  ],
+  "do_not_launch": [
+    "NormSense-RewardBalanced-FullMix",
+    "any_dynamic_alpha_variant",
+    "any_legacy_checkpoint_to_v2_transfer_claim"
+  ],
+  "old_pure_capture": {
+    "status": "leave_running_and_untouched",
+    "checkpoint_access": "forbidden_to_this_audit_and_handoff"
+  },
+  "artifacts": {
+    "audit": "docs/FORWARD_FINAL_DENSITY_NORMALIZED_SENSING_V2_AUDIT_20260915_ZH.md",
+    "master": "artifacts/2026-09-15_normsense_v2/MASTER.json",
+    "contracts": "artifacts/2026-09-15_normsense_v2/contracts.json",
+    "fullmix_parity": "artifacts/2026-09-15_normsense_v2/fullmix_original_vs_downweight05_parity.json",
+    "pure_capture_parity": "artifacts/2026-09-15_normsense_v2/pure_capture_parity_audit.json",
+    "gradient_logging": "artifacts/2026-09-15_normsense_v2/gradient_logging_schema.json"
+  },
+  "next_agent": "Agent C may launch only after verifying this committed/pushed handoff and the three run manifests; no training was launched by the independent audit agent."
+}

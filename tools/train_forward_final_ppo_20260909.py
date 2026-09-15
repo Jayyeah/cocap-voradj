@@ -10,6 +10,7 @@ import torch
 from cocap_voradj.training.forward_final import CONTRACT,TEACHER_SHA,preflight,make_env,check_env,scene_config
 from cocap_voradj.training.trainer import CoCapTrainer,set_global_config,parse_scalar_step_schedule
 from cocap_voradj.training.small_step_ac import MAPPOTrainer,MAPPOConfig,tensor_tree
+from cocap_voradj.training.gradient_logging import phase_gradient_diagnostics
 from cocap_voradj.models.small_step_ac import CentralValueNetwork
 from cocap_voradj.training.continuous.central_schema import build_central_global_obs
 from cocap_voradj.training.runtime_semantics import assert_runtime,initial_state_fingerprint
@@ -110,7 +111,23 @@ def collect_transition(trainer,stream):
     # Obtain the last physical state BEFORE any reset, including timeout bootstrap.
     next_central=build_central_global_obs(stream.env,max_agents=4,max_evaders=8,max_obstacles=5,self_feature_dim=9)
     with torch.no_grad():next_values=trainer.value(tensor_tree({k:v[None] for k,v in next_central.items()},trainer.device))[0].cpu().numpy()
-    row={'local_obs':local,'global_obs':central,'actions':physical,'latent':indices,'log_prob':logp,'values':values[0],'next_values':next_values,'rewards':np.asarray(outcome.rewards,np.float32),'active_mask':active,'terminated':term,'truncated':trunc,'episode_end':term|trunc}
+    metadata = [info.get('replay_metadata', {}) for info in outcome.infos]
+    def metadata_array(name, default=0.0):
+        return np.asarray([item.get(name, default) for item in metadata], dtype=np.float32)
+    # Observational side-channel only. It lets checkpoint-adjacent diagnostics
+    # separate visitation frequency from per-transition credit scale without
+    # changing any PPO input consumed by the update.
+    row={'local_obs':local,'global_obs':central,'actions':physical,'latent':indices,'log_prob':logp,'values':values[0],'next_values':next_values,'rewards':np.asarray(outcome.rewards,np.float32),'active_mask':active,'terminated':term,'truncated':trunc,'episode_end':term|trunc,
+         'gradient_phase':np.asarray([item.get('reward_role','inactive') for item in metadata],dtype='<U16'),
+         'reward_capture_component':metadata_array('reward_capture'),
+         'reward_coverage_component':metadata_array('reward_coverage'),
+         'reward_safety_component':metadata_array('reward_safety'),
+         'reward_terminal_component':metadata_array('reward_terminal'),
+         'reward_ce_center_component':metadata_array('reward_ce_center'),
+         'reward_ce_control_component':metadata_array('reward_ce_control'),
+         'reward_ce_pbrs_component':metadata_array('reward_ce_pbrs'),
+         'reward_support_blend_capture':metadata_array('reward_support_blend_capture'),
+         'reward_support_blend_coverage':metadata_array('reward_support_blend_coverage')}
     episode=stream.finish() if all(outcome.dones) else None
     return row,episode
 
@@ -166,6 +183,7 @@ def main():
     parent_hash=tensor_hash(trainer.actor.state_dict());critic_hash=tensor_hash(trainer.value.state_dict());warm=args.warmup_steps if args.branch=='warmup' else 0
     launch={'schema':SCHEMA,'policy_contract':POLICY_CONTRACT,'contract':CONTRACT,'bc_parent_sha256':BC_SHA,'c3_comparison_sha256':sha256_file(ROOT/'artifacts/2026-09-08_forward_final/c3_formal100/comparison.json'),'actor_initial_tensor_sha256':parent_hash,'critic_initial_tensor_sha256':critic_hash,'initial_fingerprint':initial_state_fingerprint(stream.env),'branch':args.branch,'warmup_steps':warm,'total_env_steps':args.steps,'budget':'warm-up counts within the common 25k total interaction budget; D2 has 4096 fewer actor-update interaction steps','seed':args.seed,'rollout_length':args.rollout_length,'ppo_config':dataclasses.asdict(trainer.config),'actor_backbone':'all parameters trainable for PPO; entire actor unchanged during warm-up','reward_schedule_clock':'teacher Stage1 age 2m + online steps; effective CE speed .0005, same in both branches','reset':'native Final trainer reset; alternating mixed/coverage; own online capture pool initially empty, cap1000, capture .75, map-random among noncapture .5','runtime':{task:check_env(env) for task,env in stream.envs.items()},'zero_update_probe':assert_runtime(stream.env,trainer.actor,categorical=True),'smoke':args.smoke,'gpu_visible':os.environ.get('CUDA_VISIBLE_DEVICES')}
     launch['update_diagnostics']='all-active-row exact categorical KL(old||new), before vs after entire update; eval/no RNG; all nine actions'
+    launch['gradient_logging']={'schema':'normsense-gradient-logging-v1','checkpoint_adjacent':True,'phase_order':['capture','support','coverage'],'occupancy_weighted':'actual active-row frequency; absent phase contributes exact zero','phase_conditioned':'all available rows divided by phase row count; minimum 32 rows, otherwise NA','raw_fields':['reward','advantage','normalized_advantage','gae_target','value_target','value_prediction','explained_variance'],'pairwise_cosine':True,'no_synthetic_rows':True}
     assert all(group['lr']==args.actor_lr for group in trainer.actor_optimizer.param_groups)
     atomic_json(out/'launch.json',launch)
     rollout=empty_rollout();start=time.monotonic();updates=[];checkpoint={};episode_counts=Counter()
@@ -179,6 +197,7 @@ def main():
         if boundary:
             batch=stack_rollout(rollout);error=trainer.assert_behavior_log_probs(batch)
             before_logp=rollout_log_probs(trainer,batch)
+            gradient_logging=phase_gradient_diagnostics(trainer,batch,minimum_conditioned_rows=32)
             if step<=warm:
                 metrics=trainer.update_critic_only(batch)
                 assert tensor_hash(trainer.actor.state_dict())==parent_hash,'Warm-up changed the actor'
@@ -186,7 +205,10 @@ def main():
             metrics.update(exact_update_diagnostics(before_logp,rollout_log_probs(trainer,batch)))
             assert all(np.isfinite(v) for v in metrics.values()),'Nonfinite PPO metrics'
             metrics.update({'step':step,'zero_update_max_log_prob_error':error,'critic_only':int(step<=warm),'ppo_env_steps':max(step-warm,0),'ce_speed_weight':stream.current_coverage_ce_speed_weight})
+            metrics['gradient_logging']=gradient_logging
             updates.append(metrics);rollout=empty_rollout();atomic_json(out/'updates.json',updates)
+            with (out/'gradient_logging.jsonl').open('a') as handle:
+                handle.write(json.dumps({'step':step,**gradient_logging},ensure_ascii=False,allow_nan=False)+'\n')
             if step==warm:atomic_json(out/'warmup_gate.json',{'actor_bit_exact':True,'steps':step,'critic_explained_variance':metrics['explained_variance'],'interpretation':'fixed-budget warm-up finished, not proof of an accurate critic'})
         if step%25000==0 or step==args.steps:checkpoint=save_checkpoint(out,step,trainer,stream,launch,rollout,updates[-1])
         if step%100==0 or step==args.steps:

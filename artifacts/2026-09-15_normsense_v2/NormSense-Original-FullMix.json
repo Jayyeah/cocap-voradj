@@ -68,6 +68,32 @@
   "teacher_dependency": 0,
   "name": "NormSense-Original-FullMix",
   "alpha_capture": 1.0,
+  "reward_intervention": {
+    "type": "original_baseline",
+    "dynamic_alpha": false,
+    "performance_adaptive_alpha": false,
+    "scaled_components": [
+      "direct_capture_specific_dense_reward",
+      "support_reward_capture_component",
+      "capture_specific_terminal_reward"
+    ],
+    "unscaled_components": [
+      "support_coverage_component",
+      "normal_coverage_ce_center",
+      "ce_pbrs",
+      "ce_control_and_speed",
+      "coverage_terminal_and_post_coverage_terminal",
+      "collision",
+      "boundary",
+      "safety_and_proximity",
+      "entropy_and_other_algorithm_terms"
+    ]
+  },
+  "budget": 100000,
+  "checkpoint_interval": 25000,
+  "stop_at": 100000,
+  "auto_extend": false,
+  "gradient_logging_schema": "normsense-gradient-logging-v1",
   "resolved": {
     "mixed": {
       "seed": 2026080201,
@@ -980,9 +1006,7 @@
       "friendly_information": "historical global-friendly VorAdj unchanged; local-friendly deferred to V3"
     }
   },
-  "blockers": [
-    "MASTER_COVERAGE_V2_TRANSFER_BREAKS_POLICY_REVIEW"
-  ],
-  "READY": false,
+  "blockers": [],
+  "READY": true,
   "publication_gate": "commit + push required before any launch; no launch in this tool"
 }

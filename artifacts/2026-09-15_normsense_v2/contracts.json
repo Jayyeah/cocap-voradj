@@ -1,87 +1,88 @@
 {
-  "schema": "normsense-v2-readiness-v1",
+  "schema": "normsense-v2-readiness-v2",
+  "SENSING_V2_CONTRACT": "PASS",
+  "NORM_PURE_CAPTURE_PARITY": "PASS",
+  "FULLMIX_ORIGINAL_VS_DOWNWEIGHT05_PARITY": "PASS",
+  "ALPHA1_REWARDBALANCED": "SUPERSEDED_NO_EFFECT",
+  "COVERAGE_V2_FROZEN_TRANSFER": "BREAKS_POLICY_NONBLOCKING_FOR_SCRATCH_AB",
+  "THREE_NEW_RUNS": "READY",
+  "formal_training_started": false,
   "runs": {
-    "NormSense-Original-FullMix": {
-      "READY": false,
-      "blockers": [
-        "MASTER_COVERAGE_V2_TRANSFER_BREAKS_POLICY_REVIEW"
-      ],
-      "initial_hashes": {
-        "actor": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
-        "value": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
-        "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
-      },
-      "alpha_capture": 1.0
-    },
-    "NormSense-RewardBalanced-FullMix": {
-      "READY": false,
-      "blockers": [
-        "MASTER_COVERAGE_V2_TRANSFER_BREAKS_POLICY_REVIEW",
-        "NO_CAPTURE_DOMINANCE_ALPHA_1_DUPLICATES_ORIGINAL_RECOMMEND_CANCEL"
-      ],
-      "initial_hashes": {
-        "actor": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
-        "value": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
-        "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
-      },
-      "alpha_capture": 1.0
-    },
     "NormSense-PureCapture": {
       "READY": true,
       "blockers": [],
+      "alpha_capture": 1.0,
+      "seed": 2026091501,
+      "budget": 250000,
+      "checkpoint_interval": 25000,
+      "stop_at": 250000,
+      "conditional_extension_to": 500000,
+      "extension_requires_master": true,
+      "auto_extend": false,
+      "zero_capture_early_stop": false,
+      "manifest": "artifacts/2026-09-15_normsense_v2/NormSense-PureCapture.json",
       "initial_hashes": {
         "actor": "965553646883e512219e85cf7e40036c3b23897136683335ea0c2cc6c5086f4f",
         "value": "a1b1c9091bf1c1b6c1a26cf92f1e515e070e3134d002a731918966f2b666c78b",
         "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
-      },
-      "alpha_capture": 1.0
+      }
+    },
+    "NormSense-Original-FullMix": {
+      "READY": true,
+      "blockers": [],
+      "alpha_capture": 1.0,
+      "seed": 2026091401,
+      "budget": 100000,
+      "checkpoint_interval": 25000,
+      "stop_at": 100000,
+      "auto_extend": false,
+      "manifest": "artifacts/2026-09-15_normsense_v2/NormSense-Original-FullMix.json",
+      "initial_hashes": {
+        "actor": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
+        "value": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
+        "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
+      }
+    },
+    "NormSense-CaptureDownweight05-FullMix": {
+      "READY": true,
+      "blockers": [],
+      "alpha_capture": 0.5,
+      "seed": 2026091401,
+      "budget": 100000,
+      "checkpoint_interval": 25000,
+      "stop_at": 100000,
+      "auto_extend": false,
+      "manifest": "artifacts/2026-09-15_normsense_v2/NormSense-CaptureDownweight05-FullMix.json",
+      "initial_hashes": {
+        "actor": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
+        "value": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
+        "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
+      }
+    }
+  },
+  "historical_superseded": {
+    "NormSense-RewardBalanced-FullMix": {
+      "status": "SUPERSEDED_NO_EFFECT_ALPHA1",
+      "alpha_capture": 1.0,
+      "training_forbidden": true,
+      "negative_result": false,
+      "historical_manifest": "artifacts/2026-09-15_normsense_v2/NormSense-RewardBalanced-FullMix.json",
+      "historical_config": "configs/experiments/forward_final_normsense_v2_20260915/NormSense-RewardBalanced-FullMix.yaml"
     }
   },
   "fullmix_parity": {
     "UNEXPLAINED": 0,
-    "differences": []
+    "artifact": "artifacts/2026-09-15_normsense_v2/fullmix_original_vs_downweight05_parity.json"
   },
   "pure_capture_parity": {
     "UNEXPLAINED": 0,
-    "differences": [
-      {
-        "field": "voradj.enemy_sensing_radius",
-        "before": 20.0,
-        "after": null,
-        "classification": "ONBOARD_SENSING_ONLY"
-      },
-      {
-        "field": "voradj.obstacle_sensing_radius",
-        "before": 20.0,
-        "after": null,
-        "classification": "ONBOARD_SENSING_ONLY"
-      },
-      {
-        "field": "voradj.onboard_sensing.k",
-        "before": null,
-        "after": 0.8715,
-        "classification": "ONBOARD_SENSING_ONLY"
-      },
-      {
-        "field": "voradj.onboard_sensing.policy",
-        "before": null,
-        "after": "forward-final-density-normalized-sensing-v2",
-        "classification": "ONBOARD_SENSING_ONLY"
-      },
-      {
-        "field": "voradj.onboard_sensing.radius_floor",
-        "before": null,
-        "after": 20.0,
-        "classification": "ONBOARD_SENSING_ONLY"
-      },
-      {
-        "field": "voradj.onboard_sensing.schema_version",
-        "before": null,
-        "after": 2,
-        "classification": "ONBOARD_SENSING_ONLY"
-      }
-    ]
+    "artifact": "artifacts/2026-09-15_normsense_v2/pure_capture_parity_audit.json"
   },
-  "fullmix_initial_hashes_matched": true,
-  "formal_training_started": false
+  "gradient_logging": {
+    "schema": "normsense-gradient-logging-v1",
+    "artifact": "artifacts/2026-09-15_normsense_v2/gradient_logging_schema.json",
+    "minimum_conditioned_rows": 32,
+    "na_on_insufficient_phase": true
+  },
+  "publication_gate": "commit + push required before any launch; no launch in this audit"
 }

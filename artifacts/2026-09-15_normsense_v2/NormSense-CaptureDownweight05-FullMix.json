@@ -1,0 +1,124 @@
+{
+  "schema": "forward-final-normsense-run-v2",
+  "manifest_kind": "formal_contract_manifest",
+  "sensing_policy": "forward-final-density-normalized-sensing-v2",
+  "seed": 2026091401,
+  "initial_hashes": {
+    "actor": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
+    "value": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
+    "value_norm": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515"
+  },
+  "ppo": {
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_param": 0.2,
+    "ppo_epochs": 3,
+    "minibatches": 2,
+    "actor_lr": 0.00003,
+    "critic_lr": 0.0001,
+    "entropy_coef": 0.01,
+    "value_coef": 1.0,
+    "max_grad_norm": 0.5,
+    "target_kl": 0.02,
+    "value_norm": true,
+    "value_norm_beta": 0.99999,
+    "value_norm_epsilon": 0.00001
+  },
+  "actor": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "self_feature_dim": 9,
+    "max_pursuers": 8,
+    "max_evaders": 8,
+    "max_obstacles": 5,
+    "pursuing_embed_dim": 8,
+    "dropout": 0.1
+  },
+  "critic": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "self_feature_dim": 9,
+    "max_agents": 4,
+    "max_evaders": 8,
+    "max_obstacles": 5
+  },
+  "actor_head": {
+    "orthogonal_policy_head": true,
+    "output_gain": 0.01
+  },
+  "rollout_length": 256,
+  "reward_clock_offset": 2000000,
+  "scene_schedule": {
+    "cycle": ["mixed", "coverage"],
+    "pool_initial_size": 0,
+    "pool_capacity": 1000,
+    "captured_state_ratio": 0.75,
+    "map_random_ratio_within_non_capture": 0.5
+  },
+  "eval_seed_base": 2026092401,
+  "eval_confirmation_seed_base": 2026102401,
+  "eval_episodes_per_scene_mode": 20,
+  "formal_training": "NOT_STARTED",
+  "requires_published_delivery": true,
+  "initialization": "random",
+  "teacher_dependency": 0,
+  "name": "NormSense-CaptureDownweight05-FullMix",
+  "alpha_capture": 0.5,
+  "reward_intervention": {
+    "type": "predeclared_causal_downweight_ablation",
+    "dynamic_alpha": false,
+    "performance_adaptive_alpha": false,
+    "scaled_components": [
+      "direct_capture_specific_dense_reward",
+      "support_reward_capture_component",
+      "capture_specific_terminal_reward"
+    ],
+    "unscaled_components": [
+      "support_coverage_component",
+      "normal_coverage_ce_center",
+      "ce_pbrs",
+      "ce_control_and_speed",
+      "coverage_terminal_and_post_coverage_terminal",
+      "collision",
+      "boundary",
+      "safety_and_proximity",
+      "entropy_and_other_algorithm_terms"
+    ]
+  },
+  "budget": 100000,
+  "checkpoint_interval": 25000,
+  "stop_at": 100000,
+  "auto_extend": false,
+  "gradient_logging_schema": "normsense-gradient-logging-v1",
+  "resolved_base_manifest": "artifacts/2026-09-15_normsense_v2/NormSense-Original-FullMix.json",
+  "resolved_effective_overrides": {
+    "mixed.reward.static_capture_scale": 0.5,
+    "coverage.reward.static_capture_scale": 0.5
+  },
+  "sensing_runtime": {
+    "mixed": {
+      "policy": "forward-final-density-normalized-sensing-v2",
+      "schema_version": 2,
+      "k": 0.8715,
+      "resolved_onboard_radius": 52.22459659729312,
+      "radius_floor": 20.0,
+      "distance_semantics": "surface_clearance",
+      "free_mask_sha256": "e79ab32641c09beba7dd64255eab7a933aed20d9f495cbd7b17bf78c52f5f3ab"
+    },
+    "coverage": {
+      "policy": "forward-final-density-normalized-sensing-v2",
+      "schema_version": 2,
+      "k": 0.8715,
+      "resolved_onboard_radius": 52.21732449580312,
+      "radius_floor": 20.0,
+      "distance_semantics": "surface_clearance",
+      "free_mask_sha256": "c229483ad972cda3740b22df9320a9fc247543847ef3184fcd98a8aae287c1da"
+    }
+  },
+  "parity_artifact": "artifacts/2026-09-15_normsense_v2/fullmix_original_vs_downweight05_parity.json",
+  "blockers": [],
+  "READY": true,
+  "publication_gate": "commit + push required before any launch; no launch in this tool"
+}

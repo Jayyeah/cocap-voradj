@@ -1,0 +1,68 @@
+{
+  "schema": "normsense-gradient-logging-v1",
+  "status": "SUPPORTED_FROM_FIRST_UPDATE",
+  "scope": [
+    "NormSense-Original-FullMix",
+    "NormSense-CaptureDownweight05-FullMix"
+  ],
+  "checkpoint_cadence": "record at every PPO update and persist the last record next to every checkpoint",
+  "phase_order": ["capture", "support", "coverage"],
+  "row_definition": "active agent rows from the actual mixed/coverage rollout",
+  "occupancy_weighted": {
+    "fields": [
+      "phases.capture.occupancy_weighted.gradient_norm",
+      "phases.support.occupancy_weighted.gradient_norm",
+      "phases.coverage.occupancy_weighted.gradient_norm"
+    ],
+    "normalization": "phase loss contribution divided by all active rows in the rollout",
+    "absent_phase": "exact zero contribution"
+  },
+  "phase_conditioned": {
+    "fields": [
+      "phases.capture.phase_conditioned.gradient_norm",
+      "phases.support.phase_conditioned.gradient_norm",
+      "phases.coverage.phase_conditioned.gradient_norm"
+    ],
+    "sampling": "all available rows without replacement",
+    "normalization": "phase loss contribution divided by active rows in that phase",
+    "minimum_rows": 32,
+    "insufficient_rows": "NA_INSUFFICIENT_ROWS",
+    "no_fabricated_equalization": true
+  },
+  "pairwise_cosine": {
+    "occupancy_weighted": true,
+    "phase_conditioned": true,
+    "undefined_zero_or_na": "NA"
+  },
+  "signals_per_phase": [
+    "row_count",
+    "raw_reward",
+    "raw_reward_components",
+    "raw_advantage",
+    "normalized_advantage",
+    "gae_target",
+    "value_target",
+    "value_prediction",
+    "explained_variance"
+  ],
+  "reward_components": {
+    "capture": "direct capture-specific dense reward",
+    "support_capture": "support reward capture component",
+    "support_coverage": "support reward coverage component",
+    "coverage": "normal coverage component",
+    "terminal": "terminal component",
+    "safety": "collision/boundary/proximity safety component",
+    "ce_center": "normal coverage CE center",
+    "ce_control": "CE control/speed",
+    "ce_pbrs": "CE PBRS"
+  },
+  "side_effects": {
+    "optimizer_step": false,
+    "value_norm_update": false,
+    "rng_consumption": false,
+    "algorithm_input_mutation": false
+  },
+  "implementation": "src/cocap_voradj/training/gradient_logging.py",
+  "collector_fields": "tools/train_forward_final_ppo_20260909.py",
+  "formal_training_started": false
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "normsense-fullmix-parity-v2",
+  "status": "PASS",
+  "baseline": "NormSense-Original-FullMix",
+  "intervention": "NormSense-CaptureDownweight05-FullMix",
+  "comparison_scope": "effective resolved runtime leaves; run name, alpha label, and audit metadata are excluded from shared-contract comparison",
+  "UNEXPLAINED": 0,
+  "leaf_differences": [
+    {
+      "path": "mixed.reward.static_capture_scale",
+      "original_effective": 1.0,
+      "downweight05": 0.5,
+      "classification": "REWARD_SCALE_ONLY"
+    },
+    {
+      "path": "coverage.reward.static_capture_scale",
+      "original_effective": 1.0,
+      "downweight05": 0.5,
+      "classification": "REWARD_SCALE_ONLY"
+    }
+  ],
+  "shared_contract": {
+    "sensing_policy": "forward-final-density-normalized-sensing-v2",
+    "k": 0.8715,
+    "resolved_radius_m": {
+      "mixed": 52.22459659729312,
+      "coverage": 52.21732449580312
+    },
+    "enemy_obstacle_sensing": "same_unified_onboard_surface_clearance_radius",
+    "friendly_topology": "friendly_voronoi_comm_v0_global_friendly_unchanged",
+    "actor_hash": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39",
+    "central_value_hash": "10d1324190ac94c3a2bb61342617e4a7af0340d0714b5bbb61f5418367418027",
+    "value_norm_initial_hash": "17051316105d8c8d82e64395f9ef016c2a21c9b358be4fe01a8b445930268515",
+    "seed": 2026091401,
+    "optimizer": {
+      "actor_lr": 0.00003,
+      "critic_lr": 0.0001,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "clip_param": 0.2,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 0.00001
+    },
+    "ppo_gae": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "rollout_length": 256
+    },
+    "scene_schedule": ["mixed", "coverage"],
+    "recovery_reset": {
+      "pool_initial_size": 0,
+      "pool_capacity": 1000,
+      "captured_state_ratio": 0.75,
+      "map_random_ratio_within_non_capture": 0.5
+    },
+    "eval_seeds": {
+      "base": 2026092401,
+      "confirmation": 2026102401,
+      "episodes_per_scene_mode": 20
+    },
+    "horizon": 3000,
+    "collision_semantics": "synchronized_swept_v1",
+    "teacher_dependency": 0,
+    "initialization": "random",
+    "gradient_logging_schema": "normsense-gradient-logging-v1"
+  },
+  "reward_scale_semantics": {
+    "alpha_capture": 0.5,
+    "scaled": [
+      "direct_capture_specific_dense_reward",
+      "support_reward_capture_component",
+      "capture_specific_terminal_reward"
+    ],
+    "unscaled": [
+      "support_coverage_component",
+      "normal_coverage_ce_center",
+      "ce_pbrs",
+      "ce_control_and_speed",
+      "coverage_terminal_and_post_coverage_terminal",
+      "collision",
+      "boundary",
+      "safety_and_proximity",
+      "entropy_and_other_algorithm_terms"
+    ],
+    "dynamic_alpha": false,
+    "performance_adaptive_alpha": false
+  },
+  "audit_assertions": {
+    "random_actor_hash_equal": true,
+    "central_value_hash_equal": true,
+    "value_norm_hash_equal": true,
+    "sensing_equal": true,
+    "spawn_equal": true,
+    "ppo_equal": true,
+    "terminal_equal": true,
+    "recovery_reset_equal": true,
+    "eval_equal": true,
+    "horizon_equal": true,
+    "collision_equal": true,
+    "teacher_dependency_zero": true
+  }
+}
