@@ -140,25 +140,25 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
     "pid": 827847,
     "alive": true,
     "returncode": null,
-    "step": 55300,
+    "step": 72800,
     "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_050000.pt",
-    "throughput": 8.730030173645341,
-    "eta_seconds": 50939.11374355646,
+    "throughput": 10.483500556940282,
+    "eta_seconds": 40749.74744167732,
     "status": "training"
   },
   "coverage": {
     "pid": 827848,
     "alive": true,
     "returncode": null,
-    "step": 92800,
-    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_075000.pt",
-    "throughput": 14.644881951060135,
-    "eta_seconds": 7319.963408256756,
+    "step": 109100,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_100000.pt",
+    "throughput": 15.715037633442101,
+    "eta_seconds": 5784.268680754662,
     "status": "training"
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T14:02:28.021038+08:00"
+    "next_wake_up": "2026-09-15T14:12:35.788757+08:00"
   },
   "causal_conclusion": null
 }
