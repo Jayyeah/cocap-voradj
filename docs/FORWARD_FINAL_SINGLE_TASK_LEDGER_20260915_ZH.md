@@ -87,9 +87,28 @@ High-quality return稳定更高需要teacher成功≥80%、paired mean区间下�
 
 R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/CV各改善≥20%且hold+3，collision不超过baseline+5pp。只回答当前shaping幅值是否不足；不能推断success reward需求。失败只提出`Coverage-R3: explicit strict CE completion / hold achievement reward`，本轮不运行。
 
+## 2×N证据索引
+
+具体数值与完成状态见下方自动结果和 [MASTER.json](../artifacts/2026-09-15_single_task/MASTER.json)。条件未触发的probe/R2记为未运行，不能填作负结果。
+
+| 任务 | corrected baseline | historical reference | supervised representation | reward separability | R2 |
+|---|---|---|---|---|---|
+| Capture | [500k逐checkpoint双模式评估](../artifacts/2026-09-15_single_task/capture/)；best/terminal/所有3点窗口分别统计 | [MAPPO-9-v2三seed best/terminal/窗口](../artifacts/2026-09-15_single_task/historical_reference.json) | 不适用 | 不适用 | 不适用 |
+| Coverage | [200k baseline逐checkpoint评估](../artifacts/2026-09-15_single_task/coverage/) | 当前Final reward合同 | [Probe A：train/heldout agreement和rollout](../artifacts/2026-09-15_single_task/attribution/representation.json) | [Probe B：matched分布、bootstrap及rank](../artifacts/2026-09-15_single_task/attribution/reward_separability.json) | [仅gate通过才运行](../artifacts/2026-09-15_single_task/coverage_r2/)，状态见MASTER |
+
 ## 最终MASTER规则
 
 完成两个baseline及必要probes/R2后，只输出用户规定五种结论之一。Capture只有strong才算可靠learnable；弱信号保留原分类。按representation疑点、R2明确改善、双方可靠可学、capture可学+coverage监督可学但RL失败、其余不可靠的顺序落账。最终2×N表和原始模式/窗口不被结论替代。全流程运行中`causal_conclusion=null`，禁止把启动/排队状态称为已完成实验。
+
+最终结论对应的下一重点（仅建议，不自动启动Full-Task或R3）：
+
+| 最终因果结论 | 下一重点 |
+|---|---|
+| CAPTURE_AND_COVERAGE_BOTH_INDIVIDUALLY_LEARNABLE | Full-Task capture/coverage gradient interference |
+| CAPTURE_LEARNABLE_COVERAGE_RL_NOT_LEARNABLE_BUT_SUPERVISED_LEARNABLE | reward / critic / advantage |
+| COVERAGE_REPRESENTATION_LEARNABILITY_SUSPECT | token / backbone的可学习性；不自动R2 |
+| COVERAGE_REWARD_SCALE_CAUSALLY_LIMITING | 已有CE/PBRS shaping幅值；不能据此回答success reward需求 |
+| SINGLE_TASKS_STILL_NOT_RELIABLY_LEARNABLE | 停止Full-Task扩展，重新审查基础AC合同 |
 
 ## 工程验证
 
@@ -103,13 +122,15 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 
 | 任务 | 当前 corrected baseline | 历史/归因对照 | R2 |
 |---|---|---|---|
-| Capture | PENDING / None | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |
+| Capture | RUNNING / None | MAPPO-9-v2：best 10%/50%/5%；terminal 0%/5%/5%；完整持续窗口见 historical_reference.json | 不适用 |
 | Coverage | PENDING / None | Probes pending or not required | NOT_STARTED |
 
 ### Capture best / terminal / sustained window
 
 | 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |
 |---|---|---|---|---|
+| argmax | 0.0% (0) | 0.0% (0) | 尚不足3点 | — |
+| sample | 0.0% (0) | 0.0% (0) | 尚不足3点 | — |
 
 ### 运行交接
 
@@ -118,26 +139,128 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
   "capture": {
     "pid": 827847,
     "alive": true,
-    "returncode": null,
-    "step": 0,
-    "checkpoint": "NONE",
-    "throughput": null,
-    "eta_seconds": null,
-    "status": "STARTING"
+    "physical_gpu": "0",
+    "status": "training",
+    "step": 2400,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_000000.pt",
+    "throughput": 9.448328179668628,
+    "training_only_steps_per_second": 28.17259920052161,
+    "eta_seconds": 52665.40180841303,
+    "eta_note": "Startup wall-rate estimate includes step0 eval; re-estimate after first25k checkpoint evaluation.",
+    "last_update": {
+      "actor_loss": -0.022111024086674053,
+      "value_loss": 0.47158604363600415,
+      "entropy": 2.1962005297342935,
+      "clip_fraction": 0.0,
+      "approx_kl": 1.5782056531558435e-05,
+      "actor_grad_norm": 0.4371085961659749,
+      "value_grad_norm": 3.174645642439524,
+      "explained_variance": -0.058631181716918945,
+      "value_norm_mean": -29.41818618774414,
+      "value_norm_std": 38.11102294921875,
+      "kl_early_stop": 0.0,
+      "ppo_epochs_completed": 3.0,
+      "minibatch_updates": 6.0,
+      "actor_update_l2": 0.032395220793364474,
+      "actor_update_relative_l2": 0.00030821407330468916,
+      "approx_kl_max": 4.1797757148742676e-05,
+      "update_count": 9.0,
+      "exact_full_batch_kl_old_new": 6.005060978164457e-05,
+      "exact_full_batch_kl_p90": 6.250174678006791e-05,
+      "exact_full_batch_kl_max": 6.470211559602475e-05,
+      "full_batch_argmax_flip_rate": 0.0,
+      "full_batch_entropy_before": 2.1962938747420204,
+      "full_batch_entropy_after": 2.196108242558697,
+      "step": 2304,
+      "zero_update_max_log_prob_error": 4.76837158203125e-07,
+      "raw_gae_min": -158.322021484375,
+      "raw_gae_max": 23.720279693603516,
+      "raw_return_min": -178.77749633789062,
+      "raw_return_max": -16.532978057861328,
+      "rollout_steps": 256,
+      "raw_advantage_mean": -11.731727600097656,
+      "raw_advantage_std": 36.49928283691406,
+      "normalized_advantage_mean": -3.259629011154175e-09,
+      "normalized_advantage_std": 0.9999998807907104,
+      "raw_return_mean": -44.12381362915039,
+      "raw_return_std": 34.75779724121094,
+      "raw_advantage_quantiles": [
+        -62.450843811035156,
+        1.0279779434204102,
+        11.050498008728027
+      ]
+    },
+    "step0_eval_complete": true,
+    "step0_eval_episodes": 40,
+    "source_sha256_matches": true,
+    "teacher_dependency": 0,
+    "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2"
   },
   "coverage": {
     "pid": 827848,
     "alive": true,
-    "returncode": null,
-    "step": 0,
-    "checkpoint": "NONE",
-    "throughput": null,
-    "eta_seconds": null,
-    "status": "STARTING"
+    "physical_gpu": "1",
+    "status": "training",
+    "step": 3500,
+    "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_000000.pt",
+    "throughput": 13.655945782210008,
+    "training_only_steps_per_second": 31.657502549456726,
+    "eta_seconds": 14389.336566932345,
+    "eta_note": "Startup wall-rate estimate includes step0 eval; re-estimate after first25k checkpoint evaluation.",
+    "last_update": {
+      "actor_loss": -0.02237961006661256,
+      "value_loss": 0.03798357273141543,
+      "entropy": 2.1963678201039634,
+      "clip_fraction": 0.0,
+      "approx_kl": 2.061284612864256e-05,
+      "actor_grad_norm": 0.4777671645085017,
+      "value_grad_norm": 0.5595653429627419,
+      "explained_variance": 0.18596810102462769,
+      "value_norm_mean": -64.46414184570312,
+      "value_norm_std": 47.023033142089844,
+      "kl_early_stop": 0.0,
+      "ppo_epochs_completed": 3.0,
+      "minibatch_updates": 6.0,
+      "actor_update_l2": 0.03290192841673028,
+      "actor_update_relative_l2": 0.00031303530597911387,
+      "approx_kl_max": 5.798542406409979e-05,
+      "update_count": 13.0,
+      "exact_full_batch_kl_old_new": 8.31371062520375e-05,
+      "exact_full_batch_kl_p90": 8.970471245931921e-05,
+      "exact_full_batch_kl_max": 9.227093040492735e-05,
+      "full_batch_argmax_flip_rate": 0.0,
+      "full_batch_entropy_before": 2.196415504657412,
+      "full_batch_entropy_after": 2.196266960264422,
+      "step": 3328,
+      "zero_update_max_log_prob_error": 4.76837158203125e-07,
+      "raw_gae_min": -25.52706527709961,
+      "raw_gae_max": 20.486854553222656,
+      "raw_return_min": -118.86505889892578,
+      "raw_return_max": -78.242431640625,
+      "rollout_steps": 256,
+      "raw_advantage_mean": 0.9386621713638306,
+      "raw_advantage_std": 13.104242324829102,
+      "normalized_advantage_mean": -4.6566128730773926e-09,
+      "normalized_advantage_std": 1.0,
+      "raw_return_mean": -93.02054595947266,
+      "raw_return_std": 13.593687057495117,
+      "raw_advantage_quantiles": [
+        -18.288328170776367,
+        2.2555651664733887,
+        16.241456985473633
+      ]
+    },
+    "step0_eval_complete": true,
+    "step0_eval_episodes": 40,
+    "source_sha256_matches": true,
+    "teacher_dependency": 0,
+    "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2"
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T12:16:46.237391+08:00"
+    "tmux": "cocap_single_task_20260915",
+    "poll_seconds": 300,
+    "next_wake_up": "2026-09-15T12:21:07.345216+08:00"
   },
   "causal_conclusion": null
 }
