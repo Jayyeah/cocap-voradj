@@ -129,8 +129,8 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
 
 | 模式 | 新线 best capture（step） | 新线 terminal capture | 最后3点 capture mean / min | 最后3点 collision mean |
 |---|---|---|---|---|
-| argmax | 0.0% (25000) | 0.0% (50000) | 尚不足3点 | — |
-| sample | 0.0% (50000) | 0.0% (50000) | 尚不足3点 | — |
+| argmax | 0.0% (25000) | 0.0% (75000) | 0.0% / 0.0% | 0.0% |
+| sample | 0.0% (75000) | 0.0% (75000) | 0.0% / 0.0% | 60.0% |
 
 ### 运行交接
 
@@ -140,25 +140,25 @@ R2因果改善需最后3个对应checkpoint均比baseline success+20pp，或RMS/
     "pid": 827847,
     "alive": true,
     "returncode": null,
-    "step": 75000,
+    "step": 79600,
     "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_075000.pt",
-    "throughput": 10.681622258323713,
-    "eta_seconds": 39787.9638243916,
-    "status": "checkpoint_evaluation"
+    "throughput": 8.228552062139842,
+    "eta_seconds": 51090.39802206399,
+    "status": "training"
   },
   "coverage": {
     "pid": 827848,
     "alive": true,
     "returncode": null,
-    "step": 177500,
+    "step": 187200,
     "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/coverage/step_175000.pt",
-    "throughput": 18.948237386201324,
-    "eta_seconds": 1187.4455413137887,
+    "throughput": 19.350908074557225,
+    "eta_seconds": 661.4676660486839,
     "status": "training"
   },
   "supervisor": {
     "pid": 827802,
-    "next_wake_up": "2026-09-15T14:53:00.614496+08:00"
+    "next_wake_up": "2026-09-15T14:58:07.540050+08:00"
   },
   "causal_conclusion": null
 }
