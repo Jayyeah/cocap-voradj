@@ -23,7 +23,7 @@ Pure-Coverage corrected Scratch MAPPO 单 seed 已完成预声明的 `0 → 200k
 - reward：当前 Final CE centroid-energy + PBRS + speed/control/safety；没有 success bonus、recovery pool 或 post-capture
 - 评估 RNG 与训练 RNG 隔离；checkpoint 保留 optimizer、ValueNorm、环境和 RNG 状态
 
-完整逐 episode 数据在 [Coverage artifact](../artifacts/2026-09-15_single_task/coverage/)，最终评估为 [eval_step_200000.json](../artifacts/2026-09-15_single_task/coverage/eval_step_200000.json)，合同 parity 为 [parity.json](../artifacts/2026-09-15_single_task/parity.json)。
+完整逐 episode 数据在 [Coverage artifact](../artifacts/2026-09-15_single_task/coverage/)，最终评估为 [eval_step_200000.json](../artifacts/2026-09-15_single_task/coverage/eval_step_200000.json)，合同 parity 为 [parity.json](../artifacts/2026-09-15_single_task/parity.json)。冻结终点的 V/next-V、GAE return 和 ValueNorm 诊断见 [value_diagnostic.json](../artifacts/2026-09-15_single_task/coverage/value_diagnostic.json)。
 
 ## Checkpoint 趋势
 
@@ -51,6 +51,17 @@ Pure-Coverage corrected Scratch MAPPO 单 seed 已完成预声明的 `0 → 200k
 | sample | 20/20 | .02459 / .02184 / .03467 | .03473 / .02989 / .05387 | .06761 / .05355 / .10679 | 30.0 | 48.75 / 42.50 / 75.85 s | 0/20 / 0/20 |
 
 200k sample 的 strict CE success、hold 和 collision 均稳定；argmax 125k 的 1/20 collision 是中间波动，之后恢复为0/20，不改变持续窗口判定。
+
+### 终点 return、时长和评估熵分布
+
+上表给出主要几何指标的均值。为避免把单个均值当成完整证据，下面补充20局终点评估的分布；`total return` 是未折扣 episode return，`discounted return` 使用 γ=.99，`length` 是 joint decision steps，`entropy` 是每步 categorical policy entropy 的 episode 均值。
+
+| mode | total return mean / P50 / P90 / min / max | discounted return mean / P50 / P90 / min / max | length mean / P50 / P90 | entropy mean / P50 / P90 |
+|---|---:|---:|---:|---:|
+| argmax | −18.5766 / −11.4125 / −4.6496 / −121.4305 / −1.0747 | −9.5541 / −9.0228 / −3.6758 / −22.2169 / −1.0057 | 166.7 / 91.5 / 314.7 | 1.9224 / 1.9122 / 1.9813 |
+| sample | −11.3709 / −11.3187 / −2.4509 / −27.6720 / −1.3194 | −9.3985 / −9.6766 / −2.0405 / −22.3767 / −1.2133 | 97.5 / 85.0 / 151.7 | 1.8011 / 1.7980 / 1.8652 |
+
+这解释了为什么 sample 的 discounted return 均值与 argmax 接近，但未折扣 return 和 mission time 更低：两种模式的 episode 长度和每步奖励暴露不同，不能只比较一个 return 均值。
 
 ## Reward 分量与 return
 
@@ -80,6 +91,36 @@ Pure-Coverage corrected Scratch MAPPO 单 seed 已完成预声明的 `0 → 200k
 | value grad norm | .0047 – 11.9011 | .0338 |
 
 没有触发非finite、错误恢复或 checkpoint 污染。KL/clip 的历史峰值被保留在完整日志中；它们没有与 CE 学习趋势同步恶化到停止条件。
+
+## V、GAE return 与 critic 可判定性
+
+原文已经记录了 EV、value loss、raw/normalized advantage；本节补齐直接的 V 数值，回答“critic 是否在产生可解释的 return credit”。这些数字来自不可变的 `step_200000.pt` 中最后64步 partial rollout（64×4=256个 active agent rows），由 checkpoint 内的 ValueNorm 反归一化；没有再次训练、没有改写 checkpoint，也没有把这段 partial rollout 当成独立 episode 评估。
+
+| 量（256 active rows） | mean | std | P10 | P50 | P90 | min / max |
+|---|---:|---:|---:|---:|---:|---:|
+| normalized V | .5275 | .0347 | .4669 | .5435 | .5543 | .4227 / .5675 |
+| raw V（return scale） | −1.8286 | 1.2121 | −3.9449 | −1.2719 | −.8949 | −5.4868 / −.4325 |
+| raw next-V | −1.8254 | 1.2078 | −3.9149 | −1.2717 | −.8949 | −5.4868 / −.4325 |
+| raw reward | −.0473 | .0811 | −.1712 | −.0081 | −.0013 | −.3042 / −.0001 |
+| raw GAE | −.3785 | 1.0680 | −1.8854 | .0268 | .3734 | −4.6203 / .8893 |
+| raw GAE return target | −2.2071 | 1.9766 | −5.5902 | −1.1197 | −.9300 | −7.0999 / −.7432 |
+| V − return target | .3785 | 1.0680 | −.3734 | −.0268 | 1.8854 | −.8893 / 4.6203 |
+
+该冻结窗口的 V 对 GAE return target 的 explained variance 为 `.7081`，MAE=`.6254`，RMSE=`1.1331`；窗口没有 terminal/truncation，因此这是普通 continuation 的 critic 检查，不混入 terminal bootstrap 特例。ValueNorm 的 raw return-space running mean/std 为 `−20.2327 / 34.8884`（debiasing term `.0077796`）。完整逐行数值和计算口径在 [value_diagnostic.json](../artifacts/2026-09-15_single_task/coverage/value_diagnostic.json)。
+
+训练期781个完整 PPO update 的 critic/return 范围也一并列出，避免只看终点 partial rollout：
+
+| 指标 | 781-update 范围 | 最后完整 update（step 199,936） |
+|---|---:|---:|
+| raw return mean | −145.1542 … 1.7987 | −2.1605 |
+| raw return std | .9157 … 72.5870 | 2.7299 |
+| raw return min / max | −306.6378 … −3.9281 / −95.9889 … 5.3284 | −18.6394 / .0013 |
+| raw GAE min / max | −187.0164 … −.7671 / −.0725 … 136.2320 | −4.7766 / 1.3866 |
+| ValueNorm mean / std | −86.7258 … −11.8381 / 32.3122 … 48.0252 | −20.2327 / 34.8884 |
+| explained variance | −.6775 … .9934 | .8895 |
+| value loss | 8.57e−5 … 1.8447 | .000354 |
+
+这里的 `raw return` 是 GAE 产生的训练 target，和上面的完整 episode `total/discounted return` 是不同层级的统计；两者都保留，避免把 critic target、episode reward 与 normalized V 混为一个数字。训练日志还显示 normalized advantage 的均值约0、标准差1，最后 update 为 `−3.7e−9 / 1.0000`，所以当前结果不能归因于“没有 return/V 信号”或 ValueNorm 未工作；Coverage 的下一因果问题仍应留给 Capture 完成后的 Full-Task interference 检验。
 
 ## Gate 裁决与后续
 
