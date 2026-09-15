@@ -1,3 +1,17 @@
+# Current single-task authorization (user, 2026-09-15)
+
+- Latest task supersedes the old route and budget restrictions below: corrected
+  Pure-Capture scratch 500k on GPU0; corrected Pure-Coverage scratch 200k on GPU1.
+- Both use `tools/forward_final_single_task_20260915.py` and the common contract;
+  never route Capture through historical MAPPO-9-v2 configuration or runner.
+- No performance early-stop. Capture250k/Coverage100k are reviews only. On
+  Coverage200k no-learning, execute both attribution probes, then R2 only after
+  representation/reward/non-null gates. R3 and Full-Task PPO remain forbidden.
+- Authoritative ledger: `docs/FORWARD_FINAL_SINGLE_TASK_LEDGER_20260915_ZH.md`;
+  artifacts: `artifacts/2026-09-15_single_task/`. Check live PIDs before any action.
+- Keep jobs isolated and preserve unrelated work. Running budgets are not
+  completed causal conclusions. The bounded supervisor commits/pushes reports.
+
 # Project execution constraints (user, 2026-09-08, supersedes GPU1-only)
 
 - Both physical GPU0 and GPU1 may be used for explicitly gated independent

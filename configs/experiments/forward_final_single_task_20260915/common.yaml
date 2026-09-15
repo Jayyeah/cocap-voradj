@@ -1,0 +1,28 @@
+schema: forward-final-single-task-v1
+parent: configs/experiments/forward_final_scratch_mappo_20260914/canonical.yaml
+reference_commit: 28cc8ba
+transition_semantics: terminal-priority-truncation-bootstrap-weighted-ce-v2
+seed: 2026091501
+eval_seed_base: 2026191501
+eval_episodes: 20
+checkpoint_interval: 25000
+budgets: {capture: 500000, coverage: 200000, coverage_r2: 200000}
+reset: {spawn: map_random, min_separation: 15.0, recovery_pool: false}
+support_capture_normalization: surviving_capture_weight_divided_by_sum_of_surviving_weights
+coverage_r2: {ce_center_and_pbrs_multiplier: 2.0, control_multiplier: 1.0, safety_multiplier: 1.0}
+probe_a: {train_episodes: 200, heldout_episodes: 50, epochs: 30, batch_size: 512, learning_rate: 0.0003, seed: 2026091502}
+gates:
+  sustained_checkpoints: 3
+  capture_strong_rate: 0.5
+  capture_usable_collision_max: 0.2
+  coverage_sustained_success_rate: 0.1
+  coverage_geometry_relative_improvement: 0.15
+  coverage_hold_growth_steps: 3
+  representation_rollout_success_rate: 0.5
+  representation_geometry_relative_improvement: 0.25
+  teacher_quality_min_success_rate: 0.8
+  scale_null_normalized_advantage_rms_delta_max: 0.05
+  scale_null_advantage_sign_flip_max: 0.01
+  scale_null_advantage_cosine_min: 0.995
+  r2_success_improvement_pp: 0.2
+  r2_geometry_relative_improvement: 0.2

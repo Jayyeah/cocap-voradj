@@ -2177,6 +2177,11 @@ class VorAdjEnv(CoCapEnv):
             return float(total), float(approach), float(mean_shift), float(front)
 
         def coverage_task_reward(index: int) -> Tuple[float, Dict[str, float]]:
+            # Single-task decomposition keeps Final observation geometry and
+            # direct/support capture functions; the historical legacy reward
+            # override must not be used for this experiment.
+            if (self.config.get("voradj", {}) or {}).get("single_task_objective") == "capture":
+                return 0.0, {}
             if self._ce_coverage_enabled():
                 accel, turn = self._action_accel_turn(index, pursuer_actions)
                 max_accel = float(max(abs(float(x)) for x in self.pursuers[index].a))
