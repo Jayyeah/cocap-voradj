@@ -222,7 +222,7 @@ Scratch 线 `NormSense-Final-PureCapture-Conservative300k` 已启动；PID `1423
 
 本轮机器可读总结果：`artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json`；parity：`artifacts/2026-09-15_normsense_v2/pure_capture_baseline_vs_conservative300k_parity.json`。
 
-## 已完成线交付与未完成线状态（2026-09-16 22:25）
+## 已完成线交付与未完成线状态（2026-09-16 22:30）
 
 本节覆盖当前快照，优先于本 ledger 中较早的运行中描述。三条线已完成并停止在 master review：Pure baseline `250k/250k`，Original Full-Mix `100k/100k`，CaptureDownweight05 Full-Mix `100k/100k`。Conservative300k 尚未完成，不能填入最终性能结论。
 
@@ -240,6 +240,6 @@ Full-Mix 最终 eval 的 CE RMS / area CV：Original argmax mixed/coverage `0.19
 
 ### 未完成线的如实状态
 
-`NormSense-Final-PureCapture-Conservative300k`：PID `1423380`，GPU 0，快照 `step=283600/300000`、`training_updates=1107`、约 `11.51 step/s`，状态 `RUNNING`；训练剩余约 `1425s`（约 24 分钟），300k final eval 尚未开始。该线仅预注册 horizon `3000→1000`（含 `pre_capture_max_length=1000`）和 Actor dropout `.1→0`，不得把当前 283.6k 状态当作最终结果。
+`NormSense-Final-PureCapture-Conservative300k`：PID `1423380`，GPU 0，快照 `step=287100/300000`、`training_updates=1121`、约 `11.54 step/s`，状态 `RUNNING`；训练剩余约 `1118s`（约 19 分钟），300k final eval 尚未开始。该线仅预注册 horizon `3000→1000`（含 `pre_capture_max_length=1000`）和 Actor dropout `.1→0`，不得把当前 287.1k 状态当作最终结果。
 
 机器可读完成线汇总：`artifacts/2026-09-15_normsense_v2/normsense_v2_completed_lines_results_20260916.json`。原始最终 eval 文件仍保留在各 run 目录；本节只记录已完成线可复核的关键字段，不替代原始 episode records。
