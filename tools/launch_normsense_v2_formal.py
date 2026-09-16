@@ -33,6 +33,7 @@ from cocap_voradj.training.forward_final_v2 import (
     make_fullmix_stream,
 )
 from cocap_voradj.training.gradient_logging import phase_gradient_diagnostics
+from cocap_voradj.training.numeric_validation import assert_finite_numeric_tree
 from cocap_voradj.training.small_step_ac import compute_gae, tensor_tree
 from cocap_voradj.training.trainer import CoCapTrainer, set_global_config
 from tools import forward_final_single_task_20260915 as single_task
@@ -45,6 +46,7 @@ GATE_PATH = AUDIT_DIR / "MASTER.json"
 PARITY_PATH = AUDIT_DIR / "fullmix_original_vs_downweight05_parity.json"
 SEMANTICS = "terminal-priority-truncation-bootstrap-weighted-ce-v2"
 CHECKPOINT_SCHEMA = "forward-final-normsense-formal-checkpoint-v1"
+RECOVERY_LINEAGE = "RECOVERED_AFTER_EXECUTION_BUG_FIX"
 FORMAL_STATUS = "FORMAL_TRAINING"
 
 KIND_INFO = {
@@ -102,30 +104,13 @@ def value_norm_hash(value_norm) -> str:
     return hashlib.sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
 
 
-def finite_tree(value) -> None:
-    if torch.is_tensor(value):
-        if not bool(torch.isfinite(value).all()):
-            raise FloatingPointError("non-finite tensor in formal training state")
-    elif isinstance(value, np.ndarray):
-        if not bool(np.isfinite(value).all()):
-            raise FloatingPointError("non-finite ndarray in formal training state")
-    elif isinstance(value, dict):
-        for child in value.values():
-            finite_tree(child)
-    elif isinstance(value, (list, tuple)):
-        for child in value:
-            finite_tree(child)
-    elif isinstance(value, (float, np.floating)):
-        if not bool(np.isfinite(value)):
-            raise FloatingPointError("non-finite scalar in formal training state")
-
-
 def source_hashes(config: Path) -> dict[str, str]:
     files = [
         Path(__file__), config, scratch.CONFIG,
         Path(scratch.__file__), Path(production.__file__),
         Path(single_task.__file__), ROOT / "src/cocap_voradj/training/forward_final_v2.py",
         ROOT / "src/cocap_voradj/training/gradient_logging.py",
+        ROOT / "src/cocap_voradj/training/numeric_validation.py",
         ROOT / "src/cocap_voradj/training/small_step_ac.py",
         ROOT / "src/cocap_voradj/training/forward_final.py",
         ROOT / "src/cocap_voradj/envs/density_sensing.py",
@@ -339,7 +324,7 @@ def local_advantage_stats(trainer, batch: dict) -> dict:
 
 def update_one(trainer, rollout: dict, step: int, kind: str) -> dict:
     batch = production.stack_rollout(rollout)
-    finite_tree(batch)
+    assert_finite_numeric_tree(batch, path="rollout_batch")
     zero_error = trainer.assert_behavior_log_probs(batch)
     before = production.rollout_log_probs(trainer, batch)
     advantage = local_advantage_stats(trainer, batch)
@@ -351,7 +336,7 @@ def update_one(trainer, rollout: dict, step: int, kind: str) -> dict:
     metrics.update({"step": step, "zero_update_max_log_prob_error": zero_error})
     metrics.update(advantage)
     metrics["gradient_logging"] = gradient
-    finite_tree(metrics)
+    assert_finite_numeric_tree(metrics, path="update_metrics")
     return metrics
 
 
@@ -362,6 +347,7 @@ def checkpoint(out: Path, kind: str, step: int, trainer, stream, launch: dict,
         raise RuntimeError(f"Refusing to overwrite immutable checkpoint: {path}")
     payload = {
         "schema": CHECKPOINT_SCHEMA, "formal_status": FORMAL_STATUS, "kind": kind,
+        "recovery_lineage": RECOVERY_LINEAGE,
         "step": step, "launch": launch, "trainer": trainer.state_dict(),
         "stream_state": stream.__dict__, "rollout": rollout, "metrics": metrics,
         "rng": scratch.rng_state(trainer.device),
@@ -375,6 +361,7 @@ def checkpoint(out: Path, kind: str, step: int, trainer, stream, launch: dict,
     digest = sha256_file(path)
     write_json(out / f"step_{step:06d}.json", {
         "schema": "normsense-resume-metadata-v1", "kind": kind, "step": step,
+        "recovery_lineage": RECOVERY_LINEAGE,
         "checkpoint": str(path), "checkpoint_sha256": digest,
         "source_sha256": launch["source_sha256"], "resume_supported": True,
         "partial_rollout_steps": len(rollout["rewards"]),
@@ -545,6 +532,7 @@ def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
         if step >= manifest["budget"]:
             raise RuntimeError("Completed budget cannot resume")
         write_json(out / "resume.json", {"pid": os.getpid(), "checkpoint": str(resume), "step": step,
+                                          "recovery_lineage": RECOVERY_LINEAGE,
                                           "checkpoint_sha256": sha256_file(resume), "valid": True})
     else:
         scratch.seed_all(manifest["seed"])
@@ -561,6 +549,7 @@ def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
             raise RuntimeError(f"Fresh initialization hash mismatch: {actual} != {expected}")
         launch = {
             "schema": "normsense-formal-launch-v1", "formal_status": FORMAL_STATUS,
+            "recovery_lineage": RECOVERY_LINEAGE,
             "kind": kind, "name": manifest["name"], "seed": manifest["seed"],
             "budget": manifest["budget"], "checkpoint_interval": manifest["checkpoint_interval"],
             "stop_at": manifest["stop_at"], "alpha_capture": manifest["alpha_capture"],
@@ -622,7 +611,7 @@ def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
     while step < budget:
         stream.set_clock(step)
         row, episode = production.collect_transition(trainer, stream)
-        finite_tree(row)
+        assert_finite_numeric_tree(row, path=f"transition[{step}]")
         for key, value in row.items():
             rollout[key].append(value)
         step += 1
@@ -651,6 +640,7 @@ def train(kind: str, out: Path, device: str, resume: Path | None) -> None:
     progress("STOP_FOR_MASTER_REVIEW")
     write_json(out / "report.json", {
         "status": "STOP_FOR_MASTER_REVIEW", "formal_status": FORMAL_STATUS,
+        "recovery_lineage": RECOVERY_LINEAGE,
         "kind": kind, "name": manifest["name"], "step": step, "budget": budget,
         "final_checkpoint": str(out / f"step_{step:06d}.pt"),
         "automatic_extension": False,
@@ -671,6 +661,7 @@ def main() -> None:
         if args.output.exists():
             write_json(args.output / "failure.json", {
                 "status": "STOP_IMPLEMENTATION", "formal_status": FORMAL_STATUS,
+                "recovery_lineage": RECOVERY_LINEAGE,
                 "kind": args.kind, "pid": os.getpid(),
                 "traceback": __import__("traceback").format_exc(),
             })
