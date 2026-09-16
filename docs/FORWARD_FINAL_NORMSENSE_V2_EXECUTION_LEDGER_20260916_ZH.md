@@ -19,6 +19,8 @@
 
 `LEGACY_R20_PURE_CAPTURE` 保持原样：不改代码、不改 config、不切换 sensing、不 resume 到 V2、不停止、不覆盖 checkpoint。仅读取 PID/GPU/step 做资源管理。本次未对旧线发出 kill、resume 或 checkpoint 写入操作。
 
+最终检查时间 `2026-09-16T09:54:16+0800`：OLD 进程与 `cocap_single_task_20260915` tmux 已不在；本 Agent 未停止或修改该线。旧工作树最后可见 checkpoint 为 `cocap-voradj-small-step-ac/artifacts/2026-09-15_single_task/capture/step_450000.pt`，因此不能把它报告为本轮由 Agent C 完成的 500k 结果。
+
 不启动第五条 V2 Pure-Coverage，也不启动 RewardBalanced、alpha=.25、PCGrad、CAGrad、phase-wise advantage normalization 或 200k Full-Mix 扩训。
 
 ## 三条新线启动快照
