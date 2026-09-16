@@ -1,0 +1,74 @@
+schema: forward-final-normsense-pure-capture-v3
+name: NormSense-Final-PureCapture-Conservative300k
+line: conservative
+sensing_policy: forward-final-density-normalized-sensing-v2
+seed: 2026091501
+initialization: random
+teacher_dependency: 0
+alpha_capture: 1.0
+budget: 300000
+checkpoint_interval: 25000
+stop_at: 300000
+auto_extend: false
+episode_max_length: 1000
+pre_capture_max_length: 1000
+ppo:
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_param: 0.2
+  ppo_epochs: 3
+  minibatches: 2
+  actor_lr: 3.0e-05
+  critic_lr: 0.0001
+  entropy_coef: 0.01
+  value_coef: 1.0
+  max_grad_norm: 0.5
+  target_kl: 0.02
+  value_norm: true
+  value_norm_beta: 0.99999
+  value_norm_epsilon: 1.0e-05
+actor:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_pursuers: 8
+  max_evaders: 8
+  max_obstacles: 5
+  pursuing_embed_dim: 8
+  dropout: 0.0
+critic:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_agents: 4
+  max_evaders: 8
+  max_obstacles: 5
+actor_head:
+  orthogonal_policy_head: true
+  output_gain: 0.01
+rollout_length: 256
+reward_clock_offset: 2000000
+scene_schedule:
+  - capture
+eval_seed_base: 2026191501
+eval_episodes_per_mode: 20
+allowed_scientific_changes:
+  episode_max_length: [3000, 1000]
+  pre_capture_max_length: [0, 1000]
+  actor.dropout: [0.1, 0.0]
+forbidden_changes:
+  - reward
+  - reward_scale
+  - sensing_radius
+  - support_reward
+  - collision_penalty
+  - safety_reward
+  - action_space
+  - network_width_depth
+  - ppo_hyperparameters
+  - value_norm
+  - gae
+  - gradient_surgery
+READY: true
