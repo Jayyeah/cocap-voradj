@@ -196,3 +196,28 @@ actor state hashes 已从相同 initial hash 分叉：
 除预注册的 `alpha_capture=1.0` 对 `0.5` 外，重要合同参数没有变化：sensing V2/`k=0.8715`、seed、network dimensions、PPO（actor LR `3e-5`、critic LR `1e-4`、3 epochs/2 minibatches、clip `0.2`、gamma `0.99`、GAE lambda `0.95`）、ValueNorm、rollout 256、mixed→coverage schedule、reset pool、eval seeds、horizon 和 collision semantics 均保持 audited contract。两条线的 50k eval 与 100k STOP 仍待各自自然完成；不添加第四条实验、不扩预算、不修改参数。
 
 机器可读明细：`artifacts/2026-09-15_normsense_v2/execution_recovery_results_20260916.json`。
+
+## Pure-Capture V2 窄范围恢复（2026-09-16）
+
+状态标记：`BASELINE_100K_EVAL_FIXED`、`BASELINE_RESUMED_TO_250K`、`CONSERVATIVE300K_STARTED`。
+
+100k 历史断言已用原 seed `2026191511` 精确重放。触发点是 tick 213 的 **非 capture** terminal loss（`evader collision`）：所有 agent 均 `done=true`、`terminated=true`、`truncated=false`，metadata 因 terminal successor state 被标为 `post_capture`，且 episode 没有产生下一条 transition。因此“100k evaluator crash 是否由 capture terminal 触发”的答案为 **否**。修复仅调整 evaluator/telemetry 的 terminal interpretation：只允许全体已 terminated、无 truncation 的单条 terminal `post_capture` metadata；仍拒绝任何非 terminal `post_capture` 或 terminal 后再次 `observe()`。环境 transition/reward/sensing 语义未改。相关 16 个 Pure-Capture 回归测试通过，修复提交为 `29d8498`。
+
+75k/100k 均以 matched seed base `2026191501` 完成 50 argmax + 50 sample 重评估：
+
+| checkpoint / mode | capture（normal/stationary） | ring2 / ring3 | longest ring3 hold mean | collision episodes / events | AA / obstacle / boundary events | capture time mean (s) | total / discounted return mean | visible fraction / first detection |
+|---|---|---|---:|---|---|---:|---|---|
+| 75k argmax | 0%（0%/0%） | 68% / 14% | 1.80 | 100% / 54 | 23 / 0 / 0 | — | -97.438 / -39.798 | 0.9769 / 2.40 |
+| 75k sample | 0%（0%/0%） | 18% / 0% | 0.00 | 100% / 50 | 40 / 2 / 8 | — | -256.143 / -13.787 | 0.9957 / 2.38 |
+| 100k argmax | 4%（4%/0%） | 78% / 26% | 1.54 | 96% / 51 | 27 / 0 / 4 | 61.00 | -185.093 / -37.312 | 0.9900 / 2.40 |
+| 100k sample | 8%（8%/0%） | 40% / 10% | 0.18 | 92% / 46 | 37 / 6 / 0 | 141.25 | -180.249 / -0.119 | 0.9963 / 2.38 |
+
+100k 全量重评估中有 4 个 terminal-loss episode 出现 terminal `post_capture` metadata，capture episode 中为 0；实际 post-capture rollout transition 为 0。每类 capture、ring3 near-success、collision episode 已保存最后 50–100 action-step diagnostics。
+
+Baseline `NormSense-Final-PureCapture-Baseline` 从真实 step 100000 full-resume checkpoint 恢复，Actor/Critic/optimizer/ValueNorm/RNG/training step 与 160-step partial rollout 均保留；PID `1423372`，physical GPU 0，记录快照 step `122100` / update `476`，目标 250k，下一 checkpoint 125k。首个恢复 update 的 finite/ValueNorm/entropy/KL/checkpoint gate 为 PASS。
+
+Scratch 线 `NormSense-Final-PureCapture-Conservative300k` 已启动；PID `1423380`，physical GPU 0，记录快照 step `18200` / update `71`，目标 300k，下一 checkpoint 25k。step 256 健康 gate（finite losses、ValueNorm、entropy/KL、checkpoint write/resume read）为 PASS。
+
+机器可读 parity 为 PASS、`UNEXPLAINED=0`。唯一科学改动组为 `episode_max_length 3000→1000`（并显式启用 `pre_capture_max_length=1000`）与 `actor.dropout 0.1→0.0`；其余 Final Pure-Capture 合同一致。两条 scratch 初始 Actor/Critic/ValueNorm hashes 完全一致。审查同时确认 trainer 始终将 Actor 保持在 `eval()`，故 baseline 中配置的 dropout 实际也未在 rollout/PPO update 生效；该实现事实不扩大 ablation。Full-Mix Original/Downweight 进程未被停止或修改。
+
+本轮机器可读总结果：`artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json`；parity：`artifacts/2026-09-15_normsense_v2/pure_capture_baseline_vs_conservative300k_parity.json`。

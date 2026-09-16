@@ -1,7 +1,7 @@
 {
   "schema": "normsense-v2-session-handoff-v2",
   "created_for": "Agent C",
-  "source_head": "42bb9bc",
+  "source_head": "6c5fdc3",
   "delivery_branch": "experiment/density-normalized-sensing-v2-20260915",
   "audit_commit_required_before_launch": true,
   "training_started": true,
@@ -21,7 +21,10 @@
     "FULLMIX_ORIGINAL_VS_DOWNWEIGHT05_PARITY": "PASS",
     "ALPHA1_REWARDBALANCED": "SUPERSEDED_NO_EFFECT",
     "COVERAGE_V2_FROZEN_TRANSFER": "BREAKS_POLICY_NONBLOCKING_FOR_SCRATCH_AB",
-    "THREE_NEW_RUNS": "READY"
+    "THREE_NEW_RUNS": "READY",
+    "BASELINE_100K_EVAL_FIXED": "PASS_COMPLETE_50_ARGMAX_50_SAMPLE",
+    "BASELINE_RESUMED_TO_250K": "RUNNING",
+    "CONSERVATIVE300K_STARTED": "RUNNING"
   },
   "launch_queue": [
     {
@@ -172,5 +175,29 @@
     "parameter_contract": "Only alpha_capture differs (1.0 vs 0.5); all audited seed, sensing, network, PPO, ValueNorm, rollout, schedule, reset and eval parameters unchanged.",
     "experiment_success_claimed": false
   },
-  "next_agent": "PureCapture is stopped on eval assertion; do not resume or modify it. Full-Mix lines remain under audited contracts; inspect this results artifact before any action."
+  "pure_capture_v2_recovery": {
+    "recorded_at": "2026-09-16T15:55:57+08:00",
+    "artifact": "artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json",
+    "telemetry_fix": "PASS; evaluator-only interpretation change; environment semantics unchanged",
+    "historical_crash_was_capture_terminal": false,
+    "baseline": {
+      "tmux": "normsense_pure_baseline_resume_20260916",
+      "pid": 1423372,
+      "physical_gpu": 0,
+      "snapshot_step": 122100,
+      "next_checkpoint": 125000,
+      "stop_for_master_review": 250000
+    },
+    "conservative300k": {
+      "tmux": "normsense_pure_conservative300k_20260916",
+      "pid": 1423380,
+      "physical_gpu": 0,
+      "snapshot_step": 18200,
+      "next_checkpoint": 25000,
+      "stop_for_master_review": 300000
+    },
+    "parity": "PASS; UNEXPLAINED=0; only horizon 3000 to 1000 plus pre_capture_max_length 1000 and actor dropout 0.1 to 0.0",
+    "fullmix_lines_touched": false
+  },
+  "next_agent": "Monitor the two owned Pure-Capture tmux sessions without changing their contracts: baseline must stop at 250k for master review; Conservative300k must continue through 100k and stop at 300k. Do not interrupt the two Full-Mix lines."
 }

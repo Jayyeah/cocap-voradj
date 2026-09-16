@@ -2,13 +2,16 @@
   "schema": "forward-final-normsense-v2-master-v2",
   "source_agent_a_head": "42bb9bc",
   "delivery_branch": "experiment/density-normalized-sensing-v2-20260915",
-  "status": "READY_THREE_RUNS_NO_TRAINING_STARTED",
+  "status": "PURE_CAPTURE_V2_RECOVERY_RUNNING",
   "SENSING_V2_CONTRACT": "PASS",
   "NORM_PURE_CAPTURE_PARITY": "PASS",
   "FULLMIX_ORIGINAL_VS_DOWNWEIGHT05_PARITY": "PASS",
   "ALPHA1_REWARDBALANCED": "SUPERSEDED_NO_EFFECT",
   "COVERAGE_V2_FROZEN_TRANSFER": "BREAKS_POLICY_NONBLOCKING_FOR_SCRATCH_AB",
   "THREE_NEW_RUNS": "READY",
+  "BASELINE_100K_EVAL_FIXED": "PASS_COMPLETE_50_ARGMAX_50_SAMPLE",
+  "BASELINE_RESUMED_TO_250K": "RUNNING",
+  "CONSERVATIVE300K_STARTED": "RUNNING",
   "sensing_v2": {
     "policy": "forward-final-density-normalized-sensing-v2",
     "k": 0.8715,
@@ -275,5 +278,32 @@
     },
     "parameter_contract": "Only alpha_capture differs between Full-Mix lines; seed, sensing k, network, PPO, ValueNorm, rollout, schedule, reset and eval contracts unchanged.",
     "experiment_success_claimed": false
+  },
+  "pure_capture_v2_recovery": {
+    "recorded_at": "2026-09-16T15:55:57+08:00",
+    "artifact": "artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json",
+    "parity_artifact": "artifacts/2026-09-15_normsense_v2/pure_capture_baseline_vs_conservative300k_parity.json",
+    "telemetry_fix_commit": "29d8498",
+    "launcher_config_commit": "6c5fdc3",
+    "root_cause": "Terminal non-capture evader-collision metadata was labeled post_capture; all rows terminated, no truncation, and no next transition was generated.",
+    "matched_eval": "75k and 100k complete with 50 argmax plus 50 sample using seed base 2026191501",
+    "baseline": {
+      "pid": 1423372,
+      "physical_gpu": 0,
+      "snapshot_step": 122100,
+      "target_step": 250000,
+      "next_checkpoint": 125000,
+      "status": "RUNNING"
+    },
+    "conservative300k": {
+      "pid": 1423380,
+      "physical_gpu": 0,
+      "snapshot_step": 18200,
+      "target_step": 300000,
+      "next_checkpoint": 25000,
+      "status": "RUNNING"
+    },
+    "parity": "PASS_UNEXPLAINED_0_ONLY_HORIZON_AND_ACTOR_DROPOUT",
+    "fullmix_lines_touched": false
   }
 }
