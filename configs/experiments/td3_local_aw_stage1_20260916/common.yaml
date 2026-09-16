@@ -1,0 +1,69 @@
+schema: td3-local-aw-stage1-v1
+reference_branch: experiment/density-normalized-sensing-v2-20260915
+reference_commit: 72c59392436967162fd99cf85b256bae263f0884
+statement: continuous-control capability audit; not an approved replacement for CoCap MAPPO
+transition_semantics: terminal-priority-truncation-bootstrap-weighted-ce-v2
+action:
+  mode: acceleration_angular_velocity_body
+  a_max: 0.4
+  w_max: 0.5235987755982988
+  normalized_exploration_std: 0.1
+  normalized_target_policy_std: 0.2
+  normalized_target_noise_clip: 0.5
+actor_observation: local_entity_tokens_only
+critic:
+  mode: local
+  formula: Q_i(o_i,a_i)
+  teammate_actions: false
+  global_state: false
+network:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  self_feature_dim: 9
+  max_pursuers: 8
+  max_evaders: 8
+  max_obstacles: 5
+  pursuing_embed_dim: 8
+  dropout: 0.1
+training:
+  budget: 100000
+  milestones: [25000, 50000, 75000, 100000]
+  warmup_joint_transitions: 5000
+  updates_per_environment_step: 1
+  batch_size: 256
+  replay_capacity: 200000
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  policy_delay: 2
+  max_grad_norm: 0.5
+  saturation_threshold: 0.99
+evaluation:
+  episodes: 20
+  max_steps: 3000
+  coverage_seed_base: 2026191600
+  capture_seed_base: 2026291600
+teacher:
+  checkpoint: artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage2_8v2_step_300000.pt
+  checkpoint_sha256: ef58ae9bdd018633afee0d16f2242d2f157a6cc18611e41474f115aed254b87e
+  successful_train_episodes: 64
+  successful_heldout_episodes: 16
+  collection_seed_base: 2026391600
+  bc_epochs: 30
+  bc_batch_size: 512
+  bc_learning_rate: 0.0003
+  bc_seed: 2026091603
+checkpointing:
+  atomic: true
+  replay_snapshot: true
+  rng_state: true
+  config_hash: true
+  implementation_hash: true
+forbidden:
+  phase_aware_replay: true
+  fullmix: true
+  central_critic: true
+  teammate_actions_in_critic: true
+  remove_is_pursuing: true
