@@ -29,6 +29,9 @@ def test_formal_config_locks_local_critic_and_stage_boundaries() -> None:
     assert config["critic"]["global_state"] is False
     assert config["critic"]["teammate_actions"] is False
     assert all(config["forbidden"].values())
+    assert config["seed"] == 2026091501
+    assert config["evaluation"]["coverage_seed_base"] == 2026191501
+    assert config["evaluation"]["capture_seed_base"] == 2026191501
 
 
 def test_pad_local_observations_marks_inactive_rows_fully_masked() -> None:

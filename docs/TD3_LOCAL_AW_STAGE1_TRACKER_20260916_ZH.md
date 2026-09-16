@@ -61,13 +61,13 @@ TD3-W 严格映射 IQN decision-backbone state dict。正式 4-layer teacher 应
 | D1 | pure coverage / IQN AW9 | scratch | 待 matched-run 确认 | 历史 teacher 有当前合同冻结评估能力，但训练合同/预算不 matched，不能用于 sample-efficiency 排名 |
 | D2 | pure capture / IQN AW9 | scratch | 待 matched-run 确认 | 同上；当前合同资格抽查 normal capture 2/2 |
 | D3 | pure coverage / categorical MAPPO AW9 | scratch | 待 matched-run | 旧 sensing 结果不冒充 NormSense V2 matched baseline |
-| D4 | pure capture / categorical MAPPO AW9 | scratch | 现有正式 run | 独立 run 已自然完成 300k；100k argmax normal capture 15%、ring2 visitation 90%、ring3 visitation 70%、collision 75%，须按同 eval seeds 再核对后才进入 matched 表 |
-| C1 | pure coverage / local TD3 AW | scratch | 2026091601 | runner ready；formal 未启动 |
-| C2 | pure capture / local TD3 AW | scratch | 2026091602 | runner ready；formal 未启动 |
-| C3 | pure coverage / local TD3 AW | IQN-warm | 2026091601 | 等 matched teacher dataset + BC |
-| C4 | pure capture / local TD3 AW | IQN-warm | 2026091602 | 等 matched teacher dataset + BC |
+| D4 | pure capture / categorical MAPPO AW9 | scratch | 2026091501 | horizon=3000 baseline 已完成 250k；25/50/75k normal capture 均 0，ring3 visitation 为 0/0/15%，collision 为 0/100/100%；原 run 缺 100k eval，需用共同 seeds 补评。1000-step conservative 线是显式 ablation，不计入 D4 |
+| C1 | pure coverage / local TD3 AW | scratch | 2026091501 | runner ready；formal 未启动 |
+| C2 | pure capture / local TD3 AW | scratch | 2026091501 | runner ready；formal 未启动 |
+| C3 | pure coverage / local TD3 AW | IQN-warm | 2026091501 | 等 matched teacher dataset + BC |
+| C4 | pure capture / local TD3 AW | IQN-warm | 2026091501 | 等 matched teacher dataset + BC |
 
-scratch/warm 同 task 共用 seed；critics 的随机初始化 matched。正式 TD3 milestone=`25k/50k/75k/100k`，每点 20 个 deterministic eval episodes、atomic checkpoint、replay snapshot、diagnostics 与 manifests；100k 无趋势先审计，不自动延长。
+四条 TD3 均使用与现有 MAPPO baseline 相同的训练 seed `2026091501`；两个任务的 deterministic eval 均使用共同 seed base `2026191501`。scratch/warm 同 task 的 critics 随机初始化 matched。正式 TD3 milestone=`25k/50k/75k/100k`，每点 20 个 deterministic eval episodes、atomic checkpoint、replay snapshot、diagnostics 与 manifests；100k 无趋势先审计，不自动延长。
 
 ## Hyperparameters
 
