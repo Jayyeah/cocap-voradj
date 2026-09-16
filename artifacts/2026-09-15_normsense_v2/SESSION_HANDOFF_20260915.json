@@ -23,8 +23,10 @@
     "COVERAGE_V2_FROZEN_TRANSFER": "BREAKS_POLICY_NONBLOCKING_FOR_SCRATCH_AB",
     "THREE_NEW_RUNS": "READY",
     "BASELINE_100K_EVAL_FIXED": "PASS_COMPLETE_50_ARGMAX_50_SAMPLE",
-    "BASELINE_RESUMED_TO_250K": "RUNNING",
-    "CONSERVATIVE300K_STARTED": "RUNNING"
+    "BASELINE_RESUMED_TO_250K": "COMPLETE_STOP_FOR_MASTER_REVIEW",
+    "CONSERVATIVE300K_STARTED": "RUNNING_STEP_283600_OF_300000",
+    "FULLMIX_ORIGINAL_100K": "COMPLETE_STOP_FOR_MASTER_REVIEW_EVAL_80_OF_80",
+    "FULLMIX_DOWNWEIGHT05_100K": "COMPLETE_STOP_FOR_MASTER_REVIEW_EVAL_80_OF_80"
   },
   "launch_queue": [
     {
@@ -178,26 +180,29 @@
   "pure_capture_v2_recovery": {
     "recorded_at": "2026-09-16T15:55:57+08:00",
     "artifact": "artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json",
+    "completed_lines_artifact": "artifacts/2026-09-15_normsense_v2/normsense_v2_completed_lines_results_20260916.json",
     "telemetry_fix": "PASS; evaluator-only interpretation change; environment semantics unchanged",
     "historical_crash_was_capture_terminal": false,
     "baseline": {
       "tmux": "normsense_pure_baseline_resume_20260916",
       "pid": 1423372,
       "physical_gpu": 0,
-      "snapshot_step": 122100,
-      "next_checkpoint": 125000,
+      "snapshot_step": 250000,
+      "next_checkpoint": null,
       "stop_for_master_review": 250000
     },
     "conservative300k": {
       "tmux": "normsense_pure_conservative300k_20260916",
       "pid": 1423380,
       "physical_gpu": 0,
-      "snapshot_step": 18200,
-      "next_checkpoint": 25000,
+      "snapshot_step": 283600,
+      "next_checkpoint": 300000,
       "stop_for_master_review": 300000
     },
+    "fullmix_original": {"pid": 1293741, "physical_gpu": 1, "step": 100000, "eval_complete": "80/80", "status": "STOP_FOR_MASTER_REVIEW"},
+    "fullmix_downweight05": {"pid": 1293745, "physical_gpu": 1, "step": 100000, "eval_complete": "80/80", "status": "STOP_FOR_MASTER_REVIEW"},
     "parity": "PASS; UNEXPLAINED=0; only horizon 3000 to 1000 plus pre_capture_max_length 1000 and actor dropout 0.1 to 0.0",
     "fullmix_lines_touched": false
   },
-  "next_agent": "Monitor the two owned Pure-Capture tmux sessions without changing their contracts: baseline must stop at 250k for master review; Conservative300k must continue through 100k and stop at 300k. Do not interrupt the two Full-Mix lines."
+  "next_agent": "Three lines are complete and frozen for master review. Monitor only Conservative300k PID 1423380 through step 300000, then run/record its final eval and update the completed-lines artifact. Do not restart completed lines or interrupt unrelated processes."
 }

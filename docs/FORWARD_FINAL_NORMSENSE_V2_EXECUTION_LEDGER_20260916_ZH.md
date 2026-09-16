@@ -221,3 +221,25 @@ Scratch 线 `NormSense-Final-PureCapture-Conservative300k` 已启动；PID `1423
 机器可读 parity 为 PASS、`UNEXPLAINED=0`。唯一科学改动组为 `episode_max_length 3000→1000`（并显式启用 `pre_capture_max_length=1000`）与 `actor.dropout 0.1→0.0`；其余 Final Pure-Capture 合同一致。两条 scratch 初始 Actor/Critic/ValueNorm hashes 完全一致。审查同时确认 trainer 始终将 Actor 保持在 `eval()`，故 baseline 中配置的 dropout 实际也未在 rollout/PPO update 生效；该实现事实不扩大 ablation。Full-Mix Original/Downweight 进程未被停止或修改。
 
 本轮机器可读总结果：`artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json`；parity：`artifacts/2026-09-15_normsense_v2/pure_capture_baseline_vs_conservative300k_parity.json`。
+
+## 已完成线交付与未完成线状态（2026-09-16 22:25）
+
+本节覆盖当前快照，优先于本 ledger 中较早的运行中描述。三条线已完成并停止在 master review：Pure baseline `250k/250k`，Original Full-Mix `100k/100k`，CaptureDownweight05 Full-Mix `100k/100k`。Conservative300k 尚未完成，不能填入最终性能结论。
+
+### 已完成线的合同与最终 eval
+
+| line | budget / eval | seed | 唯一实验参数 | actor hash（final） | 关键结果 |
+|---|---:|---:|---|---|---|
+| NormSense-Final-PureCapture-Baseline | 250k，20 argmax + 20 sample | 2026091501 | CR-MS `ring_importance_ms_v0`；horizon 3000；dropout .1 | `77bf7001…` | argmax/sample capture 均 5%；ring2/ring3 = 65/15%、50/25%；collision episode 均 95% |
+| NormSense-Original-FullMix | 100k，20×scene×mode | 2026091401 | `alpha_capture=1.0`；horizon 3000 | `500c2f2a…` | argmax mixed/coverage capture、CE 均 0；sample mixed collision 16/20，coverage collision 15/20 |
+| NormSense-CaptureDownweight05-FullMix | 100k，20×scene×mode | 2026091401 | `alpha_capture=0.5`；horizon 3000 | `b2061d17…` | argmax mixed/coverage capture、CE 均 0；sample mixed collision 17/20，coverage CE success 1/20、collision 18/20 |
+
+Pure baseline 250k 的细项为：argmax capture `5%`（normal `5%`、stationary `0%`），capture time mean `22.5s`，enemy-visible `0.9654`，ring3 hold mean `0.2`，collision events `23`（AA/obstacle/boundary `4/0/1`），total/discounted return `-51.272/-20.770`；sample capture `5%`（normal `5%`、stationary `0%`），capture time mean `143.5s`，enemy-visible `0.9922`，ring3 hold mean `1.3`，collision events `19`（AA/obstacle/boundary `18/0/1`），total/discounted return `-250.093/-0.986`。
+
+Full-Mix 最终 eval 的 CE RMS / area CV：Original argmax mixed/coverage `0.19705/0.39028`、`0.29735/0.40882`；sample mixed/coverage `0.20813/0.30873`、`0.20856/0.30402`。Downweight05 对应为 `0.19705/0.39028`、`0.29735/0.40882`；`0.20081/0.32542`、`0.18949/0.33707`。两个 Full-Mix eval 均为 80/80 完整，Actor/Critic/ValueNorm/RNG resume metadata 保留，未改变 audited sensing、transition、collision、PPO 或 ValueNorm 合同。
+
+### 未完成线的如实状态
+
+`NormSense-Final-PureCapture-Conservative300k`：PID `1423380`，GPU 0，快照 `step=283600/300000`、`training_updates=1107`、约 `11.51 step/s`，状态 `RUNNING`；训练剩余约 `1425s`（约 24 分钟），300k final eval 尚未开始。该线仅预注册 horizon `3000→1000`（含 `pre_capture_max_length=1000`）和 Actor dropout `.1→0`，不得把当前 283.6k 状态当作最终结果。
+
+机器可读完成线汇总：`artifacts/2026-09-15_normsense_v2/normsense_v2_completed_lines_results_20260916.json`。原始最终 eval 文件仍保留在各 run 目录；本节只记录已完成线可复核的关键字段，不替代原始 episode records。

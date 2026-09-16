@@ -1,0 +1,128 @@
+{
+  "schema": "normsense-v2-completed-lines-results-v1",
+  "recorded_at": "2026-09-16T22:25:53+08:00",
+  "source_head": "72c5939",
+  "status": "THREE_LINES_COMPLETE_ONE_LINE_RUNNING",
+  "completed_lines": {
+    "NormSense-Final-PureCapture-Baseline": {
+      "status": "STOP_FOR_MASTER_REVIEW",
+      "step": 250000,
+      "budget": 250000,
+      "training_updates": 976,
+      "eval_progress": "40/40",
+      "eval_artifact": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-PureCapture_RECOVERED_AFTER_EXECUTION_BUG_FIX/eval_step_250000.json",
+      "actor_sha256": "77bf7001501f66d74c86c1dc097544f0e0f9e02d4ce237cc91b0e62ce2e7bb75",
+      "training_rng_preserved": true,
+      "contract": {
+        "seed": 2026091501,
+        "capture_reward_mode": "ring_importance_ms_v0",
+        "sensing": "NormSense V2 enemy+obstacle unified onboard radius; no global enemy broadcast",
+        "horizon": 3000,
+        "actor_dropout": 0.1,
+        "ppo": "rollout 256; gamma .99; lambda .95; clip .2; 3 epochs; 2 minibatches; actor lr 3e-5; critic lr 1e-4; entropy .01; ValueNorm; target KL .02; max grad norm .5"
+      },
+      "argmax": {
+        "episodes": 20,
+        "capture_rate": 0.05,
+        "normal_capture_rate": 0.05,
+        "stationary_capture_rate": 0,
+        "capture_time_seconds_mean": 22.5,
+        "ring2_visitation": 0.65,
+        "ring3_visitation": 0.15,
+        "longest_ring3_hold_mean": 0.2,
+        "enemy_visible_fraction": 0.9654359780,
+        "collision_episode_rate": 0.95,
+        "collision_event_total": 23,
+        "agent_agent_events": 4,
+        "obstacle_events": 0,
+        "boundary_events": 1,
+        "total_return_mean": -51.27206508,
+        "discounted_return_mean": -20.77031856
+      },
+      "sample": {
+        "episodes": 20,
+        "capture_rate": 0.05,
+        "normal_capture_rate": 0.05,
+        "stationary_capture_rate": 0,
+        "capture_time_seconds_mean": 143.5,
+        "ring2_visitation": 0.5,
+        "ring3_visitation": 0.25,
+        "longest_ring3_hold_mean": 1.3,
+        "enemy_visible_fraction": 0.9922324511,
+        "collision_episode_rate": 0.95,
+        "collision_event_total": 19,
+        "agent_agent_events": 18,
+        "obstacle_events": 0,
+        "boundary_events": 1,
+        "total_return_mean": -250.09321438,
+        "discounted_return_mean": -0.98637179
+      }
+    },
+    "NormSense-Original-FullMix": {
+      "status": "STOP_FOR_MASTER_REVIEW",
+      "step": 100000,
+      "budget": 100000,
+      "alpha_capture": 1.0,
+      "eval_progress": "80/80",
+      "eval_artifact": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-Original-FullMix_RECOVERED_AFTER_EXECUTION_BUG_FIX/eval_step_100000.json",
+      "actor_sha256": "500c2f2a4e69e055f3c8266f04660e53d5993eb235f4c5a327fd09346d0aea3a",
+      "training_rng_preserved": true,
+      "contract": {
+        "seed": 2026091401,
+        "horizon": 3000,
+        "eval_episodes_per_scene_mode": 20,
+        "shared_contract": "NormSense V2, current Final sensing/reward/transition/collision contract, PPO/ValueNorm/network unchanged"
+      },
+      "final_eval_key_metrics": {
+        "argmax_mixed": {"capture": 0, "ce_success": 0, "collision": 0, "boundary": 0, "ce_rms": 0.19704694, "area_cv": 0.39027794},
+        "argmax_coverage": {"capture": 0, "ce_success": 0, "collision": 0, "boundary": 0, "ce_rms": 0.29735029, "area_cv": 0.40881868},
+        "sample_mixed": {"capture": 0, "ce_success": 0, "collision": 16, "boundary": 11, "ce_rms": 0.20812507, "area_cv": 0.30872808},
+        "sample_coverage": {"capture": 0, "ce_success": 0, "collision": 15, "boundary": 9, "ce_rms": 0.20856401, "area_cv": 0.30401813}
+      }
+    },
+    "NormSense-CaptureDownweight05-FullMix": {
+      "status": "STOP_FOR_MASTER_REVIEW",
+      "step": 100000,
+      "budget": 100000,
+      "alpha_capture": 0.5,
+      "eval_progress": "80/80",
+      "eval_artifact": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-CaptureDownweight05-FullMix_RECOVERED_AFTER_EXECUTION_BUG_FIX/eval_step_100000.json",
+      "actor_sha256": "b2061d1784c31507e7c3718714cc7b1cfa0bf6d762a9e0ece24f5db821b596f9",
+      "training_rng_preserved": true,
+      "contract": {
+        "seed": 2026091401,
+        "horizon": 3000,
+        "eval_episodes_per_scene_mode": 20,
+        "shared_contract": "NormSense V2, current Final sensing/reward/transition/collision contract, PPO/ValueNorm/network unchanged"
+      },
+      "final_eval_key_metrics": {
+        "argmax_mixed": {"capture": 0, "ce_success": 0, "collision": 0, "boundary": 0, "ce_rms": 0.19704694, "area_cv": 0.39027794},
+        "argmax_coverage": {"capture": 0, "ce_success": 0, "collision": 0, "boundary": 0, "ce_rms": 0.29735029, "area_cv": 0.40881868},
+        "sample_mixed": {"capture": 0, "ce_success": 0, "collision": 17, "boundary": 14, "ce_rms": 0.20080951, "area_cv": 0.32542106},
+        "sample_coverage": {"capture": 0, "ce_success": 1, "collision": 18, "boundary": 5, "ce_rms": 0.18949155, "area_cv": 0.33707192}
+      }
+    }
+  },
+  "unfinished_lines": {
+    "NormSense-Final-PureCapture-Conservative300k": {
+      "status": "RUNNING",
+      "pid": 1423380,
+      "physical_gpu": 0,
+      "step": 283600,
+      "budget": 300000,
+      "training_updates": 1107,
+      "steps_per_second": 11.5102523320,
+      "training_eta_seconds": 1424.8,
+      "next_checkpoint": 300000,
+      "final_eval": "NOT_STARTED",
+      "contract_delta": "episode_max_length 3000 to 1000; pre_capture_max_length 1000; actor dropout .1 to 0; all other audited Final contract fields unchanged",
+      "explicit_boundary": "No final performance claim before 300k checkpoint and eval."
+    }
+  },
+  "source_artifacts": {
+    "telemetry_fix": "29d8498",
+    "launcher_config": "6c5fdc3",
+    "prior_recovery_summary": "artifacts/2026-09-15_normsense_v2/pure_capture_v2_recovery_results_20260916.json",
+    "parity": "artifacts/2026-09-15_normsense_v2/pure_capture_baseline_vs_conservative300k_parity.json"
+  }
+}
