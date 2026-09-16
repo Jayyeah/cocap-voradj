@@ -161,8 +161,12 @@ class Telemetry:
         self.capture_step = None
         self.collision_types = Counter()
         self.last_components = None
+        self.terminal_transition_seen = False
+        self.post_capture_terminal_metadata_transitions = 0
 
     def observe(self, env, outcome, active):
+        if getattr(self, 'terminal_transition_seen', False):
+            raise AssertionError('telemetry.observe called after the episode terminal transition')
         self.count['length'] += 1
         step = self.count['length']
         self.count['active_rows'] += len(active)
@@ -180,7 +184,20 @@ class Telemetry:
         for event in env.last_collision_events:
             self.collision_types[event.get('type','unknown')] += 1
         metas = [o['replay_metadata'] for o in outcome.infos]
-        assert all(m['phase'] != 'post_capture' for m in metas)
+        post_capture_metadata = [m['phase'] == 'post_capture' for m in metas]
+        if any(post_capture_metadata):
+            # Pure-Capture must never roll into recovery. Runtime state can,
+            # however, label the terminal successor as post_capture after the
+            # final enemy is deactivated (capture or terminal enemy loss).
+            # Accept that label only on the immediate terminal transition; a
+            # non-terminal post-capture row remains a hard error.
+            assert self.task == 'capture'
+            assert all(post_capture_metadata)
+            assert all(outcome.dones)
+            assert all(i['terminated'] and not i['truncated'] for i in outcome.infos)
+            self.post_capture_terminal_metadata_transitions = (
+                getattr(self, 'post_capture_terminal_metadata_transitions', 0) + 1
+            )
         self.count['support_rows'] += sum(metas[i]['support_candidate'] for i in active)
         if self.task == 'capture':
             assert all(m['reward_coverage']==m['reward_ce_pbrs']==m['reward_ce_control']==0 for m in metas)
@@ -189,6 +206,8 @@ class Telemetry:
         else:
             assert not events and not env.evaders
             assert not any(m['support_candidate'] or m['reward_capture'] or m['reward_terminal'] for m in metas)
+        if all(outcome.dones):
+            self.terminal_transition_seen = True
         self.last_components = {k:np.array([m[k] for m in metas],np.float32) for k in REWARD_KEYS}
         for k in REWARD_KEYS:
             v = float(np.mean(self.last_components[k]))
@@ -224,7 +243,10 @@ class Telemetry:
             discounted_components=dict(self.reward_discounted),
             discounted_return=sum(self.reward_discounted[k] for k in p.COMPONENTS),
             total_return=sum(self.reward_sum[k] for k in p.COMPONENTS),
-            reset_source='common_map_random',pool_size=0,post_capture_transitions=0)
+            reset_source='common_map_random',pool_size=0,
+            post_capture_terminal_metadata_transitions=getattr(
+                self, 'post_capture_terminal_metadata_transitions', 0),
+            post_capture_transitions=0)
 
 
 class SingleTaskStream:
