@@ -145,3 +145,54 @@ PureCapture 已明确产生训练 update；其 actor/value loss、advantage/retu
 ETA（只作资源规划，不是结果承诺）：PureCapture launcher 当前 ETA 约 5 小时 27 分；两条 Full-Mix 预计约 3--6 分钟进入训练，100k 完成粗估各 5--7 小时（包含后续 25k eval）。按用户最新要求，本次只做一次状态确认，不再长期监控；进程继续运行，25k 节点由后续人工检查。
 
 机器可读记录见 `artifacts/2026-09-15_normsense_v2/execution_recovery_20260916.json`。禁止项、预算、seed、alpha、reward、网络、transition semantics 和 rollout budget 均未改变。
+
+## 2026-09-16 historical results update
+
+### NormSense-PureCapture
+
+`NormSense-PureCapture` 使用 audited Pure-Capture 合同（seed `2026091501`、alpha_capture `1.0`、250k budget、25k eval cadence、V2 `k=0.8715`）。step 100k checkpoint 已写入，共 390 PPO updates；随后在 100k eval 的第 10/40 条记录处停止：
+
+```
+AssertionError: telemetry.observe: all(m['phase'] != 'post_capture' for m in metas)
+```
+
+这是评估/telemetry 执行失败，不是训练 NaN、Inf 或 OOM；不将 100k eval 写成完整结果，也不继续恢复该线。
+
+| eval step | argmax capture / CE | argmax collision | argmax CE RMS | argmax total return | sample capture / CE | sample collision | sample CE RMS |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 0 / 0 | 1.00 | 0.21696 | -66.08 | 0 / 0 | 1.00 | 0.21036 |
+| 25k | 0 / 0 | 0.00 | 0.20105 | 24.07 | 0 / 0 | 0.70 | 0.20015 |
+| 50k | 0 / 0 | 1.00 | 0.26343 | -53.11 | 0.05 / 0 | 0.95 | 0.26490 |
+| 75k | 0 / 0 | 1.00 | 0.21482 | -123.01 | 0 / 0 | 1.00 | 0.25220 |
+| 100k | incomplete (10/40) | — | — | — | incomplete | — | — |
+
+截至完整的 75k eval，没有稳定 capture 或 CE success；50k sample 的 capture 率 0.05 未在 75k 保持。训练状态确实发生变化（actor hash 由 `965553…` 变为 `795f99…`），但不能据此宣称 PureCapture 学习成功。
+
+### 两条 Full-Mix 的历史性能与参数变化
+
+两条线均为 random-init、seed `2026091401`、100k budget、25k cadence；当前均完成 step 50k / 195 updates，50k checkpoint 已写入，50k eval 尚未完成。
+
+| line / alpha | eval step | argmax mixed: capture / collision / CE RMS | argmax coverage: collision / CE RMS | sample mixed: capture / collision / CE RMS | sample coverage: collision / CE RMS |
+|---|---:|---|---|---|---|
+| Original / 1.0 | 0 | 0 / 20 / 0.20552 | 12 / 0.20457 | 0 / 20 / 0.18021 | 20 / 0.19718 |
+| Original / 1.0 | 25k | 0 / 0 / 0.19705 | 0 / 0.29735 | 0 / 18 / 0.23471 | 18 / 0.21332 |
+| Downweight05 / 0.5 | 0 | 0 / 20 / 0.20552 | 12 / 0.20457 | 0 / 20 / 0.18021 | 20 / 0.19718 |
+| Downweight05 / 0.5 | 25k | 0 / 0 / 0.19705 | 0 / 0.29735 | 0 / 19 / 0.22370 | 20 / 0.21414 |
+
+25k 时两线 argmax mixed/coverage 均无 capture/CE success；collision 下降伴随 episode 达到 horizon，coverage CE RMS 从约 0.205 增至约 0.297。sample 指标出现轻微分叉，但尚不足以作 causal 结论。50k eval 仍为 `NOT_YET_WRITTEN`，不能填零。
+
+训练/参数状态节点：
+
+| line | actor loss (step 256 → 49,920) | value loss | entropy | explained variance | ValueNorm mean / std |
+|---|---:|---:|---:|---:|---:|
+| Original | -0.022464 → -0.021123 | 0.65449 → 0.01230 | 2.19716 → 2.10151 | 0.138 → 0.221 | -28.61/53.63 → -56.25/40.49 |
+| Downweight05 | -0.022464 → -0.021571 | 0.65433 → 0.01042 | 2.19716 → 2.14218 | 0.140 → 0.697 | -28.37/53.81 → -65.22/40.82 |
+
+actor state hashes 已从相同 initial hash 分叉：
+
+- Original：`54f502…` → 25k `7b199c…` → 50k `ecb25a…`
+- Downweight05：`54f502…` → 25k `7fd066…` → 50k `3ad01c…`
+
+除预注册的 `alpha_capture=1.0` 对 `0.5` 外，重要合同参数没有变化：sensing V2/`k=0.8715`、seed、network dimensions、PPO（actor LR `3e-5`、critic LR `1e-4`、3 epochs/2 minibatches、clip `0.2`、gamma `0.99`、GAE lambda `0.95`）、ValueNorm、rollout 256、mixed→coverage schedule、reset pool、eval seeds、horizon 和 collision semantics 均保持 audited contract。两条线的 50k eval 与 100k STOP 仍待各自自然完成；不添加第四条实验、不扩预算、不修改参数。
+
+机器可读明细：`artifacts/2026-09-15_normsense_v2/execution_recovery_results_20260916.json`。

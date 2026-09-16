@@ -1,0 +1,96 @@
+{
+  "schema": "normsense-v2-historical-results-v1",
+  "recorded_at": "2026-09-16T14:29:57+08:00",
+  "recovery_lineage": "RECOVERED_AFTER_EXECUTION_BUG_FIX",
+  "source_runs_root": "runs/2026-09-16_normsense_v2_execution_recovery",
+  "pure_capture": {
+    "name": "NormSense-PureCapture",
+    "seed": 2026091501,
+    "alpha_capture": 1.0,
+    "budget": 250000,
+    "checkpoint_interval": 25000,
+    "status": "STOPPED_AT_STEP_100000_DURING_EVAL",
+    "step": 100000,
+    "training_updates": 390,
+    "eval_100k": "NOT_AVAILABLE_EVAL_ABORTED_AFTER_10_OF_40_RECORDS",
+    "failure": {
+      "type": "AssertionError",
+      "location": "forward_final_single_task_20260915.py:telemetry.observe",
+      "condition": "all(m['phase'] != 'post_capture' for m in metas)",
+      "interpretation": "evaluation/telemetry execution failure after training; not a training NaN/OOM"
+    },
+    "eval_history": [
+      {"step": 0, "argmax": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 1.0, "ce_rms": 0.2169612098, "total_return": -66.07911093, "ring2": 0.0, "ring3": 0.0}, "sample": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 1.0, "ce_rms": 0.2103627484, "total_return": -233.7109521, "ring2": 0.0, "ring3": 0.0}},
+      {"step": 25000, "argmax": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 0.0, "ce_rms": 0.2010526981, "total_return": 24.07110774, "ring2": 0.0, "ring3": 0.0}, "sample": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 0.7, "ce_rms": 0.2001461973, "total_return": -370.1549995, "ring2": 0.0, "ring3": 0.0}},
+      {"step": 50000, "argmax": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 1.0, "ce_rms": 0.2634302877, "total_return": -53.11035729, "ring2": 0.05, "ring3": 0.0}, "sample": {"captured_rate": 0.05, "ce_success_rate": 0.0, "collision_rate": 0.95, "ce_rms": 0.2648962855, "total_return": -208.6239254, "ring2": 0.05, "ring3": 0.05}},
+      {"step": 75000, "argmax": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 1.0, "ce_rms": 0.2148195664, "total_return": -123.0137052, "ring2": 0.75, "ring3": 0.15}, "sample": {"captured_rate": 0.0, "ce_success_rate": 0.0, "collision_rate": 1.0, "ce_rms": 0.2522010841, "total_return": -263.5710597, "ring2": 0.15, "ring3": 0.0}}
+    ],
+    "checkpoint_state_hashes": {
+      "step_0_actor": "965553646883e512219e85cf7e40036c3b23897136683335ea0c2cc6c5086f4f",
+      "step_25000_actor": "12c823effa59ecf74692291a2b8ee5635fca67ebdcc6b19f5c9802546a8e8bc2",
+      "step_50000_actor": "f85cb4b8b6c3d1af9d2c5c2cef6d57edd207be0a547dbbfc6c2c21bc56864ee2",
+      "step_75000_actor": "62269ebf7158ecff4ab745d9709cfe76cb52c4a24bcf52a74f30de57d92b898f",
+      "step_100000_actor": "795f9917f5897e8848133ce788d512e20228f481753435f5bd5080f189bdbeaf"
+    },
+    "milestone_training": [
+      {"step": 256, "updates": 1, "actor_loss": -0.0221879420, "value_loss": 0.5037271728, "entropy": 2.1971922, "explained_variance": 0.1041996},
+      {"step": 24960, "updates": 97, "actor_loss": -0.0218683098, "value_loss": 0.0046044636, "entropy": 2.1509748, "explained_variance": 0.0199839},
+      {"step": 49920, "updates": 195, "actor_loss": -0.0260888939, "value_loss": 0.0255199093, "entropy": 2.1615868, "explained_variance": -0.0425532},
+      {"step": 75008, "updates": 293, "actor_loss": -0.0215837856, "value_loss": 0.0447579001, "entropy": 2.1230894, "explained_variance": 0.8064145},
+      {"step": 99840, "updates": 390, "actor_loss": -0.0209792837, "value_loss": 1.5308343967, "entropy": 2.0857813, "explained_variance": 0.0113516}
+    ],
+    "interpretation": "No persistent capture success or CE success; ring visitation increased by 75k, but 100k eval is incomplete. Do not claim learnability or experiment success."
+  },
+  "fullmix": {
+    "shared_contract": {
+      "seed": 2026091401,
+      "budget": 100000,
+      "checkpoint_interval": 25000,
+      "stop_at": 100000,
+      "sensing_policy": "forward-final-density-normalized-sensing-v2",
+      "k": 0.8715,
+      "rollout_length": 256,
+      "scene_schedule": ["mixed", "coverage"],
+      "ppo": {"actor_lr": 0.00003, "critic_lr": 0.0001, "ppo_epochs": 3, "minibatches": 2, "clip_param": 0.2, "gamma": 0.99, "gae_lambda": 0.95, "entropy_coef": 0.01, "max_grad_norm": 0.5, "value_norm": true, "value_norm_beta": 0.99999},
+      "actor": {"hidden_dim": 256, "num_heads": 8, "num_layers": 4, "dropout": 0.1},
+      "recovery_reset": {"pool_initial_size": 0, "pool_capacity": 1000, "captured_state_ratio": 0.75, "map_random_ratio_within_non_capture": 0.5},
+      "eval_episodes_per_scene_mode": 20
+    },
+    "important_parameter_change": "Only alpha_capture differs: Original=1.0; Downweight05=0.5. Seeds, initial actor/value/ValueNorm hashes, PPO, sensing, reset, schedule, eval seeds, horizon, collision semantics, and network dimensions remain matched.",
+    "original": {
+      "alpha_capture": 1.0,
+      "status": "RUNNING_CHECKPOINT_EVAL_AT_STEP_50000",
+      "step": 50000,
+      "training_updates": 195,
+      "eval_50k": "NOT_YET_WRITTEN_CHECKPOINT_EVAL_IN_PROGRESS",
+      "eval_history": [
+        {"step": 0, "argmax_mixed": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.2055239295, "episode_length": 96.65}, "argmax_coverage": {"ce_success": 0, "collision": 12, "ce_rms": 0.2045682186, "episode_length": 1222.35}, "sample_mixed": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.1802110964, "episode_length": 387.25}, "sample_coverage": {"ce_success": 0, "collision": 20, "ce_rms": 0.1971831816, "episode_length": 403.1}},
+        {"step": 25000, "argmax_mixed": {"captured": 0, "ce_success": 0, "collision": 0, "ce_rms": 0.1970469362, "episode_length": 3000.0}, "argmax_coverage": {"ce_success": 0, "collision": 0, "ce_rms": 0.2973502940, "episode_length": 3000.0}, "sample_mixed": {"captured": 0, "ce_success": 0, "collision": 18, "ce_rms": 0.2347145630, "episode_length": 1408.2}, "sample_coverage": {"ce_success": 0, "collision": 18, "ce_rms": 0.2133166810, "episode_length": 1137.15}}
+      ],
+      "checkpoint_hashes": {"actor_0": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39", "actor_25k": "7b199c3e35ed0df32809b6ef12ad26cbbb9fc5d44d59332eb3ff050bf9477abb", "actor_50k": "ecb25a1ef1f8aad30a6d5e1561193d5e8dd1d70989885dc79890628520cebc5a"},
+      "milestone_training": [
+        {"step": 256, "updates": 1, "actor_loss": -0.0224639003, "value_loss": 0.6544890503, "entropy": 2.1971641, "explained_variance": 0.1380959, "value_norm_mean": -28.6121, "value_norm_std": 53.6314},
+        {"step": 24960, "updates": 97, "actor_loss": -0.0217495052, "value_loss": 0.0535066792, "entropy": 2.1489097, "explained_variance": 0.2584808, "value_norm_mean": -69.0938, "value_norm_std": 41.2016},
+        {"step": 49920, "updates": 195, "actor_loss": -0.0211231339, "value_loss": 0.0123018924, "entropy": 2.1015146, "explained_variance": 0.2212598, "value_norm_mean": -56.2531, "value_norm_std": 40.4861}
+      ]
+    },
+    "downweight05": {
+      "alpha_capture": 0.5,
+      "status": "RUNNING_CHECKPOINT_EVAL_AT_STEP_50000",
+      "step": 50000,
+      "training_updates": 195,
+      "eval_50k": "NOT_YET_WRITTEN_CHECKPOINT_EVAL_IN_PROGRESS",
+      "eval_history": [
+        {"step": 0, "argmax_mixed": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.2055239295, "episode_length": 96.65}, "argmax_coverage": {"ce_success": 0, "collision": 12, "ce_rms": 0.2045682186, "episode_length": 1222.35}, "sample_mixed": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.1802110964, "episode_length": 387.25}, "sample_coverage": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.1971831816, "episode_length": 403.1}},
+        {"step": 25000, "argmax_mixed": {"captured": 0, "ce_success": 0, "collision": 0, "ce_rms": 0.1970469362, "episode_length": 3000.0}, "argmax_coverage": {"ce_success": 0, "collision": 0, "ce_rms": 0.2973502940, "episode_length": 3000.0}, "sample_mixed": {"captured": 0, "ce_success": 0, "collision": 19, "ce_rms": 0.2236982784, "episode_length": 889.4}, "sample_coverage": {"captured": 0, "ce_success": 0, "collision": 20, "ce_rms": 0.2141406969, "episode_length": 556.75}}
+      ],
+      "checkpoint_hashes": {"actor_0": "54f502a7b7c2bfbb2169f73c6edef48e5ed761e51a05c66bf0858c3b38945c39", "actor_25k": "7fd066f99b13d88c5ab43c8fe7aeee74dd13136e45ba3d0f08a8f4ba3635c2c2", "actor_50k": "3ad01c4b2c8a850ecf5c8919d2d0d8a1a78e5255bee185378447d5445afd063e"},
+      "milestone_training": [
+        {"step": 256, "updates": 1, "actor_loss": -0.0224639348, "value_loss": 0.6543261707, "entropy": 2.1971640, "explained_variance": 0.1396403, "value_norm_mean": -28.3726, "value_norm_std": 53.8113},
+        {"step": 24960, "updates": 97, "actor_loss": -0.0221508571, "value_loss": 0.2860465745, "entropy": 2.1795288, "explained_variance": 0.0099306, "value_norm_mean": -66.8666, "value_norm_std": 42.2517},
+        {"step": 49920, "updates": 195, "actor_loss": -0.0215706831, "value_loss": 0.0104180301, "entropy": 2.1421779, "explained_variance": 0.6967169, "value_norm_mean": -65.2170, "value_norm_std": 40.8196}
+      ]
+    },
+    "interpretation": "At available eval nodes both lines retain zero capture/CE success; argmax collision count falls to zero at 25k but episodes reach horizon and coverage CE RMS worsens. 50k parameter states diverge under alpha intervention; no causal performance conclusion before 50k eval and final 100k STOP."
+  }
+}
