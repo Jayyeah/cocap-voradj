@@ -58,14 +58,14 @@ TD3-W 严格映射 IQN decision-backbone state dict。正式 4-layer teacher 应
 
 | ID | task / algorithm | init | seed | 当前状态 |
 |---|---|---|---:|---|
-| D1 | pure coverage / IQN AW9 | scratch | 待 matched-run 确认 | 历史 teacher 有当前合同冻结评估能力，但训练合同/预算不 matched，不能用于 sample-efficiency 排名 |
-| D2 | pure capture / IQN AW9 | scratch | 待 matched-run 确认 | 同上；当前合同资格抽查 normal capture 2/2 |
-| D3 | pure coverage / categorical MAPPO AW9 | scratch | 待 matched-run | 旧 sensing 结果不冒充 NormSense V2 matched baseline |
+| D1 | pure coverage / IQN AW9 | scratch | 2026091501（待跑） | 历史 teacher 有当前合同冻结评估能力，但训练合同/预算不 matched，不能用于 sample-efficiency 排名 |
+| D2 | pure capture / IQN AW9 | scratch | 2026091501（待跑） | 同上；当前合同资格抽查 normal capture 2/2 |
+| D3 | pure coverage / categorical MAPPO AW9 | scratch | 2026091501（待跑） | 旧 sensing 结果不冒充 NormSense V2 matched baseline |
 | D4 | pure capture / categorical MAPPO AW9 | scratch | 2026091501 | horizon=3000 baseline 已完成 250k；25/50/75k normal capture 均 0，ring3 visitation 为 0/0/15%，collision 为 0/100/100%；原 run 缺 100k eval，需用共同 seeds 补评。1000-step conservative 线是显式 ablation，不计入 D4 |
-| C1 | pure coverage / local TD3 AW | scratch | 2026091501 | runner ready；formal 未启动 |
-| C2 | pure capture / local TD3 AW | scratch | 2026091501 | runner ready；formal 未启动 |
-| C3 | pure coverage / local TD3 AW | IQN-warm | 2026091501 | 等 matched teacher dataset + BC |
-| C4 | pure capture / local TD3 AW | IQN-warm | 2026091501 | 等 matched teacher dataset + BC |
+| C1 | pure coverage / local TD3 AW | scratch | 2026091501 | formal RUNNING；GPU0；首个 5k update finite |
+| C2 | pure capture / local TD3 AW | scratch | 2026091501 | formal RUNNING；GPU0；6k 时 critic/policy=1001/500，delay=2 精确 |
+| C3 | pure coverage / local TD3 AW | IQN-warm | 2026091501 | teacher dataset 完成；统一 eval seeds 的最终 BC 验证中 |
+| C4 | pure capture / local TD3 AW | IQN-warm | 2026091501 | formal RUNNING；GPU1；BC 初始 policy 在训练前 rollout 为 8/8 normal capture |
 
 四条 TD3 均使用与现有 MAPPO baseline 相同的训练 seed `2026091501`；两个任务的 deterministic eval 均使用共同 seed base `2026191501`。scratch/warm 同 task 的 critics 随机初始化 matched。正式 TD3 milestone=`25k/50k/75k/100k`，每点 20 个 deterministic eval episodes、atomic checkpoint、replay snapshot、diagnostics 与 manifests；100k 无趋势先审计，不自动延长。
 
@@ -79,9 +79,16 @@ TD3-W 严格映射 IQN decision-backbone state dict。正式 4-layer teacher 应
 - actor/Q learning rate 均 `1e-4`；grad clip `.5`
 - BC：64 successful train episodes + 16 successful heldout episodes / task；30 epochs；batch 512；lr `3e-4`
 
+## IQN teacher / BC 实际结果
+
+- Capture：80/80 successful normal-capture episodes，0 collision，21,560 rows（train 16,936 / held-out 4,624），dataset SHA256=`00d2210293b260051a8e2e48261abdf1d9dd39c4134bf40ef27f3f1a1b3f76f9`。
+- Capture BC epoch30：train/held-out physical-AW MSE=`.0161539/.0178840`，action-index agreement=`.854511/.827638`；共同 seeds `2026191501–08` 为 8/8 normal capture、0 stationary、0 collision。
+- Coverage：80/80 successful CE episodes，0 collision，109,628 rows（train 89,820 / held-out 19,808），dataset SHA256=`b408c7a87e0132beb641f207e6103eb09473498677b1db4f888626af4f50415c`。原始 BC 的 held-out MSE/action-index agreement=`.0695674/.693457`，但其 rollout 使用旧 seed base；当前正复用同一冻结 dataset 以共同 seeds `2026191501–08` 重做确定性验证后再启动 C3。
+- 两任务均严格映射 86 个 backbone keys；IQN heads 全部排除；critic transfer=`none`。
+
 ## 工程验证
 
-- 聚焦单测：`36 passed`（protobuf 仅 deprecation warnings）
+- 聚焦与扩展单测：最近完整批次 `51 passed`（protobuf 仅 deprecation warnings）
 - CPU real-env coverage smoke：12 env steps，replay 12，critic updates 10，actor updates 5，finite；atomic checkpoint/replay/eval 完成
 - CUDA real-env capture smoke（GPU1）：24 env steps，replay 24，critic updates 19，actor updates 9，finite；atomic checkpoint/replay/eval 完成
 - CUDA smoke resume：成功恢复 trainer、replay、环境 pickle 与 RNG；manifest 为 attempted=24、added=24、replay=24；`global_state_consumed=false`、`teammate_actions_consumed=false`
@@ -130,6 +137,8 @@ python3 -u tools/train_td3_local_aw_stage1_20260916.py \
 | 50k | pending | pending | pending | pending |
 | 75k | pending | pending | pending | pending |
 | 100k | pending | pending | pending | pending |
+
+正式启动时间（CST）：C2 `23:10`、C4 `23:15`、C1 `23:17`。三者均在独立 TD3 artifact namespace 下运行；原 MAPPO 已自然完成，本线从未对其发送停止信号。C1/C2/C4 首个真实 optimizer update 均 finite，target smoothing 约 `.155` normalized absolute mean，replay attempted/add 相等。C2 到 6k 的 critic/policy updates=`1001/500`，与 `policy_delay=2` 精确一致；尚未到 25k，因此这些只算工程健康，不算任务能力结果。
 
 Coverage/capture gate 按任务书原定义执行；normal 与 stationary capture 永远分列。Q1/Q2、Q-gap、Bellman target、TD error、predicted Q vs empirical discounted MC proxy，以及 success/failure 条件分组均进入 milestone report。不能把 proxy 表述成 true Q。
 
