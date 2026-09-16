@@ -318,7 +318,14 @@ def _capture_geometry(env) -> dict[str, Any]:
         for evader in env.evaders
         if not evader.deactivated
     ]
-    inside = int(sum(distance <= 8.0 for distance in distances))
+    # A successful capture deactivates the evader before the returned state is
+    # inspected. Preserve the terminal ring cardinality from the authoritative
+    # event instead of turning that final ring3 frame into an empty geometry.
+    event_inside = max(
+        (len(event.get("participants", [])) for event in env.last_capture_events),
+        default=0,
+    )
+    inside = max(int(sum(distance <= 8.0 for distance in distances)), event_inside)
     return {
         "min_target_distance": min(distances, default=None),
         "inside_capture_radius": inside,
