@@ -104,3 +104,8 @@ Legacy Pure-Coverage checkpoint 在 V2 argmax 下的 transfer shift 已由 Agent
 `Legacy Pure-Coverage success != V2 Pure-Coverage learnability proof`
 
 训练未完成；不自动进入下一实验，不启动任何 alpha=.25、PCGrad、CAGrad、phase-wise advantage normalization、V2 Pure-Coverage 或 200k Full-Mix。失败日志与 step-0 eval 作为审计证据保留。用户已重新允许 push，本次文档变更将同步到 GitHub。
+
+## GitHub 同步
+
+已 fetch 并确认远端目标分支无落后提交；失败记录已推送至：
+`origin/experiment/density-normalized-sensing-v2-20260915`，同步提交为 `3007a02`（后续仅补充本节状态记录）。
