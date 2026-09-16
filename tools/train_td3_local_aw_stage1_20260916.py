@@ -615,6 +615,10 @@ def train(config: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     validate_config(config)
     if args.device:
         config["device"] = args.device
+    if args.warm_actor:
+        if config.get("initialization") != "iqn_warm":
+            raise ValueError("--warm-actor is valid only for an iqn_warm config")
+        config["warm_actor"] = args.warm_actor
     device = str(config.get("device", "cuda:1"))
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA requested but unavailable")
@@ -847,6 +851,7 @@ def main() -> None:
     parser.add_argument("--device", default=None)
     parser.add_argument("--output", default=None)
     parser.add_argument("--resume", default=None)
+    parser.add_argument("--warm-actor", default=None)
     parser.add_argument("--smoke-steps", type=int, default=0)
     args = parser.parse_args()
     config = load_config(args.config)

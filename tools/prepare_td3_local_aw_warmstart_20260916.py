@@ -291,8 +291,8 @@ def prepare_task(args: argparse.Namespace, config: Mapping[str, Any], task: str)
             teacher_metadata=teacher_metadata,
             task=task,
             device=args.device,
-            train_successes=int(config["teacher"]["successful_train_episodes"]),
-            heldout_successes=int(config["teacher"]["successful_heldout_episodes"]),
+            train_successes=int(args.train_successes or config["teacher"]["successful_train_episodes"]),
+            heldout_successes=int(args.heldout_successes or config["teacher"]["successful_heldout_episodes"]),
             seed_base=int(config["teacher"]["collection_seed_base"]) + (10_000 if task == "capture" else 0),
             output=dataset_path,
             max_attempts=args.max_attempts,
@@ -322,7 +322,7 @@ def prepare_task(args: argparse.Namespace, config: Mapping[str, Any], task: str)
         actor,
         dataset,
         device=args.device,
-        epochs=int(config["teacher"]["bc_epochs"]),
+        epochs=int(args.bc_epochs or config["teacher"]["bc_epochs"]),
         batch_size=int(config["teacher"]["bc_batch_size"]),
         learning_rate=float(config["teacher"]["bc_learning_rate"]),
         seed=int(config["teacher"]["bc_seed"]) + (1 if task == "capture" else 0),
@@ -361,6 +361,9 @@ def main() -> None:
     parser.add_argument("--max-attempts", type=int, default=120)
     parser.add_argument("--rollout-episodes", type=int, default=8)
     parser.add_argument("--rollout-max-steps", type=int, default=600)
+    parser.add_argument("--train-successes", type=int, default=0)
+    parser.add_argument("--heldout-successes", type=int, default=0)
+    parser.add_argument("--bc-epochs", type=int, default=0)
     parser.add_argument("--force-collect", action="store_true")
     args = parser.parse_args()
     config = load_config(str(CONFIG))
