@@ -1,0 +1,98 @@
+{
+  "schema": "normsense-v2-execution-recovery-v1",
+  "recorded_at": "2026-09-16T10:52:26+08:00",
+  "recovery_lineage": "RECOVERED_AFTER_EXECUTION_BUG_FIX",
+  "remote_head_at_start": "f1a9216c8fce801603b731aa9f300158ec1905a7",
+  "fix_commit": "81682667dbe8316154d5d78e6baecf3e736fe361",
+  "historical_failure_status": "FAILED_AGENT_C_EXECUTION",
+  "bug_fix_status": "BUG_FIXED",
+  "root_causes": [
+    "The formal launcher delegated finite_tree to the scratch preflight module, but that module never exported the symbol.",
+    "The compatibility implementation sent every ndarray, including non-numeric gradient_phase metadata and object arrays, directly to np.isfinite."
+  ],
+  "finite_check_contract": {
+    "checked": [
+      "torch tensors",
+      "numeric numpy arrays",
+      "numeric scalars",
+      "numeric leaves nested in mappings, lists, tuples, and object ndarrays"
+    ],
+    "ignored_as_metadata": [
+      "strings",
+      "bytes",
+      "None",
+      "non-numeric numpy arrays"
+    ],
+    "true_nan_inf_rejected": true
+  },
+  "gates": {
+    "A_targeted_regression": {
+      "status": "PASS",
+      "tests": "23 passed",
+      "coverage": "numeric tensors/arrays/scalars, object ndarray, nested containers, metadata, NaN/Inf, real NormSense transition"
+    },
+    "B_cpu_smoke": {
+      "status": "PASS",
+      "step": 256,
+      "training_updates": 1,
+      "actor_loss": -0.022538100679715473,
+      "value_loss": 0.5574234376351038
+    },
+    "C_cuda_smoke": {
+      "status": "PASS",
+      "physical_gpu": 0,
+      "step": 256,
+      "training_updates": 1,
+      "actor_loss": -0.02218794667472442,
+      "value_loss": 0.5037271728118261,
+      "optimizer_step": "PASS",
+      "checkpoint_and_log_write": "PASS"
+    },
+    "D_resume_smoke": {
+      "status": "PASS",
+      "model": "PASS",
+      "optimizer": "PASS",
+      "ValueNorm": "PASS",
+      "step": "PASS",
+      "RNG": "PASS",
+      "metadata": "PASS"
+    }
+  },
+  "formal_relaunch": {
+    "status": "FORMAL_RELAUNCH",
+    "launch_head": "81682667dbe8316154d5d78e6baecf3e736fe361",
+    "snapshot_at": "2026-09-16T10:52:26+08:00",
+    "runs": {
+      "NormSense-PureCapture": {
+        "pid": 1293736,
+        "tmux": "normsense_v2_recovered_pure_20260916",
+        "physical_gpu": 0,
+        "step": 14000,
+        "training_updates": 54,
+        "status": "RUNNING",
+        "output": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-PureCapture_RECOVERED_AFTER_EXECUTION_BUG_FIX"
+      },
+      "NormSense-Original-FullMix": {
+        "pid": 1293741,
+        "tmux": "normsense_v2_recovered_original_20260916",
+        "physical_gpu": 1,
+        "step": 0,
+        "training_updates": 0,
+        "status": "INITIAL_CHECKPOINT_EVAL_69_OF_80",
+        "output": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-Original-FullMix_RECOVERED_AFTER_EXECUTION_BUG_FIX"
+      },
+      "NormSense-CaptureDownweight05-FullMix": {
+        "pid": 1293745,
+        "tmux": "normsense_v2_recovered_downweight05_20260916",
+        "physical_gpu": 1,
+        "step": 0,
+        "training_updates": 0,
+        "status": "INITIAL_CHECKPOINT_EVAL_69_OF_80",
+        "output": "runs/2026-09-16_normsense_v2_execution_recovery/NormSense-CaptureDownweight05-FullMix_RECOVERED_AFTER_EXECUTION_BUG_FIX"
+      }
+    },
+    "training_updates_observed": true,
+    "experiment_success_claimed": false,
+    "monitoring": "one-time health confirmation complete; no long-term monitoring requested"
+  }
+}

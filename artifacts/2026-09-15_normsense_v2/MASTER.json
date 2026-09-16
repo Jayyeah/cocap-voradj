@@ -134,8 +134,8 @@
   },
   "formal_training_started": true,
   "formal_training_completed": false,
-  "training_updates_observed": false,
-  "training_launch": "started_but_failed_before_first_update; no rerun per user instruction",
+  "training_updates_observed": true,
+  "training_launch": "RECOVERED_AFTER_EXECUTION_BUG_FIX; formal relaunch active; experiment outcome not yet known",
   "execution_snapshot": {
     "recorded_at": "2026-09-16T09:43:11+08:00",
     "launch_head": "cd8a5c9",
@@ -200,5 +200,51 @@
       "V2 Pure-Coverage",
       "200k Full-Mix extension"
     ]
+  },
+  "execution_recovery": {
+    "status_sequence": [
+      "FAILED_AGENT_C_EXECUTION",
+      "BUG_FIXED",
+      "SMOKE_PASS",
+      "FORMAL_RELAUNCH"
+    ],
+    "snapshot_at": "2026-09-16T10:52:26+08:00",
+    "fix_commit": "81682667dbe8316154d5d78e6baecf3e736fe361",
+    "artifact": "artifacts/2026-09-15_normsense_v2/execution_recovery_20260916.json",
+    "gates": {
+      "A_targeted_regression": "PASS_23_TESTS",
+      "B_cpu_update": "PASS",
+      "C_cuda_update": "PASS",
+      "D_resume": "PASS"
+    },
+    "recovery_lineage": "RECOVERED_AFTER_EXECUTION_BUG_FIX",
+    "training_updates_observed": true,
+    "experiment_success_claimed": false,
+    "runs": {
+      "NormSense-PureCapture": {
+        "pid": 1293736,
+        "tmux": "normsense_v2_recovered_pure_20260916",
+        "physical_gpu": 0,
+        "step": 14000,
+        "training_updates": 54,
+        "status": "RUNNING"
+      },
+      "NormSense-Original-FullMix": {
+        "pid": 1293741,
+        "tmux": "normsense_v2_recovered_original_20260916",
+        "physical_gpu": 1,
+        "step": 0,
+        "training_updates": 0,
+        "status": "INITIAL_CHECKPOINT_EVAL_69_OF_80"
+      },
+      "NormSense-CaptureDownweight05-FullMix": {
+        "pid": 1293745,
+        "tmux": "normsense_v2_recovered_downweight05_20260916",
+        "physical_gpu": 1,
+        "step": 0,
+        "training_updates": 0,
+        "status": "INITIAL_CHECKPOINT_EVAL_69_OF_80"
+      }
+    }
   }
 }

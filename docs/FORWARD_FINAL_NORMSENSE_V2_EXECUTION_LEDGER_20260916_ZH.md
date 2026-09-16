@@ -111,3 +111,37 @@ Legacy Pure-Coverage checkpoint 在 V2 argmax 下的 transfer shift 已由 Agent
 
 已 fetch 并确认远端目标分支无落后提交；失败记录已推送至：
 `origin/experiment/density-normalized-sensing-v2-20260915`，同步提交为 `3007a02`（后续仅补充本节状态记录）。
+
+## 2026-09-16 execution recovery / relaunch
+
+状态序列：`FAILED_AGENT_C_EXECUTION -> BUG_FIXED -> SMOKE_PASS -> FORMAL_RELAUNCH`。这只是成功恢复执行并正式重启，不是实验成功。
+
+启动时重新 fetch；远端最新 HEAD 为 `f1a9216c8fce801603b731aa9f300158ec1905a7`。修复与 regression 已先提交并推送为 `81682667dbe8316154d5d78e6baecf3e736fe361`。
+
+两个执行层 root cause：
+
+1. 初版 formal launcher 的本地 `finite_tree()` 包装器委托给 scratch preflight module，但该 module 从未导出这个 symbol，因此第一次 training transition 抛出 `AttributeError`。
+2. 后续兼容实现把所有 ndarray 无条件传给 `np.isfinite`；真实 transition 含 `gradient_phase` Unicode metadata ndarray，object ndarray 也可能包含 string / None / nested containers，因此抛出 `TypeError`。新公共 helper 只检查数值 tensor / ndarray / scalar，递归处理 mapping / list / tuple / object ndarray，并忽略非数值 metadata；真正 NaN/Inf 仍 fail closed。
+
+Gate 结果：
+
+- Gate A targeted regression：`PASS (23 passed)`，覆盖 torch tensor、float/int ndarray、object ndarray、nested dict/list/tuple、string/None metadata、真实 NormSense transition，以及真实 NaN/Inf。
+- Gate B CPU：`PASS`，256 real transitions、1 PPO update；actor/value loss 与 advantage/return finite。
+- Gate C CUDA0：`PASS`，256 real transitions、1 PPO update；optimizer step、loss、advantage/return、checkpoint/log 均正常。
+- Gate D resume：`PASS`；model、optimizer、ValueNorm、step、RNG、metadata round-trip 一致。
+
+旧 `runs/2026-09-15_normsense_v2` step-0 failed artifacts 保留且未覆盖。新 lineage 固定为 `RECOVERED_AFTER_EXECUTION_BUG_FIX`，输出根为 `runs/2026-09-16_normsense_v2_execution_recovery`。
+
+`2026-09-16T10:52:26+08:00` 快照：
+
+| line | tmux | PID | physical GPU | current step | updates | status |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| NormSense-PureCapture | `normsense_v2_recovered_pure_20260916` | 1293736 | 0 | 14000 | 54 | `RUNNING` |
+| NormSense-Original-FullMix | `normsense_v2_recovered_original_20260916` | 1293741 | 1 | 0 | 0 | `INITIAL_CHECKPOINT_EVAL 69/80` |
+| NormSense-CaptureDownweight05-FullMix | `normsense_v2_recovered_downweight05_20260916` | 1293745 | 1 | 0 | 0 | `INITIAL_CHECKPOINT_EVAL 69/80` |
+
+PureCapture 已明确产生训练 update；其 actor/value loss、advantage/return 均 finite。三进程均存活，GPU0/1 显存约 4.75/2.87 GiB，无 Traceback/OOM/NaN/Inf。两条 Full-Mix 仍在合同规定的 step-0 eval，不能把 eval 中写成已训练。
+
+ETA（只作资源规划，不是结果承诺）：PureCapture launcher 当前 ETA 约 5 小时 27 分；两条 Full-Mix 预计约 3--6 分钟进入训练，100k 完成粗估各 5--7 小时（包含后续 25k eval）。按用户最新要求，本次只做一次状态确认，不再长期监控；进程继续运行，25k 节点由后续人工检查。
+
+机器可读记录见 `artifacts/2026-09-15_normsense_v2/execution_recovery_20260916.json`。禁止项、预算、seed、alpha、reward、网络、transition semantics 和 rollout budget 均未改变。
