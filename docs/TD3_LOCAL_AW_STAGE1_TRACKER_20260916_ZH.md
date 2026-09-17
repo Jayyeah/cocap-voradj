@@ -143,3 +143,108 @@ python3 -u tools/train_td3_local_aw_stage1_20260916.py \
 Coverage/capture gate 按任务书原定义执行；normal 与 stationary capture 永远分列。Q1/Q2、Q-gap、Bellman target、TD error、predicted Q vs empirical discounted MC proxy，以及 success/failure 条件分组均进入 milestone report。不能把 proxy 表述成 true Q。
 
 当前 STOP / promotion 状态：**停在 Stage 1；Stage-1 task gate 尚无正式结果；Stage 2 不允许开启。**
+
+---
+
+## 2026-09-17 15:25 CST 会话交接快照
+
+### 代码与验证
+
+- 恢复基线：`experiment/density-normalized-sensing-v2-20260915@72c59392436967162fd99cf85b256bae263f0884`。
+- 本快照对应最新实现 HEAD：`f451172d9db9a0e2b135fd9ca750eedc7dcd8b0e`；已推送到 `origin/experiment/td3-local-aw-stage1-20260916`。
+- 新增严格隔离的 matched discrete runner：`tools/run_td3_stage1_discrete_baseline_20260917.py`。
+- IQN 新增向后兼容的 `terminated_only` replay 模式：true terminal 不 bootstrap，time-limit truncation 继续 bootstrap；旧 `terminal_state` 默认语义未改变。
+- 离散 runner 固定使用 single-task 的 2M reward clock。审计曾捕获通用 IQN trainer 会把 `coverage_ce_speed_weight` 按历史 step-0 schedule 静默改为 0；隔离 subclass 现保持 live env 精确等于 NormSense-V2 task contract。
+- D1/D2 scratch 模型初始化 bit-exact；D3 初始 Actor/Value/ValueNorm hash 硬断言与 D4 相同。
+- CPU IQN real-env/checkpoint smoke PASS；CPU MAPPO 256-step rollout、1 次 production PPO update、finite 与 resume hash smoke PASS。
+- 最新聚焦回归：`51 passed`；仅 protobuf deprecation warnings。
+
+### TD3 正式里程碑
+
+下表均为同一组 20 个 deterministic seeds（`2026191501–20`）。`Qmin-MC` 只是 predicted Q 与经验折扣 return 的 proxy，不是真实 Q。
+
+| run / step | task ability | geometry / ladder | collision | action | Qmin-MC |
+|---|---|---|---:|---|---:|
+| C1 scratch 25k | coverage 0/20 | CE RMS .2011 / CV .3667 | 0% | saturation 100%，速度 0 | +26.94 |
+| C1 scratch 50k | coverage 0/20 | 与 no-op 相同 | 0% | saturation 100%，速度 0 | +12.04 |
+| C1 scratch 75k | coverage 0/20 | 与 no-op 相同 | 0% | saturation 100%，速度 0 | +3.09 |
+| C1 scratch 100k | coverage 0/20 | CE RMS .2011 / max .2954 / CV .3667 | 0% | 常量 `a=-.4,w=+π/6`，速度 0 | -4.88 |
+| C2 scratch 25k | capture 0/20 | min distance 10.08；ring2/3=0 | 15% | saturation 96.5% | -16.47 |
+| C2 scratch 50k | capture 0/20 | min distance 13.95；ring2/3=0 | 5% | saturation 28.4% | -41.84 |
+| C2 scratch 75k | capture 0/20 | min distance 12.34；ring2/3=0 | 5% | saturation 20.7% | -53.57 |
+| C3 warm 25k | coverage 0/20 | CE RMS .1395 / CV .2384 | 15% | saturation 76.0% | +18.61 |
+| C3 warm 50k | coverage 0/20 | CE RMS .1768 / CV .3329 | 10% | saturation 54.4% | +12.82 |
+| C3 warm 75k | coverage 0/20 | CE RMS .1281 / CV .2055 | 15% | saturation 59.0% | +6.92 |
+| C4 warm 25k | capture 0/20 | ring2 20%；ring3 0；min 6.40 | 100% | saturation 67.1% | +25.76 |
+| C4 warm 50k | **normal 1/20** | ring2 35%；ring3 10%；min 8.60 | 95% | saturation 86.8% | -42.15 |
+| C4 warm 75k | capture 0/20 | ring2/3=0；min 9.31 | 65% | saturation 74.0% | -142.64 |
+
+C1 已完成完整 100k checkpoint/replay/manifest/final，wall-clock `56,458.5s`，critic/policy updates=`95,001/47,500`。它不是高速穿越式假改善，而是“饱和负加速度指令 + 零速”的行为 collapse，精确复现 no-op control：
+
+- no-op：CE RMS `.2011`、max `.2954`、CV `.3667`、success 0/20、collision 0；
+- random：success 0/20、collision 20/20。
+
+因此截至本快照，**Q1 / Coverage Gate 对 formal seed 已明确 FAIL**；不应自动续训超过 100k。
+
+C2/C4 已完成 100k optimizer budget，正在跑 20-seed deterministic eval，尚不能把训练累计统计冒充最终结果。C3 为 93k：
+
+| run | PID | 状态 |
+|---|---:|---|
+| C2 Capture Scratch | 1627516 | 100k deterministic eval / snapshot pending |
+| C3 Coverage Warm | 1637678 | 93k；critic/policy=88,001/44,000 |
+| C4 Capture Warm | 1630254 | 100k deterministic eval / snapshot pending |
+
+### Warm-start 实际证据
+
+| task | held-out physical-AW MSE | held-out AW9 agreement | RL 前 common-seed rollout |
+|---|---:|---:|---|
+| coverage | .06957 | 69.35% | 8/8 CE success，0 collision；CE RMS .0420，CV .0732 |
+| capture | .01788 | 82.76% | 8/8 normal capture，0 collision；平均 37.1s |
+
+warm-start 在 step 0 给出明确能力，但在 TD3 更新后不稳定：
+
+- coverage：25/50/75k formal success 均为 0；相对 scratch/no-op 的 CE RMS 改善约 30.6% / 12.0% / 36.3%，但没有保持几何成功；
+- capture：scratch 到 75k 没有 ring2/3；warm 在 25k 首现 ring2，50k 首现 ring3 与 1 次 normal capture，但 75k 消失；
+- C4 50k 的唯一成功轨迹 `Qmin-MC=-111.57`，失败轨迹为 `-38.49`，是 rare success 被 twin-min 强烈低估的 proxy；不能表述为已知 true-Q bias。
+
+阶段性 Q3 结论：IQN warm-start 带来巨大的 **初始能力与早期 geometry/sample-efficiency** 提升，但没有带来稳定的 TD3 retention；当前不能宣称稳定性提升。
+
+### D4 与 matched baselines
+
+D4 checkpoint 内 live environment 已逐对象验证与 `discrete_task_config("capture")` 完全相等：4v1、AW9、NormSense-V2 radius 52.2173、horizon 3000、reward clock 2.1M、seed/eval seeds 均 matched。100k 补评 SHA256：
+
+- checkpoint：`b31e11fbcf10c710e7bae16cfe62ab78ac4848337a79b1a1679665ab19b0edbc`
+- eval：`78703f5d9a8c8bb9a4792a72f0ad0dc46a1fa9a2fdb577ed3d54432d699c020e`
+
+| D4 step | normal | ring2 | ring3 | collision |
+|---:|---:|---:|---:|---:|
+| 25k | 0% | 0% | 0% | 0% |
+| 50k | 0% | 5% | 0% | 100% |
+| 75k | 0% | 75% | 15% | 100% |
+| 100k | 5% | 85% | 30% | 95% |
+
+D4 到 100k 有 capture/ring 信号，但碰撞极高，不能描述为稳定安全能力。
+
+D1/D2/D3 没有可冒充 matched 的历史 artifact，因此已发布新 runner 并建立非侵入式队列：
+
+- `td3_d2_then_d1_baselines`：等待 C2 PID 1627516 退出后，在 GPU0 顺序运行 D2 Capture IQN → D1 Coverage IQN；
+- `td3_d3_baseline`：等待 C3 PID 1637678 退出后，在 GPU1 运行 D3 Coverage MAPPO；
+- 队列仅轮询 PID，不发送信号；本快照时均处于 sleep，未占用 GPU、未创建输出目录。
+
+预定 artifacts：
+
+- `runs/2026-09-17_td3_stage1_discrete_baselines/D2_IQN_Capture_Scratch/`
+- `runs/2026-09-17_td3_stage1_discrete_baselines/D1_IQN_Coverage_Scratch/`
+- `runs/2026-09-17_td3_stage1_discrete_baselines/D3_MAPPO_Coverage_Scratch/`
+
+### 阶段性 Gate / STOP
+
+- Coverage scratch：**FAIL at 100k**。
+- Capture scratch：截至 75k **FAIL**；100k deterministic eval pending。
+- Warm-start：step-0 capability 强，但 retention/stability **FAIL / pending final100**。
+- teammate-conditioning：**没有直接证据**。当前 coverage scratch 本身失败，且 capture 失败可由 action collapse / severe Q under-estimation 解释；尚未建立“同一 `(o_i,a_i)` 因 `a_-i` 不同而 return 显著不同”的条件证据。
+- Stage 2：**不允许开启**（coverage Gate 已失败，且完整 matched matrix 未收口）。
+- Stage 3：**不允许开启**（没有 teammate-action conditioning 的归因证据）。
+- 自动延训：禁止；100k 后先审计。
+
+本线仍是 continuous-control capability audit，不是 CoCap/MAPPO 主线的既定替换。FullMix、phase-aware replay、MADDPG/MATD3、central critic、GNN/GAT 与 `is_pursuing` removal 均未启动。
