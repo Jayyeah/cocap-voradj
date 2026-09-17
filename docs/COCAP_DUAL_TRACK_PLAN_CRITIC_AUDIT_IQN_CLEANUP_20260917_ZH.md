@@ -167,6 +167,16 @@ Q(s,a_{good})>Q(s,a_{bad})
 | Q 都好、MAPPO V 明显差 | MAPPO state-value / phase aliasing 更可疑 | 聚焦 V/GAE，不泛化成所有 critic 问题 |
 | 所有 critic 都差 | observation/history 仍非充分 Markov 表示，或 return 条件方差太大 | 查 state/history/belief，不继续堆算法 |
 
+### 2026-09-18 A0/A1 实测状态
+
+A0 → Gate → A1 已在独立分支 `experiment/critic-identifiability-audit-20260917` 完成，详见 `docs/CRITIC_IDENTIFIABILITY_AUDIT_20260917_ZH.md` 与 `artifacts/2026-09-17_critic_identifiability_audit/critic_comparison.json`。
+
+- 唯一生成器为冻结 Final IQN `epsilon=.05`；Pure Capture / Pure Coverage / Mixed 资格分别为 `8/8、8/8、6/8`，state hash 前后一致。
+- bank 为 60 episodes、16,728 transitions、66,912 active-agent rows；49 success / 11 failure。稀有 collision 通过 89-seed 搜索得到 4 个独立 seed，并按 train/validation/test 形成 `4/4/8` rows；MC、termination/truncation、split 泄漏与冻结 actor Gate 全部通过。
+- heldout MC `(RMSE, EV)`：LQ `(34.84,.593)`、NQ `(32.59,.643)`、CQ `(42.39,.398)`、V `(43.28,.375)`；分类为 **`LOCAL_SUFFICIENT`**。NQ 有温和改善但未到预注册显著门槛，central Q/V 没有收益。
+- 成功捕获 vs 碰撞 transition 的 Q ordering 稳定成立，但 twin AW9 action top-1 一致率仅 LQ/NQ/CQ `0.185/0.208/0.283`；ring3/capture 与 early recovery 仍是关键高误差区。因此该分类只支持“local 表示可拟合 realized MC”，不等价于反事实动作排序可靠。
+- A1 提供进入 A2 的表示层证据，但本轮严格未执行 A2/A3/A4、bootstrap、online RL 或 actor update。后续只有在单独授权时才能启动 A2。
+
 ---
 
 ## A2 — Native Bootstrap Audit

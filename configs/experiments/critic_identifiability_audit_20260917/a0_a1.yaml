@@ -1,0 +1,56 @@
+schema: critic-identifiability-a0-a1-v1
+scope: A0_GATE_A1_ONLY
+gamma: 0.99
+teacher:
+  checkpoint: artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt
+  sha256: 2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89
+  policy: iqn_epsilon05
+  parent_iqn_checkpoint: artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt
+  parent_iqn_sha256: 2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89
+  frozen: true
+collection:
+  seed_base: 2026491701
+  pure_capture_episodes: 18
+  pure_coverage_episodes: 18
+  mixed_episodes: 24
+  known_rare_mixed_seeds_by_split:
+    train: [2026096170]
+    validation: [2026096217]
+    test: [2026096251, 2026096258]
+  max_steps: 3000
+  splits: {train: 0.7, validation: 0.15, test: 0.15}
+  qualification_episodes: 8
+  qualification_min_success_rate: 0.75
+  qualification_max_collision_rate: 0.25
+gate:
+  minimum_success_episodes: 6
+  minimum_failure_episodes: 1
+  minimum_normal_capture_rows: 24
+  minimum_ring3_rows: 64
+  minimum_collision_rows: 4
+  minimum_collision_rows_per_split: 4
+  minimum_early_recovery_rows: 64
+  require_mc_recompute_exact: true
+  require_no_episode_seed_leakage: true
+  require_actor_bit_exact: true
+training:
+  hidden_dim: 256
+  num_heads: 8
+  num_layers: 4
+  dropout: 0.0
+  batch_size: 256
+  updates: 1200
+  learning_rate: 0.0001
+  weight_decay: 0.000001
+  grad_clip: 0.5
+  seeds: [2026091711, 2026091712]
+  validation_every: 100
+  event_balance_cap: 12.0
+forbidden:
+  actor_update: true
+  online_rl: true
+  bootstrap_target: true
+  gae: true
+  reward_change: true
+  sensing_change: true
+  a2_a3_a4: true
