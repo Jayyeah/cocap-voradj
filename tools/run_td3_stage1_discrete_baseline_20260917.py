@@ -217,6 +217,7 @@ class MatchedIQNTrainer(CoCapTrainer):
 
     def __init__(self, config: dict, task: str):
         self.stage1_task = task
+        self.stage1_wall_started = time.monotonic()
         super().__init__(config)
 
     def _task_config(self, task: str) -> dict:
@@ -242,6 +243,22 @@ class MatchedIQNTrainer(CoCapTrainer):
     def _select_actions(self, task: str, obs_list):
         self.envs[task].total_steps = 2_000_000 + int(self.global_step)
         return super()._select_actions(task, obs_list)
+
+    def _save_checkpoint(self, name: str) -> Path:
+        path = super()._save_checkpoint(name)
+        if self.global_step == 0 or self.global_step in MILESTONES or name.startswith("final_"):
+            payload = {
+                "status": "TRAINING" if self.global_step < self.total_timesteps else "TRAINING_BUDGET_REACHED",
+                "step": int(self.global_step),
+                "budget": int(self.total_timesteps),
+                "wall_seconds": time.monotonic() - self.stage1_wall_started,
+                "updates": int(self.update_steps),
+                "replay_size": int(len(self.replays["voradj"])),
+                "checkpoint": str(path),
+            }
+            write_json(self.run_dir / "checkpoint_timing" / f"step_{self.global_step:06d}.json", payload)
+            write_json(self.run_dir / "status.json", payload)
+        return path
 
     def _reset_task(self, task: str):
         observations = super()._reset_task(task)
@@ -448,6 +465,7 @@ def evaluate_policy(
             "records": records,
             "summary": summary,
             "training_rng_preserved": True,
+            "elapsed_seconds": time.monotonic() - started,
         }
         write_json(path, report)
         return report
