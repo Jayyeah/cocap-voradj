@@ -112,6 +112,21 @@ def safe_json_dumps(payload: Any, **kwargs: Any) -> str:
 FULL_RESUME_SCHEMA = "cocap_iqn_full_resume_v1"
 
 
+def replay_transition_done(environment_done: bool, info: Dict[str, Any], mode: str) -> bool:
+    """Resolve the IQN bootstrap mask without conflating truncation and terminal."""
+    if mode == "terminal_state":
+        return bool(environment_done and info.get("state") != "all targets captured")
+    if mode == "environment_done":
+        return bool(environment_done)
+    if mode == "terminated_only":
+        if "terminated" not in info or "truncated" not in info:
+            raise RuntimeError(
+                "terminated_only replay requires explicit terminated/truncated info"
+            )
+        return bool(info["terminated"])
+    raise ValueError(f"unsupported replay_done_mode: {mode}")
+
+
 def _resume_contract(config: Dict[str, Any]) -> Dict[str, Any]:
     """Return the immutable training contract used to reject unsafe resumes."""
 
@@ -206,6 +221,11 @@ class CoCapTrainer:
         if self.update_rule not in {"distributional_iqn", "mean_dqn"}:
             raise ValueError("iqn.update_rule must be 'distributional_iqn' or 'mean_dqn'")
         self.replay_done_mode = str(iqn_cfg.get("replay_done_mode", "terminal_state")).strip().lower()
+        if self.replay_done_mode not in {"terminal_state", "environment_done", "terminated_only"}:
+            raise ValueError(
+                "iqn.replay_done_mode must be terminal_state, environment_done, "
+                "or terminated_only"
+            )
         base_learning_rate = float(iqn_cfg.get("learning_rate", 1e-4))
         schedule_cfg = iqn_cfg.get("learning_rate_schedule", []) or []
         self.learning_rate_schedule = sorted(
@@ -1186,10 +1206,10 @@ class CoCapTrainer:
                 next_obs = result.observations[i]
                 if next_obs is None:
                     next_obs = zero_like_obs(prev_obs[i])
-                transition_done = bool(result.dones[i])
-                info_state = result.infos[i].get("state") if i < len(result.infos) and isinstance(result.infos[i], dict) else None
-                if self.replay_done_mode == "terminal_state" and info_state == "all targets captured":
-                    transition_done = False
+                info = result.infos[i] if i < len(result.infos) and isinstance(result.infos[i], dict) else {}
+                transition_done = replay_transition_done(
+                    bool(result.dones[i]), info, self.replay_done_mode
+                )
                 metadata = {}
                 if i < len(result.infos) and isinstance(result.infos[i], dict):
                     metadata = result.infos[i].get("replay_metadata", {}) or {}
