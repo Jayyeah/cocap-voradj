@@ -243,3 +243,18 @@ Full-Mix 最终 eval 的 CE RMS / area CV：Original argmax mixed/coverage `0.19
 `NormSense-Final-PureCapture-Conservative300k`：PID `1423380`，GPU 0，快照 `step=287100/300000`、`training_updates=1121`、约 `11.54 step/s`，状态 `RUNNING`；训练剩余约 `1118s`（约 19 分钟），300k final eval 尚未开始。该线仅预注册 horizon `3000→1000`（含 `pre_capture_max_length=1000`）和 Actor dropout `.1→0`，不得把当前 287.1k 状态当作最终结果。
 
 机器可读完成线汇总：`artifacts/2026-09-15_normsense_v2/normsense_v2_completed_lines_results_20260916.json`。原始最终 eval 文件仍保留在各 run 目录；本节只记录已完成线可复核的关键字段，不替代原始 episode records。
+
+## 四条实验线最终完成汇总（2026-09-17 14:29）
+
+Conservative300k 已达到 `300000/300000`，最终 eval `40/40`，状态 `STOP_FOR_MASTER_REVIEW`。至此本轮四条目标线全部完成；没有未完成训练线，也没有把中间 checkpoint 当作最终结果。
+
+| line | final step / eval | seed | horizon / dropout | capture argmax / sample | ring2/ring3 argmax / sample | collision episode rate argmax / sample | enemy-visible argmax / sample | total return argmax / sample |
+|---|---:|---:|---|---|---|---|---|---|
+| Pure baseline | 250k / 40 | 2026091501 | 3000 / .1 | 5% / 5% | 65/15% / 50/25% | 95% / 95% | .9654 / .9922 | -51.272 / -250.093 |
+| Conservative300k | 300k / 40 | 2026091501 | 1000 / 0 | 0% / 0% | 55/5% / 0/0% | 100% / 90% | .9918 / .9934 | -433.295 / -207.644 |
+| Original Full-Mix | 100k / 80 | 2026091401 | 3000 / contract | 0 / 0 | mixed/coverage: 0/0 | sample mixed/coverage collision 16/20 / 15/20 | — | CE RMS mixed/coverage .19705 / .29735 (argmax) |
+| Downweight05 Full-Mix | 100k / 80 | 2026091401 | 3000 / contract | 0 / 0 | mixed/coverage: 0/0 | sample mixed/coverage collision 17/20 / 18/20 | — | CE RMS mixed/coverage .19705 / .29735 (argmax) |
+
+Conservative300k 细项：argmax 无 capture，ring3 hold mean `0.5`，enemy-visible `0.991843`，first detection latency `4.2`，collision events `20`（AA/obstacle/boundary `11/3/0`），discounted return `-10.009`；sample 无 capture，ring3 visitation/hold 为 `0/0`，enemy-visible `0.993410`，first detection latency `4.25`，collision events `18`（AA/obstacle/boundary `14/4/0`），discounted return `9.729`。其健康 gate 为 PASS，Actor hash `187f401b…`，training updates `1171`。
+
+最终机器可读汇总仍为 `artifacts/2026-09-15_normsense_v2/normsense_v2_completed_lines_results_20260916.json`；原始 Conservative300k eval 为 `runs/2026-09-16_normsense_v2_pure_capture_v2/NormSense-Final-PureCapture-Conservative300k/eval_step_300000.json`。四条线均冻结，后续只进行 master review，不再自动续训。

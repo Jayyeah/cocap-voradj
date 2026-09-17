@@ -1,8 +1,9 @@
 {
   "schema": "normsense-v2-completed-lines-results-v1",
-  "recorded_at": "2026-09-16T22:30:01+08:00",
+  "recorded_at": "2026-09-17T14:29:38+08:00",
   "source_head": "72c5939",
-  "status": "THREE_LINES_COMPLETE_ONE_LINE_RUNNING",
+  "status": "ALL_FOUR_LINES_COMPLETE_STOP_FOR_MASTER_REVIEW",
+  "all_target_lines_complete": true,
   "completed_lines": {
     "NormSense-Final-PureCapture-Baseline": {
       "status": "STOP_FOR_MASTER_REVIEW",
@@ -101,24 +102,65 @@
         "sample_mixed": {"capture": 0, "ce_success": 0, "collision": 17, "boundary": 14, "ce_rms": 0.20080951, "area_cv": 0.32542106},
         "sample_coverage": {"capture": 0, "ce_success": 1, "collision": 18, "boundary": 5, "ce_rms": 0.18949155, "area_cv": 0.33707192}
       }
-    }
-  },
-  "unfinished_lines": {
+    },
     "NormSense-Final-PureCapture-Conservative300k": {
-      "status": "RUNNING",
-      "pid": 1423380,
-      "physical_gpu": 0,
-      "step": 287100,
+      "status": "STOP_FOR_MASTER_REVIEW",
+      "step": 300000,
       "budget": 300000,
-      "training_updates": 1121,
-      "steps_per_second": 11.5440251820,
-      "training_eta_seconds": 1117.5,
-      "next_checkpoint": 300000,
-      "final_eval": "NOT_STARTED",
-      "contract_delta": "episode_max_length 3000 to 1000; pre_capture_max_length 1000; actor dropout .1 to 0; all other audited Final contract fields unchanged",
-      "explicit_boundary": "No final performance claim before 300k checkpoint and eval."
+      "training_updates": 1171,
+      "eval_progress": "40/40",
+      "eval_artifact": "runs/2026-09-16_normsense_v2_pure_capture_v2/NormSense-Final-PureCapture-Conservative300k/eval_step_300000.json",
+      "actor_sha256": "187f401b46d2e1b5c093167fcada9656136102a0117735dc99e5950d7905c695",
+      "training_rng_preserved": true,
+      "contract": {
+        "seed": 2026091501,
+        "capture_reward_mode": "ring_importance_ms_v0",
+        "sensing": "NormSense V2 enemy+obstacle unified onboard radius; no global enemy broadcast",
+        "horizon": 1000,
+        "pre_capture_max_length": 1000,
+        "actor_dropout": 0.0,
+        "only_declared_deltas": "baseline horizon 3000 to 1000 and actor dropout 0.1 to 0"
+      },
+      "argmax": {
+        "episodes": 20,
+        "capture_rate": 0,
+        "normal_capture_rate": 0,
+        "stationary_capture_rate": 0,
+        "ring2_visitation": 0.55,
+        "ring3_visitation": 0.05,
+        "longest_ring3_hold_mean": 0.5,
+        "enemy_visible_fraction": 0.9918429773,
+        "first_detection_latency_mean": 4.2,
+        "collision_episode_rate": 1.0,
+        "collision_event_total": 20,
+        "agent_agent_events": 11,
+        "obstacle_events": 3,
+        "boundary_events": 0,
+        "total_return_mean": -433.29518433,
+        "discounted_return_mean": -10.00884879
+      },
+      "sample": {
+        "episodes": 20,
+        "capture_rate": 0,
+        "normal_capture_rate": 0,
+        "stationary_capture_rate": 0,
+        "ring2_visitation": 0,
+        "ring3_visitation": 0,
+        "longest_ring3_hold_mean": 0,
+        "enemy_visible_fraction": 0.9934103812,
+        "first_detection_latency_mean": 4.25,
+        "collision_episode_rate": 0.9,
+        "collision_event_total": 18,
+        "agent_agent_events": 14,
+        "obstacle_events": 4,
+        "boundary_events": 0,
+        "total_return_mean": -207.64351141,
+        "discounted_return_mean": 9.72851370
+      },
+      "health_gate": "PASS; finite loss/ValueNorm/entropy/KL; checkpoint writable and resume metadata readable"
     }
   },
+  "unfinished_lines": {},
   "source_artifacts": {
     "telemetry_fix": "29d8498",
     "launcher_config": "6c5fdc3",
