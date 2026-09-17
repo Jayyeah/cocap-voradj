@@ -249,6 +249,8 @@ class CoCapTrainer:
             num_cosine_features=int(iqn_cfg.get("num_cosine_features", 32)),
             architecture=str(iqn_cfg.get("architecture", "dual_head")),
             pursuing_embed_dim=int(iqn_cfg.get("pursuing_embed_dim", 8)),
+            pursuer_feature_dim=int(iqn_cfg.get("pursuer_feature_dim", 7)),
+            include_is_pursuing=bool(iqn_cfg.get("include_is_pursuing", True)),
         )
         self.model = CoCapIQN(model_cfg).to(self.device)
         self.target_model = CoCapIQN(model_cfg).to(self.device)

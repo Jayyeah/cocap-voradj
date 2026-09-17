@@ -1,0 +1,41 @@
+{
+  "schema": "B0_FINAL_IQN_REFERENCE-v1",
+  "status": "frozen",
+  "teacher_checkpoint": "artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt",
+  "teacher_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+  "network_config": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "architecture": "voradj_single_head",
+    "num_quantiles": 32,
+    "num_cosine_features": 64,
+    "action_size": 9,
+    "self_feature_dim": 9,
+    "pursuer_feature_dim": 7,
+    "max_pursuers": 8,
+    "max_evaders": 8,
+    "max_obstacles": 5,
+    "pursuing_embed_dim": 8,
+    "include_is_pursuing": true
+  },
+  "action_contract": "AW9: a outer {-0.4,0,0.4}, w inner {-pi/6,0,pi/6}",
+  "observation_contract": "robot-frame Final VorAdj/VCT-LS; self9, pursuer8x7, evader8x7, obstacle5x5",
+  "reward_contract": "Final CR-MS/support/coverage/CE-PBRS/capture/post-capture recovery; unchanged in B1",
+  "sensing_contract": "Final local VorAdj/VCT-LS and friendly adjacency; no topology/radius change",
+  "is_pursuing_policy_path": [
+    "_has_enemy_neighbor -> raw pursuit evidence",
+    "_effective_is_pursuing + K10 release state -> effective pursuit",
+    "_pack_agent_obs self last column and friend last column; role-dependent friend ordering",
+    "CoCapIQN.voradj_single_feature self[-1] -> pursuing_embed(1->8) -> single_action_feature(264->256)"
+  ],
+  "role_metadata_retained": ["task_label", "reward_role", "effective_pursuing", "support_candidate"],
+  "trusted_artifacts": [
+    "artifacts/2026-09-08_forward_final/c0_formal20/report.json",
+    "artifacts/2026-09-08_forward_final/c3_formal100/iqn_greedy/report.json"
+  ],
+  "pure_capture_definition": "Final matched evaluator has no standalone pure-capture scene; mixed pre-capture/capture prefix is the pure-capture evidence",
+  "reward_changed": false,
+  "topology_changed": false,
+  "z_i_added": false
+}

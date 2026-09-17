@@ -127,6 +127,19 @@ class VorAdjEnv(CoCapEnv):
         self.last_task_labels = self._task_labels_from_map(data, update_effective=True)
         return self.get_observations()
 
+    def get_policy_observations(self, include_is_pursuing: bool) -> List[Optional[Dict[str, np.ndarray]]]:
+        """Pack the same physical state with an explicit policy role contract.
+
+        Reward and replay metadata continue to use the environment's effective
+        role state.  This method only selects which policy observation view is
+        requested, so B1 can obtain teacher and no-bit views at the same
+        pre-action state without changing dynamics or reward semantics.
+        """
+        return [
+            self._pack_agent_obs(i, include_is_pursuing=bool(include_is_pursuing))
+            for i in range(len(self.pursuers))
+        ]
+
     def _invalidate_voronoi_cache(self) -> None:
         self._voronoi_cache_version += 1
         self._voronoi_cache_version_tag = -1
@@ -1047,7 +1060,11 @@ class VorAdjEnv(CoCapEnv):
             self._update_effective_pursuing_flags(raw)
         return self._effective_task_labels(raw)
 
-    def _pack_agent_obs(self, idx: int) -> Optional[Dict[str, np.ndarray]]:
+    def _pack_agent_obs(
+        self,
+        idx: int,
+        include_is_pursuing: Optional[bool] = None,
+    ) -> Optional[Dict[str, np.ndarray]]:
         pursuer = self.pursuers[idx]
         if pursuer.deactivated:
             return None
@@ -1061,6 +1078,9 @@ class VorAdjEnv(CoCapEnv):
         adjacency = data.get("adjacency", {}).get(key, set())
         raw_is_pursuing = self._has_enemy_neighbor(data, key)
         is_pursuing = self._effective_is_pursuing(idx, raw_is_pursuing)
+        if include_is_pursuing is None:
+            include_is_pursuing = bool(self.per_cfg.get("include_is_pursuing", True))
+        include_is_pursuing = bool(include_is_pursuing)
 
         distance_scale = self._distance_scale()
         abs_vel = np.asarray(pursuer.velocity, dtype=float) if world_frame else self._robot_frame(pursuer, pursuer.velocity, True)
@@ -1118,10 +1138,10 @@ class VorAdjEnv(CoCapEnv):
                     float(is_out_of_bounds),
                     float((center_r[0] / distance_scale) * center_scale),
                     float((center_r[1] / distance_scale) * center_scale),
-                    float(is_pursuing),
-                    float(np.cos(pursuer.theta)),
-                    float(np.sin(pursuer.theta)),
                 ]
+                if include_is_pursuing:
+                    self_feat.append(float(is_pursuing))
+                self_feat.extend([float(np.cos(pursuer.theta)), float(np.sin(pursuer.theta))])
             else:
                 boundary_r, is_out_of_bounds = self._nearest_boundary_vector(pursuer)
                 self_feat = [
@@ -1133,8 +1153,9 @@ class VorAdjEnv(CoCapEnv):
                     float(is_out_of_bounds),
                     float((center_r[0] / distance_scale) * center_scale),
                     float((center_r[1] / distance_scale) * center_scale),
-                    float(is_pursuing),
                 ]
+                if include_is_pursuing:
+                    self_feat.append(float(is_pursuing))
                 if bool(self.per_cfg.get("include_yaw_features", False)):
                     self_feat += [float(np.cos(pursuer.theta)), float(np.sin(pursuer.theta))]
         else:
@@ -1146,8 +1167,9 @@ class VorAdjEnv(CoCapEnv):
                 float(nearest_y / distance_scale),
                 float((center_r[0] / distance_scale) * center_scale),
                 float((center_r[1] / distance_scale) * center_scale),
-                float(is_pursuing),
             ]
+            if include_is_pursuing:
+                self_feat.append(float(is_pursuing))
 
         friend_ids = [nk[1] for nk in adjacency if nk[0] == "pursuer" and not self.pursuers[nk[1]].deactivated]
         def friend_sort(j: int) -> Tuple[int, int, float]:
@@ -1157,7 +1179,32 @@ class VorAdjEnv(CoCapEnv):
                 -self._shared_count(data, key, other_key),
                 float(np.linalg.norm(self._position(self.pursuers[j]) - self._position(pursuer))),
             )
-        friend_ids = sorted(friend_ids, key=friend_sort)
+        if include_is_pursuing:
+            friend_ids = sorted(friend_ids, key=friend_sort)
+        else:
+            # Do not leave a role-dependent ordering channel after removing
+            # the friend role column.  This order is physical-only and is
+            # mirrored by the B1 teacher dataset canonicalizer.
+            def role_free_friend_sort(j: int) -> Tuple[float, ...]:
+                other = self.pursuers[j]
+                if world_frame:
+                    pos_r = self._position(other) - self._position(pursuer)
+                    vel_r = np.asarray(other.velocity, dtype=float)
+                else:
+                    pos_r = self._robot_frame(pursuer, self._position(other), False)
+                    vel_r = self._robot_frame(pursuer, other.velocity, True)
+                dist = float(np.linalg.norm(pos_r))
+                ang = float(np.arctan2(pos_r[1], pos_r[0]))
+                return (
+                    float(pos_r[0]),
+                    float(pos_r[1]),
+                    float(vel_r[0]),
+                    float(vel_r[1]),
+                    dist,
+                    ang,
+                    float(j),
+                )
+            friend_ids = sorted(friend_ids, key=role_free_friend_sort)
         pursuer_feats: List[List[float]] = []
         for j in friend_ids[:max_p]:
             other = self.pursuers[j]
@@ -1169,15 +1216,19 @@ class VorAdjEnv(CoCapEnv):
                 vel_r = self._robot_frame(pursuer, other.velocity, True)
             dist = float(np.linalg.norm(pos_r))
             ang = float(np.arctan2(pos_r[1], pos_r[0]))
-            pursuer_feats.append([
+            friend_feature = [
                 float(pos_r[0] / distance_scale),
                 float(pos_r[1] / distance_scale),
                 float(vel_r[0]),
                 float(vel_r[1]),
                 float(dist / distance_scale),
                 ang,
-                float(self._effective_is_pursuing(j, self._has_enemy_neighbor(data, ("pursuer", j)))),
-            ])
+            ]
+            if include_is_pursuing:
+                friend_feature.append(
+                    float(self._effective_is_pursuing(j, self._has_enemy_neighbor(data, ("pursuer", j))))
+                )
+            pursuer_feats.append(friend_feature)
 
         if self._vct_ls_enabled():
             enemy_ids = sorted(
@@ -1267,7 +1318,7 @@ class VorAdjEnv(CoCapEnv):
         types = [0] + [1] * max_p + [2] * max_e + [3] * max_o
         return {
             "self": np.asarray(self_feat, dtype=np.float32),
-            "pursuers": self._pad(pursuer_feats, max_p, 7),
+            "pursuers": self._pad(pursuer_feats, max_p, len(pursuer_feats[0]) if pursuer_feats else (7 if include_is_pursuing else 6)),
             "evaders": self._pad(evader_feats, max_e, 7),
             "obstacles": self._pad(obstacle_feats, max_o, 5),
             "masks": np.asarray(masks, dtype=bool),

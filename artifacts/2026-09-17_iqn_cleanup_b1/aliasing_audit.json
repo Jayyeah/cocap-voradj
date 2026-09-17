@@ -1,0 +1,67 @@
+{
+  "schema": "iqn-cleanup-b1-no-is-pursuing-v1",
+  "status": "complete",
+  "teacher_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+  "rows": 146612,
+  "cross_role_rows": {
+    "without_pursuing": 137139,
+    "with_pursuing": 9473
+  },
+  "physical_vector": {
+    "dimensions": 159,
+    "definition": "self/friend/evader/obstacle continuous features plus token masks; role columns removed; friend tokens physical-lexicographically sorted"
+  },
+  "nearest_cross_role_rmse": {
+    "p10": 0.16953713186814043,
+    "p25": 0.1891509128930569,
+    "p50": 0.21689006018931947,
+    "p90": 0.2817749631374694,
+    "threshold": 0.1,
+    "close_pairs": 118,
+    "close_pair_fraction": 0.0008604408665660388,
+    "close_action_mismatches": 87,
+    "close_action_mismatch_rate": 0.7372881355932204,
+    "threshold_curve": {
+      "0.05": {
+        "pairs": 0,
+        "pair_fraction": 0.0,
+        "action_mismatches": 0,
+        "action_mismatch_rate": 0.0
+      },
+      "0.1": {
+        "pairs": 118,
+        "pair_fraction": 0.0008604408665660388,
+        "action_mismatches": 87,
+        "action_mismatch_rate": 0.7372881355932204
+      },
+      "0.15": {
+        "pairs": 3338,
+        "pair_fraction": 0.024340267903368115,
+        "action_mismatches": 2517,
+        "action_mismatch_rate": 0.7540443379269023
+      },
+      "0.2": {
+        "pairs": 47388,
+        "pair_fraction": 0.3455472185155207,
+        "action_mismatches": 37324,
+        "action_mismatch_rate": 0.7876255592133029
+      }
+    }
+  },
+  "aliasing_categories": {
+    "target_recent_memory_or_local_target_evidence": 87
+  },
+  "counterfactual_role_sensitivity": {
+    "rows": 2048,
+    "own_self_bit_toggle_action_flip_rate": 0.76220703125,
+    "own_self_bit_toggle_mean_abs_q_delta": 23.71084213256836,
+    "friend_role_zeroing_action_flip_rate": 0.0849609375,
+    "friend_role_zeroing_mean_abs_q_delta": 6.5718865394592285,
+    "note": "counterfactual teacher sensitivity; no role bit is restored to the student"
+  },
+  "interpretation": {
+    "policy_shortcut": "own self role, friend role values, and role-dependent friend ordering are absent from the student view",
+    "hidden_state_test": "close cross-role physical pairs with different teacher actions indicate information not represented by instantaneous role-free local geometry",
+    "classification_rule": "direct target mask difference suggests local target evidence/history; neighbor mask difference suggests neighbor target evidence; otherwise role history/release timer is the leading proxy"
+  }
+}
