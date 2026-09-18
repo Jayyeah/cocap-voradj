@@ -1,6 +1,6 @@
 # IQN-Z-TOKEN scratch 运行记录（2026-09-18）
 
-更新时间：2026-09-18 18:23（Asia/Shanghai）
+更新时间：2026-09-18 23:27（Asia/Shanghai）
 
 ## 当前状态
 
@@ -34,6 +34,7 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - full-resume 恢复 z 完整状态通过
 - 真实环境 16 步产生 15 次 optimizer update；参数发生变化；loss 有限
 - target network 更新 15 次，最后同步 step=16
+- 正式 mixed 配置的 pursuing/pre-capture/post-capture/recovery 四类 replay 初始尺寸全部为 0
 - coverage/capture/mixed evaluator smoke 完成
 - GPU：NVIDIA RTX A6000
 
