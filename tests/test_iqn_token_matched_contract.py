@@ -82,3 +82,15 @@ def test_coordinator_ignores_stale_or_wrong_arm_status():
     assert coordinator.current_arm_status(stale, "role") == {}
     assert coordinator.current_arm_status(wrong_arm, "role") == {}
     assert coordinator.current_arm_status(current, "role") == current
+
+
+def test_json_finite_replaces_nested_non_finite_values():
+    payload = {"finite": 1.5, "nested": [float("inf"), np.float32("-inf"), float("nan")]}
+    assert matched.json_finite(payload) == {"finite": 1.5, "nested": [None, None, None]}
+
+
+def test_live_checkpoint_read_error_requires_three_consecutive_samples():
+    assert not coordinator.resume_error_is_fatal("truncated", True, 1)
+    assert not coordinator.resume_error_is_fatal("truncated", True, 2)
+    assert coordinator.resume_error_is_fatal("truncated", True, 3)
+    assert coordinator.resume_error_is_fatal("truncated", False, 1)
