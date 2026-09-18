@@ -1,6 +1,6 @@
 # IQN-Z-TOKEN scratch 运行记录（2026-09-18）
 
-更新时间：2026-09-18 18:17（Asia/Shanghai）
+更新时间：2026-09-18 18:23（Asia/Shanghai）
 
 ## 当前状态
 
@@ -56,6 +56,15 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - ROLE 仍有 `voradj.obstacle_sensing_radius=20`
 - ROLE 缺少 `voradj.onboard_sensing.{policy,schema_version,k,radius_floor}`
 
+
+另外，ROLE 的旧感知训练段已在 25k 正常返回（return code 0），并发生 2,429 次 mixed optimizer update；但 2026-09-18 18:23 复核时：
+
+- ROLE tmux、supervisor PID 和 child PID 均不存在；
+- 状态文件仍滞留为 `running`；
+- 25k formal evaluation 尚未生成；
+- 实际 full-resume 位于 run root，而监督器检查的是 run-name 子目录，存在路径合同不一致。
+
+因此 ROLE 当前既不是 NormSense-V2 matched control，也不是仍在后台推进的有效 200k 作业。Z 线不会自行修复或重启该独立工作树。
 这不是 evidence token 差异，故不能开始可归因的 ROLE-vs-Z 对照。
 
 ## 解阻条件与后续动作
