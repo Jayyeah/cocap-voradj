@@ -92,6 +92,9 @@ def test_supervisor_rechecks_actual_role_even_with_cached_sanity(monkeypatch, tm
     preflight = tmp_path / "preflight"
     preflight.mkdir()
     (preflight / "startup_sanity.json").write_text('{"status":"pass"}')
+    (tmp_path / "status.json").write_text(
+        json.dumps({"role_runtime_observation": {"last_step": 25000}})
+    )
     checked = []
 
     def reject(role_path, output):
@@ -105,6 +108,7 @@ def test_supervisor_rechecks_actual_role_even_with_cached_sanity(monkeypatch, tm
     status = json.loads((tmp_path / "status.json").read_text())
     assert status["status"] == "blocked_prelaunch"
     assert status["phase"] == "prelaunch_contract_gate"
+    assert status["role_runtime_observation"] == {"last_step": 25000}
 
 
 def test_friend_token_tail_maps_to_corresponding_z_j():

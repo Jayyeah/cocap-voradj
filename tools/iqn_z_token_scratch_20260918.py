@@ -763,21 +763,26 @@ def supervisor(output: Path, device: str, role_config: Path) -> int:
     output.mkdir(parents=True, exist_ok=True)
     # Never let a cached startup sanity bypass comparison with the ROLE config
     # that is actually current at launch time.
+    status_path = output / "status.json"
+    try:
+        previous_status = json.loads(status_path.read_text()) if status_path.is_file() else {}
+    except (OSError, json.JSONDecodeError):
+        previous_status = {}
     try:
         contract_preflight(output / "preflight", device, role_config)
     except BaseException as exc:
-        atomic_json(
-            output / "status.json",
-            {
-                "schema": SCHEMA,
-                "status": "blocked_prelaunch",
-                "phase": "prelaunch_contract_gate",
-                "role_config": str(role_config),
-                "z_config": str(Z_CONFIG),
-                "error": repr(exc),
-                "updated_at": now_local(),
-            },
-        )
+        blocked_status = {
+            "schema": SCHEMA,
+            "status": "blocked_prelaunch",
+            "phase": "prelaunch_contract_gate",
+            "role_config": str(role_config),
+            "z_config": str(Z_CONFIG),
+            "error": repr(exc),
+            "updated_at": now_local(),
+        }
+        if "role_runtime_observation" in previous_status:
+            blocked_status["role_runtime_observation"] = previous_status["role_runtime_observation"]
+        atomic_json(status_path, blocked_status)
         raise
     sanity_path = output / "preflight/startup_sanity.json"
     sanity = json.loads(sanity_path.read_text())
