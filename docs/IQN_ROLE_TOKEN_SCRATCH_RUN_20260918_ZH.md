@@ -1,5 +1,19 @@
 # IQN-ROLE-TOKEN scratch control（2026-09-18）
 
+## 2026-09-19 合同纠正
+
+此前旧 ROLE 运行已停止并判定为：
+
+`INVALID_FOR_ROLE_VS_Z_MATCHED_COMPARISON`
+
+- 停止时 live metric：`global_step=28000`；最后可恢复 checkpoint：25k。
+- 归档：`artifacts/2026-09-18_iqn_role_token_scratch/invalid_contract_pre_matched_20260919T002438+0800/`。
+- 原因：`legacy 20m sensing / non-NormSense-V2 + missing matched runtime assertions + non-token contract drift`。
+- 该归档不得用于 matched 结果，也不得恢复 actor、target、optimizer、replay、epsilon 或 global step。
+- 新正式 ROLE 必须在与 Z 完全匹配的 NormSense-V2 合同下从 `step=0` clean scratch 启动。
+
+下文关于旧 20m runtime、旧 preflight PASS 和旧启动/恢复命令仅作为历史记录，均已被本节撤销；新合同和新运行信息将在 matched preflight 完成后替换。
+
 ## 目的与边界
 
 本线回答：在相同当前 IQN 任务合同、算法、训练预算和网络主体下，binary `is_pursuing` token 与连续 propagated `z` token 哪一种更容易从 scratch 学出 coverage → capture → recovery。
