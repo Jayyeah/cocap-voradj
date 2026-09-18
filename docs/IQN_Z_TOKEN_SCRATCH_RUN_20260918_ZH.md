@@ -30,6 +30,7 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - Z observation shape：self `[9]`、friend `[8,7]`
 - physical friend rows 不受 role token 翻转影响
 - z 同步传播、direct z=1、pure coverage z=0、自然衰减语义通过
+- 10 个实际 populated friend token 均由物理特征唯一定位，且最后一维逐项等于对应 `z_j`
 - full-resume 恢复 z 完整状态通过
 - 真实环境 16 步产生 15 次 optimizer update；参数发生变化；loss 有限
 - target network 更新 15 次，最后同步 step=16
@@ -38,7 +39,7 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 
 机器证据：`artifacts/2026-09-18_iqn_z_token_scratch/reference_preflight/startup_sanity.json`。
 
-聚焦回归：25 passed，2 skipped；跳过项为条件性测试，不是失败。
+聚焦回归：26 passed，2 skipped；跳过项为条件性测试，不是失败。
 
 ## 实际 ROLE 门禁结果
 

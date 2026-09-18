@@ -105,3 +105,27 @@ def test_supervisor_rechecks_actual_role_even_with_cached_sanity(monkeypatch, tm
     status = json.loads((tmp_path / "status.json").read_text())
     assert status["status"] == "blocked_prelaunch"
     assert status["phase"] == "prelaunch_contract_gate"
+
+
+def test_friend_token_tail_maps_to_corresponding_z_j():
+    config = run.resolved(run.Z_CONFIG)
+    env, _ = run.make_env(config, "mixed", int(config["seed"]))
+    env.z_state[:] = np.linspace(0.1, 0.4, len(env.pursuers), dtype=np.float32)
+    observations = env.get_policy_observations(False, True)
+    assert run.assert_friend_z_mapping(env, observations) > 0
+
+    corrupted = copy.deepcopy(observations)
+    altered = False
+    for observation in corrupted:
+        if observation is None:
+            continue
+        for row in observation["pursuers"]:
+            if not np.allclose(row, 0.0):
+                row[-1] += 0.123
+                altered = True
+                break
+        if altered:
+            break
+    assert altered
+    with pytest.raises(AssertionError, match="friend token tail is not z_j"):
+        run.assert_friend_z_mapping(env, corrupted)

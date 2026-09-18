@@ -101,6 +101,71 @@ def state_hash(model: CoCapIQN) -> str:
     return digest.hexdigest()
 
 
+def assert_friend_z_mapping(
+    env: VorAdjEnv,
+    observations: list[dict[str, np.ndarray] | None],
+) -> int:
+    """Prove every populated friend-token tail equals that physical friend's z_j."""
+
+    world_frame = str(env.per_cfg.get("observation_frame", "robot")).strip().lower() in {
+        "world",
+        "world_frame",
+    }
+    distance_scale = env._distance_scale()
+    verified = 0
+    for observer_index, observation in enumerate(observations):
+        if observation is None:
+            continue
+        observer = env.pursuers[observer_index]
+        for row in np.asarray(observation["pursuers"], dtype=float):
+            if np.allclose(row, 0.0, atol=1e-8, rtol=0.0):
+                continue
+            matches: list[int] = []
+            for friend_index, friend in enumerate(env.pursuers):
+                if friend_index == observer_index or friend.deactivated:
+                    continue
+                if world_frame:
+                    pos_r = env._position(friend) - env._position(observer)
+                    vel_r = np.asarray(friend.velocity, dtype=float)
+                else:
+                    pos_r = env._robot_frame(observer, env._position(friend), False)
+                    vel_r = env._robot_frame(observer, friend.velocity, True)
+                distance = float(np.linalg.norm(pos_r))
+                expected = np.asarray(
+                    [
+                        pos_r[0] / distance_scale,
+                        pos_r[1] / distance_scale,
+                        vel_r[0],
+                        vel_r[1],
+                        distance / distance_scale,
+                        np.arctan2(pos_r[1], pos_r[0]),
+                    ],
+                    dtype=float,
+                )
+                if np.allclose(row[:6], expected, atol=1e-6, rtol=0.0):
+                    matches.append(friend_index)
+            if len(matches) != 1:
+                raise AssertionError(
+                    f"friend physical row does not identify exactly one agent: "
+                    f"observer={observer_index} matches={matches}"
+                )
+            friend_index = matches[0]
+            if not np.isclose(
+                row[-1],
+                float(env.z_state[friend_index]),
+                atol=1e-6,
+                rtol=0.0,
+            ):
+                raise AssertionError(
+                    f"friend token tail is not z_j: observer={observer_index} "
+                    f"friend={friend_index} token={row[-1]} z={env.z_state[friend_index]}"
+                )
+            verified += 1
+    if verified <= 0:
+        raise AssertionError("friend z_j mapping sanity observed no populated friend tokens")
+    return verified
+
+
 def flatten(value: Any, prefix: str = "") -> dict[str, Any]:
     if isinstance(value, Mapping):
         out: dict[str, Any] = {}
@@ -448,6 +513,7 @@ def contract_preflight(output: Path, device: str, role_config: Path) -> dict[str
     for before, after in zip(z_before, z_after):
         if before is not None and after is not None:
             np.testing.assert_array_equal(before[:, :6], after["pursuers"][:, :6])
+    friend_z_mapping_checks = assert_friend_z_mapping(env, z_after)
 
     env._reset_z_state()
     source = {0}
@@ -581,6 +647,7 @@ def contract_preflight(output: Path, device: str, role_config: Path) -> dict[str
             "friend_shape": [8, 7],
             "self_last_is_z": True,
             "friend_last_is_z": True,
+            "friend_z_mapping_checks": friend_z_mapping_checks,
             "is_pursuing_policy_input": False,
             "late_fusion": False,
             "z_special_branch": False,
