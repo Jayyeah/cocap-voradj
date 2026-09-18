@@ -8,6 +8,7 @@ import torch
 
 from cocap_voradj.models.iqn import CoCapIQN
 from tools import iqn_token_matched_20260919 as matched
+from tools import supervise_iqn_role_z_matched_20260919 as coordinator
 
 
 def test_role_z_full_contract_diff_is_allowlisted(tmp_path: Path):
@@ -72,3 +73,12 @@ def test_registered_science_variables_are_frozen():
     }
     assert matched.MILESTONES == tuple(range(25_000, 200_001, 25_000))
     assert role["total_timesteps"] == z["total_timesteps"] == 200_000
+
+
+def test_coordinator_ignores_stale_or_wrong_arm_status():
+    stale = {"schema": "iqn-z-token-scratch-v1", "status": "blocked_prelaunch"}
+    wrong_arm = {"schema": matched.SCHEMA, "arm": "z", "status": "failed"}
+    current = {"schema": matched.SCHEMA, "arm": "role", "status": "running"}
+    assert coordinator.current_arm_status(stale, "role") == {}
+    assert coordinator.current_arm_status(wrong_arm, "role") == {}
+    assert coordinator.current_arm_status(current, "role") == current

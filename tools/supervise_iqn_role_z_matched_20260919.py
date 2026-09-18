@@ -64,6 +64,12 @@ def read_last_jsonl(path: Path) -> dict[str, Any]:
     return json.loads(lines[-1]) if lines else {}
 
 
+def current_arm_status(status: Mapping[str, Any], arm: str) -> dict[str, Any]:
+    if status.get("schema") != "iqn-role-z-matched-v1" or status.get("arm") != arm:
+        return {}
+    return dict(status)
+
+
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
 
@@ -173,7 +179,7 @@ def arm_snapshot(
 ) -> dict[str, Any]:
     launch = read_json(output / "launch.json")
     heartbeat = read_json(output / "heartbeat.json")
-    status = read_json(output / "status.json")
+    status = current_arm_status(read_json(output / "status.json"), arm)
     preflight = read_json(output / "preflight/startup_sanity.json")
     latest = heartbeat.get("latest_metrics") or status.get("latest_metrics") or read_last_jsonl(output / "training/metrics.jsonl")
     pid = int((launch or status or heartbeat).get("pid", 0) or 0)
@@ -197,7 +203,11 @@ def arm_snapshot(
     drift = {key: {"expected": expected.get(key), "actual": value} for key, value in contract.items() if expected.get(key) != value}
     wrong_gpu = bool(process_gpus and process_gpus != [physical_gpu])
     error_text = str(status.get("error", ""))
-    fatal_error = any(token in error_text.lower() for token in ("contract", "mismatch", "corrupt", "nan", "inf", "runtime assertion", "wrong gpu"))
+    fatal_status = status.get("status") in {"failed", "blocked_prelaunch", "failed_closed"}
+    fatal_error = fatal_status and any(
+        token in error_text.lower()
+        for token in ("contract", "mismatch", "corrupt", "nan", "inf", "runtime assertion", "wrong gpu")
+    )
     return {
         "arm": arm,
         "root": str(root),

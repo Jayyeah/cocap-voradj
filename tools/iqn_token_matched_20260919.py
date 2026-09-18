@@ -1021,6 +1021,17 @@ def supervisor(output: Path, device: str, arm: str) -> int:
             current = int(payload["runtime"]["global_step"])
         if current > 200_000:
             raise RuntimeError("resume step exceeds registered 200k stop")
+        atomic_json(
+            status_path,
+            {
+                **launch,
+                "status": "running",
+                "phase": "exact_resume" if current else "clean_scratch_start",
+                "current_step": current,
+                "last_full_resume": str(resume) if current else None,
+                "updated_at": now_local(),
+            },
+        )
         for target in MILESTONES:
             state["current_target"] = target
             if current < target:
