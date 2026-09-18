@@ -565,6 +565,23 @@ def contract_preflight(output: Path, device: str, role_config: Path) -> dict[str
 
     smoke_dir = Path(tempfile.mkdtemp(prefix="sanity-", dir=output))
     smoke_cfg = copy.deepcopy(zcfg)
+    production_probe_cfg = copy.deepcopy(zcfg)
+    production_probe_cfg.update(
+        output_root=str(smoke_dir),
+        run_name="production_contract_probe",
+        device=device,
+        total_timesteps=1,
+    )
+    production_probe = CoCapTrainer(production_probe_cfg)
+    production_initial_replay_sizes = {
+        name: len(buffer) for name, buffer in production_probe.replays.items()
+    }
+    expected_replay_classes = set(zcfg["voradj"]["replay_batch_counts"])
+    if set(production_initial_replay_sizes) != expected_replay_classes:
+        raise AssertionError("production replay class set drift")
+    if any(production_initial_replay_sizes.values()):
+        raise AssertionError(f"production scratch replay is not fresh: {production_initial_replay_sizes}")
+    close_trainer(production_probe)
     smoke_cfg.update(
         output_root=str(smoke_dir),
         run_name="training",
@@ -583,6 +600,9 @@ def contract_preflight(output: Path, device: str, role_config: Path) -> dict[str
     )
     smoke_cfg["checkpointing"] = {"full_resume": True}
     trainer = CoCapTrainer(smoke_cfg)
+    smoke_initial_replay_sizes = {name: len(buffer) for name, buffer in trainer.replays.items()}
+    if any(smoke_initial_replay_sizes.values()):
+        raise AssertionError(f"optimizer smoke replay is not fresh: {smoke_initial_replay_sizes}")
     initial_parameters = {key: value.detach().cpu().clone() for key, value in trainer.model.state_dict().items()}
     checkpoint = trainer.train()
     changed = any(not torch.equal(initial_parameters[key], value.detach().cpu()) for key, value in trainer.model.state_dict().items())
@@ -641,6 +661,8 @@ def contract_preflight(output: Path, device: str, role_config: Path) -> dict[str
             "bit_exact_equal": True,
             "teacher_transfer": False,
             "fresh_replay": True,
+            "production_initial_replay_sizes": production_initial_replay_sizes,
+            "optimizer_smoke_initial_replay_sizes": smoke_initial_replay_sizes,
         },
         "architecture": {
             "self_shape": [9],
