@@ -9,6 +9,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import sys
 import time
 import traceback
 from pathlib import Path
@@ -16,6 +17,9 @@ from typing import Any, Mapping
 
 import torch
 
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 
 SCHEMA = "iqn-role-z-matched-supervisor-v1"
 ARM_SCRIPT = "tools/iqn_token_matched_20260919.py"
