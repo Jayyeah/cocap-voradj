@@ -1356,12 +1356,21 @@ class VorAdjEnv(CoCapEnv):
                 -self._shared_count(data, key, other_key),
                 float(np.linalg.norm(self._position(self.pursuers[j]) - self._position(pursuer))),
             )
-        if include_is_pursuing:
+        friend_ordering_mode = str(
+            self.per_cfg.get(
+                "friend_ordering_mode",
+                "role_then_physical" if include_is_pursuing else "physical_only",
+            )
+        ).strip().lower()
+        if friend_ordering_mode not in {"role_then_physical", "physical_only"}:
+            raise ValueError(
+                "perception.friend_ordering_mode must be role_then_physical or physical_only"
+            )
+        if include_is_pursuing and friend_ordering_mode == "role_then_physical":
             friend_ids = sorted(friend_ids, key=friend_sort)
         else:
-            # Do not leave a role-dependent ordering channel after removing
-            # the friend role column.  This order is physical-only and is
-            # mirrored by the B1 teacher dataset canonicalizer.
+            # Physical-only ordering can be required even when a role/z token
+            # is present so evidence cannot affect truncation priority.
             def role_free_friend_sort(j: int) -> Tuple[float, ...]:
                 other = self.pursuers[j]
                 if world_frame:

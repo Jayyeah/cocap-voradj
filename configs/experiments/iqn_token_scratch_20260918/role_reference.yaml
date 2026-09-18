@@ -1,0 +1,21 @@
+extends: common.yaml
+
+# Read-only matched reference for automatic config comparison. This branch
+# never launches or modifies the ROLE worktree.
+perception:
+  include_is_pursuing: true
+  include_z_state: false
+
+z_state:
+  enabled: false
+  lambda: 0.95
+  eta: 0.85
+  update_semantics: synchronous_previous_decision_state
+
+iqn:
+  include_is_pursuing: true
+  include_z_state: false
+
+experiment_metadata:
+  comparison_arm: role_token
+  evidence_token: binary_is_pursuing_i_j

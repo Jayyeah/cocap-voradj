@@ -235,6 +235,11 @@ class CoCapTrainer:
         self.global_step = 0
         self.episode_idx = 0
         self.loss_ema: Optional[float] = None
+        self.action_histogram = [0] * int(iqn_cfg.get("action_size", 9))
+        self.action_histogram_window = [0] * int(iqn_cfg.get("action_size", 9))
+        self.action_count = 0
+        self.target_update_count = 0
+        self.last_target_update_step: Optional[int] = None
 
         model_cfg = CoCapNetConfig(
             hidden_dim=int(iqn_cfg.get("hidden_dim", 128)),
@@ -811,6 +816,8 @@ class CoCapTrainer:
         self.last_update_task = update_name
         if self.global_step % self.target_update_freq == 0:
             self.target_model.load_state_dict(self.model.state_dict())
+            self.target_update_count += 1
+            self.last_target_update_step = int(self.global_step)
         value = float(loss.item())
         self.loss_ema = value if self.loss_ema is None else 0.98 * self.loss_ema + 0.02 * value
         return value
@@ -1187,6 +1194,11 @@ class CoCapTrainer:
             env = self.envs[task]
             self._set_coverage_ce_control_weights()
             actions, active = self._select_actions(task, obs_list)
+            for index in active:
+                action = int(actions[index])
+                self.action_histogram[action] += 1
+                self.action_histogram_window[action] += 1
+                self.action_count += 1
             prev_obs = {i: obs_list[i] for i in active}
             evader_actions = self._evader_actions(task)
             result = env.step(actions, evader_actions)
@@ -1234,6 +1246,11 @@ class CoCapTrainer:
                     "loss": loss,
                     "loss_ema": self.loss_ema,
                     "replay_size": self._replay_size_for_task(task),
+                    "update_steps": int(self.update_steps),
+                    "target_update_count": int(self.target_update_count),
+                    "last_target_update_step": self.last_target_update_step,
+                    "action_histogram": list(self.action_histogram),
+                    "action_histogram_window": list(self.action_histogram_window),
                 }
                 metric_payload.update(self._recent_diagnostic_summary(task))
                 if self.train_mode == "m1new":
@@ -1270,6 +1287,7 @@ class CoCapTrainer:
                     })
                 self.metric_log.write(safe_json_dumps(metric_payload, ensure_ascii=False) + "\n")
                 self.metric_log.flush()
+                self.action_histogram_window = [0] * len(self.action_histogram_window)
             obs_list = result.observations
             episode_done = step_done
             if episode_done:

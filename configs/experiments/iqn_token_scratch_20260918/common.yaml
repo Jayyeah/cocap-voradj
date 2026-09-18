@@ -1,0 +1,53 @@
+extends: ../forward_final_mappo_20260908/stage1_4v1.yaml
+
+# Shared ROLE-vs-Z formal scratch contract. The supervisor applies the
+# published NormSense-V2 overlay after inheritance is resolved, removing
+# inherited legacy radius keys rather than silently retaining them.
+device: cuda:0
+total_timesteps: 200000
+train_mode: voradj_mixed_coverage
+output_root: artifacts/2026-09-18_iqn_token_scratch
+run_name: training
+
+checkpointing:
+  full_resume: true
+
+perception:
+  self_feature_dim: 9
+  friend_ordering_mode: physical_only
+
+iqn:
+  self_feature_dim: 9
+  pursuer_feature_dim: 7
+  pursuing_embed_dim: 0
+  pursuing_late_fusion: false
+  checkpoint_freq: 25000
+
+normsense_v2:
+  enabled: true
+  policy: forward-final-density-normalized-sensing-v2
+  schema_version: 2
+
+formal_evaluation:
+  episodes_per_scene: 20
+  seed_base: 2026092801
+  scenes:
+    - coverage
+    - capture
+    - mixed
+  deterministic_quantiles: midpoint32
+  checkpoint_interval: 25000
+
+experiment_metadata:
+  series_label: iqn_token_scratch_matched_20260918
+  training_start: scratch_random_initialization
+  comparison_arm: shared
+  role_comparison_branch: experiment/iqn-role-token-scratch-20260918
+  stop_target_env_steps: 200000
+  no_warm_start: true
+  friend_ordering_mode: physical_only
+  z_v1_formula: max(d_i_t, 0.95*z_i_previous, 0.85*max_neighbor_z_previous)
+  z_v2_todo:
+    - shorter_half_life_lower_lambda
+    - hard_floor_epsilon_z_after_z_tilde
+  normsense_policy: forward-final-density-normalized-sensing-v2
