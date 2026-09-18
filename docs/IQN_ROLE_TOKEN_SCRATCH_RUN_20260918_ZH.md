@@ -40,7 +40,7 @@ ROLE 与 Z 的 resolved `reward`、`env`、`voradj`、任务 schedule、动力�
 - checkpoints/evaluation：25k、50k、75k、100k、125k、150k、175k、200k。
 - batch `128`；gamma `0.99`；Adam；base LR `1e-4`；沿用 Z 的 optimizer、epsilon、n-step/quantile、replay、target update 和 curriculum 设置。
 - epsilon：`0.6 → 0.05`，沿用 Z 的 `1,000,000`-step schedule；run 在200k前不进入后续 LR schedule。
-- checkpoint exact resume：`checkpointing.full_resume=true`，`resume_latest.pt`。
+- checkpoint exact resume：`checkpointing.full_resume=true`；trainer 的 full-resume 文件为 `artifacts/2026-09-18_iqn_role_token_scratch/checkpoints/resume_latest.pt`，milestone model checkpoint 位于 `artifacts/2026-09-18_iqn_role_token_scratch/iqn_role_token_scratch_20260918/checkpoints/step_<N>.pt`。
 - 禁止 Final actor/checkpoint warm-start、BC、distillation、C0/C1/B3 权重初始化。
 - 训练主体从统一随机初始化开始；teacher 只可用于历史审计，不能进入本次 actor。
 
@@ -85,6 +85,12 @@ supervisor：`tools/supervise_iqn_role_token_scratch_20260918.py`。
 - train/eval logs 与 checkpoint 只留本地，不进 Git；
 - supervisor 不会自动越过 200k，也不会因25k暂时无最终成功而早停。
 
+## Clean scratch restart
+
+首次启动曾完整跑到25k，但 supervisor 的 full-resume 路径检查错误，未把该段用于后续训练。该段的运行目录、checkpoint、full-resume、status 和日志已整体移动到 `artifacts/2026-09-18_iqn_role_token_scratch/aborted_25k_20260918/`，保留以便审计但不作为恢复输入。
+
+修复后正式运行位被清空并从 `global_step=0` 重新启动；preflight checkpoint 只用于启动前 plumbing 验证，不进入正式 actor 初始化。当前修复 commit 与 clean-restart launch manifest 已推送到 `experiment/iqn-role-token-scratch-20260918`。
+
 ## 长时运行与恢复
 
 启动命令：
@@ -104,7 +110,7 @@ tmux attach -t iqn_role_token_scratch_20260918
 tail -f /home/yjq/rl/CoCap1/iqn-role-token-scratch-20260918/artifacts/2026-09-18_iqn_role_token_scratch/status.json
 ```
 
-若会话退出，使用同一 supervisor 命令恢复；它读取 `status.json` / `resume_latest.pt`，按下一个未完成 milestone 执行 exact resume。不要直接用普通 model checkpoint 恢复 optimizer/replay 状态。
+若会话退出，使用同一 supervisor 命令恢复；它读取 `status.json`、`artifacts/2026-09-18_iqn_role_token_scratch/checkpoints/resume_latest.pt`，按下一个未完成 milestone 执行 exact resume。不要直接用普通 model checkpoint 恢复 optimizer/replay 状态。
 
 ETA 使用 supervisor 已完成 milestone 的实际稳定 steps/s 动态计算；启动初期若稳定窗口尚未形成，status 中明确记为 unavailable，不用配置猜测替代。
 
