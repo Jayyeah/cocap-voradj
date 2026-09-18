@@ -1,6 +1,6 @@
 # IQN-Z-TOKEN scratch 运行记录（2026-09-18）
 
-更新时间：2026-09-18 23:27（Asia/Shanghai）
+更新时间：2026-09-18 23:39（Asia/Shanghai）
 
 ## 当前状态
 
@@ -35,12 +35,13 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - 真实环境 16 步产生 15 次 optimizer update；参数发生变化；loss 有限
 - target network 更新 15 次，最后同步 step=16
 - 正式 mixed 配置的 pursuing/pre-capture/post-capture/recovery 四类 replay 初始尺寸全部为 0
+- trainer 与 formal evaluator 均对 reward、sensing、AW9 action physics、synchronized-swept collision 执行 live fail-closed assertions
 - coverage/capture/mixed evaluator smoke 完成
 - GPU：NVIDIA RTX A6000
 
 机器证据：`artifacts/2026-09-18_iqn_z_token_scratch/reference_preflight/startup_sanity.json`。
 
-聚焦回归：26 passed，2 skipped；跳过项为条件性测试，不是失败。
+聚焦回归：27 passed，2 skipped；跳过项为条件性测试，不是失败。
 
 ## 实际 ROLE 门禁结果
 
@@ -51,13 +52,15 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - `artifacts/2026-09-18_iqn_z_token_scratch/preflight/config_diff.json`
 - `artifacts/2026-09-18_iqn_z_token_scratch/status.json`
 
-门禁发现的非允许差异全部属于感知配置：
+门禁发现 29 项非允许差异，分为 NormSense-V2 配置与 ROLE 缺失的 live runtime assertions 两类：
 
 - ROLE 缺少 `normsense_v2.enabled/policy/schema_version`
 - ROLE 仍有 `voradj.enemy_sensing_radius=20`
 - ROLE 仍有 `voradj.obstacle_sensing_radius=20`
 - ROLE 缺少 `voradj.onboard_sensing.{policy,schema_version,k,radius_floor}`
 
+- ROLE 缺少对 reward、sensing、AW9 action physics 与 synchronized-swept collision 的 20 项 `runtime_semantic_assertions`
+这些都不是 evidence token 差异，故不能开始可归因的 ROLE-vs-Z 对照。
 
 另外，ROLE 的旧感知训练段已在 25k 正常返回（return code 0），并发生 2,429 次 mixed optimizer update；但 2026-09-18 18:23 复核时：
 
@@ -67,7 +70,6 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - 实际 full-resume 位于 run root，而监督器检查的是 run-name 子目录，存在路径合同不一致。
 
 因此 ROLE 当前既不是 NormSense-V2 matched control，也不是仍在后台推进的有效 200k 作业。Z 线不会自行修复或重启该独立工作树。
-这不是 evidence token 差异，故不能开始可归因的 ROLE-vs-Z 对照。
 
 ## 解阻条件与后续动作
 
