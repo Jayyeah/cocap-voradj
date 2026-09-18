@@ -19,7 +19,9 @@ RUN_ROOT = ROOT / "artifacts/2026-09-18_iqn_role_token_scratch"
 RUN_NAME = "iqn_role_token_scratch_20260918"
 RUN_DIR = RUN_ROOT / RUN_NAME
 CHECKPOINT_DIR = RUN_DIR / "checkpoints"
-RESUME = CHECKPOINT_DIR / "resume_latest.pt"
+# The current IQN trainer resolves the configured full_resume_path relative to
+# the project root, while ordinary milestone checkpoints live below run_dir.
+RESUME = ROOT / "artifacts/2026-09-18_iqn_role_token_scratch/checkpoints/resume_latest.pt"
 STATUS = RUN_ROOT / "status.json"
 TREND = RUN_ROOT / "trend_ledger.jsonl"
 SUPERVISOR_LOG = RUN_ROOT / "supervisor.log"
