@@ -8,7 +8,7 @@
 - 启动 HEAD：`9828ca7475522f401c14f24331dd22a46f95988d`
 - 配置：`configs/experiments/iqn_token_scratch_20260918/role_token.yaml`
 - tmux：`iqn_role_token_matched_20260919`
-- supervisor PID：`2935643`
+- 初始 supervisor PID：`2935643`；为加载 milestone evaluator 修复从 50k exact-resume 后 PID：`2956761`
 - GPU：物理 GPU0；进程内 `cuda:0`
 - 正式启动：`2026-09-19T01:09:49+0800`
 - 目标：200,000 environment steps；25k 间隔 checkpoint + formal evaluation
@@ -54,7 +54,7 @@ ROLE policy 输入为 `[physical_self, is_pursuing_i]` 与 `[relative_friend_phy
 
 16k 短窗口估计（early/unstable）：25k `2026-09-19T01:24:17+0800`、50k `01:38:44`、100k `02:07:39`、200k `03:05:28`。
 
-首个 production full-resume 已在 25k milestone 生成并验证可读。此后仅在 HEAD、config/runtime hash 不变且 resume 可读时自动 exact-resume；合同漂移、NaN/Inf、replay/checkpoint 损坏或 wrong GPU 一律 fail closed。
+首个 production full-resume 已在 25k milestone 生成并验证可读。ROLE 在 50k checkpoint 生成后做了一次受控 exact-resume，使后续 milestone evaluator 加载非有限时间 JSON 归一化修复；训练科学合同未改变。此后仅在 HEAD、config/runtime hash 不变且 resume 可读时自动 exact-resume；合同漂移、NaN/Inf、replay/checkpoint 损坏或 wrong GPU 一律 fail closed。
 
 ```bash
 jq '{status,current_step,phase,latest_metrics}' artifacts/2026-09-18_iqn_role_token_scratch/heartbeat.json
