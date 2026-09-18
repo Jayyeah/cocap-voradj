@@ -129,3 +129,33 @@ def test_friend_token_tail_maps_to_corresponding_z_j():
     assert altered
     with pytest.raises(AssertionError, match="friend token tail is not z_j"):
         run.assert_friend_z_mapping(env, corrupted)
+
+
+def test_runtime_semantic_assertions_are_explicit_and_fail_closed():
+    config = run.resolved(run.Z_CONFIG)
+    assert config["runtime_semantic_assertions"] == {
+        "topology": "friendly_voronoi_comm_v0",
+        "enemy_token_rule": "surface_radius",
+        "global_enemy_flag": False,
+        "support_capture_weight": 0.5,
+        "support_coverage_weight": 0.5,
+        "support_blend_enabled": True,
+        "action_mode": "unicycle_discrete",
+        "decision_dt": 0.5,
+        "physics_dt": 0.05,
+        "collision_semantics": "synchronized_swept_v1",
+        "capture_radius": 8.0,
+        "capture_k": 3,
+        "capture_reward_mode": "ring_importance_ms_v0",
+        "pursuers": 4,
+        "yaw_held_for_vxy": False,
+        "a_longitudinal_max": 0.4,
+        "omega_max": 0.5235987755982988,
+        "v_max": 3.0,
+        "drag": 0.13333333333333333,
+        "servo_acceleration_limit": 0.4,
+    }
+    bad = copy.deepcopy(config)
+    bad["runtime_semantic_assertions"]["collision_semantics"] = "legacy_end_step"
+    with pytest.raises(ValueError, match="runtime assertion collision_semantics"):
+        run.make_env(bad, "mixed", int(config["seed"]))
