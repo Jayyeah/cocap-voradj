@@ -1,0 +1,31 @@
+extends: ../iqn_cleanup_emergent_b1_20260917/no_is_pursuing.yaml
+
+# B3 policy-only replacement. Reward, topology, dynamics, and evaluator role
+# metadata inherit the frozen Final IQN contract unchanged.
+perception:
+  self_feature_dim: 9
+  include_is_pursuing: false
+  include_z_state: true
+
+z_state:
+  enabled: true
+  lambda: 0.95
+  eta: 0.85
+  update_semantics: synchronous_previous_decision_state
+
+iqn:
+  self_feature_dim: 9
+  pursuer_feature_dim: 7
+  pursuing_embed_dim: 0
+  include_is_pursuing: false
+  include_z_state: true
+
+experiment_metadata:
+  series_label: iqn_zstate_b3_20260918
+  scope: policy-observation-only scalar local evidence state replacement
+  teacher_checkpoint: artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt
+  teacher_checkpoint_sha256: 2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89
+  removed_policy_inputs:
+    - self.is_pursuing
+    - friend.is_pursuing
+    - role_dependent_friend_ordering

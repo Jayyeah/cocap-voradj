@@ -251,6 +251,7 @@ class CoCapTrainer:
             pursuing_embed_dim=int(iqn_cfg.get("pursuing_embed_dim", 8)),
             pursuer_feature_dim=int(iqn_cfg.get("pursuer_feature_dim", 7)),
             include_is_pursuing=bool(iqn_cfg.get("include_is_pursuing", True)),
+            include_z_state=bool(iqn_cfg.get("include_z_state", False)),
         )
         self.model = CoCapIQN(model_cfg).to(self.device)
         self.target_model = CoCapIQN(model_cfg).to(self.device)

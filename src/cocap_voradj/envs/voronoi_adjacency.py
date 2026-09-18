@@ -64,6 +64,27 @@ class VorAdjEnv(CoCapEnv):
         self._center_sqrt_n_normalization_enabled = bool(voradj_cfg.get("center_sqrt_n_normalization_enabled", False))
         self._pursuing_release_counters = [0] * len(self.pursuers)
         self._pursuing_flags_initialized = False
+        z_cfg = self.config.get("z_state", {}) or {}
+        self._z_state_enabled = bool(z_cfg.get("enabled", False))
+        self._z_lambda = float(z_cfg.get("lambda", 0.95))
+        self._z_eta = float(z_cfg.get("eta", 0.85))
+        if not 0.0 <= self._z_lambda <= 1.0:
+            raise ValueError("z_state.lambda must be in [0, 1]")
+        if not 0.0 <= self._z_eta <= 1.0:
+            raise ValueError("z_state.eta must be in [0, 1]")
+        configured_z_feature = bool(self.per_cfg.get("include_z_state", False))
+        if configured_z_feature != self._z_state_enabled:
+            raise ValueError("z_state.enabled and perception.include_z_state must match")
+        if self._z_state_enabled and bool(self.per_cfg.get("include_is_pursuing", True)):
+            raise ValueError("z-state policy observations cannot also include is_pursuing")
+        self.z_state = np.zeros(len(self.pursuers), dtype=np.float32)
+        self._z_update_count = 0
+        self._z_last_direct = np.zeros(len(self.pursuers), dtype=bool)
+        self._z_last_neighbor_max = np.zeros(len(self.pursuers), dtype=np.float32)
+        self._z_last_source = ["zero"] * len(self.pursuers)
+        self._z_lineage_hops = np.full(len(self.pursuers), -1, dtype=np.int16)
+        self._z_source_age_steps = np.full(len(self.pursuers), -1, dtype=np.int32)
+        self._z_last_neighbors: List[List[int]] = [[] for _ in self.pursuers]
         self._voronoi_cache_version = 0
         self._voronoi_cache_version_tag = -1
         self._voronoi_cache: Dict[str, Dict[str, Any]] = {}
@@ -116,6 +137,7 @@ class VorAdjEnv(CoCapEnv):
         self.zone_pursuer_left_inner_event = False
         self._pursuing_release_counters = [0] * len(self.pursuers)
         self._pursuing_flags_initialized = False
+        self._reset_z_state()
         self._invalidate_voronoi_cache()
         super().reset(*args, **kwargs)
         self._zone_place_evaders_after_reset()
@@ -123,22 +145,169 @@ class VorAdjEnv(CoCapEnv):
         self._zone_update_metrics()
         self._invalidate_voronoi_cache()
         self._pursuing_release_counters = [0] * len(self.pursuers)
+        self._reset_z_state()
         data = self._capture_voronoi_map()
         self.last_task_labels = self._task_labels_from_map(data, update_effective=True)
+        self._advance_z_state(data)
         return self.get_observations()
 
-    def get_policy_observations(self, include_is_pursuing: bool) -> List[Optional[Dict[str, np.ndarray]]]:
-        """Pack the same physical state with an explicit policy role contract.
+    def get_policy_observations(
+        self,
+        include_is_pursuing: bool,
+        include_z_state: Optional[bool] = None,
+    ) -> List[Optional[Dict[str, np.ndarray]]]:
+        """Pack the same state under an explicit, mutually-exclusive contract.
 
-        Reward and replay metadata continue to use the environment's effective
-        role state.  This method only selects which policy observation view is
-        requested, so B1 can obtain teacher and no-bit views at the same
-        pre-action state without changing dynamics or reward semantics.
+        Reward/replay role metadata is unchanged.  B3 can therefore request
+        the old roleful teacher view and the z-token student view at exactly
+        the same pre-action physical state.
         """
+        include_role = bool(include_is_pursuing)
+        if include_z_state is None:
+            include_z_state = bool(self._z_state_enabled and not include_role)
+        include_z = bool(include_z_state)
+        if include_role and include_z:
+            raise ValueError("policy observation cannot contain both is_pursuing and z_state")
         return [
-            self._pack_agent_obs(i, include_is_pursuing=bool(include_is_pursuing))
+            self._pack_agent_obs(
+                i,
+                include_is_pursuing=include_role,
+                include_z_state=include_z,
+            )
             for i in range(len(self.pursuers))
         ]
+
+    def _reset_z_state(self) -> None:
+        count = len(self.pursuers)
+        self.z_state = np.zeros(count, dtype=np.float32)
+        self._z_update_count = 0
+        self._z_last_direct = np.zeros(count, dtype=bool)
+        self._z_last_neighbor_max = np.zeros(count, dtype=np.float32)
+        self._z_last_source = ["zero"] * count
+        self._z_lineage_hops = np.full(count, -1, dtype=np.int16)
+        self._z_source_age_steps = np.full(count, -1, dtype=np.int32)
+        self._z_last_neighbors = [[] for _ in range(count)]
+
+    def _advance_z_state(self, data: Optional[Dict[str, Any]] = None) -> None:
+        """Synchronously update z once before the next decision observation."""
+
+        if not self._z_state_enabled:
+            return
+        if data is None:
+            data = self._capture_voronoi_map()
+        count = len(self.pursuers)
+        if len(self.z_state) != count:
+            self._reset_z_state()
+        previous = np.asarray(self.z_state, dtype=np.float32).copy()
+        previous_hops = np.asarray(self._z_lineage_hops, dtype=np.int16).copy()
+        previous_age = np.asarray(self._z_source_age_steps, dtype=np.int32).copy()
+        direct = np.asarray(
+            [
+                bool(
+                    not pursuer.deactivated
+                    and self._has_enemy_neighbor(data, ("pursuer", i))
+                )
+                for i, pursuer in enumerate(self.pursuers)
+            ],
+            dtype=bool,
+        )
+        next_z = np.zeros(count, dtype=np.float32)
+        neighbor_max = np.zeros(count, dtype=np.float32)
+        next_hops = np.full(count, -1, dtype=np.int16)
+        next_age = np.full(count, -1, dtype=np.int32)
+        sources = ["zero"] * count
+        neighbors_by_agent: List[List[int]] = []
+        adjacency = data.get("adjacency", {})
+        for i, pursuer in enumerate(self.pursuers):
+            neighbor_ids = sorted(
+                int(key[1])
+                for key in adjacency.get(("pursuer", i), set())
+                if key[0] == "pursuer" and not self.pursuers[int(key[1])].deactivated
+            )
+            neighbors_by_agent.append(neighbor_ids)
+            if pursuer.deactivated:
+                continue
+            best_neighbor = max(neighbor_ids, key=lambda j: float(previous[j]), default=None)
+            neighbor_value = float(previous[best_neighbor]) if best_neighbor is not None else 0.0
+            neighbor_max[i] = neighbor_value
+            candidates = (
+                (1.0 if direct[i] else 0.0, 2, "direct"),
+                (self._z_lambda * float(previous[i]), 1, "self_decay"),
+                (self._z_eta * neighbor_value, 0, "neighbor"),
+            )
+            value, _priority, source = max(candidates, key=lambda item: (item[0], item[1]))
+            next_z[i] = np.float32(value)
+            if value <= 0.0:
+                continue
+            sources[i] = source
+            if source == "direct":
+                next_hops[i] = 0
+                next_age[i] = 0
+            elif source == "self_decay":
+                next_hops[i] = previous_hops[i]
+                next_age[i] = previous_age[i] + 1 if previous_age[i] >= 0 else -1
+            elif best_neighbor is not None:
+                next_hops[i] = previous_hops[best_neighbor] + 1 if previous_hops[best_neighbor] >= 0 else -1
+                next_age[i] = previous_age[best_neighbor] + 1 if previous_age[best_neighbor] >= 0 else -1
+        self.z_state = next_z
+        self._z_update_count += 1
+        self._z_last_direct = direct
+        self._z_last_neighbor_max = neighbor_max
+        self._z_last_source = sources
+        self._z_lineage_hops = next_hops
+        self._z_source_age_steps = next_age
+        self._z_last_neighbors = neighbors_by_agent
+
+    def z_state_dict(self) -> Dict[str, Any]:
+        """Return an exact serializable z snapshot for checkpoint/resume."""
+
+        return {
+            "schema": "cocap-z-state-v1",
+            "enabled": bool(self._z_state_enabled),
+            "lambda": float(self._z_lambda),
+            "eta": float(self._z_eta),
+            "update_count": int(self._z_update_count),
+            "values": self.z_state.astype(float).tolist(),
+            "last_direct": self._z_last_direct.astype(bool).tolist(),
+            "last_neighbor_max": self._z_last_neighbor_max.astype(float).tolist(),
+            "last_source": list(self._z_last_source),
+            "lineage_hops": self._z_lineage_hops.astype(int).tolist(),
+            "source_age_steps": self._z_source_age_steps.astype(int).tolist(),
+            "last_neighbors": [list(values) for values in self._z_last_neighbors],
+        }
+
+    def load_z_state_dict(self, state: Dict[str, Any]) -> None:
+        if state.get("schema") != "cocap-z-state-v1":
+            raise ValueError("unsupported z-state checkpoint schema")
+        if bool(state.get("enabled")) != self._z_state_enabled:
+            raise ValueError("z-state checkpoint enabled contract mismatch")
+        if not np.isclose(float(state.get("lambda")), self._z_lambda):
+            raise ValueError("z-state checkpoint lambda mismatch")
+        if not np.isclose(float(state.get("eta")), self._z_eta):
+            raise ValueError("z-state checkpoint eta mismatch")
+        count = len(self.pursuers)
+
+        def vector(name: str, dtype) -> np.ndarray:
+            value = np.asarray(state.get(name, []), dtype=dtype)
+            if value.shape != (count,):
+                raise ValueError(f"z-state checkpoint {name} shape mismatch")
+            return value.copy()
+
+        values = vector("values", np.float32)
+        if not np.all(np.isfinite(values)) or np.any(values < 0.0) or np.any(values > 1.0):
+            raise ValueError("z-state checkpoint values must be finite in [0, 1]")
+        self.z_state = values
+        self._z_last_direct = vector("last_direct", bool)
+        self._z_last_neighbor_max = vector("last_neighbor_max", np.float32)
+        self._z_lineage_hops = vector("lineage_hops", np.int16)
+        self._z_source_age_steps = vector("source_age_steps", np.int32)
+        sources = list(state.get("last_source", []))
+        neighbors = [list(map(int, values)) for values in state.get("last_neighbors", [])]
+        if len(sources) != count or len(neighbors) != count:
+            raise ValueError("z-state checkpoint diagnostic shape mismatch")
+        self._z_last_source = sources
+        self._z_last_neighbors = neighbors
+        self._z_update_count = int(state.get("update_count", 0))
 
     def _invalidate_voronoi_cache(self) -> None:
         self._voronoi_cache_version += 1
@@ -1064,6 +1233,7 @@ class VorAdjEnv(CoCapEnv):
         self,
         idx: int,
         include_is_pursuing: Optional[bool] = None,
+        include_z_state: Optional[bool] = None,
     ) -> Optional[Dict[str, np.ndarray]]:
         pursuer = self.pursuers[idx]
         if pursuer.deactivated:
@@ -1081,6 +1251,11 @@ class VorAdjEnv(CoCapEnv):
         if include_is_pursuing is None:
             include_is_pursuing = bool(self.per_cfg.get("include_is_pursuing", True))
         include_is_pursuing = bool(include_is_pursuing)
+        if include_z_state is None:
+            include_z_state = bool(self._z_state_enabled and not include_is_pursuing)
+        include_z_state = bool(include_z_state)
+        if include_is_pursuing and include_z_state:
+            raise ValueError("policy observation cannot contain both is_pursuing and z_state")
 
         distance_scale = self._distance_scale()
         abs_vel = np.asarray(pursuer.velocity, dtype=float) if world_frame else self._robot_frame(pursuer, pursuer.velocity, True)
@@ -1170,6 +1345,8 @@ class VorAdjEnv(CoCapEnv):
             ]
             if include_is_pursuing:
                 self_feat.append(float(is_pursuing))
+        if include_z_state:
+            self_feat.append(float(self.z_state[idx]) if idx < len(self.z_state) else 0.0)
 
         friend_ids = [nk[1] for nk in adjacency if nk[0] == "pursuer" and not self.pursuers[nk[1]].deactivated]
         def friend_sort(j: int) -> Tuple[int, int, float]:
@@ -1228,6 +1405,8 @@ class VorAdjEnv(CoCapEnv):
                 friend_feature.append(
                     float(self._effective_is_pursuing(j, self._has_enemy_neighbor(data, ("pursuer", j))))
                 )
+            if include_z_state:
+                friend_feature.append(float(self.z_state[j]) if j < len(self.z_state) else 0.0)
             pursuer_feats.append(friend_feature)
 
         if self._vct_ls_enabled():
@@ -1316,9 +1495,10 @@ class VorAdjEnv(CoCapEnv):
         masks += [True] * min(len(evader_feats), max_e) + [False] * max(0, max_e - len(evader_feats))
         masks += [True] * min(len(obstacle_feats), max_o) + [False] * max(0, max_o - len(obstacle_feats))
         types = [0] + [1] * max_p + [2] * max_e + [3] * max_o
+        friend_dim = 6 + int(include_is_pursuing) + int(include_z_state)
         return {
             "self": np.asarray(self_feat, dtype=np.float32),
-            "pursuers": self._pad(pursuer_feats, max_p, len(pursuer_feats[0]) if pursuer_feats else (7 if include_is_pursuing else 6)),
+            "pursuers": self._pad(pursuer_feats, max_p, len(pursuer_feats[0]) if pursuer_feats else friend_dim),
             "evaders": self._pad(evader_feats, max_e, 7),
             "obstacles": self._pad(obstacle_feats, max_o, 5),
             "masks": np.asarray(masks, dtype=bool),
@@ -1907,6 +2087,12 @@ class VorAdjEnv(CoCapEnv):
         before_coverage_data = self._coverage_voronoi_map(before_p, before_e)
         before_raw_labels = self._raw_task_labels_from_map(before_data)
         before_labels = self._task_labels_from_map(before_data, update_effective=False, raw_labels=before_raw_labels)
+        before_z_state = self.z_state.copy()
+        before_z_direct = self._z_last_direct.copy()
+        before_z_neighbor_max = self._z_last_neighbor_max.copy()
+        before_z_source = list(self._z_last_source)
+        before_z_hops = self._z_lineage_hops.copy()
+        before_z_age = self._z_source_age_steps.copy()
         before_cov = self._voradj_coverage_potentials(
             before_p,
             before_e,
@@ -2506,6 +2692,9 @@ class VorAdjEnv(CoCapEnv):
             for i in range(len(infos)):
                 infos[i]["next_task_label"] = next_labels[i]
 
+        # The next decision receives current direct evidence immediately.  All
+        # propagation candidates read the immutable z vector used by this step.
+        self._advance_z_state(data)
         active_evaders = [j for j, e in enumerate(self.evaders) if not e.deactivated]
         post_capture_phase = bool((not pure_coverage_scene) and len(active_evaders) == 0)
         settle_enabled = self._coverage_settle_enabled()
@@ -2829,6 +3018,18 @@ class VorAdjEnv(CoCapEnv):
                 ),
                 "enemy_neighbor_count": int(before_raw_labels[i] == "capture"),
                 "effective_pursuing": bool(before_labels[i] == "capture"),
+                "z_state_enabled": bool(self._z_state_enabled),
+                "z": float(before_z_state[i]),
+                "z_direct_visible": bool(before_z_direct[i]),
+                "z_neighbor_previous_max": float(before_z_neighbor_max[i]),
+                "z_dominant_source": str(before_z_source[i]),
+                "z_lineage_hops": int(before_z_hops[i]),
+                "z_source_age_steps": int(before_z_age[i]),
+                "next_z": float(self.z_state[i]),
+                "next_z_direct_visible": bool(self._z_last_direct[i]),
+                "next_z_dominant_source": str(self._z_last_source[i]),
+                "next_z_lineage_hops": int(self._z_lineage_hops[i]),
+                "next_z_source_age_steps": int(self._z_source_age_steps[i]),
                 "friend_neighbor_count": int(sum(1 for nk in before_data.get("adjacency", {}).get(("pursuer", i), set()) if nk[0] == "pursuer")) if before_labels[i] != "inactive" else 0,
                 "support_candidate": bool(reward_roles[i] == "support"),
                 "support_pursuing_friend_count": int(len(self._support_pursuing_friend_ids(i, reward_role_labels, before_data))),

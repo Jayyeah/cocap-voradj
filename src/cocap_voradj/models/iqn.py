@@ -30,6 +30,7 @@ class CoCapNetConfig:
     # legacy behavior.
     pursuer_feature_dim: int = 7
     include_is_pursuing: bool = True
+    include_z_state: bool = False
 
 
 def mlp_encoder(input_dim: int, hidden_dim: int) -> nn.Sequential:
@@ -39,6 +40,8 @@ def mlp_encoder(input_dim: int, hidden_dim: int) -> nn.Sequential:
 class CoCapIQN(nn.Module):
     def __init__(self, config: CoCapNetConfig):
         super().__init__()
+        if config.include_is_pursuing and config.include_z_state:
+            raise ValueError("IQN cannot enable both is_pursuing and z_state policy inputs")
         self.config = config
         h = config.hidden_dim
         self.encoders = nn.ModuleDict({
@@ -230,6 +233,7 @@ class CoCapIQN(nn.Module):
         config_payload = dict(payload["config"])
         config_payload.setdefault("pursuer_feature_dim", 7)
         config_payload.setdefault("include_is_pursuing", True)
+        config_payload.setdefault("include_z_state", False)
         model = cls(CoCapNetConfig(**config_payload))
         model.load_state_dict(payload["state_dict"])
         return model.to(device)
@@ -263,6 +267,7 @@ class CoCapIQN(nn.Module):
             pursuing_embed_dim=0,
             pursuer_feature_dim=tc.pursuer_feature_dim - 1,
             include_is_pursuing=False,
+            include_z_state=False,
         )
         student = cls(sc).to(next(teacher.parameters()).device)
         teacher_state = teacher.state_dict()
@@ -289,5 +294,82 @@ class CoCapIQN(nn.Module):
             "trimmed_keys": trimmed,
             "removed_keys": ["pursuing_embed.weight", "pursuing_embed.bias"],
             "late_fusion_removed": True,
+        }
+        return student, report
+
+    @classmethod
+    def make_z_state_student(cls, teacher: "CoCapIQN") -> tuple["CoCapIQN", Dict[str, object]]:
+        """Replace Final's role columns with ordinary scalar-z token columns.
+
+        Final self/friend input dimensions already equal the B3 dimensions.
+        Their last input columns are therefore copied explicitly from the
+        corresponding teacher role columns as a warm semantic remap.  The
+        late-fusion role branch is removed and every other compatible backbone
+        parameter is copied bit-exactly.
+        """
+        if teacher.config.include_is_pursuing is False:
+            raise ValueError("z-state transfer requires the roleful Final IQN teacher")
+        tc = teacher.config
+        sc = CoCapNetConfig(
+            hidden_dim=tc.hidden_dim,
+            num_heads=tc.num_heads,
+            num_layers=tc.num_layers,
+            action_size=tc.action_size,
+            self_feature_dim=tc.self_feature_dim,
+            max_pursuers=tc.max_pursuers,
+            max_evaders=tc.max_evaders,
+            max_obstacles=tc.max_obstacles,
+            num_quantiles=tc.num_quantiles,
+            num_cosine_features=tc.num_cosine_features,
+            gate_hidden_dim=tc.gate_hidden_dim,
+            architecture=tc.architecture,
+            pursuing_embed_dim=0,
+            pursuer_feature_dim=tc.pursuer_feature_dim,
+            include_is_pursuing=False,
+            include_z_state=True,
+        )
+        student = cls(sc).to(next(teacher.parameters()).device)
+        teacher_state = teacher.state_dict()
+        student_state = student.state_dict()
+        copied_exact = []
+        for key, value in student_state.items():
+            source = teacher_state.get(key)
+            if source is not None and source.shape == value.shape:
+                value.copy_(source)
+                copied_exact.append(key)
+        action_key = "single_action_feature.0.weight"
+        student_state[action_key].copy_(teacher_state[action_key][:, :tc.hidden_dim])
+        student.load_state_dict(student_state, strict=True)
+        semantic_remaps = [
+            {
+                "student_key": "encoders.self.0.weight",
+                "teacher_key": "encoders.self.0.weight",
+                "column": int(sc.self_feature_dim - 1),
+                "teacher_semantic": "self.is_pursuing",
+                "student_semantic": "self.z_i",
+            },
+            {
+                "student_key": "encoders.pursuers.0.weight",
+                "teacher_key": "encoders.pursuers.0.weight",
+                "column": int(sc.pursuer_feature_dim - 1),
+                "teacher_semantic": "friend.is_pursuing",
+                "student_semantic": "friend.z_j",
+            },
+        ]
+        report = {
+            "student_config": asdict(sc),
+            "copied_exact_keys": copied_exact,
+            "semantic_column_remaps": semantic_remaps,
+            "trimmed_keys": [
+                {
+                    "student_key": action_key,
+                    "teacher_key": action_key,
+                    "kept_columns": int(tc.hidden_dim),
+                    "removed_columns": int(tc.pursuing_embed_dim),
+                }
+            ],
+            "removed_keys": ["pursuing_embed.weight", "pursuing_embed.bias"],
+            "late_fusion_removed": True,
+            "z_special_branch": False,
         }
         return student, report
