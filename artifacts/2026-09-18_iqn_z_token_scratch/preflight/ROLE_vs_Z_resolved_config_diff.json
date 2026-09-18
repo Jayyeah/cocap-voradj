@@ -1,0 +1,244 @@
+{
+  "schema": "iqn-role-z-matched-v1",
+  "status": "pass",
+  "role_config": "/home/yjq/rl/CoCap1/iqn-z-token-scratch-20260918/configs/experiments/iqn_token_scratch_20260918/role_token.yaml",
+  "z_config": "/home/yjq/rl/CoCap1/iqn-z-token-scratch-20260918/configs/experiments/iqn_token_scratch_20260918/z_token.yaml",
+  "raw_config": {
+    "differences": [
+      {
+        "path": "experiment_metadata.comparison_arm",
+        "role": "role_token",
+        "z": "z_token"
+      },
+      {
+        "path": "experiment_metadata.evidence_token",
+        "role": "binary_is_pursuing_i_j",
+        "z": "continuous_z_i_j"
+      },
+      {
+        "path": "iqn.include_is_pursuing",
+        "role": true,
+        "z": false
+      },
+      {
+        "path": "iqn.include_z_state",
+        "role": false,
+        "z": true
+      },
+      {
+        "path": "perception.include_is_pursuing",
+        "role": true,
+        "z": false
+      },
+      {
+        "path": "perception.include_z_state",
+        "role": false,
+        "z": true
+      },
+      {
+        "path": "z_state.enabled",
+        "role": false,
+        "z": true
+      }
+    ],
+    "unexpected_differences": []
+  },
+  "resolved_config": {
+    "role_sha256": "1623ec5d1727cc6846261ca1915833d8d13dfdd5ae637cdbad14b14248755f01",
+    "z_sha256": "15d36f4b1454e7dd9424390a47af02ea6ed115eaf70896151e1c463e79040b38",
+    "matched_contract_sha256": "12029ad757c1efe975ea3d04971d7d12f0fb8e00ca5209782dbdd95534777843",
+    "z_matched_contract_sha256": "12029ad757c1efe975ea3d04971d7d12f0fb8e00ca5209782dbdd95534777843"
+  },
+  "differences": [
+    {
+      "path": "iqn.include_is_pursuing",
+      "role": true,
+      "z": false
+    },
+    {
+      "path": "iqn.include_z_state",
+      "role": false,
+      "z": true
+    },
+    {
+      "path": "perception.include_is_pursuing",
+      "role": true,
+      "z": false
+    },
+    {
+      "path": "perception.include_z_state",
+      "role": false,
+      "z": true
+    },
+    {
+      "path": "z_state.enabled",
+      "role": false,
+      "z": true
+    }
+  ],
+  "ignored_non_training_differences": [
+    {
+      "path": "experiment_metadata.comparison_arm",
+      "role": "role_token",
+      "z": "z_token"
+    },
+    {
+      "path": "experiment_metadata.evidence_token",
+      "role": "binary_is_pursuing_i_j",
+      "z": "continuous_z_i_j"
+    }
+  ],
+  "allowed_paths": [
+    "iqn.include_is_pursuing",
+    "iqn.include_z_state",
+    "perception.include_is_pursuing",
+    "perception.include_z_state",
+    "z_state.enabled"
+  ],
+  "unexpected_differences": [],
+  "non_token_diff_count": 0,
+  "model_config": {
+    "role": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "action_size": 9,
+      "self_feature_dim": 9,
+      "max_pursuers": 8,
+      "max_evaders": 8,
+      "max_obstacles": 5,
+      "num_quantiles": 32,
+      "num_cosine_features": 64,
+      "gate_hidden_dim": 64,
+      "architecture": "voradj_single_head",
+      "pursuing_embed_dim": 0,
+      "pursuer_feature_dim": 7,
+      "include_is_pursuing": true,
+      "include_z_state": false,
+      "pursuing_late_fusion": false
+    },
+    "z": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "action_size": 9,
+      "self_feature_dim": 9,
+      "max_pursuers": 8,
+      "max_evaders": 8,
+      "max_obstacles": 5,
+      "num_quantiles": 32,
+      "num_cosine_features": 64,
+      "gate_hidden_dim": 64,
+      "architecture": "voradj_single_head",
+      "pursuing_embed_dim": 0,
+      "pursuer_feature_dim": 7,
+      "include_is_pursuing": false,
+      "include_z_state": true,
+      "pursuing_late_fusion": false
+    },
+    "differences": [
+      {
+        "path": "include_is_pursuing",
+        "role": true,
+        "z": false
+      },
+      {
+        "path": "include_z_state",
+        "role": false,
+        "z": true
+      }
+    ],
+    "unexpected_differences": []
+  },
+  "trainer_config": {
+    "role": {
+      "seed": 2026080201,
+      "total_timesteps": 200000,
+      "train_mode": "voradj_mixed_coverage",
+      "iqn.learning_rate": 0.0001,
+      "iqn.epsilon_start": 0.6,
+      "iqn.epsilon_final": 0.05,
+      "iqn.epsilon_decay_steps": 500000,
+      "iqn.num_quantiles": 32,
+      "iqn.num_cosine_features": 64,
+      "iqn.checkpoint_freq": 25000,
+      "env.width": 120.0,
+      "env.height": 120.0,
+      "env.num_pursuers": 4,
+      "env.num_evaders": 1,
+      "env.collision_semantics": "synchronized_swept_v1",
+      "action.mode": null,
+      "action.decision_dt": null
+    },
+    "z": {
+      "seed": 2026080201,
+      "total_timesteps": 200000,
+      "train_mode": "voradj_mixed_coverage",
+      "iqn.learning_rate": 0.0001,
+      "iqn.epsilon_start": 0.6,
+      "iqn.epsilon_final": 0.05,
+      "iqn.epsilon_decay_steps": 500000,
+      "iqn.num_quantiles": 32,
+      "iqn.num_cosine_features": 64,
+      "iqn.checkpoint_freq": 25000,
+      "env.width": 120.0,
+      "env.height": 120.0,
+      "env.num_pursuers": 4,
+      "env.num_evaders": 1,
+      "env.collision_semantics": "synchronized_swept_v1",
+      "action.mode": null,
+      "action.decision_dt": null
+    }
+  },
+  "replay_config": {
+    "role": {
+      "iqn.batch_size": 128,
+      "iqn.replay_capacity": 1000000,
+      "iqn.min_replay_size": 3000,
+      "iqn.train_freq": 4,
+      "iqn.target_update_freq": 10000,
+      "iqn.gamma": 0.99,
+      "voradj.replay_batch_counts.pursuing": 64,
+      "voradj.replay_batch_counts.pre_capture_cover": 16,
+      "voradj.replay_batch_counts.post_capture_real": 32,
+      "voradj.replay_batch_counts.recovery_pure": 16
+    },
+    "z": {
+      "iqn.batch_size": 128,
+      "iqn.replay_capacity": 1000000,
+      "iqn.min_replay_size": 3000,
+      "iqn.train_freq": 4,
+      "iqn.target_update_freq": 10000,
+      "iqn.gamma": 0.99,
+      "voradj.replay_batch_counts.pursuing": 64,
+      "voradj.replay_batch_counts.pre_capture_cover": 16,
+      "voradj.replay_batch_counts.post_capture_real": 32,
+      "voradj.replay_batch_counts.recovery_pure": 16
+    }
+  },
+  "evaluator_config": {
+    "role": {
+      "formal_evaluation.episodes_per_scene": 20,
+      "formal_evaluation.seed_base": 2026092801,
+      "formal_evaluation.scenes": [
+        "coverage",
+        "capture",
+        "mixed"
+      ],
+      "formal_evaluation.deterministic_quantiles": "midpoint32",
+      "formal_evaluation.checkpoint_interval": 25000
+    },
+    "z": {
+      "formal_evaluation.episodes_per_scene": 20,
+      "formal_evaluation.seed_base": 2026092801,
+      "formal_evaluation.scenes": [
+        "coverage",
+        "capture",
+        "mixed"
+      ],
+      "formal_evaluation.deterministic_quantiles": "midpoint32",
+      "formal_evaluation.checkpoint_interval": 25000
+    }
+  },
+  "generated_at": "2026-09-19T01:34:20+0800"
+}

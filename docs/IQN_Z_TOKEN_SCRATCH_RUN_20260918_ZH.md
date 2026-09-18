@@ -1,86 +1,61 @@
-# IQN-Z-TOKEN scratch 运行记录（2026-09-18）
+# IQN Z-token matched scratch 运行记录（2026-09-18）
 
-更新时间：2026-09-18 23:41（Asia/Shanghai）
+本记录已按 2026-09-19（Asia/Shanghai）正式 matched 启动事实更新。仓库 runtime artifact 优先于聊天摘要。
 
 ## 当前状态
 
-**BLOCKED_PRELAUNCH：未启动正式训练。**
-
-Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配置仍使用历史固定 20m 感知，而本任务明确要求两臂都使用 NormSense-V2。自动 ROLE-vs-Z 门禁因此按设计停止；没有创建 Z 训练进程、没有占用 GPU0，也没有生成可误认为正式运行的 PID、step、吞吐或 ETA。
-
-## 固定实验合同
-
 - 分支：`experiment/iqn-z-token-scratch-20260918`
-- 训练预算：scratch IQN，严格止于 200,000 environment steps
-- 里程碑：25k、50k、75k、100k、125k、150k、175k、200k
-- self token：`[physical, z_i]`
-- friend token：`[physical, z_j]`
-- friend ordering：physical-only
-- 已删除 `is_pursuing` 输入、`pursuing_embed`、late fusion 和 role-dependent ordering
-- z-v1：`lambda=0.95`、`eta=0.85`、previous-step neighbor、同步更新、direct 当步置 1、reset 置 0、无 hard floor
-- 感知：NormSense-V2
-- 训练初始化：完全随机；无 BC、Final IQN、no-role 或 teacher 权重迁移
-- 正式评估：每场景 20 episodes，seed base 2026092801，与 ROLE 约定一致
+- 启动 HEAD：`57bb0aa2e5e80fb0b34da5880e059bbcf60d7b6c`
+- 配置：`configs/experiments/iqn_token_scratch_20260918/z_token.yaml`
+- tmux：`iqn_z_token_matched_20260919`
+- 初始 supervisor PID：`2935727`；25k evaluator 工程修复后 exact-resume PID：`2949712`
+- GPU：物理 GPU1；进程内 `cuda:0`
+- 正式启动：`2026-09-19T01:09:49+0800`
+- 目标：200,000 environment steps；25k 间隔 checkpoint + formal evaluation
+- 状态入口：`artifacts/2026-09-18_iqn_z_token_scratch/{launch,status,heartbeat,scratch_gate}.json`
 
-## 已通过的启动 sanity
+启动后在 16k 稳定窗口观察到：约 `28.82 steps/s`、`3278` 次真实 optimizer updates、replay `64000`、loss `1.3790`、loss EMA `2.6811`，均为有限值；target 已在 step 10k 同步一次。动作窗口九个动作均有采样，不存在固定动作实现错误。
 
-使用当前 seed 2026080201、physical-only ordering 和 NormSense-V2 参考 ROLE 配置完成了真实 GPU0 预检：
+25k milestone 已完成 resumable checkpoint 与 60 局 formal evaluation；报告严格 JSON 可读。评估写出曾因“未发生事件”的 `inf` 时间值被严格 JSON writer 拒绝，修复为 `null` 后从 25k exact-resume，仅重跑 evaluator，不改变训练状态。当前 25k strict CE、capture 和 safe-complete 均为 0，属于允许的早期性能，不触发早停。
 
-- ROLE/Z 随机初始化 state hash bit-exact 相同：`22a7deaa4b7265909a8b6c340f84d8741b69194fd3cc5c643f487ddeb3908ec8`
-- Z observation shape：self `[9]`、friend `[8,7]`
-- physical friend rows 不受 role token 翻转影响
-- z 同步传播、direct z=1、pure coverage z=0、自然衰减语义通过
-- 10 个实际 populated friend token 均由物理特征唯一定位，且最后一维逐项等于对应 `z_j`
-- full-resume 恢复 z 完整状态通过
-- 真实环境 16 步产生 15 次 optimizer update；参数发生变化；loss 有限
-- target network 更新 15 次，最后同步 step=16
-- 正式 mixed 配置的 pursuing/pre-capture/post-capture/recovery 四类 replay 初始尺寸全部为 0
-- trainer 与 formal evaluator 均对 reward、sensing、AW9 action physics、synchronized-swept collision 执行 live fail-closed assertions
-- coverage/capture/mixed evaluator smoke 完成
-- GPU：NVIDIA RTX A6000
+## Matched 合同
 
-机器证据：`artifacts/2026-09-18_iqn_z_token_scratch/reference_preflight/startup_sanity.json`。
+Z 与 ROLE 共同继承 `configs/experiments/iqn_token_scratch_20260918/common.yaml`，共同使用 NormSense-V2：
 
-聚焦回归：27 passed，2 skipped；跳过项为条件性测试，不是失败。
+- policy：`forward-final-density-normalized-sensing-v2`
+- runtime observation hash：`6c2af0df8ebb4fbca9c52a29fb4008a84e0ff90a5804ba633054745bef6f2bcd`
+- matched non-token contract hash：`12029ad757c1efe975ea3d04971d7d12f0fb8e00ca5209782dbdd95534777843`
+- Z resolved config hash：`15d36f4b1454e7dd9424390a47af02ea6ed115eaf70896151e1c463e79040b38`
+- non-token diff count：`0`
 
-## 实际 ROLE 门禁结果
+Z policy 输入为 `[physical_self, z_i]` 与 `[relative_friend_physical, z_j]`。不存在 `is_pursuing` policy 输入、`pursuing_embed`、late fusion、特殊 z branch、z-dependent friend ordering 或 global target state。
 
-实际 ROLE commit：`14702f5e1d2c2ec49ced78efb84c3f4b3642f612`。
+Z-v1 固定：`lambda=0.95`、`eta=0.85`、direct 当前 decision 立即生效、neighbor 只读 previous-decision `z_j`、同步更新、reset 为 0、无 hard floor，且 z 完整进入 checkpoint/resume state。本轮禁止修改这些科学变量。
+
+## Scratch 与 preflight
+
+正式 scratch gate 已确认：`global_step=0`、四类 production replay 全为 0、optimizer state 为空、epsilon 为 `0.6`，online/target model SHA 均为 `22a7deaa4b7265909a8b6c340f84d8741b69194fd3cc5c643f487ddeb3908ec8`。ROLE/Z 初始化参数 key、shape 与 tensor bit-exact。
+
+双边 preflight 均通过：NormSense-V2 runtime assertion、observation shape、ROLE binary token、10 个 Z friend `z_j` mapping checks、10 个 physical friend rows、15 次真实 optimizer update、finite loss、参数变化、target sync、非固定动作、checkpoint exact load、optimizer/replay/global-step/epsilon resume、Z state bit-exact resume、formal evaluator smoke 与 runtime fail-closed trigger。
 
 机器证据：
 
-- `artifacts/2026-09-18_iqn_z_token_scratch/preflight/config_diff.json`
-- `artifacts/2026-09-18_iqn_z_token_scratch/status.json`
+- `artifacts/2026-09-18_iqn_z_token_scratch/preflight/ROLE_vs_Z_resolved_config_diff.json`
+- `artifacts/2026-09-18_iqn_z_token_scratch/preflight/startup_sanity.json`
+- `artifacts/2026-09-18_iqn_z_token_scratch/STARTUP_AUDIT.json`
 
-门禁发现 29 项非允许差异，分为 NormSense-V2 配置与 ROLE 缺失的 live runtime assertions 两类：
+首次 matched startup 曾到 3k，但因 coordinator 读取 stale prelaunch status 而主动终止；它已归档到 `aborted_matched_startup_coordinator_status_bug_20260919T005609+0800/`，标记为 `ABORTED_MATCHED_STARTUP_NOT_FOR_RESULTS`，禁止恢复。本次正式 run 是状态新鲜度修复后重新从 step 0 启动。
 
-- ROLE 缺少 `normsense_v2.enabled/policy/schema_version`
-- ROLE 仍有 `voradj.enemy_sensing_radius=20`
-- ROLE 仍有 `voradj.obstacle_sensing_radius=20`
-- ROLE 缺少 `voradj.onboard_sensing.{policy,schema_version,k,radius_floor}`
+## ETA 与恢复
 
-- ROLE 缺少对 reward、sensing、AW9 action physics 与 synchronized-swept collision 的 20 项 `runtime_semantic_assertions`
-这些都不是 evidence token 差异，故不能开始可归因的 ROLE-vs-Z 对照。
+16k 短窗口估计（early/unstable）：25k `2026-09-19T01:24:17+0800`、50k `01:38:44`、100k `02:07:39`、200k `03:05:28`。
 
-ROLE 首次旧感知训练段在 25k 后因 resume 路径合同不一致停止，随后该路径问题已由 ROLE 线修复。
+首个 production full-resume 已在 25k milestone 生成并验证可读。此后仅在 HEAD、config/runtime hash 不变且 resume 可读时自动 exact-resume；合同漂移、训练 NaN/Inf、replay/checkpoint 损坏或 wrong GPU 一律 fail closed。
 
-ROLE 于 23:31 从 scratch 重启；23:41 的权威观测为：
+Z-v2 shorter-half-life 与 epsilon hard floor 仅保留为未来 TODO，本轮不实施。
 
-- launch head `574430f4bed5db4d6d1b5ddd18076754dcfc87f2`；
-- tmux、supervisor PID 2860213、child PID 2860218 均存活，运行于 GPU1；
-- current step 21,000，mixed optimizer updates 1,429，loss EMA 2.5167；
-- resume 路径合同已修复；
-- 配置仍是旧 20m 感知且没有 live runtime assertions。
-
-因此 ROLE 当前虽在后台推进，但仍不是 NormSense-V2 matched control。Z 线不会自行修改、停止或重启该独立工作树。
-
-## 解阻条件与后续动作
-
-等待 ROLE 线采用相同 NormSense-V2 有效配置并重新建立可比较基线。Z 线不会修改、停止或重启 ROLE 工作树/进程。ROLE 配置更新后，重新运行监督器会强制完整重跑预检，不复用缓存 sanity；通过后才会在独立 GPU 上启动，并在确认 optimizer update、loss、replay、target sync 正常后记录实际 PID、step、吞吐、ETA 与远端 head。
-
-## Z-v2 TODO（本轮禁止实施）
-
-1. 降低 lambda，缩短 half-life。
-2. 在 `z_tilde` 后应用小阈值 `epsilon_z`，使指数尾巴有限时间归零。
-
-只有 Z-v1 RL 证明“能学但 release/recovery 偏慢”后，才考虑 Z-v2。
+```bash
+jq '{status,current_step,phase,latest_metrics}' artifacts/2026-09-18_iqn_z_token_scratch/heartbeat.json
+tmux attach -t iqn_z_token_matched_20260919
+CUDA_VISIBLE_DEVICES=1 python3 tools/iqn_token_matched_20260919.py supervise --arm z --device cuda:0 --output artifacts/2026-09-18_iqn_z_token_scratch
+```
