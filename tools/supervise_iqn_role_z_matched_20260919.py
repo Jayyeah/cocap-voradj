@@ -70,6 +70,10 @@ def current_arm_status(status: Mapping[str, Any], arm: str) -> dict[str, Any]:
     return dict(status)
 
 
+def resume_error_is_fatal(resume_error: str | None, pid_is_alive: bool, streak: int) -> bool:
+    return bool(resume_error) and (not pid_is_alive or streak >= 3)
+
+
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
 
@@ -283,6 +287,7 @@ def supervise(
     atomic_json(output / "launch.json", launch_payload)
     seen_milestones = {"role": set(), "z": set()}
     restart_counts = {"role": 0, "z": 0}
+    resume_error_streaks = {"role": 0, "z": 0}
     while True:
         gpu_pids = gpu_processes()
         snapshots = {
@@ -292,13 +297,14 @@ def supervise(
         disk = shutil.disk_usage(role_root)
         fail_reasons = []
         for arm, row in snapshots.items():
+            resume_error_streaks[arm] = resume_error_streaks[arm] + 1 if row["resume_error"] else 0
             if row["contract_drift"]:
                 fail_reasons.append(f"{arm}:contract_drift")
             if row["wrong_gpu"]:
                 fail_reasons.append(f"{arm}:wrong_gpu")
             if not row["metrics_finite"]:
                 fail_reasons.append(f"{arm}:nan_or_inf")
-            if row["resume_error"]:
+            if resume_error_is_fatal(row["resume_error"], row["pid_alive"], resume_error_streaks[arm]):
                 fail_reasons.append(f"{arm}:resume_corruption")
             if row["fatal_error"]:
                 fail_reasons.append(f"{arm}:fatal_status")
@@ -346,6 +352,7 @@ def supervise(
             "role_runtime": snapshots["role"],
             "z_runtime": snapshots["z"],
             "restart_counts": restart_counts,
+            "resume_error_streaks": resume_error_streaks,
             "disk": {"total": disk.total, "used": disk.used, "free": disk.free},
             "fail_reasons": sorted(set(fail_reasons)),
             "updated_at": now_local(),

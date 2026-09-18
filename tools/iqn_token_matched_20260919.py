@@ -356,6 +356,18 @@ def numeric_summary(values: list[float]) -> dict[str, Any]:
     }
 
 
+def json_finite(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: json_finite(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_finite(item) for item in value]
+    if isinstance(value, np.generic):
+        return json_finite(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 class ZDiagnostics:
     def __init__(self, scene: str):
         self.scene = scene
@@ -501,6 +513,7 @@ def evaluate_checkpoint(
             if scene == "capture":
                 row["safe_complete"] = bool(row["captured"] and not row["collision"])
                 row["mission_seconds"] = row["capture_seconds"] if row["safe_complete"] else None
+            row = json_finite(row)
             records.append(row)
             with (output / "episodes.jsonl").open("a", encoding="utf-8") as stream:
                 stream.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
@@ -596,6 +609,7 @@ def evaluate_checkpoint(
         "elapsed_seconds": time.monotonic() - started,
         "completed_at": now_local(),
     }
+    report = json_finite(report)
     atomic_json(output / "report.json", report)
     atomic_json(output / "progress.json", {"status": "complete", "completed": total, "total": total})
     return report
