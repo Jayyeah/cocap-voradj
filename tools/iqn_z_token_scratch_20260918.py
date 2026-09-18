@@ -30,6 +30,7 @@ from cocap_voradj.envs.density_sensing import enable_v2, runtime_metadata
 from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.models.iqn import CoCapIQN, CoCapNetConfig
 from cocap_voradj.training.trainer import CoCapTrainer, deep_update, load_config, set_global_config
+from cocap_voradj.training.runtime_semantics import assert_runtime
 from tools.collect_iqn_aw_teacher_dataset_20260903 import sha256_file
 from tools.evaluate_vxy_stage2_cross_retention_20260903 import ring_count
 from tools.run_forward_final_bridge_20260908 import atomic_json, run_episode as standard_episode
@@ -226,6 +227,7 @@ def make_env(root_cfg: Mapping[str, Any], scene: str, seed: int) -> tuple[VorAdj
     meta = runtime_metadata(env)
     if meta["policy"] != NORMSENSE_POLICY:
         raise AssertionError("NormSense-V2 runtime policy drift")
+    assert_runtime(env)
     return env, observations
 
 
