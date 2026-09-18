@@ -1357,7 +1357,10 @@ class VorAdjEnv(CoCapEnv):
                 float(np.linalg.norm(self._position(self.pursuers[j]) - self._position(pursuer))),
             )
         friend_ordering_mode = str(
-            self.per_cfg.get("friend_ordering_mode", "role_then_physical")
+            self.per_cfg.get(
+                "friend_ordering_mode",
+                "role_then_physical" if include_is_pursuing else "physical_only",
+            )
         ).strip().lower()
         if friend_ordering_mode not in {"role_then_physical", "physical_only"}:
             raise ValueError(
@@ -1366,10 +1369,8 @@ class VorAdjEnv(CoCapEnv):
         if include_is_pursuing and friend_ordering_mode == "role_then_physical":
             friend_ids = sorted(friend_ids, key=friend_sort)
         else:
-            # Physical-only ordering is required for the matched ROLE/Z
-            # controls. The legacy role-first path remains opt-in for old
-            # Final checkpoints/configs, while every role-free observation
-            # already takes this path.
+            # Physical-only ordering can be required even when a role/z token
+            # is present so evidence cannot affect truncation priority.
             def role_free_friend_sort(j: int) -> Tuple[float, ...]:
                 other = self.pursuers[j]
                 if world_frame:
