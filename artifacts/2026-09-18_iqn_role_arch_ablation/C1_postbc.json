@@ -1,0 +1,655 @@
+{
+  "schema": "iqn-role-architecture-ablation-v1",
+  "arm": "C1",
+  "teacher_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+  "dataset_rows": 29864,
+  "optimization_rows": 23424,
+  "train_rows": 23424,
+  "validation_rows": 6440,
+  "epochs": 4,
+  "batch_size": 4096,
+  "optimizer": {
+    "name": "Adam",
+    "lr": 0.0003,
+    "eps": 1e-05
+  },
+  "loss": "categorical_KL + 0.25*normalized_smooth_L1",
+  "temperature": 0.0031884169327952754,
+  "seed": 2026091801,
+  "transfer": {
+    "student_config": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "action_size": 9,
+      "self_feature_dim": 9,
+      "max_pursuers": 8,
+      "max_evaders": 8,
+      "max_obstacles": 5,
+      "num_quantiles": 32,
+      "num_cosine_features": 64,
+      "gate_hidden_dim": 64,
+      "architecture": "voradj_single_head",
+      "pursuing_embed_dim": 0,
+      "pursuer_feature_dim": 7,
+      "include_is_pursuing": true,
+      "include_z_state": false,
+      "pursuing_late_fusion": false
+    },
+    "copied_exact_keys": [
+      "pis",
+      "encoders.self.0.weight",
+      "encoders.self.0.bias",
+      "encoders.self.1.weight",
+      "encoders.self.1.bias",
+      "encoders.pursuers.0.weight",
+      "encoders.pursuers.0.bias",
+      "encoders.pursuers.1.weight",
+      "encoders.pursuers.1.bias",
+      "encoders.evaders.0.weight",
+      "encoders.evaders.0.bias",
+      "encoders.evaders.1.weight",
+      "encoders.evaders.1.bias",
+      "encoders.obstacles.0.weight",
+      "encoders.obstacles.0.bias",
+      "encoders.obstacles.1.weight",
+      "encoders.obstacles.1.bias",
+      "type_embedding.weight",
+      "transformer.layers.0.self_attn.in_proj_weight",
+      "transformer.layers.0.self_attn.in_proj_bias",
+      "transformer.layers.0.self_attn.out_proj.weight",
+      "transformer.layers.0.self_attn.out_proj.bias",
+      "transformer.layers.0.linear1.weight",
+      "transformer.layers.0.linear1.bias",
+      "transformer.layers.0.linear2.weight",
+      "transformer.layers.0.linear2.bias",
+      "transformer.layers.0.norm1.weight",
+      "transformer.layers.0.norm1.bias",
+      "transformer.layers.0.norm2.weight",
+      "transformer.layers.0.norm2.bias",
+      "transformer.layers.1.self_attn.in_proj_weight",
+      "transformer.layers.1.self_attn.in_proj_bias",
+      "transformer.layers.1.self_attn.out_proj.weight",
+      "transformer.layers.1.self_attn.out_proj.bias",
+      "transformer.layers.1.linear1.weight",
+      "transformer.layers.1.linear1.bias",
+      "transformer.layers.1.linear2.weight",
+      "transformer.layers.1.linear2.bias",
+      "transformer.layers.1.norm1.weight",
+      "transformer.layers.1.norm1.bias",
+      "transformer.layers.1.norm2.weight",
+      "transformer.layers.1.norm2.bias",
+      "transformer.layers.2.self_attn.in_proj_weight",
+      "transformer.layers.2.self_attn.in_proj_bias",
+      "transformer.layers.2.self_attn.out_proj.weight",
+      "transformer.layers.2.self_attn.out_proj.bias",
+      "transformer.layers.2.linear1.weight",
+      "transformer.layers.2.linear1.bias",
+      "transformer.layers.2.linear2.weight",
+      "transformer.layers.2.linear2.bias",
+      "transformer.layers.2.norm1.weight",
+      "transformer.layers.2.norm1.bias",
+      "transformer.layers.2.norm2.weight",
+      "transformer.layers.2.norm2.bias",
+      "transformer.layers.3.self_attn.in_proj_weight",
+      "transformer.layers.3.self_attn.in_proj_bias",
+      "transformer.layers.3.self_attn.out_proj.weight",
+      "transformer.layers.3.self_attn.out_proj.bias",
+      "transformer.layers.3.linear1.weight",
+      "transformer.layers.3.linear1.bias",
+      "transformer.layers.3.linear2.weight",
+      "transformer.layers.3.linear2.bias",
+      "transformer.layers.3.norm1.weight",
+      "transformer.layers.3.norm1.bias",
+      "transformer.layers.3.norm2.weight",
+      "transformer.layers.3.norm2.bias",
+      "cos_embedding.weight",
+      "cos_embedding.bias",
+      "coverage_fusion.0.weight",
+      "coverage_fusion.0.bias",
+      "coverage_fusion.1.weight",
+      "coverage_fusion.1.bias",
+      "encirclement_fusion.0.weight",
+      "encirclement_fusion.0.bias",
+      "encirclement_fusion.1.weight",
+      "encirclement_fusion.1.bias",
+      "target_query.weight",
+      "target_query.bias",
+      "target_key.weight",
+      "target_key.bias",
+      "target_value.weight",
+      "target_value.bias",
+      "coverage_head.0.weight",
+      "coverage_head.0.bias",
+      "coverage_head.2.weight",
+      "coverage_head.2.bias",
+      "coverage_head.3.weight",
+      "coverage_head.3.bias",
+      "encirclement_head.0.weight",
+      "encirclement_head.0.bias",
+      "encirclement_head.2.weight",
+      "encirclement_head.2.bias",
+      "encirclement_head.3.weight",
+      "encirclement_head.3.bias",
+      "gate_head.0.weight",
+      "gate_head.0.bias",
+      "gate_head.2.weight",
+      "gate_head.2.bias",
+      "summary_role_embedding.weight",
+      "summary_attention.in_proj_weight",
+      "summary_attention.in_proj_bias",
+      "summary_attention.out_proj.weight",
+      "summary_attention.out_proj.bias",
+      "summary_fusion.0.weight",
+      "summary_fusion.0.bias",
+      "summary_fusion.1.weight",
+      "summary_fusion.1.bias",
+      "single_action_feature.0.bias",
+      "single_action_feature.1.weight",
+      "single_action_feature.1.bias",
+      "single_head.0.weight",
+      "single_head.0.bias",
+      "single_head.2.weight",
+      "single_head.2.bias",
+      "single_head.3.weight",
+      "single_head.3.bias"
+    ],
+    "trimmed_keys": [
+      {
+        "student_key": "single_action_feature.0.weight",
+        "teacher_key": "single_action_feature.0.weight",
+        "kept_columns": 256,
+        "removed_columns": 8
+      }
+    ],
+    "removed_keys": [
+      "pursuing_embed.weight",
+      "pursuing_embed.bias"
+    ],
+    "late_fusion_removed": true,
+    "role_token_columns_preserved": true,
+    "role_dependent_friend_ordering_preserved": true
+  },
+  "stage": "postbc",
+  "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C1_postbc.pt",
+  "checkpoint_sha256": "5a87687f4ed04572fa2151c28c83e06217b8c79380e6d356e2447787a7b7c0b7",
+  "offline": {
+    "overall": {
+      "rows": 29864,
+      "action_agreement": 0.3654567372086793,
+      "categorical_kl": 1.5815811157226562,
+      "q_regret": 0.03486979007720947,
+      "q_ranking_agreement": 0.7855107764251438
+    },
+    "pre_capture": {
+      "rows": 6668,
+      "action_agreement": 0.5641871625674865,
+      "categorical_kl": 1.2901042699813843,
+      "q_regret": 0.05854969099164009,
+      "q_ranking_agreement": 0.8650788360846349
+    },
+    "post_capture": {
+      "rows": 12384,
+      "action_agreement": 0.30781653746770027,
+      "categorical_kl": 1.6743344068527222,
+      "q_regret": 0.0283492561429739,
+      "q_ranking_agreement": 0.7607905062685424
+    },
+    "pure_coverage": {
+      "rows": 10812,
+      "action_agreement": 0.3089160192378838,
+      "categorical_kl": 1.6551021337509155,
+      "q_regret": 0.027734454721212387,
+      "q_ranking_agreement": 0.7647538400405585
+    },
+    "direct": {
+      "rows": 1744,
+      "action_agreement": 0.6731651376146789,
+      "categorical_kl": 1.0086909532546997,
+      "q_regret": 0.11990945786237717,
+      "q_ranking_agreement": 0.9146279306829764
+    },
+    "pursuing_memory": {
+      "rows": 66,
+      "action_agreement": 0.6666666666666666,
+      "categorical_kl": 0.9694382548332214,
+      "q_regret": 0.17719575762748718,
+      "q_ranking_agreement": 0.8806584362139918
+    },
+    "support": {
+      "rows": 1936,
+      "action_agreement": 0.6580578512396694,
+      "categorical_kl": 1.031437635421753,
+      "q_regret": 0.06196106970310211,
+      "q_ranking_agreement": 0.9175339251096826
+    },
+    "coverage": {
+      "rows": 26118,
+      "action_agreement": 0.3224596064017153,
+      "categorical_kl": 1.6621614694595337,
+      "q_regret": 0.026823561638593674,
+      "q_ranking_agreement": 0.7668624542555676
+    },
+    "ring2": {
+      "rows": 64,
+      "action_agreement": 0.71875,
+      "categorical_kl": 0.9354683756828308,
+      "q_regret": 0.0641765147447586,
+      "q_ranking_agreement": 0.904320987654321
+    },
+    "ring3": {
+      "rows": 16,
+      "action_agreement": 0.6875,
+      "categorical_kl": 0.8531978726387024,
+      "q_regret": 0.037447988986968994,
+      "q_ranking_agreement": 0.9598765432098766
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "mean_loss": 2.6593814889589944,
+      "validation": {
+        "overall": {
+          "rows": 6440,
+          "action_agreement": 0.3293478260869565,
+          "categorical_kl": 1.5759462118148804,
+          "q_regret": 0.04425670579075813,
+          "q_ranking_agreement": 0.7551184725097769
+        },
+        "pre_capture": {
+          "rows": 1216,
+          "action_agreement": 0.4597039473684211,
+          "categorical_kl": 1.3581103086471558,
+          "q_regret": 0.10507391393184662,
+          "q_ranking_agreement": 0.8070784600389863
+        },
+        "post_capture": {
+          "rows": 2540,
+          "action_agreement": 0.3062992125984252,
+          "categorical_kl": 1.6669937372207642,
+          "q_regret": 0.04411865770816803,
+          "q_ranking_agreement": 0.7344415281423156
+        },
+        "pure_coverage": {
+          "rows": 2684,
+          "action_agreement": 0.29210134128166915,
+          "categorical_kl": 1.5884753465652466,
+          "q_regret": 0.016833793371915817,
+          "q_ranking_agreement": 0.7511453331125464
+        },
+        "direct": {
+          "rows": 366,
+          "action_agreement": 0.5573770491803278,
+          "categorical_kl": 1.2216215133666992,
+          "q_regret": 0.18555042147636414,
+          "q_ranking_agreement": 0.8658166363084395
+        },
+        "pursuing_memory": {
+          "rows": 16,
+          "action_agreement": 0.625,
+          "categorical_kl": 1.2520533800125122,
+          "q_regret": 0.34034252166748047,
+          "q_ranking_agreement": 0.8132716049382716
+        },
+        "support": {
+          "rows": 352,
+          "action_agreement": 0.625,
+          "categorical_kl": 1.1763445138931274,
+          "q_regret": 0.10459356009960175,
+          "q_ranking_agreement": 0.8828563411896745
+        },
+        "coverage": {
+          "rows": 5706,
+          "action_agreement": 0.29565369786189977,
+          "categorical_kl": 1.6242331266403198,
+          "q_regret": 0.030641311779618263,
+          "q_ranking_agreement": 0.7399748153340863
+        },
+        "ring2": {
+          "rows": 36,
+          "action_agreement": 0.4722222222222222,
+          "categorical_kl": 1.1279081106185913,
+          "q_regret": 0.14999359846115112,
+          "q_ranking_agreement": 0.874485596707819
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.4375,
+          "categorical_kl": 1.026279330253601,
+          "q_regret": 0.10156160593032837,
+          "q_ranking_agreement": 0.9290123456790124
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "mean_loss": 1.9849807421366374,
+      "validation": {
+        "overall": {
+          "rows": 6440,
+          "action_agreement": 0.10201863354037267,
+          "categorical_kl": 1.628609299659729,
+          "q_regret": 0.04630643501877785,
+          "q_ranking_agreement": 0.7834215167548502
+        },
+        "pre_capture": {
+          "rows": 1216,
+          "action_agreement": 0.37088815789473684,
+          "categorical_kl": 1.3624732494354248,
+          "q_regret": 0.08733317255973816,
+          "q_ranking_agreement": 0.8388157894736842
+        },
+        "post_capture": {
+          "rows": 2540,
+          "action_agreement": 0.05393700787401575,
+          "categorical_kl": 1.7251410484313965,
+          "q_regret": 0.04177136719226837,
+          "q_ranking_agreement": 0.7669680178866531
+        },
+        "pure_coverage": {
+          "rows": 2684,
+          "action_agreement": 0.02570789865871833,
+          "categorical_kl": 1.6578305959701538,
+          "q_regret": 0.032010823488235474,
+          "q_ranking_agreement": 0.7738956044966974
+        },
+        "direct": {
+          "rows": 366,
+          "action_agreement": 0.6174863387978142,
+          "categorical_kl": 1.1697614192962646,
+          "q_regret": 0.12155424803495407,
+          "q_ranking_agreement": 0.8805235107603049
+        },
+        "pursuing_memory": {
+          "rows": 16,
+          "action_agreement": 0.4375,
+          "categorical_kl": 2.0630064010620117,
+          "q_regret": 0.6661367416381836,
+          "q_ranking_agreement": 0.7762345679012346
+        },
+        "support": {
+          "rows": 352,
+          "action_agreement": 0.5738636363636364,
+          "categorical_kl": 1.141660213470459,
+          "q_regret": 0.10051247477531433,
+          "q_ranking_agreement": 0.900182379349046
+        },
+        "coverage": {
+          "rows": 5706,
+          "action_agreement": 0.03890641430073607,
+          "categorical_kl": 1.6868627071380615,
+          "q_regret": 0.03639783337712288,
+          "q_ranking_agreement": 0.770010342156621
+        },
+        "ring2": {
+          "rows": 36,
+          "action_agreement": 0.5555555555555556,
+          "categorical_kl": 1.1141197681427002,
+          "q_regret": 0.18557456135749817,
+          "q_ranking_agreement": 0.8717421124828534
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.6875,
+          "categorical_kl": 0.9281999468803406,
+          "q_regret": 0.037447988986968994,
+          "q_ranking_agreement": 0.9506172839506173
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "mean_loss": 1.7931239008903503,
+      "validation": {
+        "overall": {
+          "rows": 6440,
+          "action_agreement": 0.3549689440993789,
+          "categorical_kl": 1.5928759574890137,
+          "q_regret": 0.03501736745238304,
+          "q_ranking_agreement": 0.7785522582624033
+        },
+        "pre_capture": {
+          "rows": 1216,
+          "action_agreement": 0.5608552631578947,
+          "categorical_kl": 1.2905410528182983,
+          "q_regret": 0.0662730261683464,
+          "q_ranking_agreement": 0.8682789148797921
+        },
+        "post_capture": {
+          "rows": 2540,
+          "action_agreement": 0.3389763779527559,
+          "categorical_kl": 1.6895780563354492,
+          "q_regret": 0.028000803664326668,
+          "q_ranking_agreement": 0.7648002333041704
+        },
+        "pure_coverage": {
+          "rows": 2684,
+          "action_agreement": 0.2768256333830104,
+          "categorical_kl": 1.638336420059204,
+          "q_regret": 0.027496952563524246,
+          "q_ranking_agreement": 0.7509153465437619
+        },
+        "direct": {
+          "rows": 366,
+          "action_agreement": 0.6256830601092896,
+          "categorical_kl": 1.0877093076705933,
+          "q_regret": 0.13106149435043335,
+          "q_ranking_agreement": 0.9085880051271672
+        },
+        "pursuing_memory": {
+          "rows": 16,
+          "action_agreement": 0.5625,
+          "categorical_kl": 1.085179090499878,
+          "q_regret": 0.15152239799499512,
+          "q_ranking_agreement": 0.8919753086419753
+        },
+        "support": {
+          "rows": 352,
+          "action_agreement": 0.6221590909090909,
+          "categorical_kl": 1.0770411491394043,
+          "q_regret": 0.07078314572572708,
+          "q_ranking_agreement": 0.9118967452300786
+        },
+        "coverage": {
+          "rows": 5706,
+          "action_agreement": 0.3205397826848931,
+          "categorical_kl": 1.6585240364074707,
+          "q_regret": 0.026323754340410233,
+          "q_ranking_agreement": 0.7616673806649271
+        },
+        "ring2": {
+          "rows": 36,
+          "action_agreement": 0.6666666666666666,
+          "categorical_kl": 0.9193322062492371,
+          "q_regret": 0.06666609644889832,
+          "q_ranking_agreement": 0.925925925925926
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.6875,
+          "categorical_kl": 0.8531978726387024,
+          "q_regret": 0.037447988986968994,
+          "q_ranking_agreement": 0.9598765432098766
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "mean_loss": 1.7164045373598735,
+      "validation": {
+        "overall": {
+          "rows": 6440,
+          "action_agreement": 0.29720496894409937,
+          "categorical_kl": 1.6006466150283813,
+          "q_regret": 0.03717537224292755,
+          "q_ranking_agreement": 0.813361705390691
+        },
+        "pre_capture": {
+          "rows": 1216,
+          "action_agreement": 0.48930921052631576,
+          "categorical_kl": 1.2898328304290771,
+          "q_regret": 0.07712308317422867,
+          "q_ranking_agreement": 0.8774772579597142
+        },
+        "post_capture": {
+          "rows": 2540,
+          "action_agreement": 0.2740157480314961,
+          "categorical_kl": 1.7024948596954346,
+          "q_regret": 0.030288858339190483,
+          "q_ranking_agreement": 0.8001652571206377
+        },
+        "pure_coverage": {
+          "rows": 2684,
+          "action_agreement": 0.2321162444113264,
+          "categorical_kl": 1.6450780630111694,
+          "q_regret": 0.02559390477836132,
+          "q_ranking_agreement": 0.7968022667476219
+        },
+        "direct": {
+          "rows": 366,
+          "action_agreement": 0.6229508196721312,
+          "categorical_kl": 1.0674325227737427,
+          "q_regret": 0.1343320906162262,
+          "q_ranking_agreement": 0.9081157660392634
+        },
+        "pursuing_memory": {
+          "rows": 16,
+          "action_agreement": 0.5625,
+          "categorical_kl": 1.5208218097686768,
+          "q_regret": 0.3141775131225586,
+          "q_ranking_agreement": 0.8348765432098766
+        },
+        "support": {
+          "rows": 352,
+          "action_agreement": 0.5767045454545454,
+          "categorical_kl": 1.0482274293899536,
+          "q_regret": 0.09251382201910019,
+          "q_ranking_agreement": 0.9212962962962963
+        },
+        "coverage": {
+          "rows": 5706,
+          "action_agreement": 0.25832457062740977,
+          "categorical_kl": 1.669150710105896,
+          "q_regret": 0.02675291709601879,
+          "q_ranking_agreement": 0.8005651404412942
+        },
+        "ring2": {
+          "rows": 36,
+          "action_agreement": 0.5833333333333334,
+          "categorical_kl": 0.9381272196769714,
+          "q_regret": 0.1340620517730713,
+          "q_ranking_agreement": 0.9320987654320988
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.6875,
+          "categorical_kl": 0.7897910475730896,
+          "q_regret": 0.037447988986968994,
+          "q_ranking_agreement": 0.9583333333333334
+        }
+      }
+    }
+  ],
+  "rollout": {
+    "coverage": {
+      "episodes": 20,
+      "captured_rate": 0.0,
+      "normal_capture_rate": 0.0,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.05,
+      "ce_success_rate": 0.0,
+      "safe_complete_rate": 0.0,
+      "episode_seconds": {
+        "n": 20,
+        "mean": 1425.95,
+        "p50": 1500.0,
+        "p90": 1500.0
+      },
+      "capture_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "recovery_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "mission_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      }
+    },
+    "capture": {
+      "episodes": 20,
+      "captured_rate": 0.9,
+      "normal_capture_rate": 0.9,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.1,
+      "ce_success_rate": 0.0,
+      "safe_complete_rate": 0.9,
+      "episode_seconds": {
+        "n": 20,
+        "mean": 42.925,
+        "p50": 39.5,
+        "p90": 63.50000000000001
+      },
+      "capture_seconds": {
+        "n": 18,
+        "mean": 40.416666666666664,
+        "p50": 38.75,
+        "p90": 52.25000000000001
+      },
+      "recovery_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "mission_seconds": {
+        "n": 18,
+        "mean": 40.416666666666664,
+        "p50": 38.75,
+        "p90": 52.25000000000001
+      }
+    },
+    "mixed": {
+      "episodes": 20,
+      "captured_rate": 0.95,
+      "normal_capture_rate": 0.95,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.15,
+      "ce_success_rate": 0.0,
+      "safe_complete_rate": 0.0,
+      "episode_seconds": {
+        "n": 20,
+        "mean": 259.75,
+        "p50": 289.75,
+        "p90": 302.1
+      },
+      "capture_seconds": {
+        "n": 19,
+        "mean": 44.10526315789474,
+        "p50": 44.0,
+        "p90": 54.3
+      },
+      "recovery_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "mission_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      }
+    }
+  }
+}

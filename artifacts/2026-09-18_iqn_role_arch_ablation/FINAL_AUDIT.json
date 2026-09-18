@@ -1,0 +1,1506 @@
+{
+  "schema": "iqn-role-architecture-ablation-v1",
+  "status": "complete",
+  "branch": "experiment/iqn-role-architecture-ablation-20260918",
+  "baseline_head_at_run": "5f545de9233ce5e917919cb638462cf580ad4c56",
+  "contract": {
+    "teacher_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+    "b3_dataset_manifest_sha256": "efd2db4f04007a71d9038c3d67d8e9d94902b9b3d96f9df1b7abee0175fcb73e",
+    "b3_student_checkpoint_sha256": "e8f38734c462488afea992ada065bd96f8a98c536077ca079ff043c47ed6de9b",
+    "reward_unchanged": true,
+    "topology_unchanged": true,
+    "role_tokens_preserved": true,
+    "role_dependent_friend_ordering_preserved": true,
+    "c1_late_fusion_removed": true
+  },
+  "dataset": {
+    "manifest": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/dataset/manifest.json",
+    "rows": 29864,
+    "coverage": {
+      "ring2_rows": 64,
+      "ring3_rows": 16,
+      "direct_rows": 1810,
+      "support_rows": 1936,
+      "post_capture_rows": 12384,
+      "pure_coverage_rows": 10812
+    },
+    "observation_semantics": "original Final IQN is_pursuing tokens and role-dependent friend ordering",
+    "b3_match": {
+      "strict": true,
+      "all_metadata_exact": true,
+      "max_teacher_q_abs_delta": 0.0,
+      "max_reward_abs_delta": 0.0
+    }
+  },
+  "training_matched_to_b3": {
+    "strict": true,
+    "epochs": 4,
+    "batch_size": 4096,
+    "optimizer": "Adam(lr=3e-4, eps=1e-5)",
+    "loss": "categorical_KL + 0.25*normalized_smooth_L1",
+    "split": "episode_id % 5",
+    "max_train_rows": 65536,
+    "seed": 2026091801
+  },
+  "arms": {
+    "C0_step0": {
+      "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C0_step0.pt",
+      "checkpoint_sha256": "e24e1376021fdbb637b7ce70105ba7b4413245614af92ef9770f8658e0dd0ad7",
+      "offline": {
+        "overall": {
+          "rows": 29864,
+          "action_agreement": 0.9999665148673988,
+          "categorical_kl": 1.6180758476257324,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 0.9999917320660244
+        },
+        "pre_capture": {
+          "rows": 6668,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.4174292087554932,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 0.9999962970368889
+        },
+        "post_capture": {
+          "rows": 12384,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.6827222108840942,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 0.9999940185663699
+        },
+        "pure_coverage": {
+          "rows": 10812,
+          "action_agreement": 0.9999075101738809,
+          "categorical_kl": 1.6677738428115845,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 0.999986297803538
+        },
+        "direct": {
+          "rows": 1744,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.2354589700698853,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 1.0
+        },
+        "pursuing_memory": {
+          "rows": 66,
+          "action_agreement": 1.0,
+          "categorical_kl": 0.9853454232215881,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 1.0
+        },
+        "support": {
+          "rows": 1936,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.2483185529708862,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 1.0
+        },
+        "coverage": {
+          "rows": 26118,
+          "action_agreement": 0.999961712229114,
+          "categorical_kl": 1.6726319789886475,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 0.9999905462294109
+        },
+        "ring2": {
+          "rows": 64,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.2468328475952148,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 1.0
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 1.0,
+          "categorical_kl": 1.3042106628417969,
+          "q_regret": 0.0,
+          "q_ranking_agreement": 1.0
+        }
+      },
+      "rollout": {
+        "coverage": {
+          "episodes": 3,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 71.16666666666667,
+            "p50": 75.5,
+            "p90": 79.9
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 71.16666666666667,
+            "p50": 75.5,
+            "p90": 79.9
+          }
+        },
+        "capture": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          }
+        },
+        "mixed": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 98.5,
+            "p50": 82.0,
+            "p90": 125.60000000000001
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 49.0,
+            "p50": 43.5,
+            "p90": 61.1
+          },
+          "recovery_seconds": {
+            "n": 3,
+            "mean": 49.5,
+            "p50": 39.0,
+            "p90": 64.6
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 98.5,
+            "p50": 82.0,
+            "p90": 125.60000000000001
+          }
+        }
+      },
+      "step0_fidelity": {
+        "teacher_q_max_abs_delta": 6.103515625e-05,
+        "note": "GPU batch arithmetic may differ at near-tied argmax rows; Q regret is authoritative"
+      }
+    },
+    "C0_postbc": {
+      "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C0_postbc.pt",
+      "checkpoint_sha256": "a4f8eaa501aed93b82afc17edde811c1627541bcef463f5f7ef8bb3b39fbbacd",
+      "offline": {
+        "overall": {
+          "rows": 29864,
+          "action_agreement": 0.3986070184837932,
+          "categorical_kl": 1.5689910650253296,
+          "q_regret": 0.0301947221159935,
+          "q_ranking_agreement": 0.7645730604253687
+        },
+        "pre_capture": {
+          "rows": 6668,
+          "action_agreement": 0.5779844031193762,
+          "categorical_kl": 1.2853460311889648,
+          "q_regret": 0.05670919269323349,
+          "q_ranking_agreement": 0.8554807557007117
+        },
+        "post_capture": {
+          "rows": 12384,
+          "action_agreement": 0.34383074935400515,
+          "categorical_kl": 1.660313367843628,
+          "q_regret": 0.023629063740372658,
+          "q_ranking_agreement": 0.7357422560372603
+        },
+        "pure_coverage": {
+          "rows": 10812,
+          "action_agreement": 0.3507214206437292,
+          "categorical_kl": 1.6393213272094727,
+          "q_regret": 0.021362924948334694,
+          "q_ranking_agreement": 0.7415309007367215
+        },
+        "direct": {
+          "rows": 1744,
+          "action_agreement": 0.6794724770642202,
+          "categorical_kl": 1.0121313333511353,
+          "q_regret": 0.11561944335699081,
+          "q_ranking_agreement": 0.9195831917544455
+        },
+        "pursuing_memory": {
+          "rows": 66,
+          "action_agreement": 0.803030303030303,
+          "categorical_kl": 0.9651422500610352,
+          "q_regret": 0.13446356356143951,
+          "q_ranking_agreement": 0.9001122334455669
+        },
+        "support": {
+          "rows": 1936,
+          "action_agreement": 0.6441115702479339,
+          "categorical_kl": 1.0324279069900513,
+          "q_regret": 0.06685187667608261,
+          "q_ranking_agreement": 0.9160417304356697
+        },
+        "coverage": {
+          "rows": 26118,
+          "action_agreement": 0.3606325139750364,
+          "categorical_kl": 1.6474734544754028,
+          "q_regret": 0.02150988020002842,
+          "q_ranking_agreement": 0.742652293153863
+        },
+        "ring2": {
+          "rows": 64,
+          "action_agreement": 0.65625,
+          "categorical_kl": 0.9426710605621338,
+          "q_regret": 0.09789521992206573,
+          "q_ranking_agreement": 0.9012345679012346
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.6875,
+          "categorical_kl": 0.8396527767181396,
+          "q_regret": 0.037447988986968994,
+          "q_ranking_agreement": 0.9691358024691358
+        }
+      },
+      "rollout": {
+        "coverage": {
+          "episodes": 20,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 1426.25,
+            "p50": 1500.0,
+            "p90": 1500.0
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        },
+        "capture": {
+          "episodes": 20,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          },
+          "capture_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          }
+        },
+        "mixed": {
+          "episodes": 20,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 283.125,
+            "p50": 290.75,
+            "p90": 309.45000000000005
+          },
+          "capture_seconds": {
+            "n": 20,
+            "mean": 44.775,
+            "p50": 41.5,
+            "p90": 59.45000000000003
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        }
+      }
+    },
+    "C1_step0": {
+      "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C1_step0.pt",
+      "checkpoint_sha256": "f8e60528e9cce1a4917128940c96bd74da21ef7f6a38c81c96c403a8c0808b4d",
+      "offline": {
+        "overall": {
+          "rows": 29864,
+          "action_agreement": 0.7147736405036164,
+          "categorical_kl": 1.6106634140014648,
+          "q_regret": 0.004260956309735775,
+          "q_ranking_agreement": 0.9498351373965267
+        },
+        "pre_capture": {
+          "rows": 6668,
+          "action_agreement": 0.775494901019796,
+          "categorical_kl": 1.4021227359771729,
+          "q_regret": 0.013639851473271847,
+          "q_ranking_agreement": 0.9531167840505972
+        },
+        "post_capture": {
+          "rows": 12384,
+          "action_agreement": 0.6959786821705426,
+          "categorical_kl": 1.6776922941207886,
+          "q_regret": 0.0015839143889024854,
+          "q_ranking_agreement": 0.9489983092480938
+        },
+        "pure_coverage": {
+          "rows": 10812,
+          "action_agreement": 0.6988531261561228,
+          "categorical_kl": 1.6625006198883057,
+          "q_regret": 0.0015430510975420475,
+          "q_ranking_agreement": 0.948769771127645
+        },
+        "direct": {
+          "rows": 1744,
+          "action_agreement": 0.7155963302752294,
+          "categorical_kl": 1.2080730199813843,
+          "q_regret": 0.04550323262810707,
+          "q_ranking_agreement": 0.9300175557820818
+        },
+        "pursuing_memory": {
+          "rows": 66,
+          "action_agreement": 0.7727272727272727,
+          "categorical_kl": 1.0325204133987427,
+          "q_regret": 0.07652103900909424,
+          "q_ranking_agreement": 0.9046015712682379
+        },
+        "support": {
+          "rows": 1936,
+          "action_agreement": 0.9385330578512396,
+          "categorical_kl": 1.228990912437439,
+          "q_regret": 0.0015092664398252964,
+          "q_ranking_agreement": 0.9854734210794817
+        },
+        "coverage": {
+          "rows": 26118,
+          "action_agreement": 0.6979860632513974,
+          "categorical_kl": 1.667298436164856,
+          "q_regret": 0.0015284180408343673,
+          "q_ranking_agreement": 0.9486310467498409
+        },
+        "ring2": {
+          "rows": 64,
+          "action_agreement": 0.609375,
+          "categorical_kl": 1.2168874740600586,
+          "q_regret": 0.07789702713489532,
+          "q_ranking_agreement": 0.923611111111111
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.4375,
+          "categorical_kl": 1.208491325378418,
+          "q_regret": 0.09410196542739868,
+          "q_ranking_agreement": 0.941358024691358
+        }
+      },
+      "rollout": {
+        "coverage": {
+          "episodes": 3,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 75.5,
+            "p50": 81.5,
+            "p90": 92.3
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 75.5,
+            "p50": 81.5,
+            "p90": 92.3
+          }
+        },
+        "capture": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          }
+        },
+        "mixed": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 141.66666666666666,
+            "p50": 109.5,
+            "p90": 200.3
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 49.5,
+            "p50": 40.0,
+            "p90": 66.4
+          },
+          "recovery_seconds": {
+            "n": 3,
+            "mean": 92.16666666666667,
+            "p50": 74.0,
+            "p90": 134.8
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 141.66666666666666,
+            "p50": 109.5,
+            "p90": 200.3
+          }
+        }
+      },
+      "step0_fidelity": {
+        "teacher_q_max_abs_delta": 28.736801147460938,
+        "note": "GPU batch arithmetic may differ at near-tied argmax rows; Q regret is authoritative"
+      }
+    },
+    "C1_postbc": {
+      "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C1_postbc.pt",
+      "checkpoint_sha256": "5a87687f4ed04572fa2151c28c83e06217b8c79380e6d356e2447787a7b7c0b7",
+      "offline": {
+        "overall": {
+          "rows": 29864,
+          "action_agreement": 0.3654567372086793,
+          "categorical_kl": 1.5815811157226562,
+          "q_regret": 0.03486979007720947,
+          "q_ranking_agreement": 0.7855107764251438
+        },
+        "pre_capture": {
+          "rows": 6668,
+          "action_agreement": 0.5641871625674865,
+          "categorical_kl": 1.2901042699813843,
+          "q_regret": 0.05854969099164009,
+          "q_ranking_agreement": 0.8650788360846349
+        },
+        "post_capture": {
+          "rows": 12384,
+          "action_agreement": 0.30781653746770027,
+          "categorical_kl": 1.6743344068527222,
+          "q_regret": 0.0283492561429739,
+          "q_ranking_agreement": 0.7607905062685424
+        },
+        "pure_coverage": {
+          "rows": 10812,
+          "action_agreement": 0.3089160192378838,
+          "categorical_kl": 1.6551021337509155,
+          "q_regret": 0.027734454721212387,
+          "q_ranking_agreement": 0.7647538400405585
+        },
+        "direct": {
+          "rows": 1744,
+          "action_agreement": 0.6731651376146789,
+          "categorical_kl": 1.0086909532546997,
+          "q_regret": 0.11990945786237717,
+          "q_ranking_agreement": 0.9146279306829764
+        },
+        "pursuing_memory": {
+          "rows": 66,
+          "action_agreement": 0.6666666666666666,
+          "categorical_kl": 0.9694382548332214,
+          "q_regret": 0.17719575762748718,
+          "q_ranking_agreement": 0.8806584362139918
+        },
+        "support": {
+          "rows": 1936,
+          "action_agreement": 0.6580578512396694,
+          "categorical_kl": 1.031437635421753,
+          "q_regret": 0.06196106970310211,
+          "q_ranking_agreement": 0.9175339251096826
+        },
+        "coverage": {
+          "rows": 26118,
+          "action_agreement": 0.3224596064017153,
+          "categorical_kl": 1.6621614694595337,
+          "q_regret": 0.026823561638593674,
+          "q_ranking_agreement": 0.7668624542555676
+        },
+        "ring2": {
+          "rows": 64,
+          "action_agreement": 0.71875,
+          "categorical_kl": 0.9354683756828308,
+          "q_regret": 0.0641765147447586,
+          "q_ranking_agreement": 0.904320987654321
+        },
+        "ring3": {
+          "rows": 16,
+          "action_agreement": 0.6875,
+          "categorical_kl": 0.8531978726387024,
+          "q_regret": 0.037447988986968994,
+          "q_ranking_agreement": 0.9598765432098766
+        }
+      },
+      "rollout": {
+        "coverage": {
+          "episodes": 20,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 1425.95,
+            "p50": 1500.0,
+            "p90": 1500.0
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        },
+        "capture": {
+          "episodes": 20,
+          "captured_rate": 0.9,
+          "normal_capture_rate": 0.9,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.1,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.9,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 42.925,
+            "p50": 39.5,
+            "p90": 63.50000000000001
+          },
+          "capture_seconds": {
+            "n": 18,
+            "mean": 40.416666666666664,
+            "p50": 38.75,
+            "p90": 52.25000000000001
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 18,
+            "mean": 40.416666666666664,
+            "p50": 38.75,
+            "p90": 52.25000000000001
+          }
+        },
+        "mixed": {
+          "episodes": 20,
+          "captured_rate": 0.95,
+          "normal_capture_rate": 0.95,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.15,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 259.75,
+            "p50": 289.75,
+            "p90": 302.1
+          },
+          "capture_seconds": {
+            "n": 19,
+            "mean": 44.10526315789474,
+            "p50": 44.0,
+            "p90": 54.3
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        }
+      }
+    }
+  },
+  "c2_b3_reference": {
+    "offline": {
+      "all": {
+        "rows": 29864,
+        "action_agreement": 0.41441200107152426,
+        "categorical_kl": 1.5739573240280151,
+        "q_regret": 0.03937950357794762,
+        "q_ranking_agreement": 0.7694651969587232
+      },
+      "pre_capture": {
+        "rows": 6668,
+        "action_agreement": 0.4976004799040192,
+        "categorical_kl": 1.3370736837387085,
+        "q_regret": 0.10863665491342545,
+        "q_ranking_agreement": 0.8333777688906663
+      },
+      "post_capture": {
+        "rows": 12384,
+        "action_agreement": 0.3873546511627907,
+        "categorical_kl": 1.6473487615585327,
+        "q_regret": 0.02018824778497219,
+        "q_ranking_agreement": 0.7488515647430377
+      },
+      "pure_coverage": {
+        "rows": 10812,
+        "action_agreement": 0.3940991490935997,
+        "categorical_kl": 1.6359862089157104,
+        "q_regret": 0.01864863745868206,
+        "q_ranking_agreement": 0.753659628305084
+      },
+      "direct": {
+        "rows": 1744,
+        "action_agreement": 0.6685779816513762,
+        "categorical_kl": 0.9778239130973816,
+        "q_regret": 0.12311705201864243,
+        "q_ranking_agreement": 0.908440933288028
+      },
+      "pursuing_memory": {
+        "rows": 66,
+        "action_agreement": 0.6515151515151515,
+        "categorical_kl": 1.145534634590149,
+        "q_regret": 0.2604981064796448,
+        "q_ranking_agreement": 0.8570894126449683
+      },
+      "support": {
+        "rows": 1936,
+        "action_agreement": 0.49535123966942146,
+        "categorical_kl": 1.2419860363006592,
+        "q_regret": 0.22972510755062103,
+        "q_ranking_agreement": 0.8627818589939801
+      },
+      "coverage": {
+        "rows": 26118,
+        "action_agreement": 0.3908415652040738,
+        "categorical_kl": 1.6394532918930054,
+        "q_regret": 0.01911986991763115,
+        "q_ranking_agreement": 0.7530467139166122
+      },
+      "ring2": {
+        "rows": 64,
+        "action_agreement": 0.59375,
+        "categorical_kl": 0.9803628921508789,
+        "q_regret": 0.15424461662769318,
+        "q_ranking_agreement": 0.8641975308641975
+      },
+      "ring3": {
+        "rows": 16,
+        "action_agreement": 0.6875,
+        "categorical_kl": 0.8272751569747925,
+        "q_regret": 0.037447988986968994,
+        "q_ranking_agreement": 0.9459876543209876
+      },
+      "normal_capture_transition": {
+        "rows": 84,
+        "action_agreement": 0.5595238095238095,
+        "categorical_kl": 1.3377270698547363,
+        "q_regret": 0.24224580824375153,
+        "q_ranking_agreement": 0.8051146384479717
+      }
+    },
+    "rollout": {
+      "episodes_per_scene_policy": 20,
+      "summary": {
+        "teacher": {
+          "coverage": {
+            "episodes": 20,
+            "captured_rate": 0.0,
+            "normal_capture_rate": 0.0,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.0,
+            "ce_success_rate": 1.0,
+            "safe_complete_rate": 1.0,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 65.35,
+              "p50": 60.75,
+              "p90": 90.95000000000002
+            },
+            "capture_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "recovery_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "mission_seconds": {
+              "n": 20,
+              "mean": 65.35,
+              "p50": 60.75,
+              "p90": 90.95000000000002
+            }
+          },
+          "capture": {
+            "episodes": 20,
+            "captured_rate": 1.0,
+            "normal_capture_rate": 1.0,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.0,
+            "ce_success_rate": 0.0,
+            "safe_complete_rate": 1.0,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 36.15,
+              "p50": 38.5,
+              "p90": 48.7
+            },
+            "capture_seconds": {
+              "n": 20,
+              "mean": 36.15,
+              "p50": 38.5,
+              "p90": 48.7
+            },
+            "recovery_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "mission_seconds": {
+              "n": 20,
+              "mean": 36.15,
+              "p50": 38.5,
+              "p90": 48.7
+            }
+          },
+          "mixed": {
+            "episodes": 20,
+            "captured_rate": 1.0,
+            "normal_capture_rate": 1.0,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.0,
+            "ce_success_rate": 1.0,
+            "safe_complete_rate": 1.0,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 113.275,
+              "p50": 117.25,
+              "p90": 136.05
+            },
+            "capture_seconds": {
+              "n": 20,
+              "mean": 43.0,
+              "p50": 44.25,
+              "p90": 51.30000000000002
+            },
+            "recovery_seconds": {
+              "n": 20,
+              "mean": 70.275,
+              "p50": 69.25,
+              "p90": 88.80000000000001
+            },
+            "mission_seconds": {
+              "n": 20,
+              "mean": 113.275,
+              "p50": 117.25,
+              "p90": 136.05
+            }
+          }
+        },
+        "student": {
+          "coverage": {
+            "episodes": 20,
+            "captured_rate": 0.0,
+            "normal_capture_rate": 0.0,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.1,
+            "ce_success_rate": 0.0,
+            "safe_complete_rate": 0.0,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 1352.575,
+              "p50": 1500.0,
+              "p90": 1500.0
+            },
+            "capture_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "recovery_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "mission_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            }
+          },
+          "capture": {
+            "episodes": 20,
+            "captured_rate": 0.7,
+            "normal_capture_rate": 0.7,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.3,
+            "ce_success_rate": 0.0,
+            "safe_complete_rate": 0.7,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 57.85,
+              "p50": 58.0,
+              "p90": 90.70000000000002
+            },
+            "capture_seconds": {
+              "n": 14,
+              "mean": 68.0,
+              "p50": 70.75,
+              "p90": 94.9
+            },
+            "recovery_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "mission_seconds": {
+              "n": 14,
+              "mean": 68.0,
+              "p50": 70.75,
+              "p90": 94.9
+            }
+          },
+          "mixed": {
+            "episodes": 20,
+            "captured_rate": 0.75,
+            "normal_capture_rate": 0.75,
+            "stationary_capture_rate": 0.0,
+            "collision_rate": 0.35,
+            "ce_success_rate": 0.0,
+            "safe_complete_rate": 0.0,
+            "episode_seconds": {
+              "n": 20,
+              "mean": 224.075,
+              "p50": 296.0,
+              "p90": 337.8
+            },
+            "capture_seconds": {
+              "n": 15,
+              "mean": 67.9,
+              "p50": 59.5,
+              "p90": 99.3
+            },
+            "recovery_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            },
+            "mission_seconds": {
+              "n": 0,
+              "mean": null,
+              "p50": null,
+              "p90": null
+            }
+          }
+        }
+      },
+      "matched_seed_base": 2026092801
+    },
+    "classification": "B3_FAIL"
+  },
+  "c0_bc_drift": {
+    "action_agreement": -0.6013594963836056,
+    "categorical_kl": -0.04908478260040283,
+    "q_regret": 0.0301947221159935,
+    "q_ranking_agreement": -0.23541867164065577
+  },
+  "rollout": {
+    "formal_episodes_per_scene": 20,
+    "step0_qualification_episodes_per_scene": 3,
+    "matched_seed_base": 2026092801,
+    "summary": {
+      "C0_postbc": {
+        "coverage": {
+          "episodes": 20,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 1426.25,
+            "p50": 1500.0,
+            "p90": 1500.0
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        },
+        "capture": {
+          "episodes": 20,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          },
+          "capture_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 20,
+            "mean": 40.75,
+            "p50": 38.25,
+            "p90": 58.400000000000006
+          }
+        },
+        "mixed": {
+          "episodes": 20,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 283.125,
+            "p50": 290.75,
+            "p90": 309.45000000000005
+          },
+          "capture_seconds": {
+            "n": 20,
+            "mean": 44.775,
+            "p50": 41.5,
+            "p90": 59.45000000000003
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        }
+      },
+      "C0_step0": {
+        "coverage": {
+          "episodes": 3,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 71.16666666666667,
+            "p50": 75.5,
+            "p90": 79.9
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 71.16666666666667,
+            "p50": 75.5,
+            "p90": 79.9
+          }
+        },
+        "capture": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 46.0,
+            "p50": 44.5,
+            "p90": 51.3
+          }
+        },
+        "mixed": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 98.5,
+            "p50": 82.0,
+            "p90": 125.60000000000001
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 49.0,
+            "p50": 43.5,
+            "p90": 61.1
+          },
+          "recovery_seconds": {
+            "n": 3,
+            "mean": 49.5,
+            "p50": 39.0,
+            "p90": 64.6
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 98.5,
+            "p50": 82.0,
+            "p90": 125.60000000000001
+          }
+        }
+      },
+      "C1_postbc": {
+        "coverage": {
+          "episodes": 20,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.05,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 1425.95,
+            "p50": 1500.0,
+            "p90": 1500.0
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        },
+        "capture": {
+          "episodes": 20,
+          "captured_rate": 0.9,
+          "normal_capture_rate": 0.9,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.1,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.9,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 42.925,
+            "p50": 39.5,
+            "p90": 63.50000000000001
+          },
+          "capture_seconds": {
+            "n": 18,
+            "mean": 40.416666666666664,
+            "p50": 38.75,
+            "p90": 52.25000000000001
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 18,
+            "mean": 40.416666666666664,
+            "p50": 38.75,
+            "p90": 52.25000000000001
+          }
+        },
+        "mixed": {
+          "episodes": 20,
+          "captured_rate": 0.95,
+          "normal_capture_rate": 0.95,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.15,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 0.0,
+          "episode_seconds": {
+            "n": 20,
+            "mean": 259.75,
+            "p50": 289.75,
+            "p90": 302.1
+          },
+          "capture_seconds": {
+            "n": 19,
+            "mean": 44.10526315789474,
+            "p50": 44.0,
+            "p90": 54.3
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          }
+        }
+      },
+      "C1_step0": {
+        "coverage": {
+          "episodes": 3,
+          "captured_rate": 0.0,
+          "normal_capture_rate": 0.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 75.5,
+            "p50": 81.5,
+            "p90": 92.3
+          },
+          "capture_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 75.5,
+            "p50": 81.5,
+            "p90": 92.3
+          }
+        },
+        "capture": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 0.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          },
+          "recovery_seconds": {
+            "n": 0,
+            "mean": null,
+            "p50": null,
+            "p90": null
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 48.833333333333336,
+            "p50": 50.0,
+            "p90": 55.6
+          }
+        },
+        "mixed": {
+          "episodes": 3,
+          "captured_rate": 1.0,
+          "normal_capture_rate": 1.0,
+          "stationary_capture_rate": 0.0,
+          "collision_rate": 0.0,
+          "ce_success_rate": 1.0,
+          "safe_complete_rate": 1.0,
+          "episode_seconds": {
+            "n": 3,
+            "mean": 141.66666666666666,
+            "p50": 109.5,
+            "p90": 200.3
+          },
+          "capture_seconds": {
+            "n": 3,
+            "mean": 49.5,
+            "p50": 40.0,
+            "p90": 66.4
+          },
+          "recovery_seconds": {
+            "n": 3,
+            "mean": 92.16666666666667,
+            "p50": 74.0,
+            "p90": 134.8
+          },
+          "mission_seconds": {
+            "n": 3,
+            "mean": 141.66666666666666,
+            "p50": 109.5,
+            "p90": 200.3
+          }
+        }
+      }
+    },
+    "on_policy_teacher_agreement": {
+      "C0_step0": {
+        "rows": 5176,
+        "action_agreement": 1.0
+      },
+      "C1_step0": {
+        "rows": 6384,
+        "action_agreement": 0.7037907268170426
+      },
+      "C0_postbc": {
+        "rows": 280020,
+        "action_agreement": 0.1131204913934719
+      },
+      "C1_postbc": {
+        "rows": 276580,
+        "action_agreement": 0.2195965001084677
+      }
+    }
+  },
+  "decision": {
+    "case": "CASE_C",
+    "verdict": "CURRENT_BC_PIPELINE_FAILS_POSITIVE_CONTROL",
+    "pass_rule": "all three formal safe-complete rates >= 0.85",
+    "c0_postbc_pass": false,
+    "c1_postbc_pass": false
+  },
+  "pure_coverage_causal_analysis": "C0 step-0 passes but C0 post-BC reaches 0/20 pure-coverage CE with unchanged original architecture and role semantics. The BC pipeline is therefore the major confound; C1-versus-C0 and B3 z-causality conclusions are downgraded.",
+  "future_z_todo": {
+    "implemented": false,
+    "shorter_half_life": "preregister a small lambda matrix",
+    "hard_floor": "z=0 when max(d_i, lambda*z_prev, eta*neighbor_prev) < epsilon_z",
+    "matrix": [
+      "lambda",
+      "epsilon_z"
+    ]
+  },
+  "next_stage_training_launched": false
+}

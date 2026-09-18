@@ -252,6 +252,12 @@ class CoCapTrainer:
             pursuer_feature_dim=int(iqn_cfg.get("pursuer_feature_dim", 7)),
             include_is_pursuing=bool(iqn_cfg.get("include_is_pursuing", True)),
             include_z_state=bool(iqn_cfg.get("include_z_state", False)),
+            pursuing_late_fusion=bool(
+                iqn_cfg.get(
+                    "pursuing_late_fusion",
+                    iqn_cfg.get("include_is_pursuing", True),
+                )
+            ),
         )
         self.model = CoCapIQN(model_cfg).to(self.device)
         self.target_model = CoCapIQN(model_cfg).to(self.device)

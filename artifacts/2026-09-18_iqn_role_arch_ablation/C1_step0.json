@@ -1,0 +1,353 @@
+{
+  "schema": "iqn-role-architecture-ablation-v1",
+  "arm": "C1",
+  "teacher_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+  "dataset_rows": 29864,
+  "optimization_rows": 23424,
+  "train_rows": 23424,
+  "validation_rows": 6440,
+  "epochs": 4,
+  "batch_size": 4096,
+  "optimizer": {
+    "name": "Adam",
+    "lr": 0.0003,
+    "eps": 1e-05
+  },
+  "loss": "categorical_KL + 0.25*normalized_smooth_L1",
+  "temperature": 0.0031884169327952754,
+  "seed": 2026091801,
+  "transfer": {
+    "student_config": {
+      "hidden_dim": 256,
+      "num_heads": 8,
+      "num_layers": 4,
+      "action_size": 9,
+      "self_feature_dim": 9,
+      "max_pursuers": 8,
+      "max_evaders": 8,
+      "max_obstacles": 5,
+      "num_quantiles": 32,
+      "num_cosine_features": 64,
+      "gate_hidden_dim": 64,
+      "architecture": "voradj_single_head",
+      "pursuing_embed_dim": 0,
+      "pursuer_feature_dim": 7,
+      "include_is_pursuing": true,
+      "include_z_state": false,
+      "pursuing_late_fusion": false
+    },
+    "copied_exact_keys": [
+      "pis",
+      "encoders.self.0.weight",
+      "encoders.self.0.bias",
+      "encoders.self.1.weight",
+      "encoders.self.1.bias",
+      "encoders.pursuers.0.weight",
+      "encoders.pursuers.0.bias",
+      "encoders.pursuers.1.weight",
+      "encoders.pursuers.1.bias",
+      "encoders.evaders.0.weight",
+      "encoders.evaders.0.bias",
+      "encoders.evaders.1.weight",
+      "encoders.evaders.1.bias",
+      "encoders.obstacles.0.weight",
+      "encoders.obstacles.0.bias",
+      "encoders.obstacles.1.weight",
+      "encoders.obstacles.1.bias",
+      "type_embedding.weight",
+      "transformer.layers.0.self_attn.in_proj_weight",
+      "transformer.layers.0.self_attn.in_proj_bias",
+      "transformer.layers.0.self_attn.out_proj.weight",
+      "transformer.layers.0.self_attn.out_proj.bias",
+      "transformer.layers.0.linear1.weight",
+      "transformer.layers.0.linear1.bias",
+      "transformer.layers.0.linear2.weight",
+      "transformer.layers.0.linear2.bias",
+      "transformer.layers.0.norm1.weight",
+      "transformer.layers.0.norm1.bias",
+      "transformer.layers.0.norm2.weight",
+      "transformer.layers.0.norm2.bias",
+      "transformer.layers.1.self_attn.in_proj_weight",
+      "transformer.layers.1.self_attn.in_proj_bias",
+      "transformer.layers.1.self_attn.out_proj.weight",
+      "transformer.layers.1.self_attn.out_proj.bias",
+      "transformer.layers.1.linear1.weight",
+      "transformer.layers.1.linear1.bias",
+      "transformer.layers.1.linear2.weight",
+      "transformer.layers.1.linear2.bias",
+      "transformer.layers.1.norm1.weight",
+      "transformer.layers.1.norm1.bias",
+      "transformer.layers.1.norm2.weight",
+      "transformer.layers.1.norm2.bias",
+      "transformer.layers.2.self_attn.in_proj_weight",
+      "transformer.layers.2.self_attn.in_proj_bias",
+      "transformer.layers.2.self_attn.out_proj.weight",
+      "transformer.layers.2.self_attn.out_proj.bias",
+      "transformer.layers.2.linear1.weight",
+      "transformer.layers.2.linear1.bias",
+      "transformer.layers.2.linear2.weight",
+      "transformer.layers.2.linear2.bias",
+      "transformer.layers.2.norm1.weight",
+      "transformer.layers.2.norm1.bias",
+      "transformer.layers.2.norm2.weight",
+      "transformer.layers.2.norm2.bias",
+      "transformer.layers.3.self_attn.in_proj_weight",
+      "transformer.layers.3.self_attn.in_proj_bias",
+      "transformer.layers.3.self_attn.out_proj.weight",
+      "transformer.layers.3.self_attn.out_proj.bias",
+      "transformer.layers.3.linear1.weight",
+      "transformer.layers.3.linear1.bias",
+      "transformer.layers.3.linear2.weight",
+      "transformer.layers.3.linear2.bias",
+      "transformer.layers.3.norm1.weight",
+      "transformer.layers.3.norm1.bias",
+      "transformer.layers.3.norm2.weight",
+      "transformer.layers.3.norm2.bias",
+      "cos_embedding.weight",
+      "cos_embedding.bias",
+      "coverage_fusion.0.weight",
+      "coverage_fusion.0.bias",
+      "coverage_fusion.1.weight",
+      "coverage_fusion.1.bias",
+      "encirclement_fusion.0.weight",
+      "encirclement_fusion.0.bias",
+      "encirclement_fusion.1.weight",
+      "encirclement_fusion.1.bias",
+      "target_query.weight",
+      "target_query.bias",
+      "target_key.weight",
+      "target_key.bias",
+      "target_value.weight",
+      "target_value.bias",
+      "coverage_head.0.weight",
+      "coverage_head.0.bias",
+      "coverage_head.2.weight",
+      "coverage_head.2.bias",
+      "coverage_head.3.weight",
+      "coverage_head.3.bias",
+      "encirclement_head.0.weight",
+      "encirclement_head.0.bias",
+      "encirclement_head.2.weight",
+      "encirclement_head.2.bias",
+      "encirclement_head.3.weight",
+      "encirclement_head.3.bias",
+      "gate_head.0.weight",
+      "gate_head.0.bias",
+      "gate_head.2.weight",
+      "gate_head.2.bias",
+      "summary_role_embedding.weight",
+      "summary_attention.in_proj_weight",
+      "summary_attention.in_proj_bias",
+      "summary_attention.out_proj.weight",
+      "summary_attention.out_proj.bias",
+      "summary_fusion.0.weight",
+      "summary_fusion.0.bias",
+      "summary_fusion.1.weight",
+      "summary_fusion.1.bias",
+      "single_action_feature.0.bias",
+      "single_action_feature.1.weight",
+      "single_action_feature.1.bias",
+      "single_head.0.weight",
+      "single_head.0.bias",
+      "single_head.2.weight",
+      "single_head.2.bias",
+      "single_head.3.weight",
+      "single_head.3.bias"
+    ],
+    "trimmed_keys": [
+      {
+        "student_key": "single_action_feature.0.weight",
+        "teacher_key": "single_action_feature.0.weight",
+        "kept_columns": 256,
+        "removed_columns": 8
+      }
+    ],
+    "removed_keys": [
+      "pursuing_embed.weight",
+      "pursuing_embed.bias"
+    ],
+    "late_fusion_removed": true,
+    "role_token_columns_preserved": true,
+    "role_dependent_friend_ordering_preserved": true
+  },
+  "stage": "step0",
+  "checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-iqn-role-architecture-ablation-20260918/artifacts/2026-09-18_iqn_role_arch_ablation/C1_step0.pt",
+  "checkpoint_sha256": "f8e60528e9cce1a4917128940c96bd74da21ef7f6a38c81c96c403a8c0808b4d",
+  "offline": {
+    "overall": {
+      "rows": 29864,
+      "action_agreement": 0.7147736405036164,
+      "categorical_kl": 1.6106634140014648,
+      "q_regret": 0.004260956309735775,
+      "q_ranking_agreement": 0.9498351373965267
+    },
+    "pre_capture": {
+      "rows": 6668,
+      "action_agreement": 0.775494901019796,
+      "categorical_kl": 1.4021227359771729,
+      "q_regret": 0.013639851473271847,
+      "q_ranking_agreement": 0.9531167840505972
+    },
+    "post_capture": {
+      "rows": 12384,
+      "action_agreement": 0.6959786821705426,
+      "categorical_kl": 1.6776922941207886,
+      "q_regret": 0.0015839143889024854,
+      "q_ranking_agreement": 0.9489983092480938
+    },
+    "pure_coverage": {
+      "rows": 10812,
+      "action_agreement": 0.6988531261561228,
+      "categorical_kl": 1.6625006198883057,
+      "q_regret": 0.0015430510975420475,
+      "q_ranking_agreement": 0.948769771127645
+    },
+    "direct": {
+      "rows": 1744,
+      "action_agreement": 0.7155963302752294,
+      "categorical_kl": 1.2080730199813843,
+      "q_regret": 0.04550323262810707,
+      "q_ranking_agreement": 0.9300175557820818
+    },
+    "pursuing_memory": {
+      "rows": 66,
+      "action_agreement": 0.7727272727272727,
+      "categorical_kl": 1.0325204133987427,
+      "q_regret": 0.07652103900909424,
+      "q_ranking_agreement": 0.9046015712682379
+    },
+    "support": {
+      "rows": 1936,
+      "action_agreement": 0.9385330578512396,
+      "categorical_kl": 1.228990912437439,
+      "q_regret": 0.0015092664398252964,
+      "q_ranking_agreement": 0.9854734210794817
+    },
+    "coverage": {
+      "rows": 26118,
+      "action_agreement": 0.6979860632513974,
+      "categorical_kl": 1.667298436164856,
+      "q_regret": 0.0015284180408343673,
+      "q_ranking_agreement": 0.9486310467498409
+    },
+    "ring2": {
+      "rows": 64,
+      "action_agreement": 0.609375,
+      "categorical_kl": 1.2168874740600586,
+      "q_regret": 0.07789702713489532,
+      "q_ranking_agreement": 0.923611111111111
+    },
+    "ring3": {
+      "rows": 16,
+      "action_agreement": 0.4375,
+      "categorical_kl": 1.208491325378418,
+      "q_regret": 0.09410196542739868,
+      "q_ranking_agreement": 0.941358024691358
+    }
+  },
+  "step0_fidelity": {
+    "teacher_q_max_abs_delta": 28.736801147460938,
+    "note": "GPU batch arithmetic may differ at near-tied argmax rows; Q regret is authoritative"
+  },
+  "rollout": {
+    "coverage": {
+      "episodes": 3,
+      "captured_rate": 0.0,
+      "normal_capture_rate": 0.0,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.0,
+      "ce_success_rate": 1.0,
+      "safe_complete_rate": 1.0,
+      "episode_seconds": {
+        "n": 3,
+        "mean": 75.5,
+        "p50": 81.5,
+        "p90": 92.3
+      },
+      "capture_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "recovery_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "mission_seconds": {
+        "n": 3,
+        "mean": 75.5,
+        "p50": 81.5,
+        "p90": 92.3
+      }
+    },
+    "capture": {
+      "episodes": 3,
+      "captured_rate": 1.0,
+      "normal_capture_rate": 1.0,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.0,
+      "ce_success_rate": 0.0,
+      "safe_complete_rate": 1.0,
+      "episode_seconds": {
+        "n": 3,
+        "mean": 48.833333333333336,
+        "p50": 50.0,
+        "p90": 55.6
+      },
+      "capture_seconds": {
+        "n": 3,
+        "mean": 48.833333333333336,
+        "p50": 50.0,
+        "p90": 55.6
+      },
+      "recovery_seconds": {
+        "n": 0,
+        "mean": null,
+        "p50": null,
+        "p90": null
+      },
+      "mission_seconds": {
+        "n": 3,
+        "mean": 48.833333333333336,
+        "p50": 50.0,
+        "p90": 55.6
+      }
+    },
+    "mixed": {
+      "episodes": 3,
+      "captured_rate": 1.0,
+      "normal_capture_rate": 1.0,
+      "stationary_capture_rate": 0.0,
+      "collision_rate": 0.0,
+      "ce_success_rate": 1.0,
+      "safe_complete_rate": 1.0,
+      "episode_seconds": {
+        "n": 3,
+        "mean": 141.66666666666666,
+        "p50": 109.5,
+        "p90": 200.3
+      },
+      "capture_seconds": {
+        "n": 3,
+        "mean": 49.5,
+        "p50": 40.0,
+        "p90": 66.4
+      },
+      "recovery_seconds": {
+        "n": 3,
+        "mean": 92.16666666666667,
+        "p50": 74.0,
+        "p90": 134.8
+      },
+      "mission_seconds": {
+        "n": 3,
+        "mean": 141.66666666666666,
+        "p50": 109.5,
+        "p90": 200.3
+      }
+    }
+  }
+}

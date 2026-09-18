@@ -1,0 +1,29 @@
+extends: ../forward_final_mappo_20260908/stage1_4v1.yaml
+
+# C1 keeps Final IQN's complete role-token observation contract and original
+# role-dependent friend ordering. Only the late-fusion shortcut is removed.
+perception:
+  self_feature_dim: 9
+  include_is_pursuing: true
+  include_z_state: false
+
+z_state:
+  enabled: false
+
+iqn:
+  self_feature_dim: 9
+  pursuer_feature_dim: 7
+  pursuing_embed_dim: 0
+  include_is_pursuing: true
+  include_z_state: false
+  pursuing_late_fusion: false
+
+experiment_metadata:
+  series_label: iqn_role_architecture_ablation_20260918_c1
+  scope: token-only is_pursuing; Final physical inputs and ordering preserved
+  teacher_checkpoint: artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt
+  teacher_checkpoint_sha256: 2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89
+  removed_policy_inputs: []
+  removed_architecture:
+    - pursuing_embed
+    - is_pursuing late-fusion branch

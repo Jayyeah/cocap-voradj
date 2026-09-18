@@ -31,6 +31,9 @@ class CoCapNetConfig:
     pursuer_feature_dim: int = 7
     include_is_pursuing: bool = True
     include_z_state: bool = False
+    # Keep the historical shortcut independently switchable from the token
+    # feature. Old checkpoints load it only when observations contain the bit.
+    pursuing_late_fusion: bool = True
 
 
 def mlp_encoder(input_dim: int, hidden_dim: int) -> nn.Sequential:
@@ -66,7 +69,7 @@ class CoCapIQN(nn.Module):
         self.summary_role_embedding = nn.Embedding(3, h)
         self.summary_attention = nn.MultiheadAttention(h, config.num_heads, dropout=0.1, batch_first=True)
         self.summary_fusion = nn.Sequential(nn.Linear(2 * h, h), nn.LayerNorm(h), nn.ReLU())
-        if config.include_is_pursuing:
+        if config.include_is_pursuing and config.pursuing_late_fusion:
             self.pursuing_embed = nn.Linear(1, config.pursuing_embed_dim)
             single_input_dim = h + config.pursuing_embed_dim
         else:
@@ -162,7 +165,7 @@ class CoCapIQN(nn.Module):
             need_weights=False,
         )
         fused = self.summary_fusion(torch.cat([feat["self_token"], summary_context.squeeze(1)], dim=-1))
-        if self.config.include_is_pursuing:
+        if self.config.include_is_pursuing and self.config.pursuing_late_fusion:
             # Preserve the historical fallback for old non-Final models with
             # a seven-dimensional self vector: they had no role column and
             # the legacy path supplied a zero scalar.  Final IQN has 9 dims,
@@ -234,6 +237,9 @@ class CoCapIQN(nn.Module):
         config_payload.setdefault("pursuer_feature_dim", 7)
         config_payload.setdefault("include_is_pursuing", True)
         config_payload.setdefault("include_z_state", False)
+        config_payload.setdefault(
+            "pursuing_late_fusion", bool(config_payload["include_is_pursuing"])
+        )
         model = cls(CoCapNetConfig(**config_payload))
         model.load_state_dict(payload["state_dict"])
         return model.to(device)
@@ -268,6 +274,7 @@ class CoCapIQN(nn.Module):
             pursuer_feature_dim=tc.pursuer_feature_dim - 1,
             include_is_pursuing=False,
             include_z_state=False,
+            pursuing_late_fusion=False,
         )
         student = cls(sc).to(next(teacher.parameters()).device)
         teacher_state = teacher.state_dict()
@@ -296,6 +303,60 @@ class CoCapIQN(nn.Module):
             "late_fusion_removed": True,
         }
         return student, report
+
+    @classmethod
+    def make_token_only_is_pursuing_student(
+        cls, teacher: "CoCapIQN"
+    ) -> tuple["CoCapIQN", Dict[str, object]]:
+        """Keep role token columns/order semantics but remove late fusion."""
+        if not teacher.config.include_is_pursuing:
+            raise ValueError("token-only transfer requires a roleful teacher")
+        tc = teacher.config
+        sc = CoCapNetConfig(
+            hidden_dim=tc.hidden_dim,
+            num_heads=tc.num_heads,
+            num_layers=tc.num_layers,
+            action_size=tc.action_size,
+            self_feature_dim=tc.self_feature_dim,
+            max_pursuers=tc.max_pursuers,
+            max_evaders=tc.max_evaders,
+            max_obstacles=tc.max_obstacles,
+            num_quantiles=tc.num_quantiles,
+            num_cosine_features=tc.num_cosine_features,
+            gate_hidden_dim=tc.gate_hidden_dim,
+            architecture=tc.architecture,
+            pursuing_embed_dim=0,
+            pursuer_feature_dim=tc.pursuer_feature_dim,
+            include_is_pursuing=True,
+            include_z_state=False,
+            pursuing_late_fusion=False,
+        )
+        student = cls(sc).to(next(teacher.parameters()).device)
+        teacher_state = teacher.state_dict()
+        student_state = student.state_dict()
+        copied_exact = []
+        for key, value in student_state.items():
+            source = teacher_state.get(key)
+            if source is not None and source.shape == value.shape:
+                value.copy_(source)
+                copied_exact.append(key)
+        action_key = "single_action_feature.0.weight"
+        student_state[action_key].copy_(teacher_state[action_key][:, :tc.hidden_dim])
+        student.load_state_dict(student_state, strict=True)
+        return student, {
+            "student_config": asdict(sc),
+            "copied_exact_keys": copied_exact,
+            "trimmed_keys": [{
+                "student_key": action_key,
+                "teacher_key": action_key,
+                "kept_columns": int(tc.hidden_dim),
+                "removed_columns": int(tc.pursuing_embed_dim),
+            }],
+            "removed_keys": ["pursuing_embed.weight", "pursuing_embed.bias"],
+            "late_fusion_removed": True,
+            "role_token_columns_preserved": True,
+            "role_dependent_friend_ordering_preserved": True,
+        }
 
     @classmethod
     def make_z_state_student(cls, teacher: "CoCapIQN") -> tuple["CoCapIQN", Dict[str, object]]:
@@ -327,6 +388,7 @@ class CoCapIQN(nn.Module):
             pursuer_feature_dim=tc.pursuer_feature_dim,
             include_is_pursuing=False,
             include_z_state=True,
+            pursuing_late_fusion=False,
         )
         student = cls(sc).to(next(teacher.parameters()).device)
         teacher_state = teacher.state_dict()
