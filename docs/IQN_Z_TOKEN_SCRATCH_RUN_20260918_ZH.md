@@ -1,6 +1,6 @@
 # IQN-Z-TOKEN scratch 运行记录（2026-09-18）
 
-更新时间：2026-09-18 23:39（Asia/Shanghai）
+更新时间：2026-09-18 23:41（Asia/Shanghai）
 
 ## 当前状态
 
@@ -62,14 +62,17 @@ Z 线独立工作树与正式监督器已经就绪，但实际 ROLE scratch 配�
 - ROLE 缺少对 reward、sensing、AW9 action physics 与 synchronized-swept collision 的 20 项 `runtime_semantic_assertions`
 这些都不是 evidence token 差异，故不能开始可归因的 ROLE-vs-Z 对照。
 
-另外，ROLE 的旧感知训练段已在 25k 正常返回（return code 0），并发生 2,429 次 mixed optimizer update；但 2026-09-18 18:23 复核时：
+ROLE 首次旧感知训练段在 25k 后因 resume 路径合同不一致停止，随后该路径问题已由 ROLE 线修复。
 
-- ROLE tmux、supervisor PID 和 child PID 均不存在；
-- 状态文件仍滞留为 `running`；
-- 25k formal evaluation 尚未生成；
-- 实际 full-resume 位于 run root，而监督器检查的是 run-name 子目录，存在路径合同不一致。
+ROLE 于 23:31 从 scratch 重启；23:41 的权威观测为：
 
-因此 ROLE 当前既不是 NormSense-V2 matched control，也不是仍在后台推进的有效 200k 作业。Z 线不会自行修复或重启该独立工作树。
+- launch head `574430f4bed5db4d6d1b5ddd18076754dcfc87f2`；
+- tmux、supervisor PID 2860213、child PID 2860218 均存活，运行于 GPU1；
+- current step 21,000，mixed optimizer updates 1,429，loss EMA 2.5167；
+- resume 路径合同已修复；
+- 配置仍是旧 20m 感知且没有 live runtime assertions。
+
+因此 ROLE 当前虽在后台推进，但仍不是 NormSense-V2 matched control。Z 线不会自行修改、停止或重启该独立工作树。
 
 ## 解阻条件与后续动作
 
