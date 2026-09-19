@@ -44,7 +44,7 @@ z_i = 0 if z_raw_i < 0.10 else z_raw_i
 
 ## Preflight 结果
 
-2026-09-19 18:44 +08:00 已通过：
+2026-09-19 18:47 +08:00 已通过：
 
 - 初始网络 bit-exact SHA：`67c6126a0b282eb3d691f4ef455fb11f4eb087f8f7a53e7de070adb7dbe24924`
 - Z05/Z07 非 alpha 合同差异：`0`
@@ -78,6 +78,13 @@ Preflight 产物：`artifacts/2026-09-19_iqn_z_unified_decay_curriculum/prefligh
 
 协调器在该路径可写且至少保留 200 GiB 后才启动训练；在此之前持续写轻量状态并排队，避免根盘写满。
 
+当前 detached supervisor：
+
+- tmux：`iqn_z_unified_decay_dual_20260919`
+- PID：`3319724`
+- 状态：`queued / waiting_for_storage`
+- 当前没有训练 PID、optimizer updates 或 throughput；两条线尚未启动
+
 ## Supervisor 与产物
 
 协调器状态文件：
@@ -104,4 +111,3 @@ Preflight 产物：`artifacts/2026-09-19_iqn_z_unified_decay_curriculum/prefligh
 当前 HEAD：`81be35ca56ad067d34fc8e417ff75dffef2d6fde`。远端最新 Z 事实源内容树已核对一致，但当前 fetch 因本机代理不可用及无 CA 证书失败；待修改 commit 后按最多两次安全 push 规则处理。
 
 已知运行前置风险：大容量盘目录需要管理员或存储服务提供可写路径；两张 GPU 需外部 Isaac Sim 进程释放。协调器不会抢占或停止外部进程。
-
