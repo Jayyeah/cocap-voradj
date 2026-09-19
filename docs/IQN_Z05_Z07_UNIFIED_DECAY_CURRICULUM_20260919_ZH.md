@@ -81,7 +81,7 @@ Preflight 产物：`artifacts/2026-09-19_iqn_z_unified_decay_curriculum/prefligh
 当前 detached supervisor：
 
 - tmux：`iqn_z_unified_decay_dual_20260919`
-- PID：`3319724`
+- PID：以 `artifacts/2026-09-19_iqn_z_unified_decay_curriculum/status.json` 的实时 `pid` 字段为准
 - 状态：`queued / waiting_for_storage`
 - 当前没有训练 PID、optimizer updates 或 throughput；两条线尚未启动
 

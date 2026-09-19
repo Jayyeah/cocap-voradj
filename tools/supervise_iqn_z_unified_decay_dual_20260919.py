@@ -50,6 +50,39 @@ def pid_alive(pid: int | None) -> bool:
         return False
 
 
+def arm_runtime(storage: Path, arm: str, gpu_pids: dict[int, set[int]]) -> dict[str, Any]:
+    train_output = arm_output(storage, arm)
+    status = read_json(train_output / "status.json")
+    launch = read_json(train_output / "launch.json")
+    pid = int(status.get("pid") or launch.get("pid") or 0)
+    assigned_raw = str(
+        status.get("cuda_visible_devices")
+        or launch.get("cuda_visible_devices")
+        or ""
+    ).strip()
+    assigned_gpu = int(assigned_raw) if assigned_raw.isdigit() else None
+    observed_gpus = sorted(index for index, pids in gpu_pids.items() if pid in pids)
+    return {
+        "status": status.get("status") or launch.get("status") or "missing",
+        "phase": status.get("phase"),
+        "pid": pid or None,
+        "pid_alive": pid_alive(pid),
+        "tmux_present": tmux_present(SESSIONS[arm]),
+        "assigned_gpu": assigned_gpu,
+        "observed_gpus": observed_gpus,
+        "wrong_gpu": bool(observed_gpus and assigned_gpu is not None and observed_gpus != [assigned_gpu]),
+        "current_step": status.get("current_step", 0),
+        "stage": status.get("stage"),
+        "error": status.get("error"),
+    }
+
+
+def needs_launch(runtime: dict[str, Any]) -> bool:
+    if runtime["status"] in {"complete", "failed_closed"}:
+        return False
+    return not runtime["pid_alive"] and not runtime["tmux_present"]
+
+
 def tmux_present(session: str) -> bool:
     return subprocess.run(["tmux", "has-session", "-t", session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
 
@@ -179,21 +212,27 @@ def supervise(output: Path, storage: Path, interval: int, min_free_bytes: int) -
     while True:
         snapshot = storage_snapshot(storage)
         gpus = gpu_processes()
-        arm_status = {arm: read_json(arm_output(storage, arm) / "status.json") for arm in ARMS}
+        arm_status = {arm: arm_runtime(storage, arm, gpus) for arm in ARMS}
         fail_reasons = []
         if not snapshot["writable"] or snapshot["free"] is None or snapshot["free"] < min_free_bytes:
             atomic_json(output / "status.json", {**launch, "status": "queued", "phase": "waiting_for_storage", "fail_reasons": ["storage_unavailable_or_low"], "storage": snapshot, "gpus": json_gpu_processes(), "updated_at": now_local()})
             time.sleep(interval)
             continue
+        current_head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        if current_head != launch["head"]:
+            fail_reasons.append("coordinator_head_drift")
         if any(status.get("status") == "failed_closed" for status in arm_status.values()):
             fail_reasons.append("arm_failed_closed")
+        if any(status.get("wrong_gpu") for status in arm_status.values()):
+            fail_reasons.append("arm_wrong_gpu")
         if fail_reasons:
             atomic_json(output / "status.json", {**launch, "status": "failed_closed", "fail_reasons": sorted(set(fail_reasons)), "storage": snapshot, "gpus": json_gpu_processes(), "arms": arm_status, "updated_at": now_local()})
             return 2
         free_gpus = [index for index in sorted(gpus) if not gpus[index]]
-        for arm, gpu in zip((arm for arm in ARMS if arm_status[arm].get("status") not in {"complete", "running"}), free_gpus):
+        launchable = [arm for arm in ARMS if needs_launch(arm_status[arm])]
+        for arm, gpu in zip(launchable, free_gpus):
             launch_arm(arm, output, storage, gpu)
-            arm_status[arm] = {"status": "launch_requested", "gpu": gpu}
+            arm_status[arm] = {**arm_status[arm], "status": "launch_requested", "assigned_gpu": gpu}
         complete = all(status.get("status") == "complete" for status in arm_status.values())
         if complete:
             write_final_comparison(storage)

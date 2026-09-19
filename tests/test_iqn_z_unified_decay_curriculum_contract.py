@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -134,3 +135,48 @@ def test_final_dual_comparison_contains_all_stage_metrics_and_chinese_report(tmp
     markdown = (tmp_path / "Z05_VS_Z07_FINAL_COMPARISON_ZH.md").read_text()
     assert "Stage" not in markdown
     assert "stage1" in markdown and "stage2" in markdown and "stage3" in markdown
+
+
+@pytest.mark.parametrize(
+    ("runtime", "expected"),
+    [
+        ({"status": "running", "pid_alive": True, "tmux_present": True}, False),
+        ({"status": "running", "pid_alive": False, "tmux_present": False}, True),
+        ({"status": "missing", "pid_alive": False, "tmux_present": False}, True),
+        ({"status": "failed_closed", "pid_alive": False, "tmux_present": False}, False),
+        ({"status": "complete", "pid_alive": False, "tmux_present": False}, False),
+    ],
+)
+def test_dual_supervisor_launch_policy(runtime: dict, expected: bool) -> None:
+    assert dual.needs_launch(runtime) is expected
+
+
+def test_dual_supervisor_pid_alive_detects_current_process() -> None:
+    assert dual.pid_alive(os.getpid()) is True
+    assert dual.pid_alive(None) is False
+
+
+def test_dual_supervisor_arm_runtime_falls_back_to_launch_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arm_dir = tmp_path / "z05"
+    arm_dir.mkdir()
+    (arm_dir / "status.json").write_text(
+        json.dumps({"status": "running", "current_step": 123}),
+        encoding="utf-8",
+    )
+    (arm_dir / "launch.json").write_text(
+        json.dumps({"pid": os.getpid(), "cuda_visible_devices": "1"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(dual, "tmux_present", lambda _session: True)
+
+    runtime = dual.arm_runtime(tmp_path, "z05", {0: set(), 1: {os.getpid()}})
+
+    assert runtime["pid"] == os.getpid()
+    assert runtime["pid_alive"] is True
+    assert runtime["assigned_gpu"] == 1
+    assert runtime["observed_gpus"] == [1]
+    assert runtime["wrong_gpu"] is False
+    assert runtime["current_step"] == 123
