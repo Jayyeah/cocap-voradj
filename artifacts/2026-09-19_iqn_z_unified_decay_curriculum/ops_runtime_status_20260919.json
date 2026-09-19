@@ -1,0 +1,72 @@
+{
+  "schema": "cocap-iqn-z-runtime-status-v1",
+  "captured_at": "2026-09-19T23:08:53+0800",
+  "branch": "experiment/iqn-z-unified-decay-dual-curriculum-20260919",
+  "head": "fa12ce40ff76fe2c9235c9aead6078283addb661",
+  "proxy": {
+    "stale_ports": [17891],
+    "active_mihomo_mixed_port": 17892,
+    "active_listener_confirmed": true,
+    "persistent_config_changed": false,
+    "fetch_with_temporary_override": "success"
+  },
+  "arms": {
+    "z05": {
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage1",
+      "current_step": 100000,
+      "target_step": 100000,
+      "gpu": 0,
+      "pid": 3399755,
+      "tmux": "iqn_z05_unified_decay_20260919",
+      "alpha": 0.5,
+      "lambda": 0.5,
+      "eta": 0.5,
+      "hard_zero_threshold": 0.1,
+      "replay_size": 400000,
+      "update_steps": 23705
+    },
+    "z07": {
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage1",
+      "current_step": 100000,
+      "target_step": 100000,
+      "gpu": 1,
+      "pid": 3399761,
+      "tmux": "iqn_z07_unified_decay_20260919",
+      "alpha": 0.7,
+      "lambda": 0.7,
+      "eta": 0.7,
+      "hard_zero_threshold": 0.1,
+      "replay_size": 400000,
+      "update_steps": 23490
+    }
+  },
+  "automation": {
+    "preflight": "pass",
+    "continuous_full_pytest": false,
+    "startup_smoke_and_contract_checks": true,
+    "formal_evaluation": {
+      "episodes_per_scene": 20,
+      "scenes": ["coverage", "capture", "mixed"],
+      "interval_steps": 100000
+    },
+    "stage_auto_promotion": true,
+    "selection": "balanced_floor_with_registered_fallback",
+    "fresh_runtime_reset_at_promotion": ["optimizer", "replay", "rng", "env", "z", "recovery"]
+  },
+  "disk": {
+    "root": "/dev/nvme0n1p2",
+    "free_display": "88G",
+    "inode_use_display": "6%",
+    "live_runtime_gib": 3.81,
+    "warning_free_gib": 50,
+    "critical_free_gib": 20,
+    "critical_action": "failed_closed",
+    "additional_live_cleanup_this_turn": false
+  },
+  "scientific_contract_changed": false,
+  "remote_sync": "pending_push_after_local_commit"
+}

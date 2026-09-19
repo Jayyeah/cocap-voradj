@@ -55,27 +55,29 @@ def pid_alive(pid: int | None) -> bool:
 def arm_runtime(storage: Path, arm: str, gpu_pids: dict[int, set[int]]) -> dict[str, Any]:
     train_output = arm_output(storage, arm)
     status = read_json(train_output / "status.json")
+    heartbeat = read_json(train_output / "heartbeat.json")
     launch = read_json(train_output / "launch.json")
-    pid = int(status.get("pid") or launch.get("pid") or 0)
+    pid = int(status.get("pid") or heartbeat.get("pid") or launch.get("pid") or 0)
     assigned_raw = str(
         status.get("cuda_visible_devices")
+        or heartbeat.get("cuda_visible_devices")
         or launch.get("cuda_visible_devices")
         or ""
     ).strip()
     assigned_gpu = int(assigned_raw) if assigned_raw.isdigit() else None
     observed_gpus = sorted(index for index, pids in gpu_pids.items() if pid in pids)
     return {
-        "status": status.get("status") or launch.get("status") or "missing",
-        "phase": status.get("phase"),
+        "status": status.get("status") or heartbeat.get("status") or launch.get("status") or "missing",
+        "phase": status.get("phase") or heartbeat.get("phase") or launch.get("phase"),
         "pid": pid or None,
         "pid_alive": pid_alive(pid),
         "tmux_present": tmux_present(SESSIONS[arm]),
         "assigned_gpu": assigned_gpu,
         "observed_gpus": observed_gpus,
         "wrong_gpu": bool(observed_gpus and assigned_gpu is not None and observed_gpus != [assigned_gpu]),
-        "current_step": status.get("current_step", 0),
-        "stage": status.get("stage"),
-        "error": status.get("error"),
+        "current_step": status.get("current_step", heartbeat.get("current_step", 0)),
+        "stage": status.get("stage") or heartbeat.get("stage"),
+        "error": status.get("error") or heartbeat.get("error"),
     }
 
 

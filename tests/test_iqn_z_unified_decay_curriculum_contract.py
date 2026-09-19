@@ -180,3 +180,37 @@ def test_dual_supervisor_arm_runtime_falls_back_to_launch_fields(
     assert runtime["observed_gpus"] == [1]
     assert runtime["wrong_gpu"] is False
     assert runtime["current_step"] == 123
+
+
+def test_dual_supervisor_arm_runtime_reads_heartbeat_when_status_is_absent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arm_dir = tmp_path / "z07"
+    arm_dir.mkdir()
+    (arm_dir / "heartbeat.json").write_text(
+        json.dumps(
+            {
+                "status": "running",
+                "phase": "formal_evaluation",
+                "pid": os.getpid(),
+                "current_step": 100_000,
+                "stage": "stage1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (arm_dir / "launch.json").write_text(
+        json.dumps({"cuda_visible_devices": "0"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(dual, "tmux_present", lambda _session: True)
+
+    runtime = dual.arm_runtime(tmp_path, "z07", {0: {os.getpid()}, 1: set()})
+
+    assert runtime["status"] == "running"
+    assert runtime["phase"] == "formal_evaluation"
+    assert runtime["pid"] == os.getpid()
+    assert runtime["current_step"] == 100_000
+    assert runtime["stage"] == "stage1"
+    assert runtime["assigned_gpu"] == 0
