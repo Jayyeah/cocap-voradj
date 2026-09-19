@@ -1067,6 +1067,11 @@ class CoCapTrainer:
             "target_model": self.target_model.state_dict(),
             "optimizer": self.optimizer.state_dict(),
             "runtime": self._full_resume_runtime_state(),
+            "z_states": {
+                task: env.z_state_dict()
+                for task, env in getattr(self, "envs", {}).items()
+                if isinstance(env, VorAdjEnv) and bool(getattr(env, "_z_state_enabled", False))
+            },
             "rng": {
                 "python": random.getstate(),
                 "numpy": np.random.get_state(),
@@ -1105,6 +1110,19 @@ class CoCapTrainer:
             if key in self._FULL_RESUME_STATIC_FIELDS:
                 continue
             setattr(self, key, value)
+        z_states = payload.get("z_states")
+        z_enabled_tasks = {
+            task
+            for task, env in self.envs.items()
+            if isinstance(env, VorAdjEnv) and bool(getattr(env, "_z_state_enabled", False))
+        }
+        if z_enabled_tasks:
+            if not isinstance(z_states, dict) or set(z_states) != z_enabled_tasks:
+                raise ValueError("IQN full-resume checkpoint is missing exact Z-v2 task snapshots")
+            for task in sorted(z_enabled_tasks):
+                self.envs[task].load_z_state_dict(z_states[task])
+        elif z_states not in (None, {}):
+            raise ValueError("IQN full-resume checkpoint contains unexpected z-state snapshots")
         if self.global_step > self.total_timesteps:
             raise ValueError(
                 f"resume step {self.global_step} exceeds configured total_timesteps {self.total_timesteps}"

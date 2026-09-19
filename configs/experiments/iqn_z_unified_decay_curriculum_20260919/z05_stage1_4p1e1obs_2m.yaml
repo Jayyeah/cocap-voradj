@@ -1,0 +1,30 @@
+extends: common.yaml
+
+seed: 2026091901
+total_timesteps: 2000000
+run_name: stage1_training
+
+z_state:
+  lambda: 0.5
+  eta: 0.5
+
+iqn:
+  epsilon_start: 0.6
+  epsilon_final: 0.05
+  epsilon_decay_steps: 500000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.0001
+    - step: 200000
+      learning_rate: 0.00003
+
+reward:
+  coverage_ce_min_active_pursuers: 4
+  min_active_pursuers: 4
+  post_capture_coverage_window_steps: 500
+
+experiment_metadata:
+  stage: stage1_4p1e1obs
+  stage_timesteps: 2000000
+  training_start: scratch_random_initialization
+

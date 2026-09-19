@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from tools import iqn_z_unified_decay_curriculum_20260919 as run
+
+
+def _summary(
+    *,
+    pure_capture: float,
+    mixed_capture: float,
+    coverage: float,
+    safe: float = 0.0,
+    post_ce: float = 0.0,
+    collision: float = 0.0,
+    ce_rms: float = 0.2,
+    area_cv: float = 0.3,
+    capture_seconds: float = 20.0,
+) -> dict:
+    return {
+        "coverage": {
+            "strict_ce_rate": coverage,
+            "collision_rate": collision,
+            "ce_rms": {"mean": ce_rms},
+            "area_cv": {"mean": area_cv},
+        },
+        "capture": {
+            "normal_capture_rate": pure_capture,
+            "collision_rate": collision,
+            "capture_seconds": {"mean": capture_seconds},
+        },
+        "mixed": {
+            "capture_rate": mixed_capture,
+            "safe_complete_rate": safe,
+            "post_capture_ce_rate": post_ce,
+            "collision_rate": collision,
+        },
+    }
+
+
+def _write_report(root: Path, step: int, summary: dict) -> None:
+    path = root / "evaluations" / f"step_{step:09d}" / "report.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "checkpoint": str(root / f"step_{step}.pt"),
+                "checkpoint_sha256": f"sha-{step}",
+                "summary": summary,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_dual_line_contract_diff_has_only_alpha(tmp_path: Path) -> None:
+    reports = run.write_contract_reports(tmp_path)
+    for stages in reports["arms"].values():
+        assert all(report["unexpected_difference_count"] == 0 for report in stages.values())
+    for report in reports["cross"].values():
+        assert report["non_alpha_difference_count"] == 0
+        assert {row["path"] for row in report["differences"]} == run.ALLOWED_ARM_DIFFS
+
+
+@pytest.mark.parametrize(("arm", "alpha"), [("z05", 0.5), ("z07", 0.7)])
+def test_all_stages_keep_registered_scientific_contract(arm: str, alpha: float) -> None:
+    for stage in run.STAGE_ORDER:
+        config = run.resolved(arm, stage)
+        run._assert_production_contract(config, alpha)
+        assert config["iqn"]["checkpoint_freq"] == 100_000
+        assert config["formal_evaluation"]["episodes_per_scene"] == 20
+        assert config["formal_evaluation"]["checkpoint_interval"] == 100_000
+        assert config["checkpointing"]["full_resume"] is True
+
+
+def test_balanced_floor_selection_prefers_joint_strength(tmp_path: Path) -> None:
+    milestones = (100_000, 200_000, 300_000)
+    _write_report(tmp_path, 100_000, _summary(pure_capture=1.0, mixed_capture=1.0, coverage=0.2))
+    _write_report(tmp_path, 200_000, _summary(pure_capture=0.8, mixed_capture=0.8, coverage=0.75))
+    _write_report(tmp_path, 300_000, _summary(pure_capture=0.6, mixed_capture=0.6, coverage=0.9))
+    report = run.select_balanced(tmp_path, milestones)
+    assert report["fallback_used"] is False
+    assert report["selected"]["step"] == 200_000
+    assert report["selected"]["balanced_floor"] == pytest.approx(0.75)
+
+
+def test_zero_strict_coverage_fallback_selects_maximin_compromise(tmp_path: Path) -> None:
+    milestones = (100_000, 200_000, 300_000)
+    _write_report(tmp_path, 100_000, _summary(pure_capture=0.9, mixed_capture=0.9, coverage=0.0, ce_rms=0.5, area_cv=0.8))
+    _write_report(tmp_path, 200_000, _summary(pure_capture=0.7, mixed_capture=0.7, coverage=0.0, ce_rms=0.3, area_cv=0.5))
+    _write_report(tmp_path, 300_000, _summary(pure_capture=0.5, mixed_capture=0.5, coverage=0.0, ce_rms=0.1, area_cv=0.2))
+    report = run.select_balanced(tmp_path, milestones)
+    assert report["fallback_used"] is True
+    assert report["selected"]["step"] == 200_000
+    assert report["selected"]["fallback_maximin"] == pytest.approx(0.5)
+    assert "maximin compromise" in report["selection_reason"]

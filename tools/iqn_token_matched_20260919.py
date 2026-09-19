@@ -384,6 +384,9 @@ class ZDiagnostics:
         self.capture_seen = False
         self.post_capture_max_z: list[float] = []
         self.release_step: int | None = None
+        self.last_update_count: int | None = None
+        self.update_count_checks = 0
+        self.update_count_violations = 0
 
     def transition(self, env, local, global_state, q, greedy, active, state, phase, step, outcome):
         del local, global_state, q, greedy, state
@@ -409,6 +412,15 @@ class ZDiagnostics:
             self.steps += 1
             self.saturation_09 += int(all(value >= 0.9 for value in values))
             self.saturation_05 += int(all(value >= 0.5 for value in values))
+        current_update_count = int(env._z_update_count)
+        # reset() performs the initial decision-state update; the first
+        # transition therefore lands at count 2 when step == 1.
+        expected_update_count = int(step) + 1
+        if self.last_update_count is not None:
+            expected_update_count = self.last_update_count + 1
+        self.update_count_checks += 1
+        self.update_count_violations += int(current_update_count != expected_update_count)
+        self.last_update_count = current_update_count
         captured_now = bool(env.evaders and all(ev.deactivated and not ev.collision for ev in env.evaders))
         self.capture_seen = self.capture_seen or captured_now
         if self.capture_seen and self.scene == "mixed":
@@ -435,6 +447,9 @@ class ZDiagnostics:
             "release_steps_max_z_lt_0_1": self.release_step,
             "release_seconds_max_z_lt_0_1": None if self.release_step is None else self.release_step * decision_seconds,
             "post_capture_never_released": bool(self.capture_seen and self.scene == "mixed" and self.release_step is None),
+            "z_update_count_checks": self.update_count_checks,
+            "z_update_count_violations": self.update_count_violations,
+            "z_update_count_per_decision_exact": self.update_count_violations == 0,
         }
 
 
@@ -455,11 +470,13 @@ def evaluate_checkpoint(
     seed_base: int,
     arm: str,
     max_steps: int | None = None,
+    config_path: Path | None = None,
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
-    cfg = resolved(arm_config(arm))
+    cfg = resolved(config_path or arm_config(arm))
     model = CoCapIQN.load(str(checkpoint), device=device).eval()
     expected_role = arm == "role"
+    is_z = not expected_role
     if (
         model.config.include_is_pursuing is not expected_role
         or model.config.include_z_state is expected_role
@@ -479,7 +496,7 @@ def evaluate_checkpoint(
         for index in range(episodes):
             seed = int(seed_base + scene_index * 100_000 + index)
             holder: dict[str, Any] = {}
-            diag = ZDiagnostics(scene) if arm == "z" else RoleDiagnostics()
+            diag = ZDiagnostics(scene) if is_z else RoleDiagnostics()
 
             def factory(requested_scene: str, requested_seed: int):
                 env, obs = make_env(cfg, requested_scene, requested_seed)
@@ -498,7 +515,7 @@ def evaluate_checkpoint(
             env = holder["env"]
             record = env.episode_record(task="coverage" if scene == "coverage" else "mix")
             row["area_cv"] = float(record["coverage_strict_area_cv"])
-            if arm == "z":
+            if is_z:
                 support_values.extend(diag.support)
                 coverage_values.extend(diag.coverage)
                 pure_coverage_values.extend(diag.pure_coverage)
@@ -541,7 +558,7 @@ def evaluate_checkpoint(
         [np.asarray(row["policy_diagnostics"]["action_histogram"], dtype=np.int64) for row in records],
         axis=0,
     ).tolist()
-    all_diag = [row["z_diagnostics"] for row in records] if arm == "z" else []
+    all_diag = [row["z_diagnostics"] for row in records] if is_z else []
     release = [row["release_seconds_max_z_lt_0_1"] for row in all_diag if row["release_seconds_max_z_lt_0_1"] is not None]
     summary = {
         "coverage": {
@@ -578,7 +595,7 @@ def evaluate_checkpoint(
             "distribution": [count / max(sum(action_hist), 1) for count in action_hist],
         },
     }
-    if arm == "z":
+    if is_z:
         summary["z"] = {
             "direct_checks": sum(row["direct_checks"] for row in all_diag),
             "direct_violations": sum(row["direct_violations"] for row in all_diag),
@@ -594,10 +611,14 @@ def evaluate_checkpoint(
             "whole_swarm_z_ge_0_5_fraction": float(np.mean([row["whole_swarm_z_ge_0_5_fraction"] for row in all_diag])),
             "post_capture_release_seconds": numeric_summary(release),
             "post_capture_never_release_episodes": sum(row["post_capture_never_released"] for row in all_diag),
+            "update_count_checks": sum(row["z_update_count_checks"] for row in all_diag),
+            "update_count_violations": sum(row["z_update_count_violations"] for row in all_diag),
+            "update_count_per_decision_exact": all(row["z_update_count_per_decision_exact"] for row in all_diag),
         }
     report = {
         "schema": SCHEMA,
         "arm": arm,
+        "config": str(config_path or arm_config(arm)),
         "status": "complete",
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_file(checkpoint),

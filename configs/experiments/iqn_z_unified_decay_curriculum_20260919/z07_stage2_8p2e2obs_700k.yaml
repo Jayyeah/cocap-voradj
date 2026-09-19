@@ -1,0 +1,46 @@
+extends: z07_stage1_4p1e1obs_2m.yaml
+
+seed: 2026091902
+total_timesteps: 700000
+run_name: stage2_training
+
+iqn:
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 420000
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.00003
+
+reward:
+  coverage_ce_min_active_pursuers: 8
+  min_active_pursuers: 8
+  post_capture_coverage_window_steps: 600
+
+tasks:
+  voradj:
+    env:
+      num_pursuers: 8
+      num_evaders: 2
+      num_obstacles: 2
+      pursuer_spawn_mode: map_random
+      evader_spawn_mode: map_random
+      pursuer_spawn_min_sep: 15.0
+      evader_spawn_min_sep: 15.0
+  voradj_coverage:
+    env:
+      num_pursuers: 8
+      num_evaders: 0
+      num_obstacles: 2
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 11.0
+      pursuer_spawn_min_sep: 7.0
+
+pretrained:
+  compatibility_mode: shape_compatible
+
+experiment_metadata:
+  stage: stage2_8p2e2obs
+  stage_timesteps: 700000
+  training_start: warm_start_from_own_stage1_selected_model_only
+

@@ -1,0 +1,75 @@
+extends: ../cr_ms_support_approach_ce_curriculum_20260802/common.yaml
+
+device: cuda:0
+train_mode: voradj_mixed_coverage
+
+env:
+  collision_semantics: synchronized_swept_v1
+
+checkpointing:
+  full_resume: true
+
+perception:
+  include_is_pursuing: false
+  include_z_state: true
+  self_feature_dim: 9
+  friend_ordering_mode: physical_only
+
+z_state:
+  enabled: true
+  hard_zero_threshold: 0.10
+  update_semantics: synchronous_previous_decision_state
+
+iqn:
+  include_is_pursuing: false
+  include_z_state: true
+  self_feature_dim: 9
+  pursuer_feature_dim: 7
+  pursuing_embed_dim: 0
+  pursuing_late_fusion: false
+  checkpoint_freq: 100000
+
+normsense_v2:
+  enabled: true
+  policy: forward-final-density-normalized-sensing-v2
+  schema_version: 2
+
+formal_evaluation:
+  episodes_per_scene: 20
+  seed_base: 2026091900
+  scenes:
+    - coverage
+    - capture
+    - mixed
+  deterministic_quantiles: midpoint32
+  checkpoint_interval: 100000
+
+runtime_semantic_assertions:
+  topology: friendly_voronoi_comm_v0
+  enemy_token_rule: surface_radius
+  global_enemy_flag: false
+  support_capture_weight: 0.5
+  support_coverage_weight: 0.5
+  support_blend_enabled: true
+  action_mode: unicycle_discrete
+  decision_dt: 0.5
+  physics_dt: 0.05
+  collision_semantics: synchronized_swept_v1
+  capture_radius: 8.0
+  capture_k: 3
+  capture_reward_mode: ring_importance_ms_v0
+  yaw_held_for_vxy: false
+  a_longitudinal_max: 0.4
+  omega_max: 0.5235987755982988
+  v_max: 3.0
+  drag: 0.13333333333333333
+  servo_acceleration_limit: 0.4
+
+experiment_metadata:
+  series_label: iqn_z_unified_decay_dual_curriculum_20260919
+  training_start: scratch_random_initialization
+  promotion_gate: none
+  stage_selection: balanced_floor
+  friend_ordering_mode: physical_only
+  normsense_policy: forward-final-density-normalized-sensing-v2
+

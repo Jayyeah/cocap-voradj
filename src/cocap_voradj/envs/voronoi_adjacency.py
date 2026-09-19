@@ -68,10 +68,13 @@ class VorAdjEnv(CoCapEnv):
         self._z_state_enabled = bool(z_cfg.get("enabled", False))
         self._z_lambda = float(z_cfg.get("lambda", 0.95))
         self._z_eta = float(z_cfg.get("eta", 0.85))
+        self._z_hard_zero_threshold = float(z_cfg.get("hard_zero_threshold", 0.0))
         if not 0.0 <= self._z_lambda <= 1.0:
             raise ValueError("z_state.lambda must be in [0, 1]")
         if not 0.0 <= self._z_eta <= 1.0:
             raise ValueError("z_state.eta must be in [0, 1]")
+        if not 0.0 <= self._z_hard_zero_threshold <= 1.0:
+            raise ValueError("z_state.hard_zero_threshold must be in [0, 1]")
         configured_z_feature = bool(self.per_cfg.get("include_z_state", False))
         if configured_z_feature != self._z_state_enabled:
             raise ValueError("z_state.enabled and perception.include_z_state must match")
@@ -236,6 +239,8 @@ class VorAdjEnv(CoCapEnv):
                 (self._z_eta * neighbor_value, 0, "neighbor"),
             )
             value, _priority, source = max(candidates, key=lambda item: (item[0], item[1]))
+            if value < self._z_hard_zero_threshold:
+                continue
             next_z[i] = np.float32(value)
             if value <= 0.0:
                 continue
@@ -262,10 +267,11 @@ class VorAdjEnv(CoCapEnv):
         """Return an exact serializable z snapshot for checkpoint/resume."""
 
         return {
-            "schema": "cocap-z-state-v1",
+            "schema": "cocap-z-state-v2",
             "enabled": bool(self._z_state_enabled),
             "lambda": float(self._z_lambda),
             "eta": float(self._z_eta),
+            "hard_zero_threshold": float(self._z_hard_zero_threshold),
             "update_count": int(self._z_update_count),
             "values": self.z_state.astype(float).tolist(),
             "last_direct": self._z_last_direct.astype(bool).tolist(),
@@ -277,7 +283,7 @@ class VorAdjEnv(CoCapEnv):
         }
 
     def load_z_state_dict(self, state: Dict[str, Any]) -> None:
-        if state.get("schema") != "cocap-z-state-v1":
+        if state.get("schema") != "cocap-z-state-v2":
             raise ValueError("unsupported z-state checkpoint schema")
         if bool(state.get("enabled")) != self._z_state_enabled:
             raise ValueError("z-state checkpoint enabled contract mismatch")
@@ -285,6 +291,11 @@ class VorAdjEnv(CoCapEnv):
             raise ValueError("z-state checkpoint lambda mismatch")
         if not np.isclose(float(state.get("eta")), self._z_eta):
             raise ValueError("z-state checkpoint eta mismatch")
+        if not np.isclose(
+            float(state.get("hard_zero_threshold")),
+            self._z_hard_zero_threshold,
+        ):
+            raise ValueError("z-state checkpoint hard-zero threshold mismatch")
         count = len(self.pursuers)
 
         def vector(name: str, dtype) -> np.ndarray:
@@ -296,18 +307,43 @@ class VorAdjEnv(CoCapEnv):
         values = vector("values", np.float32)
         if not np.all(np.isfinite(values)) or np.any(values < 0.0) or np.any(values > 1.0):
             raise ValueError("z-state checkpoint values must be finite in [0, 1]")
-        self.z_state = values
-        self._z_last_direct = vector("last_direct", bool)
-        self._z_last_neighbor_max = vector("last_neighbor_max", np.float32)
-        self._z_lineage_hops = vector("lineage_hops", np.int16)
-        self._z_source_age_steps = vector("source_age_steps", np.int32)
+        last_direct = vector("last_direct", bool)
+        last_neighbor_max = vector("last_neighbor_max", np.float32)
+        lineage_hops = vector("lineage_hops", np.int16)
+        source_age_steps = vector("source_age_steps", np.int32)
+        if not np.all(np.isfinite(last_neighbor_max)):
+            raise ValueError("z-state checkpoint neighbor maxima must be finite")
         sources = list(state.get("last_source", []))
         neighbors = [list(map(int, values)) for values in state.get("last_neighbors", [])]
         if len(sources) != count or len(neighbors) != count:
             raise ValueError("z-state checkpoint diagnostic shape mismatch")
+        allowed_sources = {"zero", "direct", "self_decay", "neighbor"}
+        if any(source not in allowed_sources for source in sources):
+            raise ValueError("z-state checkpoint contains an unknown source")
+        for index, value in enumerate(values):
+            if 0.0 < value < self._z_hard_zero_threshold:
+                raise ValueError("z-state checkpoint contains a value below the hard-zero threshold")
+            if value == 0.0 and (
+                sources[index] != "zero"
+                or lineage_hops[index] != -1
+                or source_age_steps[index] != -1
+            ):
+                raise ValueError("z-state checkpoint zero bookkeeping is inconsistent")
+            if value > 0.0 and sources[index] == "zero":
+                raise ValueError("z-state checkpoint positive value has zero source")
+            if any(neighbor < 0 or neighbor >= count for neighbor in neighbors[index]):
+                raise ValueError("z-state checkpoint neighbor index is out of range")
+        self.z_state = values
+        self._z_last_direct = last_direct
+        self._z_last_neighbor_max = last_neighbor_max
+        self._z_lineage_hops = lineage_hops
+        self._z_source_age_steps = source_age_steps
         self._z_last_source = sources
         self._z_last_neighbors = neighbors
-        self._z_update_count = int(state.get("update_count", 0))
+        update_count = int(state.get("update_count", 0))
+        if update_count < 0:
+            raise ValueError("z-state checkpoint update count must be non-negative")
+        self._z_update_count = update_count
 
     def _invalidate_voronoi_cache(self) -> None:
         self._voronoi_cache_version += 1
