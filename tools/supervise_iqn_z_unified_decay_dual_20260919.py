@@ -114,10 +114,21 @@ def write_final_comparison(storage: Path) -> None:
         if not path.is_file():
             return
         reports[arm] = read_json(path)
+    stage_comparison = {}
+    for index, stage in enumerate(("stage1", "stage2", "stage3")):
+        left = reports["z05"]["stages"][index]
+        right = reports["z07"]["stages"][index]
+        stage_comparison[stage] = {
+            "z05": left["formal_summary"],
+            "z07": right["formal_summary"],
+            "selected_steps": {"z05": left["selected_step"], "z07": right["selected_step"]},
+            "selected_checkpoints": {"z05": left["selected_checkpoint"], "z07": right["selected_checkpoint"]},
+        }
     comparison = {
         "schema": SCHEMA,
         "status": "complete",
         "arms": reports,
+        "stage_comparison": stage_comparison,
         "scientific_difference": {
             "z05_alpha": 0.5,
             "z07_alpha": 0.7,
@@ -127,6 +138,31 @@ def write_final_comparison(storage: Path) -> None:
         "completed_at": now_local(),
     }
     atomic_json(storage / "Z05_VS_Z07_FINAL_COMPARISON.json", comparison)
+    lines = [
+        "# Z05 vs Z07 Unified-Decay 全课程最终比较",
+        "",
+        "唯一科学差异：Z05 `alpha=0.5`，Z07 `alpha=0.7`；两线 `hard_zero_threshold=0.10`。",
+        "",
+    ]
+    for stage, payload in stage_comparison.items():
+        lines.extend([f"## {stage}", "", "| 指标 | Z05 | Z07 |", "|---|---:|---:|"])
+        left, right = payload["z05"], payload["z07"]
+        rows = (
+            ("Selected step", payload["selected_steps"]["z05"], payload["selected_steps"]["z07"]),
+            ("Pure capture", left["capture"]["normal_capture_rate"], right["capture"]["normal_capture_rate"]),
+            ("Mixed capture", left["mixed"]["capture_rate"], right["mixed"]["capture_rate"]),
+            ("Pure coverage strict CE", left["coverage"]["strict_ce_rate"], right["coverage"]["strict_ce_rate"]),
+            ("Mixed post-capture CE", left["mixed"]["post_capture_ce_rate"], right["mixed"]["post_capture_ce_rate"]),
+            ("Mixed safe-complete", left["mixed"]["safe_complete_rate"], right["mixed"]["safe_complete_rate"]),
+            ("Coverage CE RMS", left["coverage"]["ce_rms"]["mean"], right["coverage"]["ce_rms"]["mean"]),
+            ("Coverage area CV", left["coverage"]["area_cv"]["mean"], right["coverage"]["area_cv"]["mean"]),
+            ("Z max lineage hop", left["z"]["max_lineage_hop"], right["z"]["max_lineage_hop"]),
+            ("Z never-release episodes", left["z"]["post_capture_never_release_episodes"], right["z"]["post_capture_never_release_episodes"]),
+        )
+        for label, z05, z07 in rows:
+            lines.append(f"| {label} | {z05} | {z07} |")
+        lines.append("")
+    (storage / "Z05_VS_Z07_FINAL_COMPARISON_ZH.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def supervise(output: Path, storage: Path, interval: int, min_free_bytes: int) -> int:

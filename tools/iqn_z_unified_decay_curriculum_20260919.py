@@ -665,26 +665,80 @@ def supervise_arm(arm: str, output: Path, device: str) -> int:
                 result = run_stage(arm, stage, output, device, warm_start, state)
             results.append(result)
             warm_start = result.selected_checkpoint
+        stage_reports = []
+        parent_checkpoint = None
+        for result in results:
+            selection = json.loads(result.selection_report.read_text(encoding="utf-8"))
+            selected = selection["selected"]
+            selected_step = int(selected["step"])
+            evaluation_path = output / "stages" / result.stage / "evaluations" / f"step_{selected_step:09d}" / "report.json"
+            evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+            stage_reports.append(
+                {
+                    "stage": result.stage,
+                    "input_warm_start_checkpoint": parent_checkpoint,
+                    "selected_step": selected_step,
+                    "selected_checkpoint": str(result.selected_checkpoint),
+                    "selected_checkpoint_sha256": sha256_file(result.selected_checkpoint),
+                    "selection_report": str(result.selection_report),
+                    "selection_reason": selection["selection_reason"],
+                    "fallback_used": bool(selection["fallback_used"]),
+                    "selected_scores": selected,
+                    "formal_evaluation": str(evaluation_path),
+                    "formal_summary": evaluation["summary"],
+                }
+            )
+            parent_checkpoint = str(result.selected_checkpoint)
         final_report = {
             "schema": SCHEMA,
             "arm": arm,
             "alpha": ALPHAS[arm],
             "hard_zero_threshold": 0.10,
-            "stages": [
-                {
-                    "stage": result.stage,
-                    "selected_checkpoint": str(result.selected_checkpoint),
-                    "selected_checkpoint_sha256": sha256_file(result.selected_checkpoint),
-                    "selection_report": str(result.selection_report),
-                }
-                for result in results
-            ],
+            "ancestry_rule": "same-line selected model weights only; fresh optimizer/replay/RNG/env/z/recovery at each promotion",
+            "stages": stage_reports,
             "final_checkpoint": str(results[-1].selected_checkpoint),
             "final_checkpoint_sha256": sha256_file(results[-1].selected_checkpoint),
+            "final_formal_summary": stage_reports[-1]["formal_summary"],
             "completed_at": now_local(),
         }
-        matched.atomic_json(output / f"{arm.upper()}_CURRICULUM_FINAL_REPORT.json", final_report)
-        matched.atomic_json(output / "status.json", {**launch, "status": "complete", "phase": "complete", "final_report": str(output / f"{arm.upper()}_CURRICULUM_FINAL_REPORT.json"), "completed_at": now_local()})
+        final_json = output / f"{arm.upper()}_CURRICULUM_FINAL_REPORT.json"
+        final_md = output / f"{arm.upper()}_CURRICULUM_FINAL_REPORT_ZH.md"
+        matched.atomic_json(final_json, final_report)
+        lines = [
+            f"# {arm.upper()} Unified-Decay IQN 全课程最终报告",
+            "",
+            f"- alpha: `{ALPHAS[arm]}`",
+            "- hard-zero threshold: `0.10`",
+            f"- final checkpoint: `{results[-1].selected_checkpoint}`",
+            f"- final SHA256: `{final_report['final_checkpoint_sha256']}`",
+            "",
+            "## 阶段选择与 ancestry",
+            "",
+        ]
+        for row in stage_reports:
+            summary = row["formal_summary"]
+            lines.extend(
+                [
+                    f"### {row['stage']}",
+                    "",
+                    f"- selected step: `{row['selected_step']}`",
+                    f"- selected checkpoint: `{row['selected_checkpoint']}`",
+                    f"- input warm-start: `{row['input_warm_start_checkpoint']}`",
+                    f"- selection: {row['selection_reason']}",
+                    f"- fallback used: `{row['fallback_used']}`",
+                    f"- pure capture: `{summary['capture']['normal_capture_rate']:.4f}`",
+                    f"- mixed capture: `{summary['mixed']['capture_rate']:.4f}`",
+                    f"- pure coverage strict CE: `{summary['coverage']['strict_ce_rate']:.4f}`",
+                    f"- mixed post-capture CE: `{summary['mixed']['post_capture_ce_rate']:.4f}`",
+                    f"- mixed safe-complete: `{summary['mixed']['safe_complete_rate']:.4f}`",
+                    f"- worst collision: `{max(summary[s]['collision_rate'] for s in ('coverage', 'capture', 'mixed')):.4f}`",
+                    f"- Z max lineage hop: `{summary['z']['max_lineage_hop']}`",
+                    f"- Z post-capture never-release: `{summary['z']['post_capture_never_release_episodes']}`",
+                    "",
+                ]
+            )
+        final_md.write_text("\n".join(lines), encoding="utf-8")
+        matched.atomic_json(output / "status.json", {**launch, "status": "complete", "phase": "complete", "final_report": str(final_json), "final_report_zh": str(final_md), "completed_at": now_local()})
         return 0
     except BaseException as exc:
         matched.atomic_json(output / "status.json", {**launch, "status": "failed_closed", "error": repr(exc), "traceback": traceback.format_exc(), "updated_at": now_local()})

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from tools import iqn_z_unified_decay_curriculum_20260919 as run
+from tools import supervise_iqn_z_unified_decay_dual_20260919 as dual
 
 
 def _summary(
@@ -97,3 +98,39 @@ def test_zero_strict_coverage_fallback_selects_maximin_compromise(tmp_path: Path
     assert report["selected"]["step"] == 200_000
     assert report["selected"]["fallback_maximin"] == pytest.approx(0.5)
     assert "maximin compromise" in report["selection_reason"]
+
+
+def test_final_dual_comparison_contains_all_stage_metrics_and_chinese_report(tmp_path: Path) -> None:
+    for arm, capture in (("z05", 0.6), ("z07", 0.8)):
+        arm_dir = tmp_path / arm
+        arm_dir.mkdir()
+        stages = []
+        for index, stage in enumerate(run.STAGE_ORDER, start=1):
+            summary = _summary(
+                pure_capture=capture,
+                mixed_capture=capture - 0.1,
+                coverage=0.2 * index,
+            )
+            summary["z"] = {
+                "max_lineage_hop": index,
+                "post_capture_never_release_episodes": 0,
+            }
+            stages.append(
+                {
+                    "stage": stage,
+                    "selected_step": index * 100_000,
+                    "selected_checkpoint": str(arm_dir / f"{stage}.pt"),
+                    "formal_summary": summary,
+                }
+            )
+        (arm_dir / f"{arm.upper()}_CURRICULUM_FINAL_REPORT.json").write_text(
+            json.dumps({"arm": arm, "stages": stages}),
+            encoding="utf-8",
+        )
+    dual.write_final_comparison(tmp_path)
+    comparison = json.loads((tmp_path / "Z05_VS_Z07_FINAL_COMPARISON.json").read_text())
+    assert list(comparison["stage_comparison"]) == list(run.STAGE_ORDER)
+    assert comparison["stage_comparison"]["stage3"]["z07"]["capture"]["normal_capture_rate"] == pytest.approx(0.8)
+    markdown = (tmp_path / "Z05_VS_Z07_FINAL_COMPARISON_ZH.md").read_text()
+    assert "Stage" not in markdown
+    assert "stage1" in markdown and "stage2" in markdown and "stage3" in markdown
