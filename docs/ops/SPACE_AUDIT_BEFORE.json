@@ -1,0 +1,53 @@
+{
+  "schema": "cocap-space-audit-before-v1",
+  "date": "2026-09-19",
+  "timezone": "Asia/Shanghai",
+  "root_filesystem": {
+    "device": "/dev/nvme0n1p2",
+    "total_gb_display": 915,
+    "used_gb_display": 812,
+    "free_gb_display": 57,
+    "use_percent": 94,
+    "inode_use_percent": 6
+  },
+  "existing_storage": {
+    "path": "/data/disk2",
+    "device": "/dev/sdb1",
+    "total_tb_display": 5.5,
+    "free_tb_display": 4.5,
+    "use_percent": 15,
+    "new_mount_created": false
+  },
+  "top_user_consumers": [
+    {"path": "/home/yjq/rl/CoCap1/cocap-voradj/artifacts", "size_display": "58G", "category": "historical_artifacts"},
+    {"path": "/home/yjq/rl/CoCap1/cocap-voradj/runs", "size_display": "11G", "category": "historical_runs_retained"},
+    {"path": "/home/yjq/.vscode-server", "size_display": "5.1G", "category": "editor_runtime_retained"},
+    {"path": "/home/yjq/.cache", "size_display": "320K", "category": "rebuildable_cache"},
+    {"path": "/home/yjq/rl/CoCap1", "size_display": "200G", "category": "worktrees"}
+  ],
+  "candidate_cleanup": [
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj/artifacts",
+      "file_class": "replay_like",
+      "file_count": 340,
+      "bytes": 42353669292,
+      "gib": 39.44,
+      "live_process_match": false,
+      "retained": ["manifest", "effective_config", "checkpoint", "report", "selected_result"],
+      "reason": "historical replay is rebuildable and the active Z05/Z07 line is isolated elsewhere"
+    },
+    {
+      "file_class": "python_cache_and_pytest_cache",
+      "reason": "rebuildable; clean only after replay batch"
+    }
+  ],
+  "protected": [
+    "formal Z05/Z07 worktree",
+    "current supervisor/coordinator state",
+    "live replay and resumable checkpoints",
+    "selected/final/milestone checkpoints",
+    "source/docs/configs/tests",
+    "current VS Code server runtime"
+  ],
+  "estimated_reclaim_gib": 39.44
+}

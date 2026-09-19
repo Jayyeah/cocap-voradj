@@ -21,6 +21,8 @@ DEFAULT_OUTPUT = ROOT / "artifacts/2026-09-19_iqn_z_unified_decay_curriculum"
 DEFAULT_STORAGE = Path("/data/disk2/home/yjq/cocap-runs/iqn-z-unified-decay-dual-curriculum-20260919")
 SESSIONS = {"z05": "iqn_z05_unified_decay_20260919", "z07": "iqn_z07_unified_decay_20260919"}
 MIN_FREE_BYTES = 200 * 1024**3
+ROOT_DISK_WARNING_BYTES = 50 * 1024**3
+ROOT_DISK_CRITICAL_BYTES = 20 * 1024**3
 
 
 def now_local() -> str:
@@ -120,6 +122,32 @@ def storage_snapshot(storage: Path) -> dict[str, Any]:
         return {"path": str(storage), "exists": storage.exists(), "writable": False, "free": None, "total": None, "error": repr(exc)}
 
 
+def root_disk_snapshot() -> dict[str, Any]:
+    try:
+        usage = shutil.disk_usage(ROOT)
+        free = usage.free
+        return {
+            "path": str(ROOT),
+            "free": free,
+            "total": usage.total,
+            "warning": free < ROOT_DISK_WARNING_BYTES,
+            "critical": free < ROOT_DISK_CRITICAL_BYTES,
+            "warning_threshold": ROOT_DISK_WARNING_BYTES,
+            "critical_threshold": ROOT_DISK_CRITICAL_BYTES,
+        }
+    except OSError as exc:
+        return {
+            "path": str(ROOT),
+            "free": None,
+            "total": None,
+            "warning": True,
+            "critical": True,
+            "warning_threshold": ROOT_DISK_WARNING_BYTES,
+            "critical_threshold": ROOT_DISK_CRITICAL_BYTES,
+            "error": repr(exc),
+        }
+
+
 def arm_output(storage: Path, arm: str) -> Path:
     return storage / arm
 
@@ -202,20 +230,24 @@ def supervise(output: Path, storage: Path, interval: int, min_free_bytes: int) -
     output.mkdir(parents=True, exist_ok=True)
     preflight = output / "preflight/startup_sanity.json"
     snapshot = storage_snapshot(storage)
+    root_disk = root_disk_snapshot()
     gpus = gpu_processes()
     if not preflight.is_file() or read_json(preflight).get("status") != "pass":
         status = {"schema": SCHEMA, "status": "failed_closed", "phase": "preflight", "fail_reasons": ["preflight_missing_or_failed"], "updated_at": now_local()}
         atomic_json(output / "status.json", status)
         return 2
-    launch = {"schema": SCHEMA, "status": "queued", "pid": os.getpid(), "branch": subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip(), "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), "storage": snapshot, "gpus": json_gpu_processes(), "started_at": now_local()}
+    launch = {"schema": SCHEMA, "status": "queued", "pid": os.getpid(), "branch": subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip(), "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(), "storage": snapshot, "root_disk": root_disk, "gpus": json_gpu_processes(), "started_at": now_local()}
     atomic_json(output / "launch.json", launch)
     while True:
         snapshot = storage_snapshot(storage)
+        root_disk = root_disk_snapshot()
         gpus = gpu_processes()
         arm_status = {arm: arm_runtime(storage, arm, gpus) for arm in ARMS}
         fail_reasons = []
+        if root_disk["critical"]:
+            fail_reasons.append("root_disk_critical")
         if not snapshot["writable"] or snapshot["free"] is None or snapshot["free"] < min_free_bytes:
-            atomic_json(output / "status.json", {**launch, "status": "queued", "phase": "waiting_for_storage", "fail_reasons": ["storage_unavailable_or_low"], "storage": snapshot, "gpus": json_gpu_processes(), "updated_at": now_local()})
+            atomic_json(output / "status.json", {**launch, "status": "queued", "phase": "waiting_for_storage", "fail_reasons": ["storage_unavailable_or_low"], "storage": snapshot, "root_disk": root_disk, "disk_warning": root_disk["warning"], "gpus": json_gpu_processes(), "updated_at": now_local()})
             time.sleep(interval)
             continue
         current_head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -226,7 +258,7 @@ def supervise(output: Path, storage: Path, interval: int, min_free_bytes: int) -
         if any(status.get("wrong_gpu") for status in arm_status.values()):
             fail_reasons.append("arm_wrong_gpu")
         if fail_reasons:
-            atomic_json(output / "status.json", {**launch, "status": "failed_closed", "fail_reasons": sorted(set(fail_reasons)), "storage": snapshot, "gpus": json_gpu_processes(), "arms": arm_status, "updated_at": now_local()})
+            atomic_json(output / "status.json", {**launch, "status": "failed_closed", "fail_reasons": sorted(set(fail_reasons)), "storage": snapshot, "root_disk": root_disk, "disk_warning": root_disk["warning"], "gpus": json_gpu_processes(), "arms": arm_status, "updated_at": now_local()})
             return 2
         free_gpus = [index for index in sorted(gpus) if not gpus[index]]
         launchable = [arm for arm in ARMS if needs_launch(arm_status[arm])]
@@ -236,7 +268,7 @@ def supervise(output: Path, storage: Path, interval: int, min_free_bytes: int) -
         complete = all(status.get("status") == "complete" for status in arm_status.values())
         if complete:
             write_final_comparison(storage)
-        atomic_json(output / "status.json", {**launch, "status": "complete" if complete else "running", "storage": snapshot, "gpus": json_gpu_processes(), "arms": arm_status, "updated_at": now_local()})
+        atomic_json(output / "status.json", {**launch, "status": "complete" if complete else "running", "storage": snapshot, "root_disk": root_disk, "disk_warning": root_disk["warning"], "gpus": json_gpu_processes(), "arms": arm_status, "updated_at": now_local()})
         if complete:
             return 0
         time.sleep(interval)
