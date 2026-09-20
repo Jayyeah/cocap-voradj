@@ -1,0 +1,87 @@
+{
+  "schema": "cocap-ac1-bc-resolved-contract-v1",
+  "status": "CONTRACT_MATCH",
+  "audit_date": "2026-09-20",
+  "repository_commit": "7ed297d9753b0719d2a8d788123386c2ed0a6190",
+  "contract_id": "forward-final-aw9-4v1-swept-v1",
+  "checkpoint_path_requested": "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+  "checkpoint_path_loaded": "artifacts/2026-09-17_critic_identifiability_audit/frozen_policy/actor_epoch_030.pt",
+  "checkpoint_sha256": "7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd",
+  "checkpoint_identity": "VERIFIED",
+  "actor_architecture": {
+    "type": "categorical_mappo_actor",
+    "encoder": "LegacyVorAdjFeatureBackbone copied from Final IQN decision representation",
+    "mapped_backbone_keys": 86,
+    "backbone_frozen": true,
+    "policy_head": "Linear -> LayerNorm -> ReLU -> Linear(9)",
+    "forward_mode": "eval",
+    "critical_state_dict_loading": "strict"
+  },
+  "environment_config": {
+    "source": "configs/experiments/forward_final_mappo_20260908/stage1_4v1.yaml",
+    "historical_base": "configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/stage1_4p1e1obs_scratch2m.yaml",
+    "map": "120x120",
+    "mixed": {"num_pursuers": 4, "num_evaders": 1, "num_obstacles": 1},
+    "pure_coverage": {"num_pursuers": 4, "num_evaders": 0, "num_obstacles": 1},
+    "episode_horizon": 3000,
+    "collision_semantics": "synchronized_swept_v1",
+    "capture_terminal": false,
+    "post_capture_window_steps": 500,
+    "resolved_difference_from_historical_base": ["env.collision_semantics"],
+    "difference_is_part_of_historical_bc_contract": true
+  },
+  "reward_config": {
+    "capture_reward_mode": "ring_importance_ms_v0",
+    "capture_radius": 8.0,
+    "capture_k": 3,
+    "support_capture_weight": 0.5,
+    "support_coverage_weight": 0.5,
+    "support_blend_enabled": true,
+    "coverage_enabled": true,
+    "min_active_pursuers": 4
+  },
+  "sensing": {
+    "topology": "friendly_voronoi_comm_v0",
+    "enemy_surface_radius_m": 20.0,
+    "obstacle_surface_radius_m": 20.0,
+    "friend_topology": "friend-only Voronoi adjacency with free-mask projection",
+    "global_enemy_token": false,
+    "z_token_environment": false,
+    "observation_mode": "legacy-r20 Final VorAdj sensing"
+  },
+  "action_space": {
+    "type": "AW9 categorical discrete",
+    "indices": "0..8",
+    "ordering": "[(a,w) for a in (-0.4,0,0.4) for w in (-pi/6,0,pi/6)]",
+    "physical_limits": {"a_max": 0.4, "omega_max": 0.5235987755982988, "v_max": 3.0},
+    "decision_dt": 0.5,
+    "physics_dt": 0.05,
+    "action_mapping_source": "forward_final.check_env and actor.action_grid runtime assertion"
+  },
+  "teacher_contract": {
+    "checkpoint": "artifacts/2026-08-04_crms_vctls_ce_final/checkpoints/stage1_4v1_step_2000000.pt",
+    "checkpoint_sha256": "2f39ea046acb56321585e7bbe1a8f0869a4dd85777ff2ae65ca29a7bd5680c89",
+    "q_contract": "mean of 32 midpoint quantiles tau=(j+0.5)/32; deterministic greedy argmax"
+  },
+  "evaluation_mode": {
+    "policy_modes": ["bc_argmax", "bc_sample"],
+    "sample_seed_rule": "torch.manual_seed(episode_seed) per episode",
+    "device": "cpu",
+    "ppo_updates": 0,
+    "training": false
+  },
+  "seed_set": {
+    "base_seed": 2026092101,
+    "episodes_per_mode_per_scene": 20,
+    "mixed_seeds": "2026092101..2026092120",
+    "coverage_seed_offset": 100000,
+    "coverage_seeds": "2026192101..2026192120"
+  },
+  "historical_comparison": {
+    "historical_bc_contract_artifact": "artifacts/2026-09-08_forward_final/c3_formal100/bc_argmax/launch.json",
+    "historical_bc_contract": "forward-final-aw9-4v1-swept-v1",
+    "historical_evaluator": "tools/run_forward_final_bridge_20260908.py",
+    "historical_evaluation_modes": ["bc_argmax", "bc_sample"],
+    "classification_basis": "resolved contract and live runtime facts match the historical BC C3 contract"
+  }
+}

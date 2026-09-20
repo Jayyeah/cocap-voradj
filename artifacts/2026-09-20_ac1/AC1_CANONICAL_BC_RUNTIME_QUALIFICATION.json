@@ -1,0 +1,91 @@
+{
+  "schema": "cocap-ac1-canonical-bc-runtime-qualification-v1",
+  "verdict": "BC_QUALIFIED",
+  "repository_commit": "7ed297d9753b0719d2a8d788123386c2ed0a6190",
+  "checkpoint": {
+    "path_loaded": "artifacts/2026-09-17_critic_identifiability_audit/frozen_policy/actor_epoch_030.pt",
+    "canonical_path": "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+    "sha256": "7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd",
+    "identity_verified": true
+  },
+  "contract": {
+    "status": "CONTRACT_MATCH",
+    "contract_id": "forward-final-aw9-4v1-swept-v1",
+    "resolved_contract_artifact": "artifacts/2026-09-20_ac1/AC1_BC_RESOLVED_CONTRACT.json",
+    "historical_evaluator_sha256": "ad96deb20a1cf4d7d1d92edbb3a0c6abe092143a13ce62580ad7eb0697edf76b",
+    "material_drift": []
+  },
+  "offline_smoke": {
+    "historical_dataset": "unavailable",
+    "strict_state_dict": true,
+    "forward_finite": true,
+    "probability_sum_max_error": 1.1920928955078125e-07,
+    "argmax_executable": true,
+    "sampled_action_executable": true,
+    "action_mapping_match": true,
+    "actor_eval_mode": true,
+    "backbone_trainable_parameters": 0,
+    "tensor_checksum_before": "d626fe2cd19b1cc40fadabf85fdbff8d8e151969c707d9a777f081d5b893cfa0",
+    "tensor_checksum_after": "d626fe2cd19b1cc40fadabf85fdbff8d8e151969c707d9a777f081d5b893cfa0",
+    "optimizer_updates": 0
+  },
+  "rollout": {
+    "device": "cpu",
+    "seed_base": 2026092101,
+    "episodes_per_mode_per_scene": 20,
+    "ppo_updates": 0,
+    "pure_coverage": {
+      "argmax": {
+        "ce_success": "20/20",
+        "safe_completion": "20/20",
+        "collision": "0/20",
+        "mission_time_seconds": {"mean": 75.225, "p50": 65.5, "p90": 109.8}
+      },
+      "sampled": {
+        "ce_success": "20/20",
+        "safe_completion": "20/20",
+        "collision": "0/20",
+        "mission_time_seconds": {"mean": 79.55, "p50": 65.25, "p90": 111.5}
+      }
+    },
+    "pure_capture": {
+      "status": "not part of canonical BC qualification",
+      "episodes": 0
+    },
+    "mixed": {
+      "argmax": {
+        "capture": "20/20",
+        "normal_capture": "20/20",
+        "ce_success": "19/20",
+        "safe_completion": "19/20",
+        "collision": "0/20",
+        "capture_time_seconds": {"mean": 40.8, "p50": 41.25, "p90": 54.7},
+        "recovery_time_seconds": {"mean": 65.15789473684211, "p50": 62.0, "p90": 79.6},
+        "mission_time_seconds": {"mean": 105.89473684210526, "p50": 108.0, "p90": 135.1}
+      },
+      "sampled": {
+        "capture": "20/20",
+        "normal_capture": "20/20",
+        "ce_success": "20/20",
+        "safe_completion": "20/20",
+        "collision": "0/20",
+        "capture_time_seconds": {"mean": 42.475, "p50": 41.75, "p90": 57.4},
+        "recovery_time_seconds": {"mean": 85.0, "p50": 84.25, "p90": 114.65},
+        "mission_time_seconds": {"mean": 127.475, "p50": 116.25, "p90": 172.95}
+      }
+    }
+  },
+  "action_mapping": {
+    "status": "MATCH",
+    "indices": "0..8",
+    "ordering": "[(a,w) for a in (-0.4,0,0.4) for w in (-pi/6,0,pi/6)]",
+    "coordinate_convention": "unicycle AW9; a longitudinal, w angular"
+  },
+  "forbidden_paths_touched": {
+    "critic_training": false,
+    "trajectory_bank_generation": false,
+    "bc_training": false,
+    "ppo": false,
+    "optimizer_updates": 0
+  }
+}
