@@ -114,11 +114,21 @@ class LocalObservationEncoder(nn.Module):
         encoded.append(self.encoders["obstacles"](obs["obstacles"]))
         tokens = torch.cat(encoded, dim=1) + self.type_embedding(obs["types"].long())
         mask = obs["masks"].bool()
-        trans = self.transformer(tokens, src_key_padding_mask=~mask)
-        masked = trans.masked_fill(~mask.unsqueeze(-1), 0.0)
-        count = mask.sum(dim=1, keepdim=True).clamp_min(1).to(trans.dtype)
+        # A terminal transition can carry a zero-filled next observation with
+        # every token masked. PyTorch attention returns NaN for an all-masked
+        # row (softmax over all -inf). Keep one finite self token only for the
+        # encoder computation; terminated rows are still excluded from the
+        # Bellman bootstrap in the learner.
+        encoder_mask = mask.clone()
+        all_masked = ~encoder_mask.any(dim=1)
+        fallback_self = torch.zeros_like(encoder_mask)
+        fallback_self[:, 0] = all_masked
+        encoder_mask = encoder_mask | fallback_self
+        trans = self.transformer(tokens, src_key_padding_mask=~encoder_mask)
+        masked = trans.masked_fill(~encoder_mask.unsqueeze(-1), 0.0)
+        count = encoder_mask.sum(dim=1, keepdim=True).clamp_min(1).to(trans.dtype)
         mean_context = masked.sum(dim=1) / count
-        max_context = trans.masked_fill(~mask.unsqueeze(-1), -1e9).max(dim=1).values
+        max_context = trans.masked_fill(~encoder_mask.unsqueeze(-1), -1e9).max(dim=1).values
         max_context = torch.where(torch.isfinite(max_context), max_context, torch.zeros_like(max_context))
         evader_start = 1 + int(self.config.max_pursuers)
         evader_end = evader_start + int(self.config.max_evaders)
