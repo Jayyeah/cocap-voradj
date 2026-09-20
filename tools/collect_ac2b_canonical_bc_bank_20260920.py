@@ -441,11 +441,11 @@ def main() -> None:
     plan = []
     for policy_mode, seed_base in (("bc_argmax", 2026093001), ("bc_sample", 2026094001)):
         for index in range(30):
-            split_name = "train" if index < 24 else "validation" if index == 24 else "test"
+            split_name = "train" if index < 24 else "validation" if index < 27 else "test"
             plan.append(("mixed", seed_base + index, policy_mode, split_name))
     for policy_mode, seed_base in (("bc_argmax", 2026193001), ("bc_sample", 2026194001)):
         for index in range(10):
-            split_name = "train" if index < 8 else "validation" if index == 8 else "test"
+            split_name = "train" if index < 8 else "validation" if index < 9 else "test"
             plan.append(("pure_coverage", seed_base + index, policy_mode, split_name))
     if len(plan) != 80 or len({item[1] for item in plan}) != 80:
         raise RuntimeError("formal seed plan is not 80-unique")

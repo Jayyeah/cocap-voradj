@@ -109,6 +109,59 @@ def row_lookup(bank: dict[str, np.ndarray]) -> dict[tuple[int, int], int]:
     return {(int(e), int(t)): i for i, (e, t) in enumerate(zip(bank["episode_id"], bank["timestep"]))}
 
 
+def expected_split(record: dict[str, Any]) -> str:
+    scene = record["scene"]
+    mode = record["policy_mode"]
+    episode_id = int(record["episode_id"])
+    if scene == "mixed" and mode == "bc_argmax":
+        index = episode_id
+    elif scene == "mixed" and mode == "bc_sample":
+        index = episode_id - 30
+    elif scene == "pure_coverage" and mode == "bc_argmax":
+        index = episode_id - 60
+    elif scene == "pure_coverage" and mode == "bc_sample":
+        index = episode_id - 70
+    else:
+        raise ValueError(f"unknown formal episode group: {record}")
+    if index < 0 or (scene == "mixed" and index >= 30) or (scene == "pure_coverage" and index >= 10):
+        raise ValueError(f"episode outside formal group: {record}")
+    if scene == "mixed":
+        return "train" if index < 24 else "validation" if index < 27 else "test"
+    return "train" if index < 8 else "validation" if index < 9 else "test"
+
+
+def normalize_records(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    normalized = []
+    corrections = []
+    for original in records:
+        record = dict(original)
+        expected = expected_split(record)
+        if record.get("split") != expected:
+            corrections.append({"episode_id": int(record["episode_id"]), "old": record.get("split"), "new": expected})
+        record["split"] = expected
+        normalized.append(record)
+    return normalized, corrections
+
+
+def correct_split_labels(bank: dict[str, np.ndarray], records: list[dict[str, Any]]) -> dict[str, Any]:
+    split_ids = {"train": 0, "validation": 1, "test": 2}
+    expected_by_episode = {int(record["episode_id"]): split_ids[expected_split(record)] for record in records}
+    expected = np.asarray([expected_by_episode[int(episode_id)] for episode_id in bank["episode_id"]], dtype=np.int64)
+    mismatch = bank["split_id"] != expected
+    if np.any(mismatch):
+        bank["split_id"] = expected
+    return {
+        "passed": True,
+        "corrected": bool(np.any(mismatch)),
+        "rows_corrected": int(mismatch.sum()),
+        "episode_metadata_corrections": [],
+        "expected_episode_split_counts": {
+            name: int(sum(value == split_id for value in expected_by_episode.values()))
+            for name, split_id in split_ids.items()
+        },
+    }
+
+
 def check_episode_structure(bank: dict[str, np.ndarray], records: list[dict[str, Any]]) -> dict[str, Any]:
     errors: list[str] = []
     episode_ids = sorted({int(value) for value in bank["episode_id"]})
@@ -319,20 +372,24 @@ def main() -> None:
     with np.load(BANK_PATH, allow_pickle=False) as source:
         bank = {name: source[name] for name in source.files}
     needs_neighbor_fields = not {"neighbor_action_index", "neighbor_action_aw"}.issubset(bank)
-    add_neighbor_actions(bank)
-    if needs_neighbor_fields:
-        rewrite_bank(bank)
-    rewritten = needs_neighbor_fields
-    with np.load(BANK_PATH, allow_pickle=False) as source:
-        bank = {name: source[name] for name in source.files}
     manifest_path = COLLECTION_MANIFEST if COLLECTION_MANIFEST.exists() else LEGACY_COLLECTION_MANIFEST
     with manifest_path.open() as handle:
-        manifest = json.load(handle)
-    records = manifest["bank"]["episode_records"]
+        raw_manifest = json.load(handle)
+    raw_records = raw_manifest["bank"]["episode_records"]
+    records, record_corrections = normalize_records(raw_records)
+    split_before = bank["split_id"].copy()
+    split_correction = correct_split_labels(bank, records)
+    add_neighbor_actions(bank)
+    if needs_neighbor_fields or np.any(split_before != bank["split_id"]):
+        rewrite_bank(bank)
+    rewritten = bool(needs_neighbor_fields or np.any(split_before != bank["split_id"]))
+    with np.load(BANK_PATH, allow_pickle=False) as source:
+        bank = {name: source[name] for name in source.files}
 
     integrity = {
         "schema": "cocap-ac2b-canonical-bc-critic-formal-v2",
         "bank_rewritten_with_explicit_neighbor_actions": rewritten,
+        "split_label_contract": {"passed": True, "offline_correction_applied": split_correction["corrected"], "rows_corrected": split_correction["rows_corrected"], "record_split_metadata_corrections": record_corrections},
         "required_fields_present": all(name in bank for name in (
             "neighbor_action_index", "neighbor_action_aw", "local_self", "neighbor_ids",
             "neighbor_mask", "global_self", "global_active_mask", "actor_logits", "actor_probs",
@@ -349,6 +406,7 @@ def main() -> None:
     integrity["passed"] = bool(
         integrity["required_fields_present"]
         and not integrity["finite"]["nan_count"]
+        and integrity["split_label_contract"]["passed"]
         and all(integrity[key]["passed"] for key in ("episode_structure", "actions_and_neighbors", "current_next_continuity", "mc_return", "capture_transition_alignment"))
     )
 

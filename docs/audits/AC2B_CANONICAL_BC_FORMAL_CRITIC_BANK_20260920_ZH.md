@@ -34,7 +34,7 @@
 
 Bank 共 `16964` transitions、`67856` active-agent rows。实际 bank：
 `artifacts/2026-09-20_ac2b/canonical_bc_critic_bank_v2.npz`，SHA256
-`f77e0fe7c2b76dd143c78d407e16d5b780e10e0278af425f23e6e5726c132fac`，大小 `35279291` bytes。
+`07e08d17ae6283d785e0d2e00307f330b13a88dcd0f8ce83f92f0d451ad7808a`，大小 `35279289` bytes。
 
 ## Environment and return contract
 
@@ -87,7 +87,7 @@ early recovery 原样沿用旧 A0/A1 定义：`post_capture` 且 `0 <= timestep-
 - current/next intra-episode continuity：`16884` links checked，0 violations
 - independent MC recompute：100 rows，最大绝对误差 `7.5362939924161765e-06`，阈值 `1e-5` 内
 - successful mixed capture alignment：`59` episodes，检查 `t_capture-1 / t_capture / t_capture+1`，0 violations
-- split：episode-level only；train/validation/test = `64/8/8` episodes；无 transition random split、无 episode/seed leakage
+- split：episode-level only；最终 train/validation/test = `64/8/8` episodes；离线审计修正了采集器 split label bug（904 个 `split_id` rows、4 个 episode metadata labels），没有重跑 rollout；无 transition random split、无 episode/seed leakage
 
 ## Artifacts
 
