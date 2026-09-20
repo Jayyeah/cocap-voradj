@@ -1,0 +1,88 @@
+{
+  "schema": "z05-z07-pre-activation-end-to-end-certification-v1",
+  "certification_date": "2026-09-20",
+  "activation_performed": false,
+  "live_processes_untouched": true,
+  "formal": {
+    "branch": "experiment/iqn-z-unified-decay-dual-curriculum-20260919",
+    "local_head": "8e0ec7a95d73abacd2dcbad732c44d96bb4141fd",
+    "remote_head": "8e0ec7a95d73abacd2dcbad732c44d96bb4141fd",
+    "expected_head": "8e0ec7a95d73abacd2dcbad732c44d96bb4141fd",
+    "patch_base_matches_formal_head": true,
+    "proxy": "127.0.0.1:17892"
+  },
+  "patch": {
+    "branch": "fix/z-resume-latest-only-20260920",
+    "head_before_certification_commit": "a38f770de640f9a5d72b85f2a6be149444c5e5de",
+    "commit_message": "ops: certify Z latest-only end-to-end restart"
+  },
+  "tests": {
+    "t1_t8_regression": {"status": "PASS", "baseline_passed": 25},
+    "full_command": {"status": "PASS", "passed": 30, "warnings": 2},
+    "t9_continuation_equivalence": {"status": "PASS", "comparison": "bit-exact deterministic CPU continuation"},
+    "t10_stage_restart_chain": {"status": "PASS", "scenarios": ["A", "B", "C", "D"]},
+    "t11_coordinator_relaunch": {"status": "PASS", "gpu_mapping": {"z05": 0, "z07": 1}},
+    "formal_eval_crash_safety": {"status": "PASS", "report_write": "atomic"},
+    "final_comparison_automation": {"status": "PASS", "historical_resume_independent": true}
+  },
+  "live": {
+    "dual_coordinator_found": false,
+    "z05": {
+      "pid": 3399755,
+      "cuda_visible_devices": "0",
+      "output": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05",
+      "heartbeat_step": 1193000,
+      "target_step": 1200000,
+      "durable_resume_step": 1100000,
+      "resume_latest_inode": 22948662,
+      "resume_latest_links": 2,
+      "resume_latest_bytes": 6174658131
+    },
+    "z07": {
+      "pid": 3399761,
+      "cuda_visible_devices": "1",
+      "output": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z07",
+      "heartbeat_step": 1155000,
+      "target_step": 1200000,
+      "durable_resume_step": 1100000,
+      "resume_latest_inode": 22950690,
+      "resume_latest_links": 2,
+      "resume_latest_bytes": 6521735699
+    },
+    "launch_head_recorded_by_live": "fa12ce40ff76fe2c9235c9aead6078283addb661",
+    "live_worktree_formal_head": "8e0ec7a95d73abacd2dcbad732c44d96bb4141fd"
+  },
+  "storage": {
+    "path": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime",
+    "filesystem": "/dev/nvme0n1p2",
+    "mountpoint": "/",
+    "current_storage_on_root": true,
+    "root_free_bytes": 75750371328,
+    "root_free_gib_approx": 70.6,
+    "old_min_free_gib": 200,
+    "old_gate_classification": "OLD_STORAGE_GATE_INCOMPATIBLE",
+    "registered_activation_min_free_gib": 50,
+    "latest_only_theoretical_dual_write_peak_gib": 24,
+    "recommended_floor_gib": 30,
+    "root_warning_gib": 50,
+    "root_critical_gib": 20
+  },
+  "automation": {
+    "stage1_restart": "PASS",
+    "stage1_to_stage2": "PASS",
+    "stage2_restart": "PASS",
+    "stage2_to_stage3": "PASS",
+    "stage3_restart": "PASS",
+    "final_comparison": "PASS",
+    "gpu_mapping": "PASS",
+    "scientific_contract_unchanged": "PASS",
+    "historical_resume_step_dependency": false
+  },
+  "verdict": "ACTIVATION_CHAIN_CERTIFIED",
+  "registered_activation_command": "python3 tools/supervise_iqn_z_unified_decay_dual_20260919.py supervise --output /home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919/artifacts/2026-09-19_iqn_z_unified_decay_curriculum --storage /home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime --interval 30 --min-free-gib 50",
+  "notes": [
+    "The registered command is documentation only and was not executed.",
+    "No live process, live worktree, live hardlink, or live resume file was modified.",
+    "The current live runners predate patch activation; certification applies to the patch branch and its mocked/deterministic tests."
+  ]
+}
