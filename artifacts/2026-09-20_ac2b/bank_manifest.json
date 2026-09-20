@@ -1,0 +1,1506 @@
+{
+  "schema": "cocap-ac2b-canonical-bc-critic-formal-v2",
+  "status": "formal_bank_complete",
+  "contract": "forward-final-aw9-4v1-swept-v1",
+  "bank": {
+    "path": "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/artifacts/2026-09-20_ac2b/canonical_bc_critic_bank_v2.npz",
+    "sha256": "f77e0fe7c2b76dd143c78d407e16d5b780e10e0278af425f23e6e5726c132fac",
+    "size_bytes": 35279291,
+    "transitions": 16964,
+    "active_agent_rows": 67856
+  },
+  "generator": {
+    "actor": "frozen canonical categorical BC Actor",
+    "logical_checkpoint": "artifacts/2026-09-08_forward_final/c2_distillation/actor_epoch_030.pt",
+    "actual_loaded_checkpoint": "artifacts/2026-09-17_critic_identifiability_audit/frozen_policy/actor_epoch_030.pt",
+    "checkpoint_sha256": "7916a970226a0452a8f71a22235524f6ba4511aa4c9bda907a9c8368a60bf2cd",
+    "actor_updates": 0,
+    "critic_updates": 0,
+    "bootstrap_or_gae": false,
+    "iqn_recovery_pool": false,
+    "coverage_initialization": "canonical inner_random_cluster; no recovery-pool injection",
+    "mixed_initialization": "canonical mixed environment; natural post-capture continuation",
+    "actor_bit_exact": true
+  },
+  "environment": {
+    "source_contract": "artifacts/2026-09-20_ac1/AC1_BC_RESOLVED_CONTRACT.json",
+    "mixed": {
+      "pursuers": 4,
+      "evaders": 1,
+      "obstacles": 1
+    },
+    "pure_coverage": {
+      "pursuers": 4,
+      "evaders": 0,
+      "obstacles": 1
+    },
+    "episode_horizon": 3000,
+    "capture_terminal": false,
+    "post_capture_continuation": true,
+    "action_space": "AW9 categorical indices 0..8"
+  },
+  "policy_modes": {
+    "bc_argmax": 40,
+    "bc_sample": 40
+  },
+  "raw_fields": [
+    "action_aw",
+    "action_index",
+    "active_agent_ids",
+    "active_mask",
+    "actor_logits",
+    "actor_probs",
+    "done",
+    "episode_id",
+    "episode_seed",
+    "event_flags",
+    "global_active_mask",
+    "global_evader_mask",
+    "global_evaders",
+    "global_obstacle_mask",
+    "global_obstacles",
+    "global_pursuer_mask",
+    "global_pursuers",
+    "global_self",
+    "local_evaders",
+    "local_masks",
+    "local_obstacles",
+    "local_pursuers",
+    "local_self",
+    "local_types",
+    "mc_return",
+    "neighbor_action_aw",
+    "neighbor_action_index",
+    "neighbor_ids",
+    "neighbor_local_evaders",
+    "neighbor_local_masks",
+    "neighbor_local_obstacles",
+    "neighbor_local_pursuers",
+    "neighbor_local_self",
+    "neighbor_local_types",
+    "neighbor_mask",
+    "next_active_mask",
+    "next_global_active_mask",
+    "next_global_evader_mask",
+    "next_global_evaders",
+    "next_global_obstacle_mask",
+    "next_global_obstacles",
+    "next_global_pursuer_mask",
+    "next_global_pursuers",
+    "next_global_self",
+    "next_local_evaders",
+    "next_local_masks",
+    "next_local_obstacles",
+    "next_local_pursuers",
+    "next_local_self",
+    "next_local_types",
+    "normalized_time",
+    "phase_id",
+    "policy_mode_id",
+    "primary_event",
+    "replay_semantic_class",
+    "reward",
+    "ring_count",
+    "scene_id",
+    "selected_action_probability",
+    "split_id",
+    "terminated",
+    "timestep",
+    "transition_event_flags",
+    "truncated"
+  ],
+  "critic_input_contract": {
+    "LQ": [
+      "local_*",
+      "action_index",
+      "action_aw"
+    ],
+    "NQ": [
+      "local_*",
+      "neighbor_local_*",
+      "neighbor_ids",
+      "neighbor_mask",
+      "neighbor_action_index",
+      "neighbor_action_aw"
+    ],
+    "CQ": [
+      "global_*",
+      "global masks",
+      "active_mask",
+      "joint action_index/action_aw",
+      "agent identity/index"
+    ],
+    "V": [
+      "global_*",
+      "global masks",
+      "global_active_mask",
+      "normalized_time from state/time contract; no future labels"
+    ]
+  },
+  "reward_and_return": {
+    "reward_semantics": "individual per-agent environment reward",
+    "return_semantics": "per-agent realized MC return",
+    "gamma": 0.99,
+    "bootstrap": false,
+    "terminal_handling": "include terminal reward, stop after complete episode",
+    "post_capture_continuation": "all naturally visited recovery rows retained"
+  },
+  "phase_event_contract": {
+    "phases": [
+      "pure_coverage",
+      "pre_capture",
+      "post_capture"
+    ],
+    "events": [
+      "pure_coverage",
+      "coverage_steady",
+      "ordinary_pursuit",
+      "ring2",
+      "ring3",
+      "normal_capture",
+      "stationary_capture",
+      "collision",
+      "capture_terminal_transition",
+      "early_recovery",
+      "late_recovery",
+      "pure_coverage_restart"
+    ],
+    "early_recovery": "post_capture and 0 <= timestep-capture_step <= 40; capture row remains pre_capture",
+    "late_recovery": "post_capture and timestep-capture_step > 40",
+    "capture_transition": "normal_capture or stationary_capture event on the environment transition emitting last_capture_events"
+  },
+  "split_contract": {
+    "schema": "ac2b-formal-seed-split-manifest-v1",
+    "scheme": "A",
+    "episodes_total": 80,
+    "composition": {
+      "mixed": {
+        "bc_argmax": 30,
+        "bc_sample": 30
+      },
+      "pure_coverage": {
+        "bc_argmax": 10,
+        "bc_sample": 10
+      }
+    },
+    "episode_split_only": true,
+    "transition_random_split": false,
+    "planned_split_counts": {
+      "train": 64,
+      "validation": 8,
+      "test": 8
+    },
+    "actual_split": {
+      "episode_level": true,
+      "transition_random_split": false,
+      "ratio": {
+        "train": 0.7,
+        "validation": 0.15,
+        "test": 0.15
+      },
+      "by_split": {
+        "train": {
+          "episodes": 64,
+          "episode_ids": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            66,
+            67,
+            70,
+            71,
+            72,
+            73,
+            74,
+            75,
+            76,
+            77
+          ],
+          "seeds": [
+            2026093001,
+            2026093002,
+            2026093003,
+            2026093004,
+            2026093005,
+            2026093006,
+            2026093007,
+            2026093008,
+            2026093009,
+            2026093010,
+            2026093011,
+            2026093012,
+            2026093013,
+            2026093014,
+            2026093015,
+            2026093016,
+            2026093017,
+            2026093018,
+            2026093019,
+            2026093020,
+            2026093021,
+            2026093022,
+            2026093023,
+            2026093024,
+            2026094001,
+            2026094002,
+            2026094003,
+            2026094004,
+            2026094005,
+            2026094006,
+            2026094007,
+            2026094008,
+            2026094009,
+            2026094010,
+            2026094011,
+            2026094012,
+            2026094013,
+            2026094014,
+            2026094015,
+            2026094016,
+            2026094017,
+            2026094018,
+            2026094019,
+            2026094020,
+            2026094021,
+            2026094022,
+            2026094023,
+            2026094024,
+            2026193001,
+            2026193002,
+            2026193003,
+            2026193004,
+            2026193005,
+            2026193006,
+            2026193007,
+            2026193008,
+            2026194001,
+            2026194002,
+            2026194003,
+            2026194004,
+            2026194005,
+            2026194006,
+            2026194007,
+            2026194008
+          ],
+          "transitions": 13696,
+          "active_agent_rows": 54784,
+          "scenes": {
+            "mixed": 48,
+            "pure_coverage": 16
+          },
+          "policy_modes": {
+            "bc_argmax": 32,
+            "bc_sample": 32
+          }
+        },
+        "validation": {
+          "episodes": 4,
+          "episode_ids": [
+            24,
+            54,
+            68,
+            78
+          ],
+          "seeds": [
+            2026093025,
+            2026094025,
+            2026193009,
+            2026194009
+          ],
+          "transitions": 709,
+          "active_agent_rows": 2836,
+          "scenes": {
+            "mixed": 2,
+            "pure_coverage": 2
+          },
+          "policy_modes": {
+            "bc_argmax": 2,
+            "bc_sample": 2
+          }
+        },
+        "test": {
+          "episodes": 12,
+          "episode_ids": [
+            25,
+            26,
+            27,
+            28,
+            29,
+            55,
+            56,
+            57,
+            58,
+            59,
+            69,
+            79
+          ],
+          "seeds": [
+            2026093026,
+            2026093027,
+            2026093028,
+            2026093029,
+            2026093030,
+            2026094026,
+            2026094027,
+            2026094028,
+            2026094029,
+            2026094030,
+            2026193010,
+            2026194010
+          ],
+          "transitions": 2559,
+          "active_agent_rows": 10236,
+          "scenes": {
+            "mixed": 10,
+            "pure_coverage": 2
+          },
+          "policy_modes": {
+            "bc_argmax": 6,
+            "bc_sample": 6
+          }
+        }
+      },
+      "episode_or_seed_leakage": false
+    },
+    "seed_plan": [
+      {
+        "episode_id": 0,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093001,
+        "split": "train"
+      },
+      {
+        "episode_id": 1,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093002,
+        "split": "train"
+      },
+      {
+        "episode_id": 2,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093003,
+        "split": "train"
+      },
+      {
+        "episode_id": 3,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093004,
+        "split": "train"
+      },
+      {
+        "episode_id": 4,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093005,
+        "split": "train"
+      },
+      {
+        "episode_id": 5,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093006,
+        "split": "train"
+      },
+      {
+        "episode_id": 6,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093007,
+        "split": "train"
+      },
+      {
+        "episode_id": 7,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093008,
+        "split": "train"
+      },
+      {
+        "episode_id": 8,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093009,
+        "split": "train"
+      },
+      {
+        "episode_id": 9,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093010,
+        "split": "train"
+      },
+      {
+        "episode_id": 10,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093011,
+        "split": "train"
+      },
+      {
+        "episode_id": 11,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093012,
+        "split": "train"
+      },
+      {
+        "episode_id": 12,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093013,
+        "split": "train"
+      },
+      {
+        "episode_id": 13,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093014,
+        "split": "train"
+      },
+      {
+        "episode_id": 14,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093015,
+        "split": "train"
+      },
+      {
+        "episode_id": 15,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093016,
+        "split": "train"
+      },
+      {
+        "episode_id": 16,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093017,
+        "split": "train"
+      },
+      {
+        "episode_id": 17,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093018,
+        "split": "train"
+      },
+      {
+        "episode_id": 18,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093019,
+        "split": "train"
+      },
+      {
+        "episode_id": 19,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093020,
+        "split": "train"
+      },
+      {
+        "episode_id": 20,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093021,
+        "split": "train"
+      },
+      {
+        "episode_id": 21,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093022,
+        "split": "train"
+      },
+      {
+        "episode_id": 22,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093023,
+        "split": "train"
+      },
+      {
+        "episode_id": 23,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093024,
+        "split": "train"
+      },
+      {
+        "episode_id": 24,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093025,
+        "split": "validation"
+      },
+      {
+        "episode_id": 25,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093026,
+        "split": "test"
+      },
+      {
+        "episode_id": 26,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093027,
+        "split": "test"
+      },
+      {
+        "episode_id": 27,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093028,
+        "split": "test"
+      },
+      {
+        "episode_id": 28,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093029,
+        "split": "test"
+      },
+      {
+        "episode_id": 29,
+        "scene": "mixed",
+        "policy_mode": "bc_argmax",
+        "seed": 2026093030,
+        "split": "test"
+      },
+      {
+        "episode_id": 30,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094001,
+        "split": "train"
+      },
+      {
+        "episode_id": 31,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094002,
+        "split": "train"
+      },
+      {
+        "episode_id": 32,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094003,
+        "split": "train"
+      },
+      {
+        "episode_id": 33,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094004,
+        "split": "train"
+      },
+      {
+        "episode_id": 34,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094005,
+        "split": "train"
+      },
+      {
+        "episode_id": 35,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094006,
+        "split": "train"
+      },
+      {
+        "episode_id": 36,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094007,
+        "split": "train"
+      },
+      {
+        "episode_id": 37,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094008,
+        "split": "train"
+      },
+      {
+        "episode_id": 38,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094009,
+        "split": "train"
+      },
+      {
+        "episode_id": 39,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094010,
+        "split": "train"
+      },
+      {
+        "episode_id": 40,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094011,
+        "split": "train"
+      },
+      {
+        "episode_id": 41,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094012,
+        "split": "train"
+      },
+      {
+        "episode_id": 42,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094013,
+        "split": "train"
+      },
+      {
+        "episode_id": 43,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094014,
+        "split": "train"
+      },
+      {
+        "episode_id": 44,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094015,
+        "split": "train"
+      },
+      {
+        "episode_id": 45,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094016,
+        "split": "train"
+      },
+      {
+        "episode_id": 46,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094017,
+        "split": "train"
+      },
+      {
+        "episode_id": 47,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094018,
+        "split": "train"
+      },
+      {
+        "episode_id": 48,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094019,
+        "split": "train"
+      },
+      {
+        "episode_id": 49,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094020,
+        "split": "train"
+      },
+      {
+        "episode_id": 50,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094021,
+        "split": "train"
+      },
+      {
+        "episode_id": 51,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094022,
+        "split": "train"
+      },
+      {
+        "episode_id": 52,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094023,
+        "split": "train"
+      },
+      {
+        "episode_id": 53,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094024,
+        "split": "train"
+      },
+      {
+        "episode_id": 54,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094025,
+        "split": "validation"
+      },
+      {
+        "episode_id": 55,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094026,
+        "split": "test"
+      },
+      {
+        "episode_id": 56,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094027,
+        "split": "test"
+      },
+      {
+        "episode_id": 57,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094028,
+        "split": "test"
+      },
+      {
+        "episode_id": 58,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094029,
+        "split": "test"
+      },
+      {
+        "episode_id": 59,
+        "scene": "mixed",
+        "policy_mode": "bc_sample",
+        "seed": 2026094030,
+        "split": "test"
+      },
+      {
+        "episode_id": 60,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193001,
+        "split": "train"
+      },
+      {
+        "episode_id": 61,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193002,
+        "split": "train"
+      },
+      {
+        "episode_id": 62,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193003,
+        "split": "train"
+      },
+      {
+        "episode_id": 63,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193004,
+        "split": "train"
+      },
+      {
+        "episode_id": 64,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193005,
+        "split": "train"
+      },
+      {
+        "episode_id": 65,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193006,
+        "split": "train"
+      },
+      {
+        "episode_id": 66,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193007,
+        "split": "train"
+      },
+      {
+        "episode_id": 67,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193008,
+        "split": "train"
+      },
+      {
+        "episode_id": 68,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193009,
+        "split": "validation"
+      },
+      {
+        "episode_id": 69,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_argmax",
+        "seed": 2026193010,
+        "split": "test"
+      },
+      {
+        "episode_id": 70,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194001,
+        "split": "train"
+      },
+      {
+        "episode_id": 71,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194002,
+        "split": "train"
+      },
+      {
+        "episode_id": 72,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194003,
+        "split": "train"
+      },
+      {
+        "episode_id": 73,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194004,
+        "split": "train"
+      },
+      {
+        "episode_id": 74,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194005,
+        "split": "train"
+      },
+      {
+        "episode_id": 75,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194006,
+        "split": "train"
+      },
+      {
+        "episode_id": 76,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194007,
+        "split": "train"
+      },
+      {
+        "episode_id": 77,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194008,
+        "split": "train"
+      },
+      {
+        "episode_id": 78,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194009,
+        "split": "validation"
+      },
+      {
+        "episode_id": 79,
+        "scene": "pure_coverage",
+        "policy_mode": "bc_sample",
+        "seed": 2026194010,
+        "split": "test"
+      }
+    ]
+  },
+  "integrity_summary": {
+    "schema": "cocap-ac2b-canonical-bc-critic-formal-v2",
+    "bank_rewritten_with_explicit_neighbor_actions": false,
+    "required_fields_present": true,
+    "finite": {
+      "nan_by_field": {},
+      "inf_by_field": {},
+      "nan_count": 0,
+      "inf_count": 0
+    },
+    "episode_structure": {
+      "passed": true,
+      "errors": [],
+      "episode_count": 80,
+      "rows_by_episode": {
+        "0": 299,
+        "1": 199,
+        "2": 258,
+        "3": 238,
+        "4": 239,
+        "5": 255,
+        "6": 267,
+        "7": 194,
+        "8": 201,
+        "9": 153,
+        "10": 332,
+        "11": 238,
+        "12": 414,
+        "13": 270,
+        "14": 284,
+        "15": 225,
+        "16": 207,
+        "17": 385,
+        "18": 213,
+        "19": 149,
+        "20": 180,
+        "21": 347,
+        "22": 175,
+        "23": 214,
+        "24": 182,
+        "25": 193,
+        "26": 178,
+        "27": 170,
+        "28": 215,
+        "29": 317,
+        "30": 222,
+        "31": 185,
+        "32": 182,
+        "33": 198,
+        "34": 209,
+        "35": 215,
+        "36": 285,
+        "37": 284,
+        "38": 299,
+        "39": 233,
+        "40": 251,
+        "41": 187,
+        "42": 177,
+        "43": 276,
+        "44": 228,
+        "45": 278,
+        "46": 253,
+        "47": 148,
+        "48": 125,
+        "49": 83,
+        "50": 256,
+        "51": 348,
+        "52": 250,
+        "53": 309,
+        "54": 206,
+        "55": 313,
+        "56": 220,
+        "57": 229,
+        "58": 199,
+        "59": 234,
+        "60": 233,
+        "61": 85,
+        "62": 138,
+        "63": 170,
+        "64": 115,
+        "65": 80,
+        "66": 146,
+        "67": 140,
+        "68": 139,
+        "69": 189,
+        "70": 117,
+        "71": 261,
+        "72": 89,
+        "73": 175,
+        "74": 201,
+        "75": 158,
+        "76": 90,
+        "77": 81,
+        "78": 182,
+        "79": 102
+      }
+    },
+    "actions_and_neighbors": {
+      "passed": true,
+      "errors": [],
+      "action_index_range_active": [
+        0,
+        8
+      ],
+      "action_aw_max_abs_mapping_error": 0.0,
+      "actor_probability_sum_max_abs_error": 2.980232238769531e-07,
+      "selected_probability_max_abs_error": 0.0,
+      "neighbor_action_aw_max_abs_error": 0.0
+    },
+    "current_next_continuity": {
+      "passed": true,
+      "errors": [],
+      "error_count": 0,
+      "within_episode_links_checked": 16884
+    },
+    "mc_return": {
+      "passed": true,
+      "sample_size": 100,
+      "sample_rows": [
+        165,
+        515,
+        656,
+        660,
+        1098,
+        1168,
+        1177,
+        1268,
+        1611,
+        1651,
+        1664,
+        2021,
+        2034,
+        2174,
+        2230,
+        2337,
+        2470,
+        2554,
+        2555,
+        2721,
+        2769,
+        3025,
+        3236,
+        3260,
+        3328,
+        3416,
+        3976,
+        4160,
+        4427,
+        4874,
+        4947,
+        4950,
+        4987,
+        5337,
+        5644,
+        5780,
+        5885,
+        5920,
+        5969,
+        5981,
+        6057,
+        6263,
+        6280,
+        6292,
+        6542,
+        6907,
+        6920,
+        6934,
+        7038,
+        7249,
+        7269,
+        7300,
+        7484,
+        7564,
+        7734,
+        7765,
+        7812,
+        7876,
+        7988,
+        8051,
+        8302,
+        8519,
+        8960,
+        9348,
+        9559,
+        9570,
+        9619,
+        9626,
+        9644,
+        10092,
+        10155,
+        10197,
+        10504,
+        10551,
+        10731,
+        11391,
+        11442,
+        11622,
+        11665,
+        11731,
+        12022,
+        12041,
+        12911,
+        12919,
+        12972,
+        13426,
+        13572,
+        13626,
+        13902,
+        13954,
+        14499,
+        15267,
+        15382,
+        15733,
+        15949,
+        15992,
+        16046,
+        16337,
+        16367,
+        16511
+      ],
+      "max_abs_error": 7.5362939924161765e-06,
+      "gamma": 0.99,
+      "formula": "G_t = sum_{k>=0} gamma^k r_{t+k} within complete episode",
+      "terminal_handling": "include terminal transition reward; no post-episode reward; no bootstrap",
+      "reward_semantics": "individual per-agent environment reward",
+      "details": [
+        {
+          "episode_id": 0,
+          "rows_checked": 1,
+          "max_abs_error": 9.639221243418206e-08
+        },
+        {
+          "episode_id": 2,
+          "rows_checked": 3,
+          "max_abs_error": 3.4229417877895685e-06
+        },
+        {
+          "episode_id": 4,
+          "rows_checked": 3,
+          "max_abs_error": 1.2537431501868923e-06
+        },
+        {
+          "episode_id": 5,
+          "rows_checked": 1,
+          "max_abs_error": 5.9708692106141825e-06
+        },
+        {
+          "episode_id": 6,
+          "rows_checked": 3,
+          "max_abs_error": 4.307088961041927e-07
+        },
+        {
+          "episode_id": 8,
+          "rows_checked": 2,
+          "max_abs_error": 1.7166264587586966e-07
+        },
+        {
+          "episode_id": 9,
+          "rows_checked": 2,
+          "max_abs_error": 7.5362939924161765e-06
+        },
+        {
+          "episode_id": 10,
+          "rows_checked": 4,
+          "max_abs_error": 6.549338706918206e-07
+        },
+        {
+          "episode_id": 11,
+          "rows_checked": 2,
+          "max_abs_error": 1.735316864426295e-06
+        },
+        {
+          "episode_id": 12,
+          "rows_checked": 3,
+          "max_abs_error": 1.0164912112031743e-07
+        },
+        {
+          "episode_id": 13,
+          "rows_checked": 2,
+          "max_abs_error": 7.131662442816378e-06
+        },
+        {
+          "episode_id": 15,
+          "rows_checked": 1,
+          "max_abs_error": 2.8876083524309593e-08
+        },
+        {
+          "episode_id": 16,
+          "rows_checked": 1,
+          "max_abs_error": 1.0524990443627757e-06
+        },
+        {
+          "episode_id": 17,
+          "rows_checked": 1,
+          "max_abs_error": 3.740755346370861e-06
+        },
+        {
+          "episode_id": 19,
+          "rows_checked": 4,
+          "max_abs_error": 3.4329276275002485e-06
+        },
+        {
+          "episode_id": 21,
+          "rows_checked": 1,
+          "max_abs_error": 4.264012609667134e-07
+        },
+        {
+          "episode_id": 22,
+          "rows_checked": 1,
+          "max_abs_error": 2.682175193058356e-07
+        },
+        {
+          "episode_id": 23,
+          "rows_checked": 3,
+          "max_abs_error": 3.041255226321482e-06
+        },
+        {
+          "episode_id": 24,
+          "rows_checked": 3,
+          "max_abs_error": 7.248960798733606e-06
+        },
+        {
+          "episode_id": 25,
+          "rows_checked": 3,
+          "max_abs_error": 1.2296169749070884e-08
+        },
+        {
+          "episode_id": 27,
+          "rows_checked": 1,
+          "max_abs_error": 3.538579221640248e-06
+        },
+        {
+          "episode_id": 29,
+          "rows_checked": 4,
+          "max_abs_error": 3.6813274277847086e-06
+        },
+        {
+          "episode_id": 30,
+          "rows_checked": 3,
+          "max_abs_error": 3.5492502661327308e-06
+        },
+        {
+          "episode_id": 31,
+          "rows_checked": 2,
+          "max_abs_error": 4.143525302424678e-06
+        },
+        {
+          "episode_id": 32,
+          "rows_checked": 2,
+          "max_abs_error": 5.656886292726426e-08
+        },
+        {
+          "episode_id": 33,
+          "rows_checked": 2,
+          "max_abs_error": 3.2179242026586508e-06
+        },
+        {
+          "episode_id": 34,
+          "rows_checked": 2,
+          "max_abs_error": 3.738801581221196e-06
+        },
+        {
+          "episode_id": 35,
+          "rows_checked": 1,
+          "max_abs_error": 4.737264362120186e-06
+        },
+        {
+          "episode_id": 36,
+          "rows_checked": 1,
+          "max_abs_error": 2.889072916900659e-06
+        },
+        {
+          "episode_id": 37,
+          "rows_checked": 1,
+          "max_abs_error": 5.696863203397129e-09
+        },
+        {
+          "episode_id": 39,
+          "rows_checked": 1,
+          "max_abs_error": 8.636133905781662e-07
+        },
+        {
+          "episode_id": 40,
+          "rows_checked": 5,
+          "max_abs_error": 5.898677585491896e-06
+        },
+        {
+          "episode_id": 42,
+          "rows_checked": 1,
+          "max_abs_error": 1.388374998301245e-08
+        },
+        {
+          "episode_id": 43,
+          "rows_checked": 2,
+          "max_abs_error": 2.2722840924416232e-06
+        },
+        {
+          "episode_id": 44,
+          "rows_checked": 2,
+          "max_abs_error": 3.0109761972596516e-07
+        },
+        {
+          "episode_id": 45,
+          "rows_checked": 1,
+          "max_abs_error": 3.7422718150992296e-06
+        },
+        {
+          "episode_id": 48,
+          "rows_checked": 1,
+          "max_abs_error": 2.1318389720192954e-08
+        },
+        {
+          "episode_id": 49,
+          "rows_checked": 1,
+          "max_abs_error": 2.782473806917096e-07
+        },
+        {
+          "episode_id": 50,
+          "rows_checked": 3,
+          "max_abs_error": 8.037968868279677e-07
+        },
+        {
+          "episode_id": 51,
+          "rows_checked": 2,
+          "max_abs_error": 5.362528510133302e-08
+        },
+        {
+          "episode_id": 55,
+          "rows_checked": 3,
+          "max_abs_error": 3.741252768918457e-06
+        },
+        {
+          "episode_id": 57,
+          "rows_checked": 3,
+          "max_abs_error": 8.941194664657814e-07
+        },
+        {
+          "episode_id": 59,
+          "rows_checked": 2,
+          "max_abs_error": 1.3890183652165433e-06
+        },
+        {
+          "episode_id": 62,
+          "rows_checked": 1,
+          "max_abs_error": 1.4589165320266773e-08
+        },
+        {
+          "episode_id": 68,
+          "rows_checked": 1,
+          "max_abs_error": 1.9925502581230603e-08
+        },
+        {
+          "episode_id": 69,
+          "rows_checked": 1,
+          "max_abs_error": 1.7031731047723042e-07
+        },
+        {
+          "episode_id": 71,
+          "rows_checked": 1,
+          "max_abs_error": 3.652558366873393e-08
+        },
+        {
+          "episode_id": 72,
+          "rows_checked": 1,
+          "max_abs_error": 1.21513847872734e-08
+        },
+        {
+          "episode_id": 73,
+          "rows_checked": 2,
+          "max_abs_error": 2.0479678752849395e-07
+        },
+        {
+          "episode_id": 74,
+          "rows_checked": 1,
+          "max_abs_error": 1.0391513372010053e-08
+        },
+        {
+          "episode_id": 75,
+          "rows_checked": 1,
+          "max_abs_error": 7.529366499170465e-07
+        },
+        {
+          "episode_id": 76,
+          "rows_checked": 1,
+          "max_abs_error": 7.648888207256732e-07
+        }
+      ]
+    },
+    "capture_transition_alignment": {
+      "passed": true,
+      "successful_mixed_episodes_checked": 59,
+      "violations": [],
+      "checked": [
+        {
+          "episode_id": 0,
+          "seed": 2026093001,
+          "capture_step": 69,
+          "rows": [
+            67,
+            68,
+            69
+          ]
+        },
+        {
+          "episode_id": 1,
+          "seed": 2026093002,
+          "capture_step": 80,
+          "rows": [
+            377,
+            378,
+            379
+          ]
+        },
+        {
+          "episode_id": 2,
+          "seed": 2026093003,
+          "capture_step": 99,
+          "rows": [
+            595,
+            596,
+            597
+          ]
+        }
+      ]
+    },
+    "passed": true
+  }
+}
