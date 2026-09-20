@@ -41,6 +41,7 @@ from cocap_voradj.training.shared_local_ac import (
     SharedLocalACTrainer,
     SharedLocalReplay,
     Transition,
+    ACNumericFailure,
     atomic_torch_save,
     clone_obs,
     state_hash,
@@ -150,6 +151,7 @@ class CapabilityRunner:
         self.telemetry_aggregate: Dict[str, Dict[str, float]] = {}
         self.episode_reports: List[Dict[str, Any]] = []
         self.evaluation_reports: List[Dict[str, Any]] = []
+        self.first_nonfinite_artifact_written = False
         self.evaluation_bundles: List[Dict[str, Any]] = []
         self.transition_points: Dict[str, Optional[int]] = {
             "first_learner_update_step": None,
@@ -421,6 +423,45 @@ class CapabilityRunner:
             if not np.isfinite(value) or abs(value) > 1.0e6:
                 raise FloatingPointError(f"Q/target explosion: {key}={value}")
 
+    def _write_first_nonfinite_artifact(self, failure: ACNumericFailure, batch: Sequence[Transition]) -> None:
+        if self.first_nonfinite_artifact_written:
+            return
+        self.first_nonfinite_artifact_written = True
+        report = dict(failure.report)
+        report_dir = self.run_dir / "artifacts"
+        report_dir.mkdir(parents=True, exist_ok=True)
+        arrays: Dict[str, np.ndarray] = {}
+        for key in ("self", "pursuers", "evaders", "obstacles", "masks", "types"):
+            arrays[f"obs_{key}"] = np.stack([item.obs[key] for item in batch])
+            arrays[f"next_obs_{key}"] = np.stack([item.next_obs[key] for item in batch])
+        arrays.update(
+            {
+                "action": np.asarray([item.action for item in batch], dtype=np.int64),
+                "reward": np.asarray([item.reward for item in batch], dtype=np.float64),
+                "terminated": np.asarray([item.terminated for item in batch], dtype=np.bool_),
+                "truncated": np.asarray([item.truncated for item in batch], dtype=np.bool_),
+                "active_mask": np.ones(len(batch), dtype=np.bool_),
+                "behavior_probability": np.asarray([item.behavior_probability for item in batch], dtype=np.float64),
+                "actor_probability": np.asarray([item.actor_probability for item in batch], dtype=np.float64),
+                "epsilon": np.asarray([item.epsilon for item in batch], dtype=np.float64),
+                "episode_id": np.asarray([item.episode_id for item in batch], dtype=np.int64),
+                "agent_id": np.asarray([item.agent_id for item in batch], dtype=np.int64),
+                "offending_rows": np.asarray(report.get("offending_rows", []), dtype=np.int64),
+            }
+        )
+        np.savez_compressed(report_dir / "first_nonfinite_batch.npz", **arrays)
+        report.update(
+            {
+                "task": self.mode,
+                "env_step": int(self.global_step),
+                "replay_composition": dict(Counter(item.replay_class for item in batch)),
+                "replay_classes": [str(item.replay_class) for item in batch],
+                "artifact_batch_path": str(report_dir / "first_nonfinite_batch.npz"),
+                "artifact_report_path": str(report_dir / "first_nonfinite_report.json"),
+            }
+        )
+        write_json(report_dir / "first_nonfinite_report.json", report)
+
     def _maybe_update(self) -> None:
         ac = self.formal_config.get("ac", {}) or {}
         if self.global_step % int(ac.get("train_freq", 4)) != 0:
@@ -456,7 +497,11 @@ class CapabilityRunner:
             report = {"sampler": "uniform_shared", "actual_counts": dict(Counter(item.replay_class for item in batch))}
         if len(batch) != self.trainer_config.batch_size:
             return
-        stats = self.trainer.update(batch)
+        try:
+            stats = self.trainer.update(batch)
+        except ACNumericFailure as failure:
+            self._write_first_nonfinite_artifact(failure, batch)
+            raise
         self._safety_check_update(stats)
         self._accumulate_telemetry(stats)
         for item in batch:
