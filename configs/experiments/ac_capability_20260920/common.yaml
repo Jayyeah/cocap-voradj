@@ -1,0 +1,94 @@
+extends: ../cr_ms_support_approach_ce_curriculum_20260802/stage1_4p1e1obs_scratch2m.yaml
+
+# P0 AC capability contract: retain the Final IQN Stage1 environment and
+# observation contract, while replacing only the learner and replay runtime.
+env:
+  collision_semantics: legacy_end_step
+  episode_max_length: 3000
+
+ac:
+  learner: ps_local_discrete_ac
+  initialization: scratch
+  network:
+    hidden_dim: 256
+    num_heads: 8
+    num_layers: 4
+    action_size: 9
+    self_feature_dim: 9
+    max_pursuers: 8
+    max_evaders: 8
+    max_obstacles: 5
+    pursuing_embed_dim: 8
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  adam_eps: 1.0e-8
+  batch_size: 128
+  min_replay_size: 3000
+  train_freq: 4
+  max_grad_norm: 0.5
+  replay_capacity: 1000000
+  replay_fallback: defer
+  replay_semantic_sampling: exact_semantic
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 32
+    recovery_pure: 16
+  behavior_policy:
+    type: epsilon_actor_mixture
+    epsilon_start: 0.6
+    epsilon_final: 0.05
+    epsilon_decay_steps: 500000
+    source: Final_IQN_iqn.epsilon_start_final_decay_steps
+  checkpoint:
+    model_interval_steps: 25000
+    keep_history: true
+    historical_model_only: true
+    formal_steps: [25000, 50000, 75000, 100000]
+  resume:
+    latest_only: true
+    atomic: true
+    save_replay: false
+    save_optimizer: true
+    save_rng: true
+    replay_resume_policy: rewarm_if_not_saved
+  evaluation:
+    interval_steps: 25000
+    episodes: 20
+    deterministic: true
+    save_trajectories: false
+    save_gifs: false
+    artifact_policy: fixed_small_summary_only
+  disk_safety:
+    max_historical_large_copies_per_run: 1
+    recovery_pool_storage: bounded_in_memory_only
+    replay_snapshot_storage: disabled_by_default
+  smoke:
+    steps: 1200
+    batch_size: 32
+    min_replay_size: 64
+    episode_max_length: 24
+    allow_uniform_fallback: true
+
+training:
+  total_env_steps: 100000
+  update_every_env_steps: 4
+  gradient_steps: 1
+  optimizer_unit: shared_local_agent_rows
+  replay_sampling: shared_row_replay
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+
+total_timesteps: 100000
+output_root: runs
+
+experiment_metadata:
+  capability_baseline: PS-Local-Discrete-AC
+  training_start: scratch_actor_and_critic
+  stage: stage1_4p1e1obs
+  formal_budget: 100000
+  forbidden_warm_starts: BC_actor_IQN_encoder_AC_audit_LQ
+  agent_id_role: replay_provenance_only
+  collision_semantics: Final_IQN_legacy_end_step

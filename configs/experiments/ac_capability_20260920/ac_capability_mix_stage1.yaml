@@ -1,0 +1,33 @@
+extends: common.yaml
+
+seed: 2026092003
+device: cuda:0
+run_name: ac_capability_mix_stage1
+train_mode: voradj_mixed_coverage
+
+ac:
+  mode: mix
+
+voradj:
+  episode_schedule: alternating_1to1_scenes
+  scenes: [voradj, voradj_coverage]
+  replay_sampling: exact_semantic
+  replay_batch_counts:
+    pursuing: 64
+    pre_capture_cover: 16
+    post_capture_real: 32
+    recovery_pure: 16
+  real_post_min_replay_size: 0
+  recovery:
+    spawn_mode: inner_random_cluster_plus_capture_snapshot_plus_map_random
+    capture_state_pool_capacity: 1000
+    captured_state_ratio: 0.75
+    map_random_ratio_within_non_capture: 0.5
+
+experiment_metadata:
+  capability_line: full_mix
+  objective: scratch_shared_local_ac_capture_recovery_coverage
+  episode_alternation: Final_IQN_mixed_then_pure_coverage_one_to_one
+  cross_init: Final_IQN_recovery_init_pool_reused_exactly
+  replay_ratio: 64_16_32_16
+  post_capture_semantics: capture_continues_into_coverage

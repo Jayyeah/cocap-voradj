@@ -76,6 +76,7 @@ class VorAdjEnv(CoCapEnv):
         if not 0.25 <= self._static_capture_scale <= 1.0:
             raise ValueError("Static capture scale must be in [0.25, 1]")
         self._validate_pure_capture_all_capture_contract()
+        self._validate_final_ring_pure_capture_contract()
 
     def reset(self, *args, **kwargs):
         self.coverage_hold_reward_claim_steps = 0
@@ -224,6 +225,21 @@ class VorAdjEnv(CoCapEnv):
             )
         )
 
+    def _final_ring_pure_capture_enabled(self) -> bool:
+        """Return whether the AC capability pure-capture ring contract is active."""
+
+        return str(
+            (self.config.get("voradj", {}) or {}).get(
+                "pure_capture_reward_contract", ""
+            )
+        ).strip().lower() == "final_ring"
+
+    def _pure_capture_mode_enabled(self) -> bool:
+        return bool(
+            self._pure_capture_all_capture_enabled()
+            or self._final_ring_pure_capture_enabled()
+        )
+
     def _validate_pure_capture_all_capture_contract(self) -> None:
         if not self._pure_capture_all_capture_enabled():
             return
@@ -252,6 +268,30 @@ class VorAdjEnv(CoCapEnv):
                 "pure_capture_all_capture contract requires: " + ", ".join(failures)
             )
 
+    def _validate_final_ring_pure_capture_contract(self) -> None:
+        if not self._final_ring_pure_capture_enabled():
+            return
+        cfg = self.config.get("voradj", {}) or {}
+        failures: List[str] = []
+        if self._capture_reward_mode() not in {"ring_importance_ms_v0", "ring_ms_v0", "cr_ms_v0"}:
+            failures.append("reward.capture_reward_mode=ring_importance_ms_v0")
+        if not self._vct_ls_enabled():
+            failures.append("voradj.perception_topology_version=vct_ls_v0")
+        if bool(cfg.get("support_reward_blend_enabled", False)):
+            failures.append("voradj.support_reward_blend_enabled=false")
+        if self._support_reward_capture_component_mode() not in {
+            "approach_only",
+            "legacy_approach_only",
+            "attraction_only",
+        }:
+            failures.append("voradj.support_reward_capture_component_mode=approach_only")
+        if not bool(cfg.get("capture_episode_ends_on_capture", False)):
+            failures.append("voradj.capture_episode_ends_on_capture=true")
+        if failures:
+            raise ValueError(
+                "final_ring pure-capture contract requires: " + ", ".join(failures)
+            )
+
     def _pure_capture_observable_partition(
         self,
         idx: int,
@@ -275,6 +315,14 @@ class VorAdjEnv(CoCapEnv):
             return "inactive", [], []
 
         def direct_targets(agent_idx: int) -> List[int]:
+            if self._vct_ls_enabled():
+                return sorted(
+                    int(target)
+                    for target in self._vct_ls_direct_enemy_ids_for_pursuer(
+                        agent_idx,
+                    )
+                    if 0 <= int(target) < len(self.evaders)
+                )
             targets = {
                 int(neighbor[1])
                 for neighbor in data.get("adjacency", {}).get(("pursuer", agent_idx), set())
@@ -1914,7 +1962,7 @@ class VorAdjEnv(CoCapEnv):
         support_reward_blend_enabled = self._vct_ls_support_reward_blend_enabled()
         support_capture_weight, support_coverage_weight = self._vct_ls_support_reward_weights()
         legacy_support_mode = self._legacy_voradj_support_reward_blend_enabled()
-        pure_capture_mode = self._pure_capture_all_capture_enabled()
+        pure_capture_mode = self._pure_capture_mode_enabled()
         # K10 effective pursuit state is the single role source for actor
         # observations, rewards, replay metadata, and coverage-hold eligibility.
         # Raw adjacency remains diagnostic-only (raw_task_label and enemy token
@@ -2249,27 +2297,33 @@ class VorAdjEnv(CoCapEnv):
                 mean_shift_reward = 0.0
                 front_reward = 0.0
                 if pure_capture_roles[i] == "direct_capture" and active_targets:
-                    (
-                        capture_reward,
-                        approach_reward,
-                        mean_shift_reward,
-                        front_reward,
-                    ) = pure_capture_dense_reward(
-                        i,
-                        pure_capture_targets[i],
-                        direct=True,
-                    )
+                    if self._final_ring_pure_capture_enabled():
+                        capture_reward = capture_task_reward(i, pure_capture_targets[i])
+                    else:
+                        (
+                            capture_reward,
+                            approach_reward,
+                            mean_shift_reward,
+                            front_reward,
+                        ) = pure_capture_dense_reward(
+                            i,
+                            pure_capture_targets[i],
+                            direct=True,
+                        )
                 elif pure_capture_roles[i] == "one_hop_informed" and active_targets:
-                    (
-                        capture_reward,
-                        approach_reward,
-                        mean_shift_reward,
-                        front_reward,
-                    ) = pure_capture_dense_reward(
-                        i,
-                        pure_capture_targets[i],
-                        direct=False,
-                    )
+                    if self._final_ring_pure_capture_enabled():
+                        capture_reward = support_capture_task_reward(i, pure_capture_targets[i])
+                    else:
+                        (
+                            capture_reward,
+                            approach_reward,
+                            mean_shift_reward,
+                            front_reward,
+                        ) = pure_capture_dense_reward(
+                            i,
+                            pure_capture_targets[i],
+                            direct=False,
+                        )
                 rewards[i] += capture_reward
                 reward_capture_component[i] += capture_reward
                 reward_capture_approach_component[i] += approach_reward
@@ -2798,7 +2852,14 @@ class VorAdjEnv(CoCapEnv):
                         "capture_objective_target_count": int(len(pure_capture_targets[i])),
                         "capture_objective_friend_count": int(len(pure_capture_friend_ids[i])),
                         "capture_objective_target_resolved": bool(pure_capture_targets[i]),
-                        "pure_capture_all_capture_enabled": True,
+                        "pure_capture_all_capture_enabled": bool(
+                            self._pure_capture_all_capture_enabled()
+                        ),
+                        "pure_capture_reward_contract": (
+                            "final_ring"
+                            if self._final_ring_pure_capture_enabled()
+                            else "legacy_all_capture"
+                        ),
                         "reward_capture_approach": float(reward_capture_approach_component[i]),
                         "reward_capture_mean_shift": float(reward_capture_mean_shift_component[i]),
                         "reward_capture_front": float(reward_capture_front_component[i]),

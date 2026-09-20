@@ -1,0 +1,18 @@
+{
+  "formal_budget_env_steps": 100000,
+  "checkpoint_eval_steps": [25000, 50000, 75000, 100000],
+  "commands": {
+    "cov": "PYTHONPATH=src python3 tools/run_shared_local_ac_capability.py --config configs/experiments/ac_capability_20260920/ac_capability_cov_stage1.yaml --device cuda:0 --total-timesteps 100000 --run-name ac_capability_cov_stage1",
+    "cap": "PYTHONPATH=src python3 tools/run_shared_local_ac_capability.py --config configs/experiments/ac_capability_20260920/ac_capability_cap_stage1.yaml --device cuda:0 --total-timesteps 100000 --run-name ac_capability_cap_stage1",
+    "mix": "PYTHONPATH=src python3 tools/run_shared_local_ac_capability.py --config configs/experiments/ac_capability_20260920/ac_capability_mix_stage1.yaml --device cuda:0 --total-timesteps 100000 --run-name ac_capability_mix_stage1"
+  },
+  "parallel_policy": {
+    "three_or_more_free_gpus": ["cov", "cap", "mix"],
+    "two_free_gpus": ["cov", "cap", "mix_queued"],
+    "one_free_gpu": ["cov", "cap", "mix"],
+    "current_safe_free_gpu_count": 0,
+    "current_blocker": "cuda:0 has Z05 and cuda:1 has Z07; do not kill existing processes"
+  },
+  "resume": "append --resume-path runs/<run_name>/resume_latest/full_resume.pt",
+  "formal_training_started": false
+}

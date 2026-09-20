@@ -1,0 +1,55 @@
+extends: common.yaml
+
+seed: 2026092002
+device: cuda:0
+run_name: ac_capability_cap_stage1
+train_mode: voradj
+
+ac:
+  mode: capture
+
+env:
+  episode_max_length: 1000
+  pre_capture_max_length: 1000
+
+reward:
+  # Retain the Final CR-MS ring capture contract and remove coverage/PBRS.
+  coverage_ce_reward_scale: 0.0
+  coverage_ce_pbrs_enabled: false
+  coverage_ce_speed_weight: 0.0
+  coverage_ce_acceleration_weight: 0.0
+  coverage_ce_angular_velocity_weight: 0.0
+  coverage_phi_coeff: 0.0
+  coverage_progress_coeff: 0.0
+  coverage_hold_reward: 0.0
+  coverage_success_reward: 0.0
+  post_capture_coverage_success_reward: 0.0
+  post_capture_hold_reward: 0.0
+  coverage_settle_enabled: false
+  coverage_motion_penalty_enabled: false
+  coverage_motion_success_enabled: false
+  min_active_pursuers: 4
+  coverage_ce_min_active_pursuers: 4
+
+voradj:
+  episode_schedule: single_scene
+  scenes: [voradj]
+  replay_sampling: uniform_shared
+  support_reward_blend_enabled: false
+  support_reward_capture_component_mode: approach_only
+  pure_capture_reward_contract: final_ring
+  capture_episode_ends_on_capture: true
+
+tasks:
+  voradj:
+    env:
+      num_evaders: 1
+      pursuer_spawn_mode: map_random
+
+experiment_metadata:
+  capability_line: pure_capture
+  objective: scratch_shared_local_ac_learns_pursuit_capture
+  coverage_reward: zero_including_pbrs_and_post_capture_coverage
+  post_capture_semantics: terminal_on_capture
+  reward_contract: Final_IQN_ring_direct_plus_one_hop_approach_support
+  recovery_snapshot_pool: not_used

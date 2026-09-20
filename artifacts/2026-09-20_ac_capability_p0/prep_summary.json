@@ -1,0 +1,126 @@
+{
+  "date": "2026-09-20",
+  "branch": "experiment/shared-local-offpolicy-ac-capability-20260920",
+  "base_selection": {
+    "base_branch": "audit/ac-bc-critic-lineage-20260920",
+    "base_head": "4ad4cb72060142ed2bce6b33ccd7fe9c9f123b",
+    "reason": "origin/main is older than the AC audit lineage; Final IQN contract is directly recoverable from the audit branch"
+  },
+  "origin_main_after_fetch": "a5814f49fa29d869cdc3fb8d8e0df4722aa11f00",
+  "git_sync": {
+    "fetch_all_prune": "pass",
+    "proxy": "127.0.0.1:17892",
+    "global_config_modified": false
+  },
+  "scheduler": {
+    "resolved_marker": "FINAL_IQN_EPISODE_SCHEDULER_RESOLVED",
+    "sequence": ["voradj", "voradj_coverage"],
+    "unit": "episode",
+    "ratio": "1:1"
+  },
+  "cross_init": {
+    "pool_capacity": 1000,
+    "captured_ratio": 0.75,
+    "map_random_ratio_within_non_capture": 0.5,
+    "effective_nonempty_pool_ratios": {
+      "capture_snapshot": 0.75,
+      "ordinary_map_random": 0.125,
+      "synthetic_cluster": 0.125
+    },
+    "smoke": "pass",
+    "storage": "bounded_in_memory_only"
+  },
+  "replay": {
+    "shared": true,
+    "classes": ["pursuing", "pre_capture_cover", "post_capture_real", "recovery_pure"],
+    "batch_counts": {
+      "pursuing": 64,
+      "pre_capture_cover": 16,
+      "post_capture_real": 32,
+      "recovery_pure": 16
+    },
+    "exact_sampler_test": "pass",
+    "formal_missing_class_policy": "defer",
+    "smoke_fallback": "explicit_uniform_logged_only"
+  },
+  "learner": {
+    "name": "PS-Local-Discrete-AC",
+    "actor_shared": true,
+    "critic_shared": true,
+    "critic": "single_local_q_9_outputs",
+    "actor_parameters": 3965977,
+    "critic_parameters": 3965977,
+    "target_tau": 0.005,
+    "gamma": 0.99,
+    "actor_lr": 0.0001,
+    "critic_lr": 0.0001
+  },
+  "exploration": {
+    "formula": "(1-epsilon)*pi + epsilon/9",
+    "epsilon_start": 0.6,
+    "epsilon_final": 0.05,
+    "epsilon_decay_steps": 500000
+  },
+  "smoke": {
+    "steps_per_line": 1200,
+    "cov": {
+      "action_counts": [419, 468, 543, 506, 1030, 430, 359, 621, 424],
+      "minimum_action_count": 359,
+      "action_entropy": 2.1427823508370625,
+      "updates": 20,
+      "parameters_changed": true,
+      "finite": true,
+      "checkpoint_save_load": true,
+      "deterministic_eval": true
+    },
+    "cap": {
+      "action_counts": [448, 428, 405, 411, 1150, 569, 445, 431, 513],
+      "minimum_action_count": 405,
+      "action_entropy": 2.1269590944549215,
+      "updates": 20,
+      "parameters_changed": true,
+      "finite": true,
+      "checkpoint_save_load": true,
+      "deterministic_eval": true
+    },
+    "mix": {
+      "action_counts": [391, 446, 421, 477, 436, 478, 1246, 427, 478],
+      "minimum_action_count": 391,
+      "action_entropy": 2.110597509586245,
+      "updates": 20,
+      "parameters_changed": true,
+      "finite": true,
+      "checkpoint_save_load": true,
+      "deterministic_eval": true,
+      "post_capture_real_natural_fill": false,
+      "fallback_logged": true
+    },
+    "exploration_implementation_fail": false
+  },
+  "tests": {
+    "new_ac_tests": "5 passed",
+    "historical_contract_tests": "10 passed",
+    "cross_init_fixture": "pass",
+    "config_runtime_aw9": "pass"
+  },
+  "disk": {
+    "root_free_gb": 87,
+    "root_inode_free": 57450149,
+    "model_checkpoint_bytes": 63617179,
+    "runtime_resume_without_replay_bytes": 63631893,
+    "four_model_checkpoints_bytes": 254468716,
+    "default_growth_to_100k_bytes": 318100609,
+    "explicit_replay_resume_to_100k_bytes": 1299300609,
+    "replay_default_saved": false
+  },
+  "gpu": {
+    "devices": 2,
+    "safe_free_devices": 0,
+    "active_processes": {
+      "cuda:0": "Z05",
+      "cuda:1": "Z07"
+    },
+    "gpu_memory_free_but_reserved_by_active_runs": true
+  },
+  "formal_training_started": false
+}

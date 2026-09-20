@@ -1,0 +1,29 @@
+extends: common.yaml
+
+seed: 2026092001
+device: cuda:0
+run_name: ac_capability_cov_stage1
+train_mode: voradj_coverage
+
+ac:
+  mode: coverage
+
+voradj:
+  episode_schedule: single_scene
+  scenes: [voradj_coverage]
+  replay_sampling: uniform_shared
+
+tasks:
+  voradj_coverage:
+    env:
+      num_evaders: 0
+      pursuer_spawn_mode: inner_random_cluster
+      spawn_cluster_radius: 10.0
+      pursuer_spawn_min_sep: 7.0
+
+experiment_metadata:
+  capability_line: pure_coverage
+  objective: scratch_shared_local_ac_learns_coverage
+  capture: disabled_no_evader
+  initialization_source: Final_IQN_pure_coverage_scene_only
+  recovery_snapshot_pool: not_used
