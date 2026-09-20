@@ -7,6 +7,53 @@ train_mode: voradj
 
 ac:
   mode: capture
+  learner: ps_local_discrete_ac
+  initialization: scratch
+  network:
+    hidden_dim: 256
+    num_heads: 8
+    num_layers: 4
+    action_size: 9
+    self_feature_dim: 9
+    max_pursuers: 8
+    max_evaders: 8
+    max_obstacles: 5
+    pursuing_embed_dim: 8
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  adam_eps: 1.0e-8
+  batch_size: 128
+  min_replay_size: 3000
+  train_freq: 4
+  max_grad_norm: 0.5
+  replay_capacity: 1000000
+  replay_fallback: defer
+  replay_semantic_sampling: exact_semantic
+  behavior_policy:
+    type: epsilon_actor_mixture
+    epsilon_start: 0.6
+    epsilon_final: 0.05
+    epsilon_decay_steps: 500000
+    source: Final_IQN_iqn.epsilon_start_final_decay_steps
+  checkpoint:
+    model_interval_steps: 25000
+    keep_history: true
+    historical_model_only: true
+    formal_steps: [25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]
+  resume:
+    latest_only: true
+    atomic: true
+    save_replay: false
+    save_optimizer: true
+    save_rng: true
+    replay_resume_policy: rewarm_if_not_saved
+  evaluation:
+    interval_steps: 25000
+    episodes: 20
+    deterministic: true
+    formal_steps: [0, 25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]
 
 env:
   episode_max_length: 1000
@@ -46,6 +93,17 @@ tasks:
       num_evaders: 1
       pursuer_spawn_mode: map_random
 
+training:
+  total_env_steps: 500000
+  update_every_env_steps: 4
+  gradient_steps: 1
+  optimizer_unit: shared_local_agent_rows
+  replay_sampling: shared_row_replay
+  checkpoint_interval_env_steps: 25000
+  diagnostic_eval_interval_env_steps: 25000
+
+total_timesteps: 500000
+
 experiment_metadata:
   capability_line: pure_capture
   objective: scratch_shared_local_ac_learns_pursuit_capture
@@ -53,3 +111,4 @@ experiment_metadata:
   post_capture_semantics: terminal_on_capture
   reward_contract: Final_IQN_ring_direct_plus_one_hop_approach_support
   recovery_snapshot_pool: not_used
+  formal_budget: 500000

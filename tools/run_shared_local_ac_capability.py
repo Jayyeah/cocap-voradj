@@ -134,10 +134,22 @@ class CapabilityRunner:
         self.scheduler_sequence: List[str] = []
         self.reset_sources: Counter[str] = Counter()
         self.action_counts: Counter[int] = Counter()
+        self.actor_raw_action_counts: Counter[int] = Counter()
+        self.behavior_action_counts: Counter[int] = Counter()
+        self.sample_action_counts: Counter[int] = Counter()
+        self.sample_class_counts: Counter[str] = Counter()
+        self.replay_role_counts: Counter[str] = Counter()
+        self.actor_raw_probability_mass = np.zeros(9, dtype=np.float64)
+        self.behavior_probability_mass = np.zeros(9, dtype=np.float64)
+        self.actor_raw_entropy_sum = 0.0
+        self.behavior_entropy_sum = 0.0
+        self.action_row_count = 0
         self.epsilon_values: List[float] = []
         self.sampler_reports: List[Dict[str, Any]] = []
         self.telemetry: List[Dict[str, Any]] = []
+        self.telemetry_aggregate: Dict[str, Dict[str, float]] = {}
         self.episode_reports: List[Dict[str, Any]] = []
+        self.evaluation_reports: List[Dict[str, Any]] = []
         self.recovery_pool = RecoveryInitPool(
             capacity=int(((self.config.get("voradj", {}) or {}).get("recovery", {}) or {}).get("capture_state_pool_capacity", 1000)),
             captured_ratio=float(((self.config.get("voradj", {}) or {}).get("recovery", {}) or {}).get("captured_state_ratio", 0.75)),
@@ -276,12 +288,30 @@ class CapabilityRunner:
         if active:
             batch = stack_obs([old_obs[idx] for idx in active], self.device)
             with torch.no_grad():
-                sampled, actor_prob, behavior_prob = self.trainer.actor.sample_behavior(batch, epsilon)
+                actor_probs = self.trainer.actor.probabilities(batch)
+                behavior_probs = (1.0 - float(epsilon)) * actor_probs + float(epsilon) / float(actor_probs.shape[-1])
+                sampled = torch.multinomial(behavior_probs, num_samples=1).squeeze(-1)
+                actor_entropy = -(actor_probs.clamp_min(1e-8) * actor_probs.clamp_min(1e-8).log()).sum(dim=-1)
+                behavior_entropy = -(behavior_probs.clamp_min(1e-8) * behavior_probs.clamp_min(1e-8).log()).sum(dim=-1)
+                actor_actions = actor_probs.argmax(dim=-1)
+                self.actor_raw_probability_mass += actor_probs.sum(dim=0).cpu().numpy()
+                self.behavior_probability_mass += behavior_probs.sum(dim=0).cpu().numpy()
+                self.actor_raw_entropy_sum += float(actor_entropy.sum().item())
+                self.behavior_entropy_sum += float(behavior_entropy.sum().item())
+                self.action_row_count += int(actor_probs.shape[0])
+                for action in actor_actions.cpu().tolist():
+                    self.actor_raw_action_counts[int(action)] += 1
             for pos, idx in enumerate(active):
                 action = int(sampled[pos].item())
                 actions[idx] = action
                 self.action_counts[action] += 1
-                self._pending_actions[idx] = (action, float(actor_prob[pos].item()), float(behavior_prob[pos].item()), epsilon)
+                self.behavior_action_counts[action] += 1
+                self._pending_actions[idx] = (
+                    action,
+                    float(actor_probs[pos, action].item()),
+                    float(behavior_probs[pos, action].item()),
+                    epsilon,
+                )
         result = env.step(actions, self._evader_actions(scene))
         next_obs = result.observations
         for idx in active:
@@ -293,13 +323,15 @@ class CapabilityRunner:
             truncated = bool(info.get("truncated", False))
             done = bool(result.dones[idx])
             nxt = next_obs[idx] if next_obs[idx] is not None else {key: np.zeros_like(value) for key, value in obs.items()}
-            self.replay.add(Transition(
+            transition = Transition(
                 obs=clone_obs(obs), action=action, reward=float(result.rewards[idx]), next_obs=clone_obs(nxt),
                 done=done, terminated=terminated, truncated=truncated, phase=str(metadata.get("phase", "pre_capture")),
                 replay_class=replay_class(self.formal_config, scene, metadata), behavior_probability=behavior_prob,
                 epsilon=used_epsilon, actor_probability=actor_prob, episode_id=self.episode_id,
                 agent_id=idx, metadata=metadata,
-            ))
+            )
+            self.replay.add(transition)
+            self.replay_role_counts["support" if bool(metadata.get("support_candidate", False)) else "pursuing"] += 1
         self.observations[scene] = next_obs
         self.global_step += 1
         self._maybe_update()
@@ -315,6 +347,33 @@ class CapabilityRunner:
             self.episode_id += 1
             self.scene_index = (self.scene_index + 1) % len(self.scenes())
             self._reset_current_scene()
+
+    def _accumulate_telemetry(self, stats: Mapping[str, Any]) -> None:
+        for key, raw_value in stats.items():
+            if key in {"global_step", "sampler", "sample_actual_counts"}:
+                continue
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if not np.isfinite(value):
+                raise FloatingPointError(f"non-finite AC telemetry: {key}={value}")
+            bucket = self.telemetry_aggregate.setdefault(
+                str(key), {"count": 0.0, "sum": 0.0, "sum_sq": 0.0, "min": value, "max": value}
+            )
+            bucket["count"] += 1.0
+            bucket["sum"] += value
+            bucket["sum_sq"] += value * value
+            bucket["min"] = min(bucket["min"], value)
+            bucket["max"] = max(bucket["max"], value)
+
+    def _safety_check_update(self, stats: Mapping[str, Any]) -> None:
+        if not bool(float(stats.get("finite", 0.0))):
+            raise FloatingPointError("AC update reported finite=0")
+        for key in ("q_mean", "q_std", "q_min", "q_max", "td_target_mean", "td_target_std"):
+            value = float(stats.get(key, 0.0))
+            if not np.isfinite(value) or abs(value) > 1.0e6:
+                raise FloatingPointError(f"Q/target explosion: {key}={value}")
 
     def _maybe_update(self) -> None:
         ac = self.formal_config.get("ac", {}) or {}
@@ -334,9 +393,16 @@ class CapabilityRunner:
         if len(batch) != self.trainer_config.batch_size:
             return
         stats = self.trainer.update(batch)
+        self._safety_check_update(stats)
+        self._accumulate_telemetry(stats)
+        for item in batch:
+            self.sample_action_counts[int(item.action)] += 1
+            self.sample_class_counts[str(item.replay_class)] += 1
         stats.update({"global_step": self.global_step, "sampler": report.get("sampler", "unknown"), "sample_actual_counts": report.get("actual_counts", {})})
         self.sampler_reports.append(report)
         self.telemetry.append(stats)
+        if len(self.telemetry) > 1000:
+            del self.telemetry[:-1000]
 
     def _checkpoint_smoke_save_load(self) -> Dict[str, Any]:
         payload = self.trainer.checkpoint_payload(config=self.formal_config, global_step=self.global_step, episode=self.episode_count, include_runtime=True, include_replay=False, replay=self.replay, recovery_pool=self.recovery_pool)
@@ -348,68 +414,217 @@ class CapabilityRunner:
             restored.load_payload(loaded, load_optimizer=True)
             return {"save_load_pass": bool(state_hash(restored.actor) == state_hash(self.trainer.actor) and state_hash(restored.critic) == state_hash(self.trainer.critic)), "payload_has_replay": "replay" in loaded, "payload_has_optimizer": "actor_optimizer" in loaded, "atomic_latest_only": True}
 
-    @torch.no_grad()
-    def _deterministic_eval(self) -> Dict[str, Any]:
-        scene = self.scenes()[0]
-        env = make_env(self.formal_config, scene, self.seed + 5000)
-        obs = env.reset()
-        assert_runtime_aw9(env)
-        total = 0.0
-        for _ in range(min(24 if self.smoke else 3000, env.episode_max_length)):
-            active = [idx for idx, item in enumerate(obs) if item is not None]
-            actions: List[Optional[int]] = [None] * len(obs)
-            if active:
-                batch = stack_obs([obs[idx] for idx in active], self.device)
-                values = self.trainer.actor.deterministic_action(batch).cpu().tolist()
-                for idx, action in zip(active, values):
-                    actions[idx] = int(action)
-            result = env.step(actions, [None] * len(env.evaders))
-            total += float(np.sum(result.rewards))
-            obs = result.observations
-            if any(result.dones):
-                break
-        record = env.episode_record(task=scene)
-        events = list(getattr(env, "last_capture_events", []) or [])
-        capture_types = [str(event.get("capture_type", "normal")) for event in events]
-        distribution = record.get("distribution_metrics", {}) or {}
+    @staticmethod
+    def _value_stats(values: Sequence[Optional[float]]) -> Dict[str, Any]:
+        finite = np.asarray([float(value) for value in values if value is not None and np.isfinite(float(value))], dtype=float)
+        if finite.size == 0:
+            return {"count": 0, "mean": None, "std": None, "min": None, "median": None, "max": None}
         return {
-            "ran": True,
-            "scene": scene,
-            "steps": int(env.episode_step),
-            "return_sum": total,
-            "episode_return": total,
-            "completion_time": int(env.episode_step),
-            "collision": bool(record.get("collision_event", False)),
-            "capture_rate": float(record.get("captured", False)),
-            "normal_capture": float("normal" in capture_types),
-            "stationary_capture": float("stationary" in capture_types),
-            "ring_2_plus": float(any(int(event.get("participant_count", len(event.get("participants", [])))) >= 2 for event in events)),
-            "ring_3_plus": float(any(int(event.get("participant_count", len(event.get("participants", [])))) >= 3 for event in events)),
-            "coverage_strict_success": float(record.get("coverage_strict_success", False)),
-            "coverage_ce_rms": float(record.get("coverage_ce_center_rms", distribution.get("ce_center_rms", 0.0))),
-            "coverage_ce_max": float(record.get("coverage_ce_center_max", distribution.get("ce_center_max", 0.0))),
-            "area_cv": float(record.get("coverage_strict_area_cv", distribution.get("area_cv", 0.0))),
-            "post_capture_ce": float(record.get("post_capture_coverage", False)),
-            "safe_full_completion": float(record.get("fully_capture", False) and record.get("collision_free", False)),
-            "early_recovery_duration": int(record.get("post_capture_step", -1)),
-            "mission_time": int(env.episode_step),
+            "count": int(finite.size), "mean": float(finite.mean()), "std": float(finite.std()),
+            "min": float(finite.min()), "median": float(np.median(finite)), "max": float(finite.max()),
         }
+
+    def _telemetry_summary(self) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
+        for key, bucket in self.telemetry_aggregate.items():
+            count = max(float(bucket["count"]), 1.0)
+            mean = float(bucket["sum"] / count)
+            variance = max(float(bucket["sum_sq"] / count - mean * mean), 0.0)
+            result[key] = {
+                "count": int(bucket["count"]), "mean": mean, "std": float(np.sqrt(variance)),
+                "min": float(bucket["min"]), "max": float(bucket["max"]),
+            }
+        return result
+
+    def _exploration_summary(self) -> Dict[str, Any]:
+        count = max(int(self.action_row_count), 1)
+        raw_mass = self.actor_raw_probability_mass / float(count)
+        behavior_mass = self.behavior_probability_mass / float(count)
+        action_hist = {str(index): int(self.action_counts.get(index, 0)) for index in range(9)}
+        raw_hist = {str(index): int(self.actor_raw_action_counts.get(index, 0)) for index in range(9)}
+        sample_hist = {str(index): int(self.sample_action_counts.get(index, 0)) for index in range(9)}
+        return {
+            "epsilon_start": float(self.epsilon_values[0]) if self.epsilon_values else None,
+            "epsilon_end": float(self.epsilon_values[-1]) if self.epsilon_values else None,
+            "epsilon_at_25k": epsilon_value(self.formal_config, 25000),
+            "epsilon_at_100k": epsilon_value(self.formal_config, 100000),
+            "epsilon_at_500k": epsilon_value(self.formal_config, 500000),
+            "behavior_action_histogram": action_hist, "actor_raw_argmax_histogram": raw_hist,
+            "sampled_action_histogram": sample_hist,
+            "actor_raw_probability_mean": {str(index): float(raw_mass[index]) for index in range(9)},
+            "behavior_probability_mean": {str(index): float(behavior_mass[index]) for index in range(9)},
+            "actor_raw_entropy_mean": float(self.actor_raw_entropy_sum / count),
+            "behavior_entropy_mean": float(self.behavior_entropy_sum / count),
+            "action_rows": int(self.action_row_count),
+            "minimum_behavior_action_count": int(min(action_hist.values())) if action_hist else 0,
+            "action_4_sampled": int(action_hist.get("4", 0)) > 0,
+        }
+
+    def _replay_summary(self) -> Dict[str, Any]:
+        return {
+            "total_rows": int(len(self.replay)),
+            "class_counts": {str(key): int(value) for key, value in self.replay.class_counts().items()},
+            "role_counts": {str(key): int(value) for key, value in self.replay_role_counts.items()},
+            "sample_counts": {str(key): int(value) for key, value in self.sample_class_counts.items()},
+            "sample_action_counts": {str(index): int(self.sample_action_counts.get(index, 0)) for index in range(9)},
+            "recovery_pool_size": int(len(self.recovery_pool)),
+        }
+
+    def _eval_evader_actions(self, env: VorAdjEnv, apf_agents: List[ApfAgent]) -> List[Optional[int]]:
+        if not env.evaders:
+            return []
+        set_global_config(env.config)
+        observations = env.get_evader_observations_for_apf()
+        if hasattr(env, "configure_evader_apf_agents"):
+            env.configure_evader_apf_agents(apf_agents)
+        return [agent.act(obs) if obs is not None else None for agent, obs in zip(apf_agents, observations)]
+
+    @staticmethod
+    def _ring_size(env: VorAdjEnv) -> int:
+        sizes = [
+            sum(float(np.hypot(p.x - e.x, p.y - e.y)) <= 8.0 for p in env.pursuers if not p.deactivated)
+            for e in env.evaders if not e.deactivated
+        ]
+        sizes.extend(int(len(event.get("participants", []))) for event in (env.last_capture_events or []))
+        return int(max(sizes, default=0))
+
+    @torch.no_grad()
+    def _deterministic_eval(self, step: int = 0) -> Dict[str, Any]:
+        scene = self.scenes()[0]
+        evaluation = (self.formal_config.get("ac", {}) or {}).get("evaluation", {}) or {}
+        episodes = int(evaluation.get("episodes", 20 if not self.smoke else 1))
+        seed_base = int(evaluation.get("seed_base", self.seed + 5000))
+        decision_dt = float(self.formal_config.get("decision_dt", 0.5))
+        max_steps = min(24 if self.smoke else 3000, int(self.envs[scene].episode_max_length))
+        records: List[Dict[str, Any]] = []
+        saved_python = random.getstate(); saved_numpy = np.random.get_state(); saved_torch = torch.get_rng_state()
+        saved_cuda = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+        try:
+            self.trainer.actor.eval()
+            for episode in range(episodes):
+                env = make_env(self.formal_config, scene, seed_base + episode)
+                if self.smoke:
+                    env.episode_max_length = max_steps
+                obs = env.reset()
+                assert_runtime_aw9(env)
+                apf_agents = [ApfAgent(evader.a, evader.w) for evader in env.evaders]
+                total_return = 0.0; capture_step: Optional[int] = None; capture_types: List[str] = []
+                collision_types: Counter[str] = Counter(); ring2_steps = ring3_steps = 0
+                ring2_run = ring3_run = ring2_max = ring3_max = ring2_windows = ring3_windows = 0
+                eval_entropy: List[float] = []
+                for _ in range(max_steps):
+                    active = [idx for idx, item in enumerate(obs) if item is not None]
+                    actions: List[Optional[int]] = [None] * len(obs)
+                    if active:
+                        batch = stack_obs([obs[idx] for idx in active], self.device)
+                        probs = self.trainer.actor.probabilities(batch)
+                        eval_entropy.extend((-(probs.clamp_min(1e-8) * probs.clamp_min(1e-8).log()).sum(dim=-1)).cpu().tolist())
+                        for idx, action in zip(active, probs.argmax(dim=-1).cpu().tolist()):
+                            actions[idx] = int(action)
+                    result = env.step(actions, self._eval_evader_actions(env, apf_agents))
+                    total_return += float(np.sum(result.rewards))
+                    for event in env.last_capture_events or []:
+                        capture_types.append(str(event.get("capture_type", "normal")))
+                        if capture_step is None:
+                            capture_step = int(env.episode_step)
+                    for event in env.last_collision_events or []:
+                        collision_types[str(event.get("type", "unknown"))] += 1
+                    ring_size = self._ring_size(env)
+                    if ring_size >= 2:
+                        ring2_steps += 1; ring2_run += 1
+                    else:
+                        if ring2_run >= 2: ring2_windows += 1
+                        ring2_run = 0
+                    if ring_size >= 3:
+                        ring3_steps += 1; ring3_run += 1
+                    else:
+                        if ring3_run >= 2: ring3_windows += 1
+                        ring3_run = 0
+                    ring2_max = max(ring2_max, ring2_run); ring3_max = max(ring3_max, ring3_run)
+                    obs = result.observations
+                    if any(result.dones):
+                        break
+                if ring2_run >= 2: ring2_windows += 1
+                if ring3_run >= 2: ring3_windows += 1
+                if not any(result.dones):
+                    raise RuntimeError("formal deterministic evaluation did not reach native terminal")
+                record = env.episode_record(task=scene); distribution = record.get("distribution_metrics", {}) or {}
+                captured = bool(record.get("captured", False)); stationary = bool(captured and "stationary" in capture_types)
+                normal = bool(captured and any(value != "stationary" for value in capture_types))
+                collision = bool(collision_types) or bool(record.get("collision_event", False))
+                records.append({
+                    "episode": int(episode), "seed": int(seed_base + episode), "length": int(env.episode_step),
+                    "return": float(total_return), "captured": captured, "normal_capture": normal,
+                    "stationary_capture": stationary, "capture_types": capture_types,
+                    "capture_time_steps": capture_step, "capture_time_seconds": None if capture_step is None else float(capture_step * decision_dt),
+                    "ring_2_plus_steps": int(ring2_steps), "ring_3_plus_steps": int(ring3_steps),
+                    "ring_2_plus_max_hold": int(ring2_max), "ring_3_plus_max_hold": int(ring3_max),
+                    "repeated_2_plus_ring_windows": int(ring2_windows), "repeated_3_plus_ring_windows": int(ring3_windows),
+                    "collision": collision, "collision_types": dict(collision_types),
+                    "eval_entropy": float(np.mean(eval_entropy)) if eval_entropy else None,
+                    "coverage_strict_success": bool(record.get("coverage_strict_success", False)),
+                    "coverage_ce_rms": float(record.get("coverage_ce_center_rms", distribution.get("ce_center_rms", 0.0))),
+                    "coverage_ce_max": float(record.get("coverage_ce_center_max", distribution.get("ce_center_max", 0.0))),
+                    "area_cv": float(record.get("coverage_strict_area_cv", distribution.get("area_cv", 0.0))),
+                })
+        finally:
+            random.setstate(saved_python); np.random.set_state(saved_numpy); torch.set_rng_state(saved_torch)
+            if saved_cuda is not None: torch.cuda.set_rng_state_all(saved_cuda)
+
+        def total(key: str) -> int:
+            return int(sum(bool(row.get(key, False)) for row in records))
+        collision_types = Counter()
+        for row in records: collision_types.update(row["collision_types"])
+        report = {
+            "schema": "ac-capability-pure-capture-eval-v2", "step": int(step), "scene": scene,
+            "episodes": int(len(records)), "seed_base": seed_base, "deterministic": True, "records": records,
+            "total_capture": total("captured"), "normal_capture": total("normal_capture"), "stationary_capture": total("stationary_capture"),
+            "capture_rate": float(total("captured") / max(len(records), 1)), "normal_capture_rate": float(total("normal_capture") / max(len(records), 1)),
+            "stationary_capture_rate": float(total("stationary_capture") / max(len(records), 1)),
+            "repeated_2_plus_ring_windows": int(sum(row["repeated_2_plus_ring_windows"] for row in records)),
+            "repeated_3_plus_ring_windows": int(sum(row["repeated_3_plus_ring_windows"] for row in records)),
+            "ring_2_plus_repeated_episode_rate": float(np.mean([row["ring_2_plus_max_hold"] >= 2 for row in records])) if records else 0.0,
+            "ring_3_plus_repeated_episode_rate": float(np.mean([row["ring_3_plus_max_hold"] >= 2 for row in records])) if records else 0.0,
+            "ring_persistence": {
+                "ring_2_plus_steps": self._value_stats([row["ring_2_plus_steps"] for row in records]), "ring_3_plus_steps": self._value_stats([row["ring_3_plus_steps"] for row in records]),
+                "ring_2_plus_max_hold": self._value_stats([row["ring_2_plus_max_hold"] for row in records]), "ring_3_plus_max_hold": self._value_stats([row["ring_3_plus_max_hold"] for row in records]),
+            },
+            "collision": {"total": total("collision"), "rate": float(total("collision") / max(len(records), 1)), "types": dict(collision_types)},
+            "capture_time": {"steps": self._value_stats([row["capture_time_steps"] for row in records]), "seconds": self._value_stats([row["capture_time_seconds"] for row in records])},
+            "return": self._value_stats([row["return"] for row in records]), "episode_length": self._value_stats([row["length"] for row in records]),
+            "eval_entropy": self._value_stats([row["eval_entropy"] for row in records]), "training_telemetry": self._telemetry_summary(),
+            "exploration": self._exploration_summary(), "replay": self._replay_summary(), "training_updates": int(self.trainer.update_count),
+        }
+        self.evaluation_reports.append(report)
+        return report
 
     def run(self) -> Dict[str, Any]:
         self._pending_actions: Dict[int, Tuple[int, float, float, float]] = {}
         total = int(self.smoke_steps if self.smoke else self.formal_config.get("total_timesteps", 100000))
+        evaluation_cfg = (self.formal_config.get("ac", {}) or {}).get("evaluation", {}) or {}
+        checkpoint_cfg = (self.formal_config.get("ac", {}) or {}).get("checkpoint", {}) or {}
+        evaluation_steps = set(int(value) for value in evaluation_cfg.get("formal_steps", [0, 25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]))
+        checkpoint_steps = set(int(value) for value in checkpoint_cfg.get("formal_steps", [25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]))
+        if not self.smoke and 0 in evaluation_steps:
+            write_json(self.run_dir / "evaluations" / "eval_step_000000000.json", self._deterministic_eval(0))
         for _ in range(total):
             scene = self.scenes()[self.scene_index % len(self.scenes())]
             self._collect_step(scene)
-            if not self.smoke and self.global_step in {25000, 50000, 75000, 100000}:
+            if not self.smoke and self.global_step in checkpoint_steps:
                 self._write_formal_checkpoint(self.global_step)
+            if not self.smoke and self.global_step in evaluation_steps:
                 write_json(
                     self.run_dir / "evaluations" / f"eval_step_{self.global_step:09d}.json",
-                    self._deterministic_eval(),
+                    self._deterministic_eval(self.global_step),
                 )
         checkpoint_result = self._checkpoint_smoke_save_load() if self.smoke else {"formal_checkpoint_policy_ready": True}
-        eval_result = self._deterministic_eval()
-        action_hist = {str(index): int(self.action_counts.get(index, 0)) for index in range(9)}
+        if not self.smoke and self.global_step not in evaluation_steps:
+            write_json(self.run_dir / "evaluations" / f"eval_step_{self.global_step:09d}.json", self._deterministic_eval(self.global_step))
+        if not self.smoke and self.trainer.update_count <= 0:
+            raise RuntimeError("safety stop: no AC updates completed")
+        eval_result = self.evaluation_reports[-1] if self.evaluation_reports else self._deterministic_eval(self.global_step)
+        exploration = self._exploration_summary()
+        action_hist = exploration["behavior_action_histogram"]
         counts = np.asarray(list(action_hist.values()), dtype=float)
         probs = counts / max(float(counts.sum()), 1.0)
         entropy = float(-(probs[probs > 0] * np.log(probs[probs > 0])).sum())
@@ -423,16 +638,28 @@ class CapabilityRunner:
             "actor_parameters_changed": target_hashes["actor"] != self.initial_hashes["actor"], "critic_parameters_changed": target_hashes["critic"] != self.initial_hashes["critic"],
             "target_parameters_updated": target_hashes["target_actor"] != self.initial_hashes["target_actor"] or target_hashes["target_critic"] != self.initial_hashes["target_critic"],
             "aw9_live": self.aw9_live, "action_counts": action_hist, "minimum_action_count": int(counts.min()), "action_entropy": entropy,
-            "epsilon_start": float(self.epsilon_values[0]) if self.epsilon_values else None, "epsilon_end": float(self.epsilon_values[-1]) if self.epsilon_values else None,
+            "exploration": exploration, "training_telemetry": self._telemetry_summary(), "replay": self._replay_summary(),
+            "evaluation_steps_completed": [int(item["step"]) for item in self.evaluation_reports],
+            "evaluation_curve": [
+                {
+                    "step": int(item["step"]), "total_capture": int(item["total_capture"]), "normal_capture": int(item["normal_capture"]),
+                    "stationary_capture": int(item["stationary_capture"]), "repeated_2_plus_ring_windows": int(item["repeated_2_plus_ring_windows"]),
+                    "repeated_3_plus_ring_windows": int(item["repeated_3_plus_ring_windows"]),
+                    "ring_2_plus_repeated_episode_rate": float(item["ring_2_plus_repeated_episode_rate"]),
+                    "ring_3_plus_repeated_episode_rate": float(item["ring_3_plus_repeated_episode_rate"]),
+                    "collision_rate": float(item["collision"]["rate"]), "capture_time_seconds": item["capture_time"]["seconds"], "return": item["return"],
+                }
+                for item in self.evaluation_reports
+            ],
             "replay_size": len(self.replay), "replay_class_counts": self.replay.class_counts(), "recovery_pool_size": len(self.recovery_pool),
             "scheduler_sequence": self.scheduler_sequence[: min(len(self.scheduler_sequence), 24)], "reset_source_counts": dict(self.reset_sources),
             "sampler_reports": self.sampler_reports[-20:], "telemetry_tail": self.telemetry[-20:], "episode_tail": self.episode_reports[-10:],
-            "all_telemetry_finite": all(bool(item.get("finite", 0.0)) for item in self.telemetry), "checkpoint_save_load": checkpoint_result,
+            "all_telemetry_finite": True, "checkpoint_save_load": checkpoint_result,
             "deterministic_eval": eval_result, "exploration_implementation_fail": bool(self.epsilon_values and self.epsilon_values[-1] > 0 and counts.min() == 0),
             "formal_launch_started": False,
             "resume_info": self.resume_info,
         }
-        write_json(self.run_dir / ("smoke_report.json" if self.smoke else "prep_runtime_report.json"), result)
+        write_json(self.run_dir / ("smoke_report.json" if self.smoke else "formal_report.json"), result)
         return result
 
     def _write_formal_checkpoint(self, step: int) -> None:
