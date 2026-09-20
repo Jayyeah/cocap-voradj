@@ -1,0 +1,97 @@
+{
+  "schema": "ac2a5-bank-balance-analysis-v1",
+  "status": "READ_ONLY_ANALYSIS",
+  "branch": "audit/ac-bc-critic-lineage-20260920",
+  "head": "772ff649e5dae8699436690a0016e7673733ae43",
+  "pilot": {
+    "path": "artifacts/2026-09-20_ac2a/pilot_trajectory_bank_v2.npz",
+    "sha256": "348c17ea1fcfda02b99876afffa9345932d36c9a71b73382ac415eb458cc1bed",
+    "episodes": 16,
+    "transitions": 3454,
+    "active_agent_rows": 13816,
+    "average_mixed_transitions": 233.8,
+    "average_pure_coverage_transitions": 186.0,
+    "average_mixed_active_agent_rows": 935.2,
+    "average_pure_coverage_active_agent_rows": 744.0,
+    "by_scene_policy": {
+      "mixed_argmax": {"episodes": 5, "transitions": [287, 148, 356, 144, 175], "mean": 222.0, "median": 175.0, "min": 144, "max": 356, "active_agent_rows": 4440},
+      "mixed_sampled": {"episodes": 5, "transitions": [334, 186, 213, 265, 230], "mean": 245.6, "median": 230.0, "min": 186, "max": 334, "active_agent_rows": 4912},
+      "pure_coverage_argmax": {"episodes": 3, "transitions": [210, 190, 125], "mean": 175.0, "median": 190.0, "min": 125, "max": 210, "active_agent_rows": 2100},
+      "pure_coverage_sampled": {"episodes": 3, "transitions": [304, 174, 113], "mean": 197.0, "median": 174.0, "min": 113, "max": 304, "active_agent_rows": 2364}
+    }
+  },
+  "replay_semantics": {
+    "source": "src/cocap_voradj/training/trainer.py::_voradj_replay_class",
+    "phase_id_registry": {"pure_coverage": 0, "pre_capture": 1, "post_capture": 2},
+    "pursuing_field": "local_self[...,8] == effective_pursuing under canonical nearest_vector_robot_oob observation layout",
+    "strict_reconstruction": true,
+    "rule": {
+      "pursuing": "phase=pre_capture and local_self[...,8]=1",
+      "pre_capture_cover": "phase=pre_capture and local_self[...,8]=0",
+      "post_capture_real": "phase=post_capture",
+      "recovery_pure": "phase=pure_coverage"
+    },
+    "pilot_active_agent_rows": 13816,
+    "pilot_class_counts": {
+      "pursuing": {"rows": 1081, "percentage": 7.824261725535611},
+      "pre_capture_cover": {"rows": 2479, "percentage": 17.94296467863347},
+      "post_capture_real": {"rows": 5792, "percentage": 41.92240880138969},
+      "recovery_pure": {"rows": 4464, "percentage": 32.31036479444123}
+    },
+    "pursuing_field_values_on_active_rows": [0.0, 1.0],
+    "pursuing_field_nonbinary_active_rows": 0
+  },
+  "event_rows": {
+    "capture_transition": 40,
+    "early_recovery": 1600,
+    "late_recovery": 4192,
+    "pure_coverage": 4464,
+    "stationary_capture": 0,
+    "collision": 0
+  },
+  "final_iqn_reference": {
+    "config": "configs/experiments/cr_ms_support_approach_ce_curriculum_20260802/common.yaml",
+    "batch_counts": {"pursuing": 64, "pre_capture_cover": 16, "post_capture_real": 32, "recovery_pure": 16},
+    "update_ratio": {"pursuing": 0.5, "pre_capture_cover": 0.125, "post_capture_real": 0.25, "recovery_pure": 0.125},
+    "recovery_config": {
+      "capture_state_pool_capacity": 1000,
+      "captured_state_ratio": 0.75,
+      "map_random_ratio_within_non_capture": 0.5,
+      "conditional_total_intended_init_ratio": {"capture_snapshot": 0.75, "ordinary_map_random": 0.125, "synthetic_inner_cluster": 0.125},
+      "pool_empty_caveat": true
+    }
+  },
+  "canonical_bc_coverage_init": {
+    "classification": "BC_COVERAGE_INIT_DIFFERS",
+    "collector": "tools/collect_forward_final_dataset_20260908.py",
+    "evaluator": "tools/run_forward_final_bridge_20260908.py",
+    "coverage_reset": "canonical task voradj_coverage with inner_random_cluster; no CoCapTrainer recovery_init_pool reset",
+    "mixed_recovery": "natural post-capture continuation in the same full-task episode",
+    "final_iqn_075_0125_0125_confirmed": "configured/intended for Final IQN mixed-coverage trainer when pool is non-empty, not used as canonical BC collector initialization"
+  },
+  "scheme_estimates": {
+    "assumption": "linear extrapolation from pilot means; mixed=233.8 transitions and 935.2 active rows/episode; pure=186.0 transitions and 744.0 active rows/episode; mixed phase means from 10 mixed episodes",
+    "A_60_mixed_20_pure": {"mixed_episodes": 60, "pure_coverage_episodes": 20, "total_transitions": 17748, "total_active_agent_rows": 70992, "pursuing_rows": 6486, "pre_capture_cover_rows": 14874, "post_capture_real_rows": 34752, "recovery_pure_rows": 14880, "early_recovery_rows": 9600},
+    "B_50_mixed_30_pure": {"mixed_episodes": 50, "pure_coverage_episodes": 30, "total_transitions": 17270, "total_active_agent_rows": 69080, "pursuing_rows": 5405, "pre_capture_cover_rows": 12395, "post_capture_real_rows": 28960, "recovery_pure_rows": 22320, "early_recovery_rows": 8000},
+    "C_40_mixed_40_pure": {"mixed_episodes": 40, "pure_coverage_episodes": 40, "total_transitions": 16792, "total_active_agent_rows": 67168, "pursuing_rows": 4324, "pre_capture_cover_rows": 9916, "post_capture_real_rows": 23168, "recovery_pure_rows": 29760, "early_recovery_rows": 6400}
+  },
+  "scheme_d_adaptive": {
+    "base": {"mixed_episodes": 40, "pure_coverage_episodes": 20, "total_episodes": 60},
+    "operational_absolute_floor_rows_per_class": 5000,
+    "max_top_up": {"total_episodes": 30, "mixed_episodes": 20, "pure_coverage_episodes": 10},
+    "top_up_rule": {
+      "pursuing_or_pre_capture_cover_or_post_capture_real_shortage": "add mixed episodes in batches of 5",
+      "recovery_pure_shortage": "add pure-coverage episodes in batches of 5",
+      "no_shortage": "stop at base; do not force raw rows to equal 64/16/32/16",
+      "mixed_shortage_priority": "pursuing first, then post_capture_real, then pre_capture_cover",
+      "episode_split": "keep train/validation/test episode-disjoint"
+    },
+    "interpretation": "IQN ratios are sampler/update ratios, not a requirement on canonical BC natural visitation"
+  },
+  "recommendation": {
+    "healthiest_fixed_scheme": "Scheme A",
+    "reason": "It retains the largest mixed exposure and therefore the least undersampled pursuing/post-capture evidence while still providing 20 pure-coverage episodes; Scheme C overweights pure recovery and further reduces rare pursuing rows.",
+    "executed": false
+  },
+  "constraints": {"new_rollout": false, "critic_training": false, "bc_change": false, "formal_ac2b": false}
+}
