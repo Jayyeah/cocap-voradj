@@ -463,11 +463,64 @@ def read_last_jsonl(path: Path) -> dict[str, Any]:
     return matched.read_last_jsonl(path)
 
 
-def freeze_resume(source: Path, destination: Path) -> None:
-    if destination.exists():
-        return
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    os.link(source, destination)
+def _resume_global_step(path: Path) -> int:
+    """Read the exact step represented by the rolling full-resume file."""
+
+    if not path.is_file():
+        raise FileNotFoundError(f"full-resume checkpoint is missing: {path}")
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    runtime = payload.get("runtime")
+    if not isinstance(runtime, dict) or "global_step" not in runtime:
+        raise RuntimeError(f"full-resume checkpoint has no runtime.global_step: {path}")
+    try:
+        return int(runtime["global_step"])
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"full-resume checkpoint has invalid runtime.global_step: {path}") from exc
+
+
+def _assert_resume_global_step(path: Path, expected: int) -> None:
+    actual = _resume_global_step(path)
+    if actual != int(expected):
+        raise AssertionError(
+            f"resume_latest global_step mismatch: expected {expected}, got {actual} ({path})"
+        )
+
+
+def _milestone_artifacts(stage_dir: Path, target: int) -> dict[str, Path]:
+    training_dir = stage_dir / "training"
+    return {
+        "checkpoint": training_dir / f"checkpoints/step_{target}.pt",
+        "report": stage_dir / "evaluations" / f"step_{target:09d}" / "report.json",
+        "evidence": stage_dir / "runtime_evidence" / f"step_{target:09d}.json",
+    }
+
+
+def _read_validated_evidence(path: Path, target: int) -> dict[str, Any]:
+    try:
+        evidence = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"historical runtime evidence is unreadable: {path}") from exc
+    if not isinstance(evidence, dict):
+        raise RuntimeError(f"historical runtime evidence is not an object: {path}")
+    if int(evidence.get("step", -1)) != int(target) or int(evidence.get("global_step", -1)) != int(target):
+        raise RuntimeError(
+            f"historical runtime evidence step mismatch: expected {target}, got "
+            f"step={evidence.get('step')}, global_step={evidence.get('global_step')} ({path})"
+        )
+    return evidence
+
+
+def _require_historical_provenance(stage_dir: Path, target: int) -> None:
+    """Fail closed when an already-passed milestone cannot be reconstructed exactly."""
+
+    artifacts = _milestone_artifacts(stage_dir, target)
+    missing = [str(path) for path in artifacts.values() if not path.is_file()]
+    if missing:
+        raise RuntimeError(
+            f"historical milestone {target} provenance is incomplete; refusing to "
+            f"rebuild it from a later resume: missing={missing}"
+        )
+    _read_validated_evidence(artifacts["evidence"], target)
 
 
 def _stage_runtime_evidence(stage_dir: Path, step: int, config_hash: str) -> dict[str, Any]:
@@ -493,6 +546,13 @@ def _stage_runtime_evidence(stage_dir: Path, step: int, config_hash: str) -> dic
     }
     matched.atomic_json(stage_dir / "runtime_evidence" / f"step_{step:09d}.json", evidence)
     return evidence
+
+
+def _ensure_runtime_evidence(stage_dir: Path, target: int, config_hash: str) -> dict[str, Any]:
+    evidence_path = _milestone_artifacts(stage_dir, target)["evidence"]
+    if evidence_path.is_file():
+        return _read_validated_evidence(evidence_path, target)
+    return _stage_runtime_evidence(stage_dir, target, config_hash)
 
 
 def _fresh_stage_gate(trainer: CoCapTrainer, stage: str, warm_start: Path | None) -> dict[str, Any]:
@@ -543,9 +603,11 @@ def run_stage(
     milestones = MILESTONES[stage]
     current = 0
     if resume.is_file():
-        payload = torch.load(resume, map_location="cpu", weights_only=False)
-        current = int(payload["runtime"]["global_step"])
+        current = _resume_global_step(resume)
     for target in milestones:
+        if target < current:
+            _require_historical_provenance(stage_dir, target)
+            continue
         state.update(stage=stage, target_step=target, current_step=current, phase="training", segment_start=time.time(), segment_step=current)
         if current < target:
             segment = copy.deepcopy(cfg)
@@ -563,9 +625,8 @@ def run_stage(
                 raise AssertionError("trainer did not stop at registered milestone")
             current = target
             _close(trainer)
-        milestone_resume = training_dir / f"checkpoints/resume_step_{target:09d}.pt"
-        freeze_resume(resume, milestone_resume)
-        checkpoint = training_dir / f"checkpoints/step_{target}.pt"
+        _assert_resume_global_step(resume, target)
+        checkpoint = _milestone_artifacts(stage_dir, target)["checkpoint"]
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
         state.update(phase="formal_evaluation", current_step=current)
@@ -581,7 +642,9 @@ def run_stage(
                 arm=arm,
                 config_path=CONFIGS[arm][stage],
             )
-        evidence = _stage_runtime_evidence(stage_dir, target, config_hash)
+        if not report_path.is_file():
+            raise FileNotFoundError(f"formal evaluation report was not produced: {report_path}")
+        evidence = _ensure_runtime_evidence(stage_dir, target, config_hash)
         matched.atomic_json(
             output / "status.json",
             {
@@ -593,7 +656,9 @@ def run_stage(
                 "current_step": target,
                 "target_step": target,
                 "last_checkpoint": str(checkpoint),
-                "last_full_resume": str(milestone_resume),
+                "last_full_resume": str(resume),
+                "last_full_resume_global_step": target,
+                "full_resume_retention": "latest_only",
                 "last_evaluation": str(report_path),
                 "runtime_evidence": evidence,
                 "updated_at": now_local(),
