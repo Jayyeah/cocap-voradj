@@ -7,6 +7,18 @@ train_mode: voradj_coverage
 
 ac:
   mode: coverage
+  checkpoint:
+    model_interval_steps: 25000
+    keep_history: true
+    historical_model_only: true
+    formal_steps: [0, 25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]
+  evaluation:
+    interval_steps: 25000
+    episodes: 20
+    deterministic: true
+    save_trajectories: false
+    save_gifs: false
+    artifact_policy: fixed_small_summary_only
 
 voradj:
   episode_schedule: single_scene
@@ -21,9 +33,16 @@ tasks:
       spawn_cluster_radius: 10.0
       pursuer_spawn_min_sep: 7.0
 
+training:
+  total_env_steps: 500000
+  formal_steps: [0, 25000, 50000, 75000, 100000, 150000, 200000, 300000, 400000, 500000]
+
+total_timesteps: 500000
+
 experiment_metadata:
   capability_line: pure_coverage
   objective: scratch_shared_local_ac_learns_coverage
   capture: disabled_no_evader
   initialization_source: Final_IQN_pure_coverage_scene_only
   recovery_snapshot_pool: not_used
+  formal_budget: 500000

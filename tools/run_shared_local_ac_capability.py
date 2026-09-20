@@ -121,6 +121,11 @@ class CapabilityRunner:
         self.device = str(self.config.get("device", "cuda:0"))
         if self.device.startswith("cuda") and not torch.cuda.is_available():
             self.device = "cpu"
+        if self.device.startswith("cuda"):
+            # The eval-mode TransformerEncoder fast path can emit sporadic NaNs
+            # on this CUDA/PyTorch stack for masked local observations.  The
+            # reference path has identical network semantics and remains finite.
+            torch.backends.mha.set_fastpath_enabled(False)
         self.output_root = Path(output_root or self.config.get("output_root", "runs"))
         self.run_name = str(self.config.get("run_name", self.config_path.stem))
         self.run_dir = self.output_root / self.run_name
@@ -134,10 +139,19 @@ class CapabilityRunner:
         self.scheduler_sequence: List[str] = []
         self.reset_sources: Counter[str] = Counter()
         self.action_counts: Counter[int] = Counter()
+        self.raw_actor_action_counts: Counter[int] = Counter()
         self.epsilon_values: List[float] = []
         self.sampler_reports: List[Dict[str, Any]] = []
         self.telemetry: List[Dict[str, Any]] = []
         self.episode_reports: List[Dict[str, Any]] = []
+        self.formal_curve: List[Dict[str, Any]] = []
+        self._formal_telemetry_cursor = 0
+        self.sampled_rows = 0
+        self.sampled_behavior_probability_sum = 0.0
+        self.sampled_behavior_probability_min = float("inf")
+        self.sampled_behavior_probability_max = 0.0
+        self.sampled_epsilon_sum = 0.0
+        self.sampled_probability_count = 0
         self.recovery_pool = RecoveryInitPool(
             capacity=int(((self.config.get("voradj", {}) or {}).get("recovery", {}) or {}).get("capture_state_pool_capacity", 1000)),
             captured_ratio=float(((self.config.get("voradj", {}) or {}).get("recovery", {}) or {}).get("captured_state_ratio", 0.75)),
@@ -277,10 +291,12 @@ class CapabilityRunner:
             batch = stack_obs([old_obs[idx] for idx in active], self.device)
             with torch.no_grad():
                 sampled, actor_prob, behavior_prob = self.trainer.actor.sample_behavior(batch, epsilon)
+                raw_policy_actions = self.trainer.actor.deterministic_action(batch)
             for pos, idx in enumerate(active):
                 action = int(sampled[pos].item())
                 actions[idx] = action
                 self.action_counts[action] += 1
+                self.raw_actor_action_counts[int(raw_policy_actions[pos].item())] += 1
                 self._pending_actions[idx] = (action, float(actor_prob[pos].item()), float(behavior_prob[pos].item()), epsilon)
         result = env.step(actions, self._evader_actions(scene))
         next_obs = result.observations
@@ -337,6 +353,14 @@ class CapabilityRunner:
         stats.update({"global_step": self.global_step, "sampler": report.get("sampler", "unknown"), "sample_actual_counts": report.get("actual_counts", {})})
         self.sampler_reports.append(report)
         self.telemetry.append(stats)
+        behavior_probabilities = np.asarray([item.behavior_probability for item in batch], dtype=float)
+        epsilons = np.asarray([item.epsilon for item in batch], dtype=float)
+        self.sampled_rows += len(batch)
+        self.sampled_behavior_probability_sum += float(behavior_probabilities.sum())
+        self.sampled_behavior_probability_min = min(self.sampled_behavior_probability_min, float(behavior_probabilities.min()))
+        self.sampled_behavior_probability_max = max(self.sampled_behavior_probability_max, float(behavior_probabilities.max()))
+        self.sampled_epsilon_sum += float(epsilons.sum())
+        self.sampled_probability_count += len(batch)
 
     def _checkpoint_smoke_save_load(self) -> Dict[str, Any]:
         payload = self.trainer.checkpoint_payload(config=self.formal_config, global_step=self.global_step, episode=self.episode_count, include_runtime=True, include_replay=False, replay=self.replay, recovery_pool=self.recovery_pool)
@@ -349,9 +373,9 @@ class CapabilityRunner:
             return {"save_load_pass": bool(state_hash(restored.actor) == state_hash(self.trainer.actor) and state_hash(restored.critic) == state_hash(self.trainer.critic)), "payload_has_replay": "replay" in loaded, "payload_has_optimizer": "actor_optimizer" in loaded, "atomic_latest_only": True}
 
     @torch.no_grad()
-    def _deterministic_eval(self) -> Dict[str, Any]:
+    def _deterministic_eval_episode(self, seed: int) -> Dict[str, Any]:
         scene = self.scenes()[0]
-        env = make_env(self.formal_config, scene, self.seed + 5000)
+        env = make_env(self.formal_config, scene, int(seed))
         obs = env.reset()
         assert_runtime_aw9(env)
         total = 0.0
@@ -372,6 +396,13 @@ class CapabilityRunner:
         events = list(getattr(env, "last_capture_events", []) or [])
         capture_types = [str(event.get("capture_type", "normal")) for event in events]
         distribution = record.get("distribution_metrics", {}) or {}
+        positions = np.asarray(record.get("pursuer_positions", []), dtype=float)
+        pairwise_distances: List[float] = []
+        if positions.ndim == 2 and positions.shape[0] >= 2:
+            for left in range(positions.shape[0]):
+                for right in range(left + 1, positions.shape[0]):
+                    pairwise_distances.append(float(np.linalg.norm(positions[left] - positions[right])))
+        position_finite = bool(positions.size == 0 or np.isfinite(positions).all())
         return {
             "ran": True,
             "scene": scene,
@@ -389,26 +420,125 @@ class CapabilityRunner:
             "coverage_ce_rms": float(record.get("coverage_ce_center_rms", distribution.get("ce_center_rms", 0.0))),
             "coverage_ce_max": float(record.get("coverage_ce_center_max", distribution.get("ce_center_max", 0.0))),
             "area_cv": float(record.get("coverage_strict_area_cv", distribution.get("area_cv", 0.0))),
+            "active_pursuers": int(record.get("active_pursuers", len(positions))),
+            "position_finite": position_finite,
+            "position_spread_mean": float(np.mean(pairwise_distances)) if pairwise_distances else None,
+            "position_spread_min": float(np.min(pairwise_distances)) if pairwise_distances else None,
+            "position_spread_max": float(np.max(pairwise_distances)) if pairwise_distances else None,
             "post_capture_ce": float(record.get("post_capture_coverage", False)),
             "safe_full_completion": float(record.get("fully_capture", False) and record.get("collision_free", False)),
             "early_recovery_duration": int(record.get("post_capture_step", -1)),
             "mission_time": int(env.episode_step),
         }
 
+    def _deterministic_eval(self) -> Dict[str, Any]:
+        evaluation_config = (self.formal_config.get("ac", {}) or {}).get("evaluation", {}) or {}
+        episodes = 1 if self.smoke else max(int(evaluation_config.get("episodes", 20)), 1)
+        records = [self._deterministic_eval_episode(self.seed + 5000 + index) for index in range(episodes)]
+        numeric_keys = (
+            "steps", "return_sum", "episode_return", "completion_time", "collision", "capture_rate",
+            "normal_capture", "stationary_capture", "ring_2_plus", "ring_3_plus", "coverage_strict_success",
+            "coverage_ce_rms", "coverage_ce_max", "area_cv", "active_pursuers", "position_spread_mean",
+            "position_spread_min", "position_spread_max", "post_capture_ce", "safe_full_completion",
+            "early_recovery_duration", "mission_time",
+        )
+        result: Dict[str, Any] = {"ran": True, "episodes": int(episodes), "scene": self.scenes()[0]}
+        for key in numeric_keys:
+            values = [float(row[key]) for row in records if row.get(key) is not None and np.isfinite(float(row[key]))]
+            result[key] = float(np.mean(values)) if values else None
+        result["position_finite"] = bool(all(bool(row.get("position_finite", False)) for row in records))
+        result["collision_rate"] = result["collision"]
+        result["strict_ce_success_rate"] = result["coverage_strict_success"]
+        result["episode_return_mean"] = result["episode_return"]
+        result["completion_time_mean"] = result["completion_time"]
+        result["episode_records"] = records
+        return result
+
+    @staticmethod
+    def _telemetry_summary(rows: Sequence[Mapping[str, Any]]) -> Dict[str, Any]:
+        numeric_keys = (
+            "actor_entropy", "actor_loss", "actor_grad_norm", "critic_loss",
+            "critic_grad_norm", "bellman_residual_abs_mean", "q_mean", "q_std",
+            "q_min", "q_max", "td_target_mean", "td_target_std",
+        )
+        summary: Dict[str, Any] = {"updates": int(len(rows)), "all_finite": True}
+        for key in numeric_keys:
+            values = np.asarray([float(row[key]) for row in rows if key in row and np.isfinite(float(row[key]))], dtype=float)
+            if values.size:
+                summary[f"{key}_mean"] = float(values.mean())
+                summary[f"{key}_min"] = float(values.min())
+                summary[f"{key}_max"] = float(values.max())
+            else:
+                summary[f"{key}_mean"] = None
+                summary[f"{key}_min"] = None
+                summary[f"{key}_max"] = None
+        summary["all_finite"] = bool(all(bool(row.get("finite", 0.0)) for row in rows))
+        return summary
+
+    def _formal_steps(self) -> List[int]:
+        ac = self.formal_config.get("ac", {}) or {}
+        checkpoint = ac.get("checkpoint", {}) or {}
+        steps = checkpoint.get("formal_steps")
+        if steps is None:
+            steps = (self.formal_config.get("training", {}) or {}).get("formal_steps")
+        if steps is None:
+            steps = [0, 25000, 50000, 75000, 100000]
+        return sorted({int(step) for step in steps if int(step) >= 0})
+
+    def _record_formal_point(self, step: int) -> None:
+        if self.formal_curve and int(self.formal_curve[-1]["step"]) == int(step):
+            return
+        telemetry_rows = self.telemetry[self._formal_telemetry_cursor:]
+        self._formal_telemetry_cursor = len(self.telemetry)
+        behavior_histogram = {str(index): int(self.action_counts.get(index, 0)) for index in range(9)}
+        raw_histogram = {str(index): int(self.raw_actor_action_counts.get(index, 0)) for index in range(9)}
+        behavior_counts = np.asarray(list(behavior_histogram.values()), dtype=float)
+        sampled_count = max(self.sampled_probability_count, 1)
+        replay_point = {
+            "total_size": int(len(self.replay)),
+            "class_counts": self.replay.class_counts(),
+            "sampled_rows_cumulative": int(self.sampled_rows),
+            "sampled_behavior_probability_mean": float(self.sampled_behavior_probability_sum / sampled_count) if self.sampled_probability_count else None,
+            "sampled_behavior_probability_min": None if self.sampled_probability_count == 0 else float(self.sampled_behavior_probability_min),
+            "sampled_behavior_probability_max": None if self.sampled_probability_count == 0 else float(self.sampled_behavior_probability_max),
+            "sampled_epsilon_mean": float(self.sampled_epsilon_sum / sampled_count) if self.sampled_probability_count else None,
+            "last_sampler": self.sampler_reports[-1] if self.sampler_reports else None,
+        }
+        point = {
+            "step": int(step),
+            "evaluation": self._deterministic_eval(),
+            "epsilon": float(epsilon_value(self.formal_config, step)),
+            "behavior_action_histogram_cumulative": behavior_histogram,
+            "raw_actor_policy_histogram_cumulative": raw_histogram,
+            "minimum_behavior_action_count": int(behavior_counts.min()),
+            "behavior_action_entropy_cumulative": float(
+                -(behavior_counts[behavior_counts > 0] / max(float(behavior_counts.sum()), 1.0)
+                  * np.log(behavior_counts[behavior_counts > 0] / max(float(behavior_counts.sum()), 1.0))).sum()
+            ) if behavior_counts.sum() else 0.0,
+            "telemetry": self._telemetry_summary(telemetry_rows),
+            "replay": replay_point,
+        }
+        self.formal_curve.append(point)
+        write_json(self.run_dir / "evaluations" / f"eval_step_{int(step):09d}.json", point)
+        write_json(self.run_dir / "formal_learning_curve.json", {"points": self.formal_curve})
+
     def run(self) -> Dict[str, Any]:
         self._pending_actions: Dict[int, Tuple[int, float, float, float]] = {}
         total = int(self.smoke_steps if self.smoke else self.formal_config.get("total_timesteps", 100000))
+        formal_steps = self._formal_steps()
+        if not self.smoke and 0 in formal_steps:
+            self._record_formal_point(0)
         for _ in range(total):
             scene = self.scenes()[self.scene_index % len(self.scenes())]
             self._collect_step(scene)
-            if not self.smoke and self.global_step in {25000, 50000, 75000, 100000}:
-                self._write_formal_checkpoint(self.global_step)
-                write_json(
-                    self.run_dir / "evaluations" / f"eval_step_{self.global_step:09d}.json",
-                    self._deterministic_eval(),
-                )
+            if not self.smoke and self.global_step in formal_steps:
+                if self.global_step > 0:
+                    self._write_formal_checkpoint(self.global_step)
+                self._record_formal_point(self.global_step)
+                if self.global_step >= 25000 and epsilon_value(self.formal_config, self.global_step) > 0.0 and self.action_counts.get(4, 0) == 0:
+                    raise RuntimeError("EXPLORATION_IMPLEMENTATION_FAIL: action 4 has no behavior samples")
         checkpoint_result = self._checkpoint_smoke_save_load() if self.smoke else {"formal_checkpoint_policy_ready": True}
-        eval_result = self._deterministic_eval()
+        eval_result = self.formal_curve[-1]["evaluation"] if self.formal_curve else self._deterministic_eval()
         action_hist = {str(index): int(self.action_counts.get(index, 0)) for index in range(9)}
         counts = np.asarray(list(action_hist.values()), dtype=float)
         probs = counts / max(float(counts.sum()), 1.0)
@@ -423,16 +553,27 @@ class CapabilityRunner:
             "actor_parameters_changed": target_hashes["actor"] != self.initial_hashes["actor"], "critic_parameters_changed": target_hashes["critic"] != self.initial_hashes["critic"],
             "target_parameters_updated": target_hashes["target_actor"] != self.initial_hashes["target_actor"] or target_hashes["target_critic"] != self.initial_hashes["target_critic"],
             "aw9_live": self.aw9_live, "action_counts": action_hist, "minimum_action_count": int(counts.min()), "action_entropy": entropy,
+            "raw_actor_policy_action_counts": {str(index): int(self.raw_actor_action_counts.get(index, 0)) for index in range(9)},
             "epsilon_start": float(self.epsilon_values[0]) if self.epsilon_values else None, "epsilon_end": float(self.epsilon_values[-1]) if self.epsilon_values else None,
             "replay_size": len(self.replay), "replay_class_counts": self.replay.class_counts(), "recovery_pool_size": len(self.recovery_pool),
             "scheduler_sequence": self.scheduler_sequence[: min(len(self.scheduler_sequence), 24)], "reset_source_counts": dict(self.reset_sources),
             "sampler_reports": self.sampler_reports[-20:], "telemetry_tail": self.telemetry[-20:], "episode_tail": self.episode_reports[-10:],
             "all_telemetry_finite": all(bool(item.get("finite", 0.0)) for item in self.telemetry), "checkpoint_save_load": checkpoint_result,
             "deterministic_eval": eval_result, "exploration_implementation_fail": bool(self.epsilon_values and self.epsilon_values[-1] > 0 and counts.min() == 0),
+            "formal_steps": formal_steps,
+            "formal_evaluations": self.formal_curve,
+            "strict_ce_curve": [{"step": item["step"], "value": item["evaluation"]["coverage_strict_success"]} for item in self.formal_curve],
+            "ce_rms_curve": [{"step": item["step"], "value": item["evaluation"]["coverage_ce_rms"]} for item in self.formal_curve],
+            "area_cv_curve": [{"step": item["step"], "value": item["evaluation"]["area_cv"]} for item in self.formal_curve],
+            "collision_curve": [{"step": item["step"], "value": item["evaluation"]["collision"]} for item in self.formal_curve],
+            "actor_entropy_curve": [{"step": item["step"], "value": item["telemetry"]["actor_entropy_mean"]} for item in self.formal_curve],
+            "critic_loss_curve": [{"step": item["step"], "value": item["telemetry"]["critic_loss_mean"]} for item in self.formal_curve],
+            "q_scale_curve": [{"step": item["step"], "q_mean": item["telemetry"]["q_mean_mean"], "q_std": item["telemetry"]["q_std_mean"], "q_min": item["telemetry"]["q_min_min"], "q_max": item["telemetry"]["q_max_max"]} for item in self.formal_curve],
+            "replay_growth": [{"step": item["step"], **item["replay"]} for item in self.formal_curve],
             "formal_launch_started": False,
             "resume_info": self.resume_info,
         }
-        write_json(self.run_dir / ("smoke_report.json" if self.smoke else "prep_runtime_report.json"), result)
+        write_json(self.run_dir / ("smoke_report.json" if self.smoke else "formal_report.json"), result)
         return result
 
     def _write_formal_checkpoint(self, step: int) -> None:
