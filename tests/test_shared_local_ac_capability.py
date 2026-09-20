@@ -96,6 +96,20 @@ def test_behavior_mixture_has_floor_and_normalizes() -> None:
     assert float(probs.min()) >= epsilon / 9.0 - 1e-6
 
 
+def test_all_masked_terminal_observation_stays_finite() -> None:
+    config = SharedLocalACNetworkConfig(hidden_dim=32, num_heads=4, num_layers=1)
+    actor = SharedLocalActor(config).eval()
+    critic = SharedLocalQ(config).eval()
+    terminal = observation(3)
+    terminal["masks"][:] = False
+    batch = {key: torch.as_tensor(np.stack([terminal])) for key, terminal in terminal.items()}
+    batch["masks"] = batch["masks"].bool()
+    batch["types"] = batch["types"].long()
+    assert torch.isfinite(actor.logits(batch)).all()
+    assert torch.isfinite(actor.probabilities(batch)).all()
+    assert torch.isfinite(critic(batch)).all()
+
+
 def test_shared_replay_exact_64_16_32_16() -> None:
     replay = SharedLocalReplay(1000)
     counts = {"pursuing": 64, "pre_capture_cover": 16, "post_capture_real": 32, "recovery_pure": 16}
