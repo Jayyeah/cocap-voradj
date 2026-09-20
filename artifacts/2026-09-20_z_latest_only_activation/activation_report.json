@@ -1,0 +1,80 @@
+{
+  "schema": "z05-z07-latest-only-activation-v1",
+  "recorded_at": "2026-09-20T19:38:18+0800",
+  "verdict": "LATEST_ONLY_ACTIVATED",
+  "formal_branch": "experiment/iqn-z-unified-decay-dual-curriculum-20260919",
+  "patch_branch": "fix/z-resume-latest-only-20260920",
+  "old_formal_head": "8e0ec7a95d73abacd2dcbad732c44d96bb4141fd",
+  "new_formal_head": "58baa8143f143d013e32939d3bbb17f9c60bcec4",
+  "formal_base_matched_before_patch": true,
+  "cherry_picked_commits": [
+    "a38f770de640f9a5d72b85f2a6be149444c5e5de",
+    "e2265cfc0e2732b5a5a497d2e18802ce1ce06ba6"
+  ],
+  "git_proxy": "127.0.0.1:17892",
+  "architecture": "independent_supervisors_no_dual_coordinator",
+  "source": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919",
+  "runtime": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime",
+  "durable_boundary": {
+    "z05": {
+      "stage": "stage1",
+      "step": 1200000,
+      "resume_sha256": "611594166946406d222393c1730901b355376d12841c36335282ea3d9d69b6a1",
+      "resume_bytes": 6302043859,
+      "contract_hash": "27ed1830f095ac6d2654ee7b0c771ac28140dd661d6ef52235fb4e9abbe71a71",
+      "optimizer_updates": 298705,
+      "target_update_count": 120,
+      "replay_sizes": {"pursuing": 643264, "pre_capture_cover": 92624, "post_capture_real": 1000000, "recovery_pure": 1000000},
+      "recovery_pool_size": 1000,
+      "torch_load": "PASS",
+      "quiesce": "natural_exit_at_boundary_no_term"
+    },
+    "z07": {
+      "stage": "stage1",
+      "step": 1200000,
+      "resume_sha256": "6af2a557c9b878f48e51712ffba6d54b31ce3dbd0241e75b3ac0aa5ec662c7ce",
+      "resume_bytes": 6643473875,
+      "contract_hash": "0e69e577f434546e81298e33dc8039e8d93ccde98b9f08b9f0cb2b6c4e49dcfa",
+      "optimizer_updates": 298490,
+      "target_update_count": 120,
+      "replay_sizes": {"pursuing": 783840, "pre_capture_cover": 102892, "post_capture_real": 1000000, "recovery_pure": 1000000},
+      "recovery_pool_size": 1000,
+      "torch_load": "PASS",
+      "quiesce": "term_at_boundary"
+    }
+  },
+  "historical_resume_step_files": {"before": 6, "after": 0, "resume_latest_sha_unchanged": true},
+  "training_step_loss": 0,
+  "root_filesystem": {"device": "/dev/nvme0n1p2", "mount": "/", "free_gib_final_approx": 88, "storage_on_root": true},
+  "runtime_sizes_gib": {"z05": 6.4, "z07": 6.7},
+  "tests": {
+    "t1_t8_regression": {"status": "PASS", "passed": 25},
+    "t9_continuation_equivalence": "PASS_BIT_EXACT",
+    "t10_stage_restart_integration": "PASS",
+    "t11_coordinator_relaunch_contract": "PASS",
+    "full_relevant_suite": {"status": "PASS", "passed": 30},
+    "production_z_contract_suite": {"status": "PASS", "passed": 24},
+    "production_preflight": "PASS",
+    "scientific_contract_diff": 0,
+    "non_alpha_contract_diff": 0,
+    "formal_eval_crash_safety": "PASS",
+    "final_comparison_automation": "PASS"
+  },
+  "continuity": {
+    "z05_exact_resume": "PASS",
+    "z07_exact_resume": "PASS",
+    "optimizer_replay_z_rng_continuity": "PASS",
+    "stage_continuity": "PASS",
+    "target_equal_current_closure": "PASS",
+    "auto_curriculum_ready": true,
+    "resume_loaded_note": "target==current closure intentionally uses direct full-resume global-step assertion and does not construct a new Trainer; stale pre-restart resume_loaded.json is not used as evidence"
+  },
+  "live_after_restart": {
+    "z05": {"pid": 3948961, "gpu": 0, "cuda_visible_devices": "0", "tmux": "iqn_z05_unified_decay_20260919", "stage": "stage1", "phase": "training", "heartbeat_step": 1208000, "target_step": 1300000, "status": "running"},
+    "z07": {"pid": 3948953, "gpu": 1, "cuda_visible_devices": "1", "tmux": "iqn_z07_unified_decay_20260919", "stage": "stage1", "phase": "formal_evaluation", "heartbeat_step": 1200000, "target_step": 1200000, "status": "running"}
+  },
+  "no_dual_coordinator_started": true,
+  "unrelated_live_processes_touched": false,
+  "scientific_contract_unchanged": true,
+  "final_comparison_runtime_policy": "wait_for_both_final_reports_then_use_existing_writer"
+}
