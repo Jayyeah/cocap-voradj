@@ -1,0 +1,91 @@
+{
+  "schema": "local-runtime-sync-v1",
+  "captured_at": "2026-09-21T15:59:58+08:00",
+  "classification_legend": [
+    "EXACT_RESUME_CONFIRMED",
+    "FUNCTIONAL_RESUME_NOT_BIT_EXACT",
+    "RESUME_PROVENANCE_INCOMPLETE"
+  ],
+  "lines": {
+    "AC-COV": {
+      "classification": "RESUME_PROVENANCE_INCOMPLETE",
+      "pre_interruption_latest_durable_step": null,
+      "resume_checkpoint_step": 500000,
+      "post_resume_first_observed_step": null,
+      "optimizer_step": 124813,
+      "replay_size_at_resume": null,
+      "replay_restored": false,
+      "epsilon_at_latest_formal": 0.050000000000000044,
+      "learning_rate": 0.0001,
+      "rng_restore_path": "COV loader lacks CPU normalization; formal_report says resumed=false and replay_policy=scratch",
+      "evidence": [
+        "/home/yjq/rl/CoCap1/ac-capability-cov-stage1-20260920/runs/ac_capability_cov_stage1/formal_report.json",
+        "/home/yjq/rl/CoCap1/ac-capability-cov-stage1-20260920/runs/ac_capability_cov_stage1/resume_latest/full_resume.pt",
+        "/home/yjq/rl/CoCap1/ac-capability-cov-stage1-20260920/tools/run_shared_local_ac_capability.py"
+      ],
+      "finding": "COV did not demonstrate a repaired shared-runtime resume; no live COV process exists in the snapshot."
+    },
+    "AC-CAP": {
+      "classification": "FUNCTIONAL_RESUME_NOT_BIT_EXACT",
+      "pre_interruption_latest_durable_step": 200000,
+      "resume_checkpoint_step": 200000,
+      "post_resume_first_observed_step": 300000,
+      "optimizer_step_at_latest_durable_resume": 74626,
+      "replay_size_at_resume": 0,
+      "replay_restored": false,
+      "epsilon_at_post_resume_formal": 0.2700011,
+      "learning_rate": 0.0001,
+      "rng_restore_path": "fixed loader: torch_rng.cpu() and [state.cpu() for state in cuda_rng]",
+      "evidence": [
+        "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/runs/ac_capability_cap_stage1/checkpoints/model_step_000200000.pt",
+        "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/runs/ac_capability_cap_stage1/checkpoints/model_step_000300000.pt",
+        "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/runs/ac_capability_cap_stage1/evaluations/eval_step_000300000.json",
+        "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/runs/ac_capability_cap_stage1/resume_latest/full_resume.pt",
+        "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/tools/run_shared_local_ac_capability.py"
+      ],
+      "finding": "Weights/optimizer/RNG path continued functionally; replay was intentionally absent from the resume payload and re-warmed, so this is not bit-exact."
+    },
+    "AC-MIX": {
+      "classification": "FUNCTIONAL_RESUME_NOT_BIT_EXACT",
+      "pre_interruption_latest_durable_step": 200000,
+      "resume_checkpoint_step": 200000,
+      "post_resume_first_observed_step": 200392,
+      "post_resume_first_episode_step": 200378,
+      "optimizer_step_at_resume": 49951,
+      "replay_size_at_resume": 0,
+      "replay_first_observed_after_resume": {
+        "step": 200392,
+        "size": 1568
+      },
+      "replay_restored": false,
+      "epsilon_at_resume_schedule": 0.3800011,
+      "learning_rate": 0.0001,
+      "rng_restore_path": "fixed loader: torch_rng.cpu() and [state.cpu() for state in cuda_rng]",
+      "evidence": [
+        "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1/checkpoints/model_step_000200000.pt",
+        "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1/resume_latest/full_resume.pt",
+        "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1/telemetry/replay_sizes.jsonl",
+        "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1/telemetry/batch_composition.jsonl",
+        "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/tools/run_shared_local_ac_capability.py"
+      ],
+      "finding": "Global step, optimizer step, LR and RNG restore path are functional; replay starts empty after resume and re-warms."
+    }
+  },
+  "discontinuities": [
+    {
+      "line": "AC-COV",
+      "type": "RESUME_PROVENANCE_INCOMPLETE",
+      "detail": "formal_report.resumed=false; replay_policy=scratch; no live process."
+    },
+    {
+      "line": "AC-CAP",
+      "type": "REPLAY_RESET",
+      "detail": "resume payload has no replay key; replay is not bit-exact across interruption."
+    },
+    {
+      "line": "AC-MIX",
+      "type": "REPLAY_RESET",
+      "detail": "telemetry drops from 800000 at step 200000 to 1568 at first post-resume observation 200392."
+    }
+  ]
+}
