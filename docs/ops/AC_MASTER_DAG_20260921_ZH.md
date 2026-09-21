@@ -32,8 +32,8 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | 物理 GPU | active compute | util mean / peak | min free VRAM | 温度 | 结论 |
 |---|---|---:|---:|---:|---|
-| 0 | PID 17097 / Z05 + 224643 / A0 | 4.8% / 5%（22:18 sample） | 47173 MiB | 66--70 C | A0 formal 已获 lease；IQN Z05 heartbeat 正常 |
-| 1 | PID 19555 / Z07 + 229509 / A1 | 17.4% / 29%（22:18 sample） | 47173 MiB | 77--78 C | A1 formal 已获 lease；IQN Z07 heartbeat 正常 |
+| 0 | PID 17097 / Z05 + 224643 / A0 | 13.3% / 58%（22:29 sample） | 47173 MiB | 67--68 C | A0 formal live；IQN Z05 heartbeat 正常 |
+| 1 | PID 19555 / Z07 | 10.7% / 15%（22:29 sample） | 47579 MiB | 77--78 C | A1 lease 已因 device-side assert 撤销；IQN Z07 正常 |
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
@@ -44,7 +44,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 12600，25k next |
-| A1 | FORMAL_RUNNING_100K_CAUSAL_GATE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | PID 229509 / tmux `a1_entropy_localq_formal_20260921`；0 gate初始化，向100k causal gate推进 |
+| A1 | FORMAL_ABORTED_DEVICE_ASSERT_PRE_GATE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 仅 step-0 evaluation；CUDA probability assert，先做 read-only audit/CPU repro，不得宣称科学失败 |
 | B1 | ACTIVE_CPU_BOUNDED | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
 | B2 | R0_COMPLETE_R1_GATE_PENDING | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 16 anchors/144 branches；MASTER 判断 R1，R2 仍锁定 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
@@ -85,7 +85,7 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 ## 当前自动转移
 
 1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已启动到 step 12600，0--200k 合同不变。
-2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal 100k 已启动，不能在 100k 前宣称 causal answer。
+2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal 首次运行在 step-0 actor probability 处触发 CUDA device-side assert，已撤销 lease。必须先审计实现/CPU repro，再决定 retry；不能宣称 entropy 科学结论。
 3. B2 R0 已完成：16 anchors、144 AW9 branches；D_CF_R0 全 AW9 support、0 branch transition collision、ranking gate 正；R1/R2 不自动启动。
 4. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
 5. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。

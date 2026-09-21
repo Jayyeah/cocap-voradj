@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T22:24:00+08:00",
+  "updated_at": "2026-09-21T22:31:00+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -55,13 +55,13 @@
   },
   "gpu_leases": {
     "sampling_contract": "10 samples at 1 second interval before each new GPU job and again after launch",
-    "sample_window": "2026-09-21T22:18:39+08:00/2026-09-21T22:18:49+08:00",
+    "sample_window": "2026-09-21T22:29:10+08:00/2026-09-21T22:29:19+08:00",
     "gpu0": {
       "physical_gpu": 0,
-      "avg_util_percent": 4.8,
-      "peak_util_percent": 5,
+      "avg_util_percent": 13.3,
+      "peak_util_percent": 58,
       "min_free_mib": 47173,
-      "temperature_c_range": [66, 70],
+      "temperature_c_range": [67, 68],
       "active_pids": [17097, 224643],
       "active_jobs": ["IQN-Z05", "A0"],
       "lease": "A0_FORMAL_GRANTED; IQN-Z05 PRESERVED",
@@ -69,13 +69,13 @@
     },
     "gpu1": {
       "physical_gpu": 1,
-      "avg_util_percent": 17.4,
-      "peak_util_percent": 29,
-      "min_free_mib": 47173,
+      "avg_util_percent": 10.7,
+      "peak_util_percent": 15,
+      "min_free_mib": 47579,
       "temperature_c_range": [77, 78],
-      "active_pids": [19555, 229509],
-      "active_jobs": ["IQN-Z07", "A1"],
-      "lease": "A1_FORMAL_GRANTED; IQN-Z07 PRESERVED",
+      "active_pids": [19555],
+      "active_jobs": ["IQN-Z07"],
+      "lease": "A1_FORMAL_REVOKED_AFTER_DEVICE_ASSERT; IQN-Z07 PRESERVED",
       "heartbeat": "HEALTHY_AT_RECONCILIATION"
     }
   },
@@ -112,14 +112,16 @@
       "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE"
     },
     "a1_formal": {
-      "status": "LIVE",
-      "pid": 229509,
-      "tmux": "a1_entropy_localq_formal_20260921",
+      "status": "EXITED_DEVICE_ASSERT_PRE_GATE",
+      "pid": null,
+      "last_pid": 229509,
+      "tmux": null,
       "physical_gpu": 1,
       "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-21_entropy_localq_cov/formal_20260921/ac_entropy_localq_cov_20260921",
       "current_step": 0,
-      "heartbeat": "LIVE_AT_RECONCILIATION",
-      "scientific_contract": "ACTOR_ENTROPY_ALPHA_0.05_ONLY"
+      "heartbeat": "PROCESS_EXITED_IQN_Z07_STILL_HEALTHY",
+      "scientific_contract": "ACTOR_ENTROPY_ALPHA_0.05_ONLY",
+      "failure": "CUDA device-side assert during first actor probability computation: probability tensor contained inf/nan/or negative element; only step-0 evaluation artifact exists"
     },
     "ac_mix": {
       "status": "STOPPED_AFTER_300K_FORMAL",
@@ -178,25 +180,25 @@
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "FORMAL_RUNNING_100K_CAUSAL_GATE",
+      "status": "FORMAL_ABORTED_DEVICE_ASSERT_PRE_GATE",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME", "status": "exited"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
       "gpu_required": true,
-      "gpu_lease": "GPU_LEASE_GRANTED physical_gpu=1 via CUDA_VISIBLE_DEVICES=1; pre_sample_22:16:14-22:16:23 avg=4.8% peak=13% min_free~47579MiB; post_sample_22:18:39-22:18:49 avg=17.4% peak=29% free~47173MiB; IQN-Z07 heartbeat healthy",
+      "gpu_lease": "GPU_LEASE_REVOKED_RUNTIME_FAILURE; physical_gpu=1 via CUDA_VISIBLE_DEVICES=1; device-side assert before formal step; IQN-Z07 preserved and healthy",
       "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-21_entropy_localq_cov/formal_20260921/ac_entropy_localq_cov_20260921",
-      "tmux": "a1_entropy_localq_formal_20260921",
-      "pid": 229509,
+      "tmux": null,
+      "pid": null,
       "current_step": 0,
-      "latest_formal": "0_GATE_INIT_RUNNING",
-      "result_classification": "FORMAL_RUNNING_NO_CAUSAL_RESULT",
-      "next_gate": "25K_50K_75K_100K_CAUSAL_GATE",
+      "latest_formal": "0_GATE_INIT_ONLY",
+      "result_classification": "IMPLEMENTATION_RUNTIME_FAILURE_DEVICE_ASSERT_NO_SCIENTIFIC_RESULT",
+      "next_gate": "READ_ONLY_IMPLEMENTATION_AUDIT_AND_CPU_REPRO_BEFORE_ANY_RETRY",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T22:22:00+08:00"
+      "updated_at": "2026-09-21T22:31:00+08:00"
     },
     {
       "task_id": "B1",
@@ -509,6 +511,16 @@
       "at": "2026-09-21T22:15:00+08:00",
       "event": "A3_PROPOSAL_COMPLETE_USER_GATE",
       "detail": "A3 committed the design-only proposal 377a6afd with four numeric initialization stages, unchanged Final reward, risks, budgets, and promotion/rollback gates; state stops at CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL."
+    },
+    {
+      "at": "2026-09-21T22:31:00+08:00",
+      "event": "A1_FORMAL_ABORTED_DEVICE_ASSERT_PRE_GATE",
+      "detail": "A1 PID229509 exited before formal step 25k at the first actor probability computation with CUDA device-side assert (probability tensor inf/nan/negative). Only step-0 evaluation exists; this is an implementation/runtime failure, not an entropy scientific result."
+    },
+    {
+      "at": "2026-09-21T22:31:00+08:00",
+      "event": "A1_GPU_LEASE_REVOKED_RUNTIME_FAILURE",
+      "detail": "A1 GPU1 lease revoked after process exit; GPU1 and IQN-Z07 PID19555 remained healthy in the post-failure 10-sample audit. No retry or resume was started."
     }
   ]
 }
