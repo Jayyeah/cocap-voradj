@@ -195,9 +195,11 @@ class CapabilityRunner:
         if "numpy_rng" in payload:
             np.random.set_state(payload["numpy_rng"])
         if "torch_rng" in payload:
-            torch.set_rng_state(payload["torch_rng"])
+            # The checkpoint is loaded with map_location=self.device; the
+            # default generator state must nevertheless be restored on CPU.
+            torch.set_rng_state(payload["torch_rng"].cpu())
         if "cuda_rng" in payload and torch.cuda.is_available():
-            torch.cuda.set_rng_state_all(payload["cuda_rng"])
+            torch.cuda.set_rng_state_all([state.cpu() for state in payload["cuda_rng"]])
         if "replay" in payload and payload.get("replay") is not None:
             self.replay = payload["replay"]
             self.recovery_pool = payload.get("recovery_pool") or self.recovery_pool
