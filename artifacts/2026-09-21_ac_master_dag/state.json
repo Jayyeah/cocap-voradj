@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-22T01:18:00+08:00",
+  "updated_at": "2026-09-22T01:53:20+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -67,10 +67,10 @@
       "peak_util_percent": 58,
       "min_free_mib": 47173,
       "temperature_c_range": [67, 68],
-      "active_pids": [17097, 224643],
-      "active_jobs": ["IQN-Z05", "A0"],
-      "lease": "A0_FORMAL_GRANTED; IQN-Z05 PRESERVED",
-      "heartbeat": "HEALTHY_AT_RECONCILIATION"
+      "active_pids": [17097],
+      "active_jobs": ["IQN-Z05"],
+      "lease": "A0_RELEASED_AFTER_200K_REPRO_PASS; IQN-Z05 PRESERVED",
+      "heartbeat": "HEALTHY_AT_2026-09-22T01:25:00+08:00"
     },
     "gpu1": {
       "physical_gpu": 1,
@@ -81,7 +81,7 @@
       "active_pids": [19555],
       "active_jobs": ["IQN-Z07"],
       "lease": "A1_FORMAL_RELEASED_AFTER_SELF_RUNTIME_FAILURE; IQN-Z07 PRESERVED",
-      "heartbeat": "HEALTHY_AT_2026-09-22T01:17:53+08:00",
+      "heartbeat": "HEALTHY_AT_2026-09-22T01:34:17+08:00",
       "diagnostic_presample": {
         "window": "2026-09-22T00:34:30+08:00/2026-09-22T00:34:39+08:00",
         "avg_util_percent": 15,
@@ -130,6 +130,16 @@
         "active_pids": [19555],
         "active_jobs": ["IQN-Z07"],
         "decision": "GPU_RELEASED_IQN_Z07_HEALTHY"
+      },
+      "a1_cuda_diagnostic_postsample": {
+        "window": "2026-09-22T01:34:07+08:00/2026-09-22T01:34:17+08:00",
+        "util_samples_percent": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        "avg_util_percent": 0.1,
+        "peak_util_percent": 1,
+        "min_free_mib": 47726,
+        "active_pids": [19555],
+        "active_jobs": ["IQN-Z07"],
+        "decision": "GPU_RELEASED_IQN_Z07_HEALTHY"
       }
     }
   },
@@ -156,17 +166,20 @@
       "recovery_needed": false
     },
     "a0_formal": {
-      "status": "LIVE",
-      "pid": 224643,
-      "tmux": "a0_mappo_cov_formal_20260921",
+      "status": "COMPLETE_REPRO_PASS",
+      "pid": null,
+      "tmux": null,
       "physical_gpu": 0,
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
-      "current_step": 133900,
-      "heartbeat": "LIVE_AT_RECONCILIATION",
-      "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE"
+      "current_step": 200000,
+      "heartbeat": "COMPLETED_AT_2026-09-22T01:25:00+08:00",
+      "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE",
+      "classification": "REPRO_PASS",
+      "final_artifact": "artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921/eval_step_200000.json",
+      "final_review": "artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921/review_200000.json"
     },
     "a1_formal": {
-      "status": "EXITED_RUNTIME_FAILURE",
+      "status": "ENGINEERING_BLOCKED_ROOT_CAUSE_UNRESOLVED",
       "pid": null,
       "last_pid": 317964,
       "tmux": null,
@@ -183,7 +196,12 @@
       "post_launch_sample": "gpu1 mean=16.9% peak=27% min_free=47320MiB; gpu0 mean=3.4% peak=4% min_free=45616MiB; all existing heartbeats healthy",
       "failure_log": "artifacts/2026-09-22_entropy_localq_cov/formal_20260922.stdout.log",
       "failure_point": "formal step 0 probability assertion; asynchronous stack later surfaced at actor decision_feature linear",
-      "next_action": "AQUINAS_FORMAL_WIDTH_ROOT_CAUSE_DIAGNOSTIC_WITH_CUDA_LAUNCH_BLOCKING"
+      "cuda_diagnostic_artifact": "artifacts/2026-09-22_entropy_localq_cov/A1_CUDA_FORMAL_WIDTH_ROOT_CAUSE_20260922.json",
+      "final_audit_artifact": "artifacts/2026-09-22_entropy_localq_cov/A1_FORMAL_WIDTH_ROOT_CAUSE_AUDIT_20260922.json",
+      "exact_sequence_cpu": "PASS: gate_eval(0) 3000 steps -> collect_step global_step=1",
+      "exact_sequence_cuda": "PASS: CUDA_LAUNCH_BLOCKING=1, gate_eval(0) 3000 steps -> collect_step global_step=1",
+      "runner_smoke": "INITIAL_GATE_ARTIFACT_WRITTEN; 1-step real runner timed out at 120s during second deterministic_eval; no CUDA traceback",
+      "next_action": "RETAIN_ENGINEERING_BLOCKER; NO_FORMAL_RETRY_OR_A2_UNLOCK_WITHOUT_NEW_EVIDENCE"
     },
     "ac_mix": {
       "status": "STOPPED_AFTER_300K_FORMAL",
@@ -219,34 +237,34 @@
     {
       "task_id": "A0",
       "task_name": "MAPPO-COV-REPRO",
-      "status": "ENGINEERING_BLOCKED_FORMAL_WIDTH_CUDA_ASSERT",
+      "status": "REPRO_PASS",
       "dependencies": [],
       "branch": "experiment/ac-mappo-cov-repro-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921",
-      "child_agent": {"agent_id": "01a0c461-34a1-74c0-91e8-2edb550847c6", "nickname": "Aquinas", "role": "A1_FORMAL_WIDTH_ROOT_CAUSE_AUDIT"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME_COMPLETE"},
       "scientific_question": "Can historical corrected Scratch MAPPO Pure-Coverage success be reproduced under the current repository/environment?",
       "allowed_changes": "Exact reproduction implementation, tests, configs, isolated run artifacts; no entropy/reward/spawn/curriculum/BC changes.",
       "forbidden_changes": "IQN runtime or contract; central DAG/state; other worktrees; extra long runs; nested agents.",
       "gpu_required": true,
-      "gpu_lease": "GPU_LEASE_GRANTED physical_gpu=0; pre_sample_22:08:22-22:08:31 avg~0.2% peak1% min_free~48327MiB; post_sample_22:11:33-22:11:42 avg~3.4% peak4% free~47955MiB; IQN-Z05 heartbeat healthy",
+      "gpu_lease": "RELEASED_AFTER_200K_REPRO_PASS physical_gpu=0; IQN-Z05 preserved and healthy",
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
-      "tmux": "a0_mappo_cov_formal_20260921",
-      "pid": 224643,
-      "current_step": 175000,
-      "latest_formal": "175K_CHECKPOINT_COMPLETE_CONTINUE_200K",
-      "result_classification": "REPRO_LEARNABLE_EARLY_SIGNAL_PENDING_FULL_200K",
-      "next_gate": "MONITOR_200K_FORMAL_FINAL",
+      "tmux": null,
+      "pid": null,
+      "current_step": 200000,
+      "latest_formal": "200K_FORMAL_EVAL_COMPLETE",
+      "result_classification": "REPRO_PASS",
+      "next_gate": "A1_VALID_FORMAL_SCIENCE_GATE; A2 REMAINS LOCKED",
       "user_approval_required": false,
       "updated_at": "2026-09-22T01:10:50+08:00"
     },
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "FORMAL_RUNNING",
+      "status": "ENGINEERING_BLOCKED_UNREPRODUCED_FORMAL_ASSERT",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "A1_EXACT_AUDIT_COMPLETE_NO_REPRODUCTION"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
@@ -256,9 +274,9 @@
       "tmux": null,
       "pid": null,
       "current_step": 0,
-      "latest_formal": "FORMAL_STEP0_WIDTH_ASSERT_EXITED",
-      "result_classification": "ENGINEERING_BLOCKER_FORMAL_WIDTH_PROBABILITY_ASSERT_NOT_SCIENTIFIC_RESULT",
-      "next_gate": "ROOT_CAUSE_IDENTIFIED_THEN_MINIMAL_FIX_CPU_CUDA_SMOKE_BEFORE_FORMAL_RETRY",
+      "latest_formal": "EXACT_GATE_SEQUENCE_CPU_CUDA_PASS_RUNNER_SMOKE_TIMEOUT",
+      "result_classification": "ENGINEERING_BLOCKER_UNREPRODUCED_FORMAL_CUDA_ASSERT_NO_SCIENTIFIC_RESULT",
+      "next_gate": "NO_FORMAL_RETRY_OR_A2_UNLOCK_WITHOUT_NEW_ENGINEERING_EVIDENCE",
       "user_approval_required": false,
       "updated_at": "2026-09-22T01:18:00+08:00"
     },
@@ -281,7 +299,7 @@
       "current_step": "COMPLETE_HANDOFF",
       "latest_formal": "BOUNDED_COLLECTION_COMPLETE",
       "result_classification": "SUPPORT_EXPANSION_WITH_PHASE_DEPENDENT_RANKING_NO_GLOBAL_STABILITY",
-      "next_gate": "WAIT_B2_R0_FULL_THEN_B3_RANKING_GATE",
+      "next_gate": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC; RETAIN B1 HANDOFF",
       "user_approval_required": false,
       "updated_at": "2026-09-22T00:09:09+08:00"
     },
@@ -327,7 +345,7 @@
       "current_step": 1,
       "latest_formal": "FORMAL_NOT_STARTED",
       "result_classification": "PREFLIGHT_PASS_FORMAL_LOCKED",
-      "next_gate": "MASTER_REVIEW_A0_A1_GATES_BEFORE_FORMAL_100K",
+      "next_gate": "A0_REPRO_PASS; WAIT_A1_VALID_FORMAL_SCIENCE_RESULT",
       "user_approval_required": false,
       "updated_at": "2026-09-21T22:12:00+08:00"
     },
@@ -683,6 +701,26 @@
       "at": "2026-09-22T01:22:05+08:00",
       "event": "MASTER_REMOTE_SYNC_PENDING_SAFETY_REVIEW",
       "detail": "Local MASTER commit 6d86bb7 is ahead of origin fb000a2. The explicit mihomo 127.0.0.1:17892 push was rejected by safety review for sensitive central-DAG payload; MASTER did not retry via a workaround. Normal pushes remain allowed, but this blocked upload is temporarily left pending."
+    },
+    {
+      "at": "2026-09-22T01:27:13+08:00",
+      "event": "A0_REPRO_PASS_200K_COMPLETE",
+      "detail": "A0 exact corrected Scratch MAPPO Pure-Coverage completed the registered 200k contract. Final 20-episode evaluation: argmax strict CE 20/20, sample strict CE 20/20, both collision 0. Argmax CE RMS mean 0.020757, area CV mean 0.048594, time-to-CE mean/p50/p90 83.35/45.75/157.35; sample CE RMS 0.024586, area CV 0.067607, time-to-CE 48.75/42.5/75.85. Classification REPRO_PASS; GPU0 released."
+    },
+    {
+      "at": "2026-09-22T01:36:36+08:00",
+      "event": "A1_FORMAL_WIDTH_CUDA_DIAGNOSTIC_PASS_UNRESOLVED",
+      "detail": "A1 formal-width CUDA staged audit (CUDA_LAUNCH_BLOCKING=1) passed all 34 checks in 1.5988s, including encoder, attention, fusion, logits, softmax, behavior mixture, multinomial, squeeze and index validation. No invalid tensor was found; production _gate_evaluation(0) before _collect_step() remains the only sequence difference. No production fix or formal retry is justified."
+    },
+    {
+      "at": "2026-09-22T01:42:25+08:00",
+      "event": "A1_EXACT_SEQUENCE_CHILD_INCOMPLETE_MASTER_TAKES_BOUNDED_AUDIT",
+      "detail": "Aquinas did not implement the exact _gate_evaluation(0) -> _collect_step() extension before interruption; no new GPU lease or formal run started. MASTER takes over one bounded CPU exact-sequence diagnostic, preserving all A1 scientific restrictions."
+    },
+    {
+      "at": "2026-09-22T01:53:20+08:00",
+      "event": "A1_EXACT_SEQUENCE_PASS_RUNNER_SMOKE_TIMEOUT",
+      "detail": "MASTER bounded exact sequence passed on CPU and GPU1 with CUDA_LAUNCH_BLOCKING=1: _gate_evaluation(0) completed 3000 deterministic steps, then _collect_step() reached global_step=1. A real runner 1-step bounded smoke wrote the initial eval artifact but timed out at 120s during its second deterministic evaluation; no new CUDA traceback. A1 remains engineering-blocked with no scientific result; no formal retry or A2 unlock."
     }
   ]
 }

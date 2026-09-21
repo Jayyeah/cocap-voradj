@@ -32,7 +32,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | 物理 GPU | active compute | util mean / peak | min free VRAM | 温度 | 结论 |
 |---|---|---:|---:|---:|---|
-| 0 | PID 17097 / Z05 + 224643 / A0 | 13.3% / 58%（22:29 sample） | 47173 MiB | 67--68 C | A0 formal live；IQN Z05 heartbeat 正常 |
+| 0 | PID 17097 / Z05 | A0 完成后释放；当前 IQN-only | 45616 MiB observed | 65--67 C | A0 200k `REPRO_PASS`；IQN Z05 heartbeat 正常 |
 | 1 | PID 19555 / Z07 + 317964 / A1 | pre 9.1% / 15%；post 16.9% / 27% | pre 47726；post 47320 MiB | 77--79 C | A1 CUDA smoke 32/32 通过，formal live；IQN Z07 正常 |
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
@@ -43,8 +43,8 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 175000；150k argmax/sample 均 20/20、无 collision；继续 200k |
-| A1 | ENGINEERING_BLOCKED_FORMAL_WIDTH_CUDA_ASSERT | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | fresh formal PID 317964 已在 step0 退出；formal-width probability assert 已复现，不能作为科学失败；GPU1 已释放且 IQN Z07 正常；下一步 bounded `CUDA_LAUNCH_BLOCKING=1` root-cause audit，之后才可最小修复/重做 CPU-CUDA smoke |
+| A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；A1 valid science gate 后才审 A2 |
+| A1 | ENGINEERING_BLOCKED_UNREPRODUCED_FORMAL_ASSERT | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | fresh formal PID 317964 的 step0 assert 已在 CPU/GPU exact sequence diagnostic 中均未重现；真实 runner 1-step smoke 只因第二次 deterministic eval 超时；无有效科学结果，不重启 formal、不解锁 A2 |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
@@ -84,8 +84,8 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 175000。150k argmax/sample strict CE 均为 20/20、无 collision，说明当前 MAPPO Coverage 可学；仍必须跑满注册的 200k reproduction contract。
-2. A1 test-only harness 修复、CPU 7项回归与缩小 smoke 均通过（32/32 steps、finite、checkpoint save/load pass），但 fresh formal-width run 在 step0 重现 production CUDA probability assert 并退出；这仍是 engineering blocker，不是 entropy 科学结论。当前只允许 bounded formal-width root-cause audit，未解锁 A2。
+1. A0 CPU preflight、fresh-output CUDA smoke 与 200k formal 均已完成；最终 argmax/sample strict CE 均 20/20、collision 0，分类 `REPRO_PASS`。这证明当前 MAPPO Coverage 可学；A2 仍等待 A1 有效科学 gate。
+2. A1 test-only harness 修复、CPU 7项回归与缩小 smoke 均通过（32/32 steps、finite、checkpoint save/load pass）。fresh formal-width run 曾在 step0 报 production CUDA probability assert，但随后 CPU/GPU exact `_gate_evaluation(0) → _collect_step()` 均通过；真实 runner 1-step smoke 仅因第二次 deterministic eval 在 120s 内未完成。结论仍是 engineering blocker、没有 entropy 科学结果；不重启 formal、不解锁 A2。
 3. B1 handoff 已完成：epsilon 0.05/0.10 扩展到全 AW9 support，但 overall ranking 未改善，B3 选择仍锁定。
 4. B2-R0-FULL 已完成 128 anchors/1152 AW9 branches；MASTER 已完成 B3 ranking gate，结论 `NO_RANKING_QUALIFIED_CRITIC`，因此 B4 不启动，R1 不自动解锁。
 5. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
@@ -121,12 +121,24 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - 根因分类：原始 CUDA device-side assert 在 bounded diagnostic 中未复现；真实 logits/softmax/behavior mixture/`torch.multinomial` 路径均通过。失败点是 test-only harness 把合法 raw `(B,1)` 输出误判为必须 `(B,)`；已做最小 test-only squeeze/range 修复，未改 actor、critic、entropy alpha、replay、reward、epsilon、LR、环境或 observation。
 - CPU regression：7 tests passed，clean harness PASS。CUDA smoke：physical GPU1、32/32 steps、telemetry 全 finite、checkpoint save/load PASS、3.63s；没有 formal/resume 科学结论。
 - formal lease：pre-sample `01:01:29--01:01:39`，GPU1 util mean/peak `9.1%/15%`、free VRAM `47726 MiB`；post-sample `01:08:44--01:08:54`，GPU1 `16.9%/27%`、free `47320 MiB`，GPU0 `3.4%/4%`、free `45616 MiB`。IQN Z05 PID `17097`、Z07 PID `19555` 与 A0 PID `224643` 全部保持 heartbeat。
-- A1 formal 当前：branch `experiment/ac-entropy-cov-20260921`，HEAD `dc14560e1f2761ee92e36ee8ce769fe0caa8eb11`，PID `317964`，tmux `a1_entropy_localq_cov_formal_20260922`，physical GPU1 / logical `cuda:0`，run `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-22_entropy_localq_cov/ac_entropy_localq_cov_20260922`，预算 `300000`，下一正式 milestone `25k`。
-- A0 当前已到 `175000/200000`；150k argmax/sample strict CE 均 `20/20`，collision `0`；argmax CE RMS/area CV `0.024722/0.051225`，sample `0.025452/0.056678`。继续跑满 200k。
+- A1 formal 启动时记录：branch `experiment/ac-entropy-cov-20260921`，HEAD `dc14560e1f2761ee92e36ee8ce769fe0caa8eb11`，PID `317964`，tmux `a1_entropy_localq_cov_formal_20260922`，physical GPU1 / logical `cuda:0`，run `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-22_entropy_localq_cov/ac_entropy_localq_cov_20260922`，预算 `300000`；随后在 step0 engineering failure 退出。
+- A0 当时已到 `175000/200000`；150k argmax/sample strict CE 均 `20/20`，collision `0`；argmax CE RMS/area CV `0.024722/0.051225`，sample `0.025452/0.056678`，随后继续并完成 200k `REPRO_PASS`。
 
 ## A1 formal-width failure handoff（2026-09-22 01:18）
 
 - Fresh A1 formal 使用同一 entropy-only 合同、300k budget、physical GPU1，PID `317964` / tmux `a1_entropy_localq_cov_formal_20260922`；仅完成 step-0 initial evaluation 后退出，未产生任何有效 formal scientific result。
 - 日志显示 formal-width production forward 重现 `probability tensor contains either inf, nan or element < 0` 的 CUDA assert；由于未设置 `CUDA_LAUNCH_BLOCKING=1`，stack 后续显现在 actor `decision_feature` 的 linear/CUBLAS 调用。该结果确认 formal-width engineering blocker，不能标为 `ENTROPY_CONTROL_FAILED` 或 `ENTROPY_NOT_SUFFICIENT`。
 - GPU1 已释放；退出后 10×1 秒审计 util mean/peak `10%/15%`、free VRAM `47726 MiB`，IQN-Z07 PID `19555` 全程健康。A0、IQN Z05/Z07 未受影响。
-- 当前唯一下一步：Aquinas bounded `CUDA_LAUNCH_BLOCKING=1` formal-width diagnostic，定位 first invalid tensor/index/probability，并做 CPU-vs-CUDA divergence audit。未启动 formal retry，未解锁 A2；A2 仍需 A1 完成有效科学测试后确认 `ENTROPY_NOT_SUFFICIENT`。
+- 当时下一步是 Aquinas bounded `CUDA_LAUNCH_BLOCKING=1` formal-width diagnostic；该 diagnostic 后续已完成并通过，但 root cause 仍未复现。未启动 formal retry，未解锁 A2；A2 仍需 A1 完成有效科学测试后确认 `ENTROPY_NOT_SUFFICIENT`。
+
+## A0 final reproduction handoff（2026-09-22 01:27）
+
+- A0 已自然完成 `200000/200000` exact corrected Scratch MAPPO Pure-Coverage contract；PID/tmux 已结束，physical GPU0 released，IQN-Z05 保持正常。
+- final 20-episode evaluation：argmax strict CE `20/20`、sample strict CE `20/20`，两者 collision `0`；argmax CE RMS mean/p50/p90 `0.020757/0.021022/0.0338117`，area CV `0.048594/0.035882/0.100254`，time-to-CE `83.35/45.75/157.35`；sample CE RMS `0.024586/0.021842/0.034675`，area CV `0.067607/0.053551/0.106792`，time-to-CE `48.75/42.5/75.85`。
+- classification：`REPRO_PASS`。A0 提供了当前 MAPPO Coverage 可学证据，但 A2 仍不能仅凭 A1 formal engineering crash 解锁；必须先完成有效 entropy-only formal 科学测试并得到 `ENTROPY_NOT_SUFFICIENT`。
+
+## A1 exact sequence closeout（2026-09-22 01:53）
+
+- MASTER 直接执行了与 production 相同顺序的 bounded exact diagnostic：`_gate_evaluation(0)` 先完成 3000 deterministic steps，再 `_collect_step()` 到 `global_step=1`。CPU PASS；GPU1 + `CUDA_LAUNCH_BLOCKING=1` 也 PASS，alpha `0.05`，无 invalid tensor/probability/index。
+- 真实 runner 1-step smoke 只生成了初始 `eval_step_000000000.json`，在 120 秒上限内因末尾第二次 deterministic evaluation 未完成而 timeout；没有新的 CUDA traceback。该 timeout 不是科学结果，也不证明 formal 已修复。
+- 最终分类：`ENGINEERING_BLOCKED_UNREPRODUCED_FORMAL_ASSERT`。原 PID `317964` 的 formal-width assert 仍保留为 engineering evidence，但没有可复现 root cause，也没有合理最小 production fix；A1 不重启 formal，A2 不解锁。
