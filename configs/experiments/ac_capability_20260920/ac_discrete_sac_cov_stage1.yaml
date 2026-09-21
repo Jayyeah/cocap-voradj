@@ -1,0 +1,50 @@
+extends: ac_capability_cov_stage1.yaml
+
+seed: 2026092202
+run_name: ac_discrete_sac_cov_stage1
+
+ac:
+  learner: categorical_discrete_sac_aw9
+  actor_lr: 0.0001
+  critic_lr: 0.0001
+  alpha_lr: 0.0001
+  alpha_init: 0.2
+  target_entropy: null
+  gamma: 0.99
+  tau: 0.005
+  adam_eps: 1.0e-8
+  batch_size: 128
+  min_replay_size: 3000
+  train_freq: 4
+  max_grad_norm: 0.5
+  replay_capacity: 1000000
+  checkpoint:
+    model_interval_steps: 25000
+    keep_history: true
+    historical_model_only: true
+    formal_steps: [25000, 50000, 75000, 100000]
+  resume:
+    latest_only: true
+    atomic: true
+    save_replay: false
+    save_optimizer: true
+    save_rng: true
+  evaluation:
+    interval_steps: 25000
+    episodes: 20
+    deterministic: true
+    save_trajectories: false
+    save_gifs: false
+    artifact_policy: fixed_small_summary_only
+
+total_timesteps: 100000
+output_root: runs
+
+experiment_metadata:
+  capability_baseline: exact_categorical_aw9_sac
+  training_start: scratch_actor_twin_critic
+  stage: stage1_4p1e1obs_pure_coverage
+  formal_budget: 100000
+  positive_signal_extension_budget: 300000
+  causal_interpretation: parallel_capability_experiment_not_entropy_failure_proof
+  forbidden_warm_starts: BC_actor_IQN_encoder_AC_audit_LQ
