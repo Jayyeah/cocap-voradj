@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本轮 reconciliation base HEAD `f682c78`，基于 `ops/training-performance-sync-20260921`。`origin/ops/ac-master-dag-20260921` 为 `7238ffa`，两者不一致；后续同步轮次最多两次，并必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`，当前已同步 HEAD `fb000a2`，基于 `ops/training-performance-sync-20260921`。`origin/ops/ac-master-dag-20260921` 已与本地一致；后续正常提交/push不限轮次，只有单次上传阻塞时最多尝试两次，并且每次必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -33,7 +33,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | 物理 GPU | active compute | util mean / peak | min free VRAM | 温度 | 结论 |
 |---|---|---:|---:|---:|---|
 | 0 | PID 17097 / Z05 + 224643 / A0 | 13.3% / 58%（22:29 sample） | 47173 MiB | 67--68 C | A0 formal live；IQN Z05 heartbeat 正常 |
-| 1 | PID 19555 / Z07 | 10.7% / 15%（22:29 sample） | 47579 MiB | 77--78 C | A1 lease 已因 device-side assert 撤销；IQN Z07 正常 |
+| 1 | PID 19555 / Z07 + 317964 / A1 | pre 9.1% / 15%；post 16.9% / 27% | pre 47726；post 47320 MiB | 77--79 C | A1 CUDA smoke 32/32 通过，formal live；IQN Z07 正常 |
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
@@ -43,8 +43,8 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 133900；100k argmax/sample 均 20/20；继续 200k |
-| A1 | AWAITING_CUDA_SMOKE_LEASE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | diagnostic forward path PASS；harness shape check 最小修复待 smoke；下一步 fresh GPU1 lease，之后直接 formal |
+| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 175000；150k argmax/sample 均 20/20、无 collision；继续 200k |
+| A1 | ENGINEERING_BLOCKED_FORMAL_WIDTH_CUDA_ASSERT | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | fresh formal PID 317964 已在 step0 退出；formal-width probability assert 已复现，不能作为科学失败；GPU1 已释放且 IQN Z07 正常；下一步 bounded `CUDA_LAUNCH_BLOCKING=1` root-cause audit，之后才可最小修复/重做 CPU-CUDA smoke |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
@@ -55,7 +55,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
 
-第一波最多四个 child：A0、A1、B1、B2。A0/A1 formal 现在由 MASTER 直接持有已审计的 tmux/PID/GPU lease；B1 仍 bounded CPU，A2/A3 已完成并释放 child slot。A3 已停在用户审核 gate，不得自动实现或训练。
+第一波最多四个 child：A0、A1、B1、B2。A0/A1 formal 现在由 MASTER 直接持有已审计的 tmux/PID/GPU lease；B1/B2 已完成并释放 child slot，A2/A3 已完成 preflight/design。A3 已停在用户审核 gate，不得自动实现或训练。
 
 ## Child handoff contract
 
@@ -84,13 +84,13 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 133900。100k argmax/sample strict CE 均为 20/20、无 collision，说明当前 MAPPO Coverage 可学；仍必须跑满注册的 200k reproduction contract。
-2. A1 diagnostic 已完成：真实 CUDA forward/sample path 通过，失败仅是 harness 的 `(B,1)` shape 断言。当前等待最小 test-only 修复后的 fresh GPU1 CUDA smoke lease；smoke 通过后直接按 entropy-only 合同重启 formal。
+1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 175000。150k argmax/sample strict CE 均为 20/20、无 collision，说明当前 MAPPO Coverage 可学；仍必须跑满注册的 200k reproduction contract。
+2. A1 test-only harness 修复、CPU 7项回归与缩小 smoke 均通过（32/32 steps、finite、checkpoint save/load pass），但 fresh formal-width run 在 step0 重现 production CUDA probability assert 并退出；这仍是 engineering blocker，不是 entropy 科学结论。当前只允许 bounded formal-width root-cause audit，未解锁 A2。
 3. B1 handoff 已完成：epsilon 0.05/0.10 扩展到全 AW9 support，但 overall ranking 未改善，B3 选择仍锁定。
-4. B2 preliminary R0 只有 16 anchors/144 AW9 branches；因样本过小不得解锁 R1。当前由 Carson 扩展 B2-R0-FULL，保持 one-step AW9→BC continuation 定义不变。
+4. B2-R0-FULL 已完成 128 anchors/1152 AW9 branches；MASTER 已完成 B3 ranking gate，结论 `NO_RANKING_QUALIFIED_CRITIC`，因此 B4 不启动，R1 不自动解锁。
 5. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
 6. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
-7. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
+7. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。A1 CUDA smoke 通过不是科学结果。
 8. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
 
 ## 2026-09-22 00:09 reconciliation handoff
@@ -115,3 +115,18 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - B2-R0-FULL：128 anchors，四个 phase 各 32；1152 AW9 branches；D_CF_R0 183728 rows；alternative top-1 `0.7734375`，mean best-minus-BC `13.2970`。
 - B2 仍不是 learned critic：raw `Q^BC(s,a)` 仅作 direct simulator ranking diagnostic。D_CF successful-state fraction 为 `0`，27/1152 branches collision；state support 虽 unique ratio `6.2718`，nearest-D_BC p90 `0.1822` 且 100% 在 radius `0.75` 内，说明 off-BC state 扩展仍有限。
 - B3 已统一比较 historical naive/B1 LocalQ candidates。B1 BC-only：top1 `0.1719`、Spearman `0.1536`、regret `15.0065`；epsilon=.05/.10 均使主要 global ranking 指标退化。结论：`NO_RANKING_QUALIFIED_CRITIC`，B4 不启动。
+
+## A1 修复、smoke 与 formal handoff（2026-09-22 01:10）
+
+- 根因分类：原始 CUDA device-side assert 在 bounded diagnostic 中未复现；真实 logits/softmax/behavior mixture/`torch.multinomial` 路径均通过。失败点是 test-only harness 把合法 raw `(B,1)` 输出误判为必须 `(B,)`；已做最小 test-only squeeze/range 修复，未改 actor、critic、entropy alpha、replay、reward、epsilon、LR、环境或 observation。
+- CPU regression：7 tests passed，clean harness PASS。CUDA smoke：physical GPU1、32/32 steps、telemetry 全 finite、checkpoint save/load PASS、3.63s；没有 formal/resume 科学结论。
+- formal lease：pre-sample `01:01:29--01:01:39`，GPU1 util mean/peak `9.1%/15%`、free VRAM `47726 MiB`；post-sample `01:08:44--01:08:54`，GPU1 `16.9%/27%`、free `47320 MiB`，GPU0 `3.4%/4%`、free `45616 MiB`。IQN Z05 PID `17097`、Z07 PID `19555` 与 A0 PID `224643` 全部保持 heartbeat。
+- A1 formal 当前：branch `experiment/ac-entropy-cov-20260921`，HEAD `dc14560e1f2761ee92e36ee8ce769fe0caa8eb11`，PID `317964`，tmux `a1_entropy_localq_cov_formal_20260922`，physical GPU1 / logical `cuda:0`，run `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-22_entropy_localq_cov/ac_entropy_localq_cov_20260922`，预算 `300000`，下一正式 milestone `25k`。
+- A0 当前已到 `175000/200000`；150k argmax/sample strict CE 均 `20/20`，collision `0`；argmax CE RMS/area CV `0.024722/0.051225`，sample `0.025452/0.056678`。继续跑满 200k。
+
+## A1 formal-width failure handoff（2026-09-22 01:18）
+
+- Fresh A1 formal 使用同一 entropy-only 合同、300k budget、physical GPU1，PID `317964` / tmux `a1_entropy_localq_cov_formal_20260922`；仅完成 step-0 initial evaluation 后退出，未产生任何有效 formal scientific result。
+- 日志显示 formal-width production forward 重现 `probability tensor contains either inf, nan or element < 0` 的 CUDA assert；由于未设置 `CUDA_LAUNCH_BLOCKING=1`，stack 后续显现在 actor `decision_feature` 的 linear/CUBLAS 调用。该结果确认 formal-width engineering blocker，不能标为 `ENTROPY_CONTROL_FAILED` 或 `ENTROPY_NOT_SUFFICIENT`。
+- GPU1 已释放；退出后 10×1 秒审计 util mean/peak `10%/15%`、free VRAM `47726 MiB`，IQN-Z07 PID `19555` 全程健康。A0、IQN Z05/Z07 未受影响。
+- 当前唯一下一步：Aquinas bounded `CUDA_LAUNCH_BLOCKING=1` formal-width diagnostic，定位 first invalid tensor/index/probability，并做 CPU-vs-CUDA divergence audit。未启动 formal retry，未解锁 A2；A2 仍需 A1 完成有效科学测试后确认 `ENTROPY_NOT_SUFFICIENT`。
