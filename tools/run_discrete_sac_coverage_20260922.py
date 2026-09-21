@@ -77,6 +77,16 @@ class DiscreteSACCoverageRunner:
         self.device = str(self.config.get("device", "cuda:0"))
         if self.device.startswith("cuda") and not torch.cuda.is_available():
             self.device = "cpu"
+        if self.device.startswith("cuda"):
+            # Engineering-only numerical guard for this CUDA/PyTorch build.
+            # The SAC equations, optimizer values, observations, and reward are unchanged.
+            torch.set_float32_matmul_precision("high")
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
+            torch.backends.cuda.enable_flash_sdp(False)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)
+            torch.backends.cuda.enable_math_sdp(True)
+            torch.backends.mha.set_fastpath_enabled(False)
         self.output_root = Path(output_root or self.config.get("output_root", "runs"))
         self.run_name = str(self.config.get("run_name", self.config_path.stem))
         self.run_dir = self.output_root / self.run_name

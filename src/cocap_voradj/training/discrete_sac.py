@@ -171,11 +171,65 @@ class DiscreteSACTrainer:
             return float(torch.sqrt(torch.stack(values).sum()).detach()) if values else 0.0
         return float(torch.nn.utils.clip_grad_norm_(parameters, float(self.config.max_grad_norm)))
 
+    @staticmethod
+    def _assert_finite_tensor(name: str, value: torch.Tensor) -> None:
+        if not bool(torch.isfinite(value).all()):
+            finite = value[torch.isfinite(value)]
+            finite_max = float(finite.abs().max().detach().cpu()) if finite.numel() else None
+            raise FloatingPointError(
+                f"discrete SAC non-finite tensor at {name}: shape={tuple(value.shape)} "
+                f"finite_count={int(finite.numel())}/{value.numel()} finite_max_abs={finite_max}"
+            )
+
+    @staticmethod
+    def _assert_finite_module(name: str, module: nn.Module) -> None:
+        for parameter_name, parameter in module.named_parameters():
+            if not bool(torch.isfinite(parameter).all()):
+                raise FloatingPointError(
+                    f"discrete SAC non-finite parameter at {name}.{parameter_name}: shape={tuple(parameter.shape)}"
+                )
+
+    @staticmethod
+    def _mapping_summary(mapping: Mapping[str, torch.Tensor]) -> dict[str, dict[str, Any]]:
+        summary: dict[str, dict[str, Any]] = {}
+        for key, value in mapping.items():
+            numeric = value.float()
+            finite = torch.isfinite(numeric)
+            finite_values = numeric[finite]
+            summary[str(key)] = {
+                "shape": list(numeric.shape),
+                "finite": bool(finite.all()),
+                "finite_count": int(finite_values.numel()),
+                "max_abs": float(finite_values.abs().max().detach().cpu()) if finite_values.numel() else None,
+            }
+        return summary
+
     def update(self, batch: Mapping[str, Any]) -> dict[str, float]:
         obs, next_obs, actions, rewards, terminated = self._batch_tensors(batch)
+        for name, mapping in (("obs", obs), ("next_obs", next_obs)):
+            for key, value in mapping.items():
+                self._assert_finite_tensor(f"batch.{name}.{key}", value.float())
+        self._assert_finite_tensor("batch.rewards", rewards)
         with torch.no_grad():
-            target_value = self.target_value(next_obs)
+            policy_logits = self.actor.logits(next_obs)
+            q1_target = self.target_critic1(next_obs)
+            q2_target = self.target_critic2(next_obs)
+            try:
+                self._assert_finite_tensor("target_policy_logits", policy_logits)
+            except FloatingPointError as error:
+                raise FloatingPointError(
+                    f"{error}; next_obs={self._mapping_summary(next_obs)}"
+                ) from error
+            self._assert_finite_tensor("target_q1", q1_target)
+            self._assert_finite_tensor("target_q2", q2_target)
+            target_log_pi = F.log_softmax(policy_logits, dim=-1)
+            target_pi = target_log_pi.exp()
+            self._assert_finite_tensor("target_log_pi", target_log_pi)
+            self._assert_finite_tensor("target_pi", target_pi)
+            target_value = categorical_target_value(policy_logits, q1_target, q2_target, self.alpha.detach())
+            self._assert_finite_tensor("target_value", target_value)
             td_target = rewards + float(self.config.gamma) * (~terminated).to(rewards.dtype) * target_value
+            self._assert_finite_tensor("td_target", td_target)
 
         q1_all = self.critic1(obs)
         q2_all = self.critic2(obs)
@@ -185,7 +239,11 @@ class DiscreteSACTrainer:
         self.critic_optimizer.zero_grad(set_to_none=True)
         critic_loss.backward()
         critic_grad_norm = self._clip([*self.critic1.parameters(), *self.critic2.parameters()])
+        if not np.isfinite(critic_grad_norm):
+            raise FloatingPointError(f"discrete SAC non-finite critic gradient norm: {critic_grad_norm}")
         self.critic_optimizer.step()
+        self._assert_finite_module("critic1_after_step", self.critic1)
+        self._assert_finite_module("critic2_after_step", self.critic2)
 
         for parameter in [*self.critic1.parameters(), *self.critic2.parameters()]:
             parameter.requires_grad_(False)
@@ -197,7 +255,11 @@ class DiscreteSACTrainer:
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
         actor_grad_norm = self._clip(list(self.actor.parameters()))
+        if not np.isfinite(actor_grad_norm):
+            raise FloatingPointError(f"discrete SAC non-finite actor gradient norm: {actor_grad_norm}")
         self.actor_optimizer.step()
+        self._assert_finite_module("actor_after_step", self.actor)
+        self._assert_finite_tensor("actor_logits_after_step", self.actor.logits(obs))
         for parameter in [*self.critic1.parameters(), *self.critic2.parameters()]:
             parameter.requires_grad_(True)
 
@@ -206,7 +268,10 @@ class DiscreteSACTrainer:
         self.alpha_optimizer.zero_grad(set_to_none=True)
         alpha_loss.backward()
         alpha_grad_norm = self._clip([self.log_alpha])
+        if not np.isfinite(alpha_grad_norm):
+            raise FloatingPointError(f"discrete SAC non-finite alpha gradient norm: {alpha_grad_norm}")
         self.alpha_optimizer.step()
+        self._assert_finite_tensor("log_alpha_after_step", self.log_alpha)
 
         self.soft_update(self.critic1, self.target_critic1, self.config.tau)
         self.soft_update(self.critic2, self.target_critic2, self.config.tau)
