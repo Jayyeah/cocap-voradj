@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T21:45:00+08:00",
+  "updated_at": "2026-09-21T22:15:00+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -133,25 +133,25 @@
     {
       "task_id": "A0",
       "task_name": "MAPPO-COV-REPRO",
-      "status": "CUDA_SMOKE_FAILED_FRESH_OUTPUT",
+      "status": "FORMAL_RUNNING",
       "dependencies": [],
       "branch": "experiment/ac-mappo-cov-repro-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921",
-      "child_agent": {"agent_id": "01a0c432-3daa-75a0-aff3-07841e8a093f", "nickname": "Carver", "role": "A0_LEASE_CONTINUATION", "status": "completed"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME"},
       "scientific_question": "Can historical corrected Scratch MAPPO Pure-Coverage success be reproduced under the current repository/environment?",
       "allowed_changes": "Exact reproduction implementation, tests, configs, isolated run artifacts; no entropy/reward/spawn/curriculum/BC changes.",
       "forbidden_changes": "IQN runtime or contract; central DAG/state; other worktrees; extra long runs; nested agents.",
       "gpu_required": true,
-      "gpu_lease": "GPU_LEASE_REVOKED_SMOKE_SETUP_FAILURE; no formal lease; retry requires genuinely uncreated output directory",
-      "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro",
-      "tmux": null,
-      "pid": null,
-      "current_step": 264,
-      "latest_formal": "NOT_STARTED",
-      "result_classification": "REPRO_PARTIAL",
-      "next_gate": "FRESH_OUTPUT_CUDA_SMOKE_RETRY_THEN_FORMAL_LEASE_GATE",
+      "gpu_lease": "GPU_LEASE_GRANTED physical_gpu=0; pre_sample_22:08:22-22:08:31 avg~0.2% peak1% min_free~48327MiB; post_sample_22:11:33-22:11:42 avg~3.4% peak4% free~47955MiB; IQN-Z05 heartbeat healthy",
+      "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
+      "tmux": "a0_mappo_cov_formal_20260921",
+      "pid": 224643,
+      "current_step": 0,
+      "latest_formal": "0_CHECKPOINT_STARTED",
+      "result_classification": "REPRO_FORMAL_RUNNING",
+      "next_gate": "MONITOR_25K_THEN_FORMAL_CHECKPOINTS_TO_200K",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:45:00+08:00"
+      "updated_at": "2026-09-21T22:12:00+08:00"
     },
     {
       "task_id": "A1",
@@ -202,11 +202,11 @@
     {
       "task_id": "B2",
       "task_name": "BC-COUNTERFACTUAL-CRITIC",
-      "status": "R0_IMPLEMENTATION_READY_WAITING_CPU_CONTINUATION",
+      "status": "R0_COMPLETE_R1_GATE_PENDING",
       "dependencies": ["BC_CANONICAL_QUALIFIED"],
       "branch": "experiment/ac-bc-counterfactual-critic-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921",
-      "child_agent": {"agent_id": "01a0c424-8d9a-7d10-bffa-356d36444375", "nickname": "Maxwell", "status": "completed"},
+      "child_agent": {"agent_id": "01a0c43d-8929-7731-8837-094d069e6eb9", "nickname": "Pascal", "role": "B2_R0_CPU_CONTINUATION", "status": "shutdown_after_artifact_completion"},
       "scientific_question": "Can iterative counterfactual dataset aggregation improve full-AW9 ranking while expanding modestly off-BC state support?",
       "allowed_changes": "R0 all-9 one-step branch plus BC continuation; conditional bounded-deviation R1/R2 only under registered gates; independent datasets/reports.",
       "forbidden_changes": "9^H tree expansion, unlimited rounds, actor updates, online RL, reward/obs changes, central DAG/state, nested agents.",
@@ -215,21 +215,21 @@
       "run_dir": null,
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": "R0_NOT_STARTED",
-      "result_classification": "R0_IMPLEMENTATION_READY_NO_CPU_ARTIFACTS",
-      "next_gate": "MASTER_SPAWN_B2_R0_CPU_CONTINUATION_THEN_R1_GATE",
+      "current_step": 144,
+      "latest_formal": "R0_COMPLETE",
+      "result_classification": "R0_COMPLETE_R1_REQUEST_DRAFT_ELIGIBLE",
+      "next_gate": "MASTER_DECIDE_R1_FROM_R0_STATE_SUPPORT_AND_RANKING",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:45:00+08:00"
+      "updated_at": "2026-09-21T22:02:00+08:00"
     },
     {
       "task_id": "A2",
       "task_name": "DISCRETE-SAC-PREFLIGHT",
-      "status": "ACTIVE_IMPLEMENTATION_PREFLIGHT",
+      "status": "PREFLIGHT_PASS_FORMAL_LOCKED",
       "dependencies": ["A0_GATE", "A1_ENTROPY_NOT_SUFFICIENT"],
       "branch": "experiment/ac-discrete-sac-preflight-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
-      "child_agent": {"agent_id": "01a0c43b-2d2f-7cf3-9c32-4cfeb4b788a6", "nickname": "Feynman", "role": "A2_PREFLIGHT"},
+      "child_agent": {"agent_id": "01a0c43b-2d2f-7cf3-9c32-4cfeb4b788a6", "nickname": "Feynman", "role": "A2_PREFLIGHT", "status": "completed"},
       "scientific_question": "Does exact categorical AW9 SAC provide a controlled twin-Q entropy target after A0 remains learnable and A1 is insufficient?",
       "allowed_changes": "Implementation/tests/smoke/config only now; later exact categorical SAC formal 100k if MASTER unlocks.",
       "forbidden_changes": "Gumbel, continuous conversion, architecture/reward/curriculum changes, autonomous formal long run, central DAG/state.",
@@ -238,21 +238,21 @@
       "run_dir": null,
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": null,
-      "result_classification": null,
-      "next_gate": "A2_PREFLIGHT_READY_THEN_MASTER_GATE",
+      "current_step": 1,
+      "latest_formal": "FORMAL_NOT_STARTED",
+      "result_classification": "PREFLIGHT_PASS_FORMAL_LOCKED",
+      "next_gate": "MASTER_REVIEW_A0_A1_GATES_BEFORE_FORMAL_100K",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:45:00+08:00"
+      "updated_at": "2026-09-21T22:12:00+08:00"
     },
     {
       "task_id": "A3",
       "task_name": "CAPTURE-CURRICULUM-DESIGN",
-      "status": "ACTIVE_DESIGN_ONLY",
+      "status": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL",
       "dependencies": [],
       "branch": "design/ac-capture-curriculum-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921",
-      "child_agent": {"agent_id": "01a0c43b-2d86-7a61-b021-ee4537a6bfc3", "nickname": "Hubble", "role": "A3_DESIGN_ONLY"},
+      "child_agent": {"agent_id": "01a0c43b-2d86-7a61-b021-ee4537a6bfc3", "nickname": "Hubble", "role": "A3_DESIGN_ONLY", "status": "completed"},
       "scientific_question": "Can an initialization-only capture curriculum bridge capture without changing Final Capture reward?",
       "allowed_changes": "Read/audit/design/proposal only; exact numeric candidate stages, Final diff, risks, budgets, promotion/rollback gates.",
       "forbidden_changes": "Implementation, spawn edits, reward curriculum, training, GPU job, central DAG/state, self-approval.",
@@ -262,11 +262,11 @@
       "tmux": null,
       "pid": null,
       "current_step": 0,
-      "latest_formal": null,
+      "latest_formal": "DESIGN_ONLY_NO_FORMAL",
       "result_classification": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL",
-      "next_gate": "USER_EXPLICIT_APPROVAL_REQUIRED",
+      "next_gate": "USER_REVIEW_PROPOSAL_THEN_EXPLICIT_APPROVAL",
       "user_approval_required": true,
-      "updated_at": "2026-09-21T21:45:00+08:00"
+      "updated_at": "2026-09-21T22:15:00+08:00"
     },
     {
       "task_id": "B3",
@@ -452,6 +452,41 @@
       "at": "2026-09-21T21:45:00+08:00",
       "event": "B2_R0_IMPLEMENTATION_READY",
       "detail": "B2 added bounded R0 counterfactual aggregation implementation and syntax validation; no R0 dataset was run, so CPU continuation remains a MASTER-controlled next step."
+    },
+    {
+      "at": "2026-09-21T21:50:00+08:00",
+      "event": "B2_R0_CPU_CONTINUATION_SPAWNED",
+      "detail": "Spawned Pascal in the existing isolated B2 worktree for CPU-only R0 artifact generation; R1/R2 remain locked pending R0 handoff."
+    },
+    {
+      "at": "2026-09-21T22:02:00+08:00",
+      "event": "B2_R0_COMPLETE",
+      "detail": "B2 R0 completed 16 anchors and 144 AW9 branches. D_CF_R0 covers all AW9 actions with zero branch transition collisions and nonzero BC-distance proxy; ranking gate is positive, while R1 remains a MASTER decision."
+    },
+    {
+      "at": "2026-09-21T22:04:00+08:00",
+      "event": "A0_GPU_LEASE_GRANTED_SMOKE_RETRY",
+      "detail": "Granted Kant physical GPU0 for a fresh-output CUDA smoke only after a new 10x1s sample: average utilization about 8.1%, peak 15%, free VRAM about 48327 MiB, IQN-Z05 heartbeat healthy; formal remains locked."
+    },
+    {
+      "at": "2026-09-21T22:06:00+08:00",
+      "event": "A0_CUDA_SMOKE_PASS",
+      "detail": "Fresh-output CUDA smoke completed at artifacts/2026-09-21_ac_mappo_cov_repro/cuda_smoke_lease_20260921_02 with finite telemetry, exact contract flags, and SMOKE_PASS. Post-sample 22:05:00-22:05:09 showed GPU0 average about 8.6%, peak 16%, IQN-Z05 heartbeat healthy; smoke lease released and formal remains pending a separate lease."
+    },
+    {
+      "at": "2026-09-21T22:12:00+08:00",
+      "event": "A0_FORMAL_STARTED",
+      "detail": "MASTER launched exact A0 formal Pure-Coverage reproduction in tmux a0_mappo_cov_formal_20260921, PID224643, physical GPU0, fresh output formal_20260921; step 0 checkpoint evaluation started and post-launch health sample passed."
+    },
+    {
+      "at": "2026-09-21T22:12:00+08:00",
+      "event": "A2_PREFLIGHT_PASS",
+      "detail": "A2 commit 9231c25 passed 4 focused tests, 5 shared-local regression tests, and CPU smoke with finite categorical AW9 twin-Q target; formal GPU training remains locked."
+    },
+    {
+      "at": "2026-09-21T22:15:00+08:00",
+      "event": "A3_PROPOSAL_COMPLETE_USER_GATE",
+      "detail": "A3 committed the design-only proposal 377a6afd with four numeric initialization stages, unchanged Final reward, risks, budgets, and promotion/rollback gates; state stops at CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL."
     }
   ]
 }

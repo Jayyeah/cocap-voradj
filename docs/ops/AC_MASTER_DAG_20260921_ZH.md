@@ -43,12 +43,12 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | CUDA_SMOKE_FAILED_FRESH_OUTPUT | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 先用全新未创建 output 重试 CUDA smoke；formal 仍锁定 |
+| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 0，监控至 200k |
 | A1 | PREP_COMPLETE_WAITING_GPU_LEASE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 0/25/50/75/100k entropy causal gate；1200-step CPU smoke passed |
 | B1 | ACTIVE_CPU_BOUNDED | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
-| B2 | R0_IMPLEMENTATION_READY_WAITING_CPU_CONTINUATION | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | MASTER 后续派发 R0 CPU；R1/R2 only under MASTER gate |
-| A2 | ACTIVE_IMPLEMENTATION_PREFLIGHT | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | implementation/tests/smoke；formal only after A0 learnable + A1 insufficient |
-| A3 | ACTIVE_DESIGN_ONLY | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal then `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL` |
+| B2 | R0_COMPLETE_R1_GATE_PENDING | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 16 anchors/144 branches；MASTER 判断 R1，R2 仍锁定 |
+| A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
+| A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
 | B3 | LOCKED_DEPENDENCIES | MASTER-only comparison | select `BEST_PRETRAINED_CRITIC` only if ranking-first evidence supports it |
 | B4 | LOCKED_DEPENDENCIES | later isolated worktree | step0 retention before any long joint RL |
 | OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
@@ -84,10 +84,10 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 已通过，但第一次 CUDA smoke 因 output directory 已存在而在训练前退出；不得把它计为 formal，必须 fresh-output 重试。
+1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；smoke 仅到 step 264，不能计为 formal，0--200k 仍需独立 lease。
 2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal lease 仍由 MASTER 发放。
-3. B2 已完成 R0 实现与 syntax validation，但未生成 R0 数据集；后续需由 MASTER 在 slot 释放后派发 CPU continuation。
+3. B2 R0 已完成：16 anchors、144 AW9 branches；D_CF_R0 全 AW9 support、0 branch transition collision、ranking gate 正；R1/R2 不自动启动。
 4. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
-5. A3 只做 design，完成后写 proposal 并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`。
+5. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
 6. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
 7. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
