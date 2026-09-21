@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T22:31:00+08:00",
+  "updated_at": "2026-09-21T22:33:00+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -180,11 +180,11 @@
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "FORMAL_ABORTED_DEVICE_ASSERT_PRE_GATE",
+      "status": "AUDIT_ACTIVE_AFTER_DEVICE_ASSERT",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME", "status": "exited"},
+      "child_agent": {"agent_id": "01a0c461-34a1-74c0-91e8-2edb550847c6", "nickname": "Aquinas", "role": "A1_RUNTIME_AUDIT"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
@@ -196,9 +196,9 @@
       "current_step": 0,
       "latest_formal": "0_GATE_INIT_ONLY",
       "result_classification": "IMPLEMENTATION_RUNTIME_FAILURE_DEVICE_ASSERT_NO_SCIENTIFIC_RESULT",
-      "next_gate": "READ_ONLY_IMPLEMENTATION_AUDIT_AND_CPU_REPRO_BEFORE_ANY_RETRY",
+      "next_gate": "AUDIT_HANDOFF_THEN_MASTER_DECIDE_BOUNDED_RETRY_LEASE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T22:31:00+08:00"
+      "updated_at": "2026-09-21T22:33:00+08:00"
     },
     {
       "task_id": "B1",
@@ -521,6 +521,11 @@
       "at": "2026-09-21T22:31:00+08:00",
       "event": "A1_GPU_LEASE_REVOKED_RUNTIME_FAILURE",
       "detail": "A1 GPU1 lease revoked after process exit; GPU1 and IQN-Z07 PID19555 remained healthy in the post-failure 10-sample audit. No retry or resume was started."
+    },
+    {
+      "at": "2026-09-21T22:33:00+08:00",
+      "event": "A1_RUNTIME_AUDIT_SPAWNED",
+      "detail": "Spawned Aquinas for CPU/static diagnosis of the step-0 probability assertion; GPU retry and scientific classification remain locked."
     }
   ]
 }
