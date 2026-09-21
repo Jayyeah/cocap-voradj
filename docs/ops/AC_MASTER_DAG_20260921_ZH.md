@@ -43,14 +43,14 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 118500；100k argmax/sample 均 20/20；继续 200k |
-| A1 | CUDA_STEP0_DIAGNOSTIC_ACTIVE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | Aquinas；GPU1 diagnostic lease 已授予；完成后 CPU regression + CUDA smoke；通过才 formal |
+| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 133900；100k argmax/sample 均 20/20；继续 200k |
+| A1 | AWAITING_CUDA_SMOKE_LEASE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | diagnostic forward path PASS；harness shape check 最小修复待 smoke；下一步 fresh GPU1 lease，之后直接 formal |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
-| B2 | R0_FULL_ACTIVE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | Carson CPU PID `285669`；run `artifacts/2026-09-22_b2_r0`；106/128 anchors、954/1152 branches；目标 32 anchors/phase；R1/R2 锁定 |
+| B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
-| B3 | LOCKED_DEPENDENCIES | MASTER-only comparison | select `BEST_PRETRAINED_CRITIC` only if ranking-first evidence supports it |
-| B4 | LOCKED_DEPENDENCIES | later isolated worktree | step0 retention before any long joint RL |
+| B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；不注册 BEST_PRETRAINED_CRITIC |
+| B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
 | OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
 | IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
@@ -84,8 +84,8 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 118500。100k argmax/sample strict CE 均为 20/20、无 collision，说明当前 MAPPO Coverage 可学；仍必须跑满注册的 200k reproduction contract。
-2. A1 已获得用户批准。GPU1 10x1s pre-sample 通过，Aquinas 正在执行一次 CUDA step-0 diagnostic；通过后自动执行 CPU regression、CUDA smoke，再按 entropy-only 合同重启 formal。
+1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 133900。100k argmax/sample strict CE 均为 20/20、无 collision，说明当前 MAPPO Coverage 可学；仍必须跑满注册的 200k reproduction contract。
+2. A1 diagnostic 已完成：真实 CUDA forward/sample path 通过，失败仅是 harness 的 `(B,1)` shape 断言。当前等待最小 test-only 修复后的 fresh GPU1 CUDA smoke lease；smoke 通过后直接按 entropy-only 合同重启 formal。
 3. B1 handoff 已完成：epsilon 0.05/0.10 扩展到全 AW9 support，但 overall ranking 未改善，B3 选择仍锁定。
 4. B2 preliminary R0 只有 16 anchors/144 AW9 branches；因样本过小不得解锁 R1。当前由 Carson 扩展 B2-R0-FULL，保持 one-step AW9→BC continuation 定义不变。
 5. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
@@ -109,3 +109,9 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - A0 100k formal：argmax strict CE `20/20`，sample strict CE `20/20`，collision `0`；argmax CE RMS mean `0.025129`，area CV mean `0.061531`。该证据满足“可学”方向 gate，但不能替代 200k exact reproduction classification。
 - B2-R0-FULL 当前已到 `106/128 anchors`、`954/1152 branches`；完成后立即由 MASTER 启动 B3 ranking gate。若 B3 选出明确优于 historical naive critic 的候选，自动进行 B4 step0 BC retention gate，gate 通过后申请并启动 overnight joint RL。
 - 若 A1 完成有效 formal 科学测试后确认 `ENTROPY_NOT_SUFFICIENT`，A0 已提供 MAPPO learnability evidence，MASTER 自动解锁 A2 formal；A3 仍禁止实现/训练。
+
+## B2-FULL → B3 handoff（2026-09-22）
+
+- B2-R0-FULL：128 anchors，四个 phase 各 32；1152 AW9 branches；D_CF_R0 183728 rows；alternative top-1 `0.7734375`，mean best-minus-BC `13.2970`。
+- B2 仍不是 learned critic：raw `Q^BC(s,a)` 仅作 direct simulator ranking diagnostic。D_CF successful-state fraction 为 `0`，27/1152 branches collision；state support 虽 unique ratio `6.2718`，nearest-D_BC p90 `0.1822` 且 100% 在 radius `0.75` 内，说明 off-BC state 扩展仍有限。
+- B3 已统一比较 historical naive/B1 LocalQ candidates。B1 BC-only：top1 `0.1719`、Spearman `0.1536`、regret `15.0065`；epsilon=.05/.10 均使主要 global ranking 指标退化。结论：`NO_RANKING_QUALIFIED_CRITIC`，B4 不启动。

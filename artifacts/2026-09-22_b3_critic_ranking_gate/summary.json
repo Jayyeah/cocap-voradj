@@ -1,0 +1,87 @@
+{
+  "schema": "ac-master-b3-critic-ranking-gate-v1",
+  "task_id": "B3",
+  "generated_at": "2026-09-22T00:50:51+08:00",
+  "decision": "NO_RANKING_QUALIFIED_CRITIC",
+  "selection_rule": {
+    "primary": ["top1_agreement", "top3_overlap", "spearman", "sign_accuracy_vs_bc", "regret", "phase_breakdown"],
+    "secondary": ["rmse", "mae", "explained_variance", "calibration"],
+    "must_be": "a learned critic checkpoint evaluated on the common AC4B ranking benchmark; raw counterfactual Q matrices are diagnostic only"
+  },
+  "benchmark": {
+    "historical_reference": "AC4B fixed 64-anchor x 9-action counterfactual benchmark",
+    "b1_artifact": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921/artifacts/2026-09-21_b1_exploratory_critic/handoff.json",
+    "b2_artifact": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921/artifacts/2026-09-22_b2_r0/summary.json"
+  },
+  "candidates": {
+    "historical_naive_localq_bc_only": {
+      "source": "B1 frozen-BC/no-exploration LocalQ, historical A1 LocalQ contract",
+      "checkpoint_set": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921/artifacts/2026-09-21_b1_exploratory_critic/critics/bc_only/checkpoints",
+      "ranking_means": {
+        "top1_agreement": 0.171875,
+        "top3_overlap": 0.421875,
+        "spearman": 0.15364583333333331,
+        "sign_accuracy_vs_bc": 0.56640625,
+        "regret": 15.00652045043136,
+        "critic_selected_empirical_rank": 4.5546875
+      },
+      "qualified": true,
+      "selection_role": "historical_naive_reference_only"
+    },
+    "b1_epsilon_mild": {
+      "source": "B1 frozen-BC epsilon-mixture LocalQ, epsilon=0.05",
+      "checkpoint_set": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921/artifacts/2026-09-21_b1_exploratory_critic/critics/epsilon_mild/checkpoints",
+      "ranking_means": {
+        "top1_agreement": 0.1328125,
+        "top3_overlap": 0.3489583333333333,
+        "spearman": 0.03190104166666667,
+        "sign_accuracy_vs_bc": 0.474609375,
+        "regret": 14.770825943875305,
+        "critic_selected_empirical_rank": 4.8359375
+      },
+      "qualified": false,
+      "selection_reason": "regret slightly lower but all primary ranking agreement/correlation metrics regress versus historical naive"
+    },
+    "b1_epsilon_moderate": {
+      "source": "B1 frozen-BC epsilon-mixture LocalQ, epsilon=0.10",
+      "checkpoint_set": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921/artifacts/2026-09-21_b1_exploratory_critic/critics/epsilon_moderate/checkpoints",
+      "ranking_means": {
+        "top1_agreement": 0.15625,
+        "top3_overlap": 0.3723958333333333,
+        "spearman": 0.083203125,
+        "sign_accuracy_vs_bc": 0.5185546875,
+        "regret": 13.369447716148958,
+        "critic_selected_empirical_rank": 4.71875
+      },
+      "qualified": false,
+      "selection_reason": "best B1 regret but primary top1/top3/Spearman/sign metrics regress and phase behavior is not globally stable"
+    },
+    "b2_r0_full_raw_counterfactual_q": {
+      "source": "B2-R0-FULL Q^BC(s,a) direct simulator return matrix; 128 anchors x 9 actions",
+      "artifact": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921/artifacts/2026-09-22_b2_r0/Q_BC_R0.npz",
+      "diagnostic": {
+        "alternative_top1_fraction": 0.7734375,
+        "bc_top1_fraction": 0.2265625,
+        "mean_best_minus_bc": 13.297046172266894,
+        "mean_spearman_vs_bc_action_order": 0.14535595094568723,
+        "phase_alternative_top1": {
+          "pursuing": 0.875,
+          "pre_capture_cover": 0.71875,
+          "early_recovery": 0.65625,
+          "pure_coverage": 0.84375
+        },
+        "state_support_unique_ratio": 6.271842150611753,
+        "nearest_dbc_p90": 0.18219119404034467,
+        "dcf_fraction_within_dbc_radius_075": 1.0
+      },
+      "qualified": false,
+      "selection_reason": "direct counterfactual return matrix is not a learned critic checkpoint and is not comparable as a pretrained critic candidate; 27/1152 branches collided and D_CF successful_state fraction was 0"
+    }
+  },
+  "gate_result": {
+    "best_pretrained_critic": null,
+    "b4_unlocked": false,
+    "classification": "NO_RANKING_QUALIFIED_CRITIC",
+    "next_gate": "B4_BLOCKED; no automatic joint RL. A1 smoke/formal and A2 science gate remain independent."
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-22T00:42:18+08:00",
+  "updated_at": "2026-09-22T00:52:01+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -121,7 +121,7 @@
       "tmux": "a0_mappo_cov_formal_20260921",
       "physical_gpu": 0,
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
-      "current_step": 118500,
+      "current_step": 133900,
       "heartbeat": "LIVE_AT_RECONCILIATION",
       "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE"
     },
@@ -193,30 +193,30 @@
       "result_classification": "REPRO_LEARNABLE_EARLY_SIGNAL_PENDING_FULL_200K",
       "next_gate": "MONITOR_25K_THEN_FORMAL_CHECKPOINTS_TO_200K",
       "user_approval_required": false,
-      "updated_at": "2026-09-22T00:36:16+08:00"
+      "updated_at": "2026-09-22T00:52:01+08:00"
     },
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "CUDA_STEP0_DIAGNOSTIC_ACTIVE",
+      "status": "AWAITING_CUDA_SMOKE_LEASE",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": "01a0c461-34a1-74c0-91e8-2edb550847c6", "nickname": "Aquinas", "role": "A1_BOUNDED_CUDA_DIAGNOSTIC", "status": "lease_granted_waiting_or_running"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "A1_DIAGNOSTIC_HANDOFF_COMPLETE"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
       "gpu_required": true,
-      "gpu_lease": "GPU1_DIAGNOSTIC_GRANTED_AFTER_10X1S_PRESAMPLE; CUDA_VISIBLE_DEVICES=1; IQN-Z07 preserved and healthy",
+      "gpu_lease": "GPU1_DIAGNOSTIC_RELEASED_AFTER_COMPLETION; fresh GPU1 lease required for CUDA smoke; IQN-Z07 preserved and healthy",
       "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-21_entropy_localq_cov/formal_20260921/ac_entropy_localq_cov_20260921",
       "tmux": null,
       "pid": null,
       "current_step": 0,
-      "latest_formal": "0_GATE_INIT_ONLY_DIAGNOSTIC_ACTIVE",
-      "result_classification": "IMPLEMENTATION_RUNTIME_FAILURE_DEVICE_ASSERT_NO_SCIENTIFIC_RESULT",
-      "next_gate": "DIAGNOSTIC_HANDOFF_THEN_CPU_REGRESSION_AND_CUDA_SMOKE",
+      "latest_formal": "0_DIAGNOSTIC_FORWARD_PATH_PASS_HARNESS_SHAPE_FIX_PENDING_SMOKE",
+      "result_classification": "CUDA_FORWARD_PATH_PASS_HARNESS_SHAPE_FAILURE_ORIGINAL_ASSERT_NOT_REPRODUCED",
+      "next_gate": "FRESH_GPU1_LEASE_FOR_CUDA_SMOKE",
       "user_approval_required": false,
-      "updated_at": "2026-09-22T00:36:16+08:00"
+      "updated_at": "2026-09-22T00:52:01+08:00"
     },
     {
       "task_id": "B1",
@@ -244,11 +244,11 @@
     {
       "task_id": "B2",
       "task_name": "BC-COUNTERFACTUAL-CRITIC",
-      "status": "R0_FULL_ACTIVE",
+      "status": "B2_COMPLETE",
       "dependencies": ["BC_CANONICAL_QUALIFIED"],
       "branch": "experiment/ac-bc-counterfactual-critic-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921",
-      "child_agent": {"agent_id": "01a0c4bc-26c1-7b70-8e25-391459425efe", "nickname": "Carson", "role": "B2_R0_FULL_CPU_CONTINUATION", "status": "running"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "B2_R0_FULL_HANDOFF_RECEIVED_CHILD_CLOSED"},
       "scientific_question": "Can iterative counterfactual dataset aggregation improve full-AW9 ranking while expanding modestly off-BC state support?",
       "allowed_changes": "R0 all-9 one-step branch plus BC continuation; conditional bounded-deviation R1/R2 only under registered gates; independent datasets/reports.",
       "forbidden_changes": "9^H tree expansion, unlimited rounds, actor updates, online RL, reward/obs changes, central DAG/state, nested agents.",
@@ -256,13 +256,13 @@
       "gpu_lease": "CPU_FIRST; GPU_ONLY_IF_CHILD_REQUESTS_AND_MASTER_GRANTS",
       "run_dir": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921/artifacts/2026-09-22_b2_r0",
       "tmux": null,
-      "pid": 285669,
-      "current_step": "106/128 anchors; 954/1152 branches",
-      "latest_formal": "R0_PRELIMINARY_16_ANCHORS_NOT_GATE; R0_FULL_RUNNING",
-      "result_classification": "R0_PRELIMINARY_INSUFFICIENT_SAMPLE_EXPANDING",
-      "next_gate": "R0_FULL_HANDOFF_THEN_B3_OR_R1_MASTER_GATE",
+      "pid": null,
+      "current_step": "128/128 anchors; 1152/1152 branches",
+      "latest_formal": "R0_FULL_COMPLETE",
+      "result_classification": "R0_FULL_COMPLETE_RANKING_SIGNAL_STATE_SUPPORT_LIMITED",
+      "next_gate": "B3_COMPLETE_NO_QUALIFIED_CRITIC; R1 REMAINS MASTER-LOCKED",
       "user_approval_required": false,
-      "updated_at": "2026-09-22T00:36:16+08:00"
+      "updated_at": "2026-09-22T00:52:01+08:00"
     },
     {
       "task_id": "A2",
@@ -313,30 +313,30 @@
     {
       "task_id": "B3",
       "task_name": "CRITIC-RANKING-GATE",
-      "status": "LOCKED_DEPENDENCIES",
+      "status": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC",
       "dependencies": ["B1", "B2"],
-      "branch": null,
-      "worktree": null,
+      "branch": "ops/ac-master-dag-20260921",
+      "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
       "child_agent": null,
       "scientific_question": "Which behavior-support/counterfactual critic, if any, wins ranking-first evaluation?",
       "allowed_changes": "MASTER-only comparison and BEST_PRETRAINED_CRITIC selection record.",
       "forbidden_changes": "Pretending RMSE-only success; actor update; hidden data mixing; central state writes by children.",
       "gpu_required": false,
       "gpu_lease": "NONE",
-      "run_dir": null,
+      "run_dir": "/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate",
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": null,
-      "result_classification": null,
-      "next_gate": "B4_UNLOCK_ONLY_IF_BC_QUALIFIED_AND_BEST_CRITIC_SELECTED",
+      "current_step": "MASTER_COMPARISON_COMPLETE",
+      "latest_formal": "B1_VS_B2_R0_FULL_RANKING_GATE_COMPLETE",
+      "result_classification": "NO_RANKING_QUALIFIED_CRITIC",
+      "next_gate": "B4_BLOCKED_NO_BEST_PRETRAINED_CRITIC",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:16:00+08:00"
+      "updated_at": "2026-09-22T00:52:01+08:00"
     },
     {
       "task_id": "B4",
       "task_name": "BC-ACTOR-PRETRAINED-CRITIC-JOINT-RL",
-      "status": "LOCKED_DEPENDENCIES",
+      "status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC",
       "dependencies": ["BC_CANONICAL_QUALIFIED", "B3_BEST_PRETRAINED_CRITIC"],
       "branch": null,
       "worktree": null,
@@ -352,9 +352,9 @@
       "current_step": 0,
       "latest_formal": null,
       "result_classification": null,
-      "next_gate": "B4_STEP0_RETENTION_GATE",
+      "next_gate": "NO_B4_UNTIL_BEST_PRETRAINED_CRITIC; RETAIN ARTIFACT ONLY",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:16:00+08:00"
+      "updated_at": "2026-09-22T00:52:01+08:00"
     },
     {
       "task_id": "OLD-MIX-CLOSEOUT",
@@ -599,6 +599,21 @@
       "at": "2026-09-22T00:42:18+08:00",
       "event": "MASTER_REMOTE_SYNC_ATTEMPT_1_SUCCESS",
       "detail": "Explicit mihomo 127.0.0.1:17892 http_proxy/https_proxy/all_proxy plus git -c http.proxy/https.proxy push succeeded: remote 7238ffa advanced to 7010ea8. One sync attempt remains for this round; no stale 17891 or permanent proxy was used."
+    },
+    {
+      "at": "2026-09-22T00:43:48+08:00",
+      "event": "A1_DIAGNOSTIC_HANDOFF",
+      "detail": "A1 diagnostic PID299693 completed. Full CUDA logits, softmax, behavior mixture and torch.multinomial path passed; the only failure was a test-only harness expectation of (B,) instead of legal raw (B,1). Original device-side assert was not reproduced; no scientific result claimed."
+    },
+    {
+      "at": "2026-09-22T00:50:51+08:00",
+      "event": "B2_R0_FULL_COMPLETE",
+      "detail": "B2-R0-FULL completed 128 phase-balanced anchors and 1152 AW9 branches CPU-only. Alternative top-1 fraction 0.7734375; mean best-minus-BC 13.2970; D_CF state support unique ratio 6.2718 but all sampled D_CF states remained within BC radius 0.75; 27 branches collided and D_CF successful_state fraction was 0."
+    },
+    {
+      "at": "2026-09-22T00:50:51+08:00",
+      "event": "B3_RANKING_GATE_COMPLETE",
+      "detail": "MASTER compared historical naive/B1 LocalQ candidates on the common AC4B benchmark and kept B2 raw Q^BC as diagnostic-only, not a learned critic checkpoint. B1 epsilon=0.05/0.10 regressed primary global ranking metrics; registered NO_RANKING_QUALIFIED_CRITIC and kept B4 blocked."
     }
   ]
 }
