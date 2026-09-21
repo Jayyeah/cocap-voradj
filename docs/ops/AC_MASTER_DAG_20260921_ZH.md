@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，中央状态本轮待提交更新，基于 `ops/training-performance-sync-20260921`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD `b14217b`，基于 `ops/training-performance-sync-20260921`。已完成两次成功 push；按本 DAG 的 push 上限，后续中央更新保留在共享本地 worktree，状态标记为 `REMOTE_SYNC_PENDING`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
