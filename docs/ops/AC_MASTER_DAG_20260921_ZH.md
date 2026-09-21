@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本地当前 HEAD `6d86bb7`，origin 当前 `fb000a2`，基于 `ops/training-performance-sync-20260921`。本轮显式 17892 push 被安全审查拦截，状态 `REMOTE_SYNC_PENDING`；不使用 workaround。后续正常提交/push不限轮次，只有单次上传阻塞时最多尝试两次，并且每次必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本地当前 HEAD `db166fc`，origin 当前 `fb000a2`，基于 `ops/training-performance-sync-20260921`。本轮显式 17892 push 被安全审查拦截，状态 `REMOTE_SYNC_PENDING`；不使用 workaround。后续正常提交/push不限轮次，只有单次上传阻塞时最多尝试两次，并且每次必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
