@@ -1,0 +1,58 @@
+{
+  "schema": "ac-master-b3-root-cause-summary-v1",
+  "task_id": "B3",
+  "generated_at": "2026-09-22T02:57:50+08:00",
+  "classification": "DIAGNOSTIC_SUMMARY_NO_SINGLE_CAUSE_PROVEN",
+  "decision": "NO_RANKING_QUALIFIED_CRITIC",
+  "scope": "One bounded summary of existing B1/B2 evidence; no new long training or new method was run.",
+  "evidence": {
+    "B1_behavior_support": {
+      "bc_only_support": 8,
+      "epsilon_005_support": 9,
+      "epsilon_010_support": 9,
+      "finding": "Bounded BC-centered exploration expanded action support, but primary global top1/top3/Spearman/sign metrics regressed or were not globally stable; epsilon=0.10 had slightly lower regret only."
+    },
+    "B2_R0_full": {
+      "anchors": 128,
+      "branches": 1152,
+      "alternative_top1_fraction": 0.7734375,
+      "mean_spearman": 0.14535595094568723,
+      "collision_branches": 27,
+      "successful_state_fraction": 0.0,
+      "state_support_unique_ratio": 6.271842150611753,
+      "nearest_dbc_p90": 0.18219119404034467,
+      "fraction_within_dbc_radius_075": 1.0,
+      "phase_alternative_top1": {
+        "pursuing": 0.875,
+        "pre_capture_cover": 0.71875,
+        "early_recovery": 0.65625,
+        "pure_coverage": 0.84375
+      },
+      "finding": "Counterfactual branches expose action disagreement, but remain close to the BC manifold and show phase-dependent ranking plus collision/return-target contamination."
+    },
+    "B3_model_gate": {
+      "historical_naive_top1": 0.171875,
+      "historical_naive_spearman": 0.15364583333333331,
+      "historical_naive_regret": 15.00652045043136,
+      "best_b1_regret": 13.369447716148958,
+      "best_b1_primary_metrics": "regressed versus historical naive",
+      "b2_raw_q_checkpoint": false,
+      "finding": "No candidate learned critic checkpoint was clearly better on the ranking-first common benchmark; B2 raw Q is diagnostic-only, not a pretrained critic."
+    }
+  },
+  "root_cause_assessment": {
+    "primary": "state coverage insufficiency together with phase-dependent action ranking",
+    "secondary": "counterfactual target noise from collision/unsuccessful branches and direct-return heterogeneity",
+    "not_proven": "critic fitting/architecture alone as the dominant cause; no controlled candidate isolated it",
+    "interpretation": "B1 answers natural action-support expansion is insufficient; B2 answers R0 reveals ranking disagreement but does not yet supply clean learned supervision."
+  },
+  "next_step_candidates": [
+    "Hold B4 blocked until a new user/MASTER-approved critic method is registered.",
+    "If revisited, separate successful/failed/collision target strata and report phase-specific ranking before training a new critic.",
+    "If revisited, use bounded off-BC state aggregation only with an explicit target-quality gate; do not auto-run R1/R2."
+  ],
+  "b4": {
+    "status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC",
+    "launch": false
+  }
+}

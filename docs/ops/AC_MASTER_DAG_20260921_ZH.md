@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本地当前 HEAD `db166fc`，origin 当前 `fb000a2`，基于 `ops/training-performance-sync-20260921`。本轮显式 17892 push 被安全审查拦截，状态 `REMOTE_SYNC_PENDING`；不使用 workaround。后续正常提交/push不限轮次，只有单次上传阻塞时最多尝试两次，并且每次必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本次 reconcile 本地 HEAD `c07fb4e`，origin 当前 `fb000a2`，基于 `ops/training-performance-sync-20260921`。只读 fetch 已确认仍不一致，状态 `REMOTE_SYNC_PENDING`；此前显式 17892 upload 被安全审查拦截，不使用 workaround。后续正常提交/push不限轮次，只有单次上传阻塞时最多尝试两次，并且每次必须显式使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -43,13 +43,13 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；A1 valid science gate 后才审 A2 |
-| A1 | ENGINEERING_BLOCKED_UNREPRODUCED_FORMAL_ASSERT | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | fresh formal PID 317964 的 step0 assert 已在 CPU/GPU exact sequence diagnostic 中均未重现；真实 runner 1-step smoke 只因第二次 deterministic eval 超时；无有效科学结果，不重启 formal、不解锁 A2 |
+| A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
+| A1 | A1_ENGINEERING_BLOCKED_DEFERRED | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 最后 bounded CPU/CUDA exact sequence 与 staged checks 通过，但 formal-width assert 无稳定 production reproduction；无 entropy 科学结果，不再 retry，A2 不受其阻塞 |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
-| A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
+| A2 | A2_ENGINEERING_BLOCKED_DEFERRED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | formal PID `354627`/tmux `a2_discrete_sac_cov_formal_20260922` 在 step 808 退出；finite diagnostics 定位到有限 next_obs 上 CUDA actor target logits 非有限；CPU/CUDA smoke 通过但没有 25k 科学结果；不 overnight retry |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
-| B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；不注册 BEST_PRETRAINED_CRITIC |
+| B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
 | B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
 | OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
 | IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
@@ -88,10 +88,18 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 2. A1 test-only harness 修复、CPU 7项回归与缩小 smoke 均通过（32/32 steps、finite、checkpoint save/load pass）。fresh formal-width run 曾在 step0 报 production CUDA probability assert，但随后 CPU/GPU exact `_gate_evaluation(0) → _collect_step()` 均通过；真实 runner 1-step smoke 仅因第二次 deterministic eval 在 120s 内未完成。结论仍是 engineering blocker、没有 entropy 科学结果；不重启 formal、不解锁 A2。
 3. B1 handoff 已完成：epsilon 0.05/0.10 扩展到全 AW9 support，但 overall ranking 未改善，B3 选择仍锁定。
 4. B2-R0-FULL 已完成 128 anchors/1152 AW9 branches；MASTER 已完成 B3 ranking gate，结论 `NO_RANKING_QUALIFIED_CRITIC`，因此 B4 不启动，R1 不自动解锁。
-5. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
+5. A2 已在 A0 `REPRO_PASS` 且 A1 deferred 后获得 formal lease；CPU/CUDA smoke 通过，但 formal 首次尝试在 step 808 出现 CUDA actor target logits 非有限，六次 bounded diagnostic 未得到稳定修复，当前 `A2_ENGINEERING_BLOCKED_DEFERRED`，不留 overnight 进程。
 6. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
 7. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。A1 CUDA smoke 通过不是科学结果。
-8. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
+8. A0 `REPRO_PASS` 已证明 MAPPO Coverage 可学；按当前用户 gate，A1 engineering deferred 后 A2 可作为独立 parallel capability experiment 解锁，但 A2 结果不得解释为 entropy-only 失败的因果证据。B4 仍必须等待 qualified pretrained critic。
+
+## 2026-09-22 current bounded closeout
+
+- A1：用户批准的最后 bounded 工程窗口已收口。CPU/GPU exact `_gate_evaluation(0) -> _collect_step()`、CUDA staged finite checks 均通过；原 formal-width probability assert 没有稳定 production reproduction，因此写入 `A1_ENGINEERING_BLOCKED_DEFERRED`，无 formal retry、无科学结论。
+- A2：在 A0 `REPRO_PASS` 后独立解锁。新增 formal runner/config commit `135eca3`，后续 finite diagnostics/数值 guard commit `e383c03`；CPU 1200-step smoke、CUDA 1200-step smoke 与 lease post-sample 通过。正式 PID `354627`、tmux `a2_discrete_sac_cov_formal_20260922`、物理 GPU1、run root `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-22_discrete_sac_cov/ac_discrete_sac_cov_formal_20260922` 在 step 808 退出，未到 25k formal。bounded 诊断显示有限 next observation 输入下 actor `target_policy_logits` 仅 1143/1152 finite；关闭 TF32/SDP 与 MHA fastpath 仍未形成稳定运行，故延期，不把它标为科学失败。
+- GPU/IQN：A2 失败后 GPU1 释放。最终 Z05 PID `17097` / tmux `iqn_z05_recovery_20260921` / GPU0 与 Z07 PID `19555` / tmux `iqn_z07_recovery_20260921` / GPU1 均健康；本轮没有停止、迁移、重启或修改 IQN。
+- B3：已写 bounded root-cause summary。证据支持“state coverage 不足 + phase-dependent ranking”为主、collision/target noise 为次；critic fitting 单独主因未被证明。B4 继续 `BLOCKED_BY_B3_NO_QUALIFIED_CRITIC`。
+- A3：仍为 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`，不实现、不训练。
 
 ## 2026-09-22 00:09 reconciliation handoff
 
