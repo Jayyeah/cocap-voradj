@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD `b14217b`，基于 `ops/training-performance-sync-20260921`。已完成两次成功 push；按本 DAG 的 push 上限，后续中央更新保留在共享本地 worktree，状态标记为 `REMOTE_SYNC_PENDING`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD `8ff81f8`，基于 `ops/training-performance-sync-20260921`。本轮只读 fetch 后，`origin/ops/ac-master-dag-20260921` 为 `7238ffa`，两者不一致；已完成两次成功 push，后续中央更新保留在共享本地 worktree，状态标记为 `REMOTE_SYNC_PENDING`，不再 push。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -37,16 +37,16 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
-根盘当前约 75 GiB free、92% used、inode 6%。A0/A1 formal 已分别使用 latest-only/无 replay 累积合同；任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry。
+根盘当前约 74 GiB free、92% used、inode 6%。A0/A1 formal 已分别使用 latest-only/无 replay 累积合同；任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry。
 
 ## DAG gate
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 12600，25k next |
-| A1 | FORMAL_ABORTED_DEVICE_ASSERT_PRE_GATE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 仅 step-0 evaluation；CUDA probability assert，先做 read-only audit/CPU repro，不得宣称科学失败 |
-| B1 | ACTIVE_CPU_BOUNDED | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
-| B2 | R0_COMPLETE_R1_GATE_PENDING | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 16 anchors/144 branches；MASTER 判断 R1，R2 仍锁定 |
+| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 81700；75k formal 已记录，100k next |
+| A1 | AWAITING_USER_APPROVAL_CUDA_STEP0_DIAGNOSTIC | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 工程审计完成；CUDA source 尚未定位；只允许用户批准后的一步 bounded diagnostic，不得宣称科学失败 |
+| B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
+| B2 | R0_FULL_ACTIVE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | Carson CPU PID `285669`；run `artifacts/2026-09-22_b2_r0`；11/128 anchors、99/1152 branches；目标 32 anchors/phase；R1/R2 锁定 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
 | B3 | LOCKED_DEPENDENCIES | MASTER-only comparison | select `BEST_PRETRAINED_CRITIC` only if ranking-first evidence supports it |
@@ -84,10 +84,21 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已启动到 step 12600，0--200k 合同不变。
-2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal 首次运行在 step-0 actor probability 处触发 CUDA device-side assert，已撤销 lease。必须先审计实现/CPU repro，再决定 retry；不能宣称 entropy 科学结论。
-3. B2 R0 已完成：16 anchors、144 AW9 branches；D_CF_R0 全 AW9 support、0 branch transition collision、ranking gate 正；R1/R2 不自动启动。
-4. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
-5. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
-6. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
-7. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
+1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已到 step 81700。75k sample strict CE 为 1.0/20、argmax strict CE 为 0/20，属于 early/sample signal；0--200k 合同不变，不提前判定。
+2. A1 已完成 py_compile、contract tests、CPU architecture probe 与审计；formal 首次运行在 step-0 actor probability 处触发 CUDA device-side assert，已撤销 lease。审计确认工程 blocker、不是科学结果；下一步必须用户批准一次 bounded CUDA diagnostic。
+3. B1 handoff 已完成：epsilon 0.05/0.10 扩展到全 AW9 support，但 overall ranking 未改善，B3 选择仍锁定。
+4. B2 preliminary R0 只有 16 anchors/144 AW9 branches；因样本过小不得解锁 R1。当前由 Carson 扩展 B2-R0-FULL，保持 one-step AW9→BC continuation 定义不变。
+5. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
+6. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
+7. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
+8. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
+
+## 2026-09-22 00:09 reconciliation handoff
+
+- remote 只读 fetch：local `8ff81f8`，origin `7238ffa`；状态 `REMOTE_SYNC_PENDING`，不再 push。
+- IQN Z05 PID `17097` / GPU0 与 Z07 PID `19555` / GPU1 均 alive，tmux、heartbeat、GPU health 正常；没有 resume-needed，不干扰。
+- A0 PID `224643` / GPU0 / tmux `a0_mappo_cov_formal_20260921` alive，step `81700`。75k formal：sample strict CE `1.0/20`，argmax strict CE `0/20`，sample CE RMS mean `0.034989`，area CV mean `0.088407`；只登记 `EARLY_REPRO_SIGNAL_SAMPLE_ONLY`，继续到 200k。
+- A1 审计已 handoff：CPU regression/static checks 通过；CUDA 异步 assert 的 first invalid tensor 仍需一次经用户批准的 bounded CUDA diagnostic 才能定位。无 retry/resume、无科学结论。
+- B1 handoff：BC-only support=8，epsilon 0.05/0.10 support=9；三档 quality PASS，但 overall top1/Spearman 没有形成全局稳定提升，不能直接注册 pretrained critic。
+- B2 preliminary R0：16 anchors/144 branches，仅作样本量不足的 preliminary。Carson 已在独立 B2 worktree 启动 CPU-only R0-FULL，PID `285669`，实际 run `artifacts/2026-09-22_b2_r0`，当前 11/128 anchors、99/1152 branches；目标每 phase 32 anchors（至少 128 total），不含 multi-deviation；完成后 MASTER 再决定 B3 比较或是否满足 R1 条件。
+- A2 仍 `PREFLIGHT_PASS/FORMAL_LOCKED`；A3 仍 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；B4 仍 `BLOCKED_BY_B3`。

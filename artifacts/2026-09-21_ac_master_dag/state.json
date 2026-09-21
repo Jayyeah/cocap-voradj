@@ -1,19 +1,22 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T22:33:00+08:00",
+  "updated_at": "2026-09-22T00:09:09+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
     "branch": "ops/ac-master-dag-20260921",
     "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
-    "head": "668d5f710c68cb994292722ca92861fe47247672",
+    "head": "8ff81f826d5e4a43f924b01de6f62079e98164ad",
+    "remote_head": "7238ffa8bcd448db2e16204b43335873507625b8",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
     "child_concurrency_limit": 4,
     "git_proxy": "127.0.0.1:17892",
     "max_push_attempts": 2,
-    "last_reconciled_commit": "a71785f",
-    "remote_sync_status": "REMOTE_SYNC_PENDING_PUSH_BUDGET_EXHAUSTED_AFTER_TWO_SUCCESSFUL_PUSHES"
+    "last_reconciled_commit": "8ff81f8",
+    "last_remote_fetch_at": "2026-09-22T00:09:09+08:00",
+    "remote_sync_status": "REMOTE_SYNC_PENDING",
+    "remote_sync_reason": "local 8ff81f8 != origin/ops/ac-master-dag-20260921 7238ffa; two successful pushes already consumed; no further push"
   },
   "repo": {
     "remote": "https://github.com/Jayyeah/cocap-voradj.git",
@@ -24,7 +27,7 @@
     "live_iqn_worktree": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919",
     "root_disk": {
       "filesystem": "/dev/nvme0n1p2",
-      "free_gib_approx": 78,
+      "free_gib_approx": 74,
       "use_percent": 92,
       "inode_use_percent": 6,
       "warning": "new large runtime requires latest-only storage and explicit margin"
@@ -80,7 +83,7 @@
     }
   },
   "runtime_reconciliation": {
-    "observed_at": "2026-09-21T22:18:49+08:00",
+    "observed_at": "2026-09-22T00:09:09+08:00",
     "iqn_z05": {
       "status": "LIVE",
       "pid": 17097,
@@ -107,7 +110,7 @@
       "tmux": "a0_mappo_cov_formal_20260921",
       "physical_gpu": 0,
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
-      "current_step": 12600,
+      "current_step": 81700,
       "heartbeat": "LIVE_AT_RECONCILIATION",
       "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE"
     },
@@ -121,7 +124,9 @@
       "current_step": 0,
       "heartbeat": "PROCESS_EXITED_IQN_Z07_STILL_HEALTHY",
       "scientific_contract": "ACTOR_ENTROPY_ALPHA_0.05_ONLY",
-      "failure": "CUDA device-side assert during first actor probability computation: probability tensor contained inf/nan/or negative element; only step-0 evaluation artifact exists"
+      "failure": "CUDA device-side assert during first actor probability computation: probability tensor contained inf/nan/or negative element; only step-0 evaluation artifact exists",
+      "audit_artifact": "artifacts/2026-09-21_entropy_localq_cov/A1_RUNTIME_FAILURE_AUDIT_20260921.json",
+      "approval_required": true
     },
     "ac_mix": {
       "status": "STOPPED_AFTER_300K_FORMAL",
@@ -170,21 +175,21 @@
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
       "tmux": "a0_mappo_cov_formal_20260921",
       "pid": 224643,
-      "current_step": 12600,
-      "latest_formal": "0_CHECKPOINT_STARTED_25K_NEXT",
-      "result_classification": "REPRO_FORMAL_RUNNING",
+      "current_step": 81700,
+      "latest_formal": "75K_FORMAL_EVAL_COMPLETE_100K_NEXT",
+      "result_classification": "EARLY_REPRO_SIGNAL_SAMPLE_ONLY_CONTINUE_CONTRACT",
       "next_gate": "MONITOR_25K_THEN_FORMAL_CHECKPOINTS_TO_200K",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T22:22:00+08:00"
+      "updated_at": "2026-09-22T00:09:09+08:00"
     },
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "AUDIT_ACTIVE_AFTER_DEVICE_ASSERT",
+      "status": "AWAITING_USER_APPROVAL_CUDA_STEP0_DIAGNOSTIC",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": "01a0c461-34a1-74c0-91e8-2edb550847c6", "nickname": "Aquinas", "role": "A1_RUNTIME_AUDIT"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "A1_RUNTIME_AUDIT_HANDOFF_COMPLETE"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
@@ -196,55 +201,55 @@
       "current_step": 0,
       "latest_formal": "0_GATE_INIT_ONLY",
       "result_classification": "IMPLEMENTATION_RUNTIME_FAILURE_DEVICE_ASSERT_NO_SCIENTIFIC_RESULT",
-      "next_gate": "AUDIT_HANDOFF_THEN_MASTER_DECIDE_BOUNDED_RETRY_LEASE",
-      "user_approval_required": false,
-      "updated_at": "2026-09-21T22:33:00+08:00"
+      "next_gate": "USER_APPROVAL_FOR_BOUNDED_CUDA_STEP0_DIAGNOSTIC",
+      "user_approval_required": true,
+      "updated_at": "2026-09-22T00:09:09+08:00"
     },
     {
       "task_id": "B1",
       "task_name": "BC-EXPLORATORY-CRITIC",
-      "status": "ACTIVE_CPU_BOUNDED",
+      "status": "B1_COMPLETE",
       "dependencies": ["BC_CANONICAL_QUALIFIED"],
       "branch": "experiment/ac-bc-exploratory-critic-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921",
-      "child_agent": {"agent_id": "01a0c424-8de1-7c50-888e-66c441a786a4", "nickname": "Noether"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "B1_HANDOFF_RECEIVED_CHILD_CLOSED"},
       "scientific_question": "Can bounded exploration around the canonical BC Actor provide broader action support and a more stable critic ranking?",
       "allowed_changes": "Frozen canonical BC Actor; bounded BC-centered exploration variants; independent critic training and ranking evaluation.",
       "forbidden_changes": "Actor updates, long-term random policy, task/reward/obs changes, B4 joint RL, central DAG/state, nested agents.",
       "gpu_required": false,
       "gpu_lease": "CPU_FIRST; GPU_ONLY_IF_CHILD_REQUESTS_AND_MASTER_GRANTS",
-      "run_dir": null,
+      "run_dir": "/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921/artifacts/2026-09-21_b1_exploratory_critic",
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": "BC_QUALIFIED_STEP0_REFERENCE",
-      "result_classification": null,
-      "next_gate": "B1_SUPPORT_AND_RANKING_HANDOFF",
+      "current_step": "COMPLETE_HANDOFF",
+      "latest_formal": "BOUNDED_COLLECTION_COMPLETE",
+      "result_classification": "SUPPORT_EXPANSION_WITH_PHASE_DEPENDENT_RANKING_NO_GLOBAL_STABILITY",
+      "next_gate": "WAIT_B2_R0_FULL_THEN_B3_RANKING_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:17:00+08:00"
+      "updated_at": "2026-09-22T00:09:09+08:00"
     },
     {
       "task_id": "B2",
       "task_name": "BC-COUNTERFACTUAL-CRITIC",
-      "status": "R0_COMPLETE_R1_GATE_PENDING",
+      "status": "R0_FULL_ACTIVE",
       "dependencies": ["BC_CANONICAL_QUALIFIED"],
       "branch": "experiment/ac-bc-counterfactual-critic-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921",
-      "child_agent": {"agent_id": "01a0c43d-8929-7731-8837-094d069e6eb9", "nickname": "Pascal", "role": "B2_R0_CPU_CONTINUATION", "status": "shutdown_after_artifact_completion"},
+      "child_agent": {"agent_id": "01a0c4bc-26c1-7b70-8e25-391459425efe", "nickname": "Carson", "role": "B2_R0_FULL_CPU_CONTINUATION", "status": "running"},
       "scientific_question": "Can iterative counterfactual dataset aggregation improve full-AW9 ranking while expanding modestly off-BC state support?",
       "allowed_changes": "R0 all-9 one-step branch plus BC continuation; conditional bounded-deviation R1/R2 only under registered gates; independent datasets/reports.",
       "forbidden_changes": "9^H tree expansion, unlimited rounds, actor updates, online RL, reward/obs changes, central DAG/state, nested agents.",
       "gpu_required": false,
       "gpu_lease": "CPU_FIRST; GPU_ONLY_IF_CHILD_REQUESTS_AND_MASTER_GRANTS",
-      "run_dir": null,
+      "run_dir": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921/artifacts/2026-09-22_b2_r0",
       "tmux": null,
-      "pid": null,
-      "current_step": 144,
-      "latest_formal": "R0_COMPLETE",
-      "result_classification": "R0_COMPLETE_R1_REQUEST_DRAFT_ELIGIBLE",
-      "next_gate": "MASTER_DECIDE_R1_FROM_R0_STATE_SUPPORT_AND_RANKING",
+      "pid": 285669,
+      "current_step": "11/128 anchors; 99/1152 branches",
+      "latest_formal": "R0_PRELIMINARY_16_ANCHORS_NOT_GATE; R0_FULL_RUNNING",
+      "result_classification": "R0_PRELIMINARY_INSUFFICIENT_SAMPLE_EXPANDING",
+      "next_gate": "R0_FULL_HANDOFF_THEN_B3_OR_R1_MASTER_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T22:02:00+08:00"
+      "updated_at": "2026-09-22T00:09:09+08:00"
     },
     {
       "task_id": "A2",
@@ -526,6 +531,36 @@
       "at": "2026-09-21T22:33:00+08:00",
       "event": "A1_RUNTIME_AUDIT_SPAWNED",
       "detail": "Spawned Aquinas for CPU/static diagnosis of the step-0 probability assertion; GPU retry and scientific classification remain locked."
+    },
+    {
+      "at": "2026-09-22T00:09:09+08:00",
+      "event": "MASTER_RECONCILED_REMOTE_PENDING",
+      "detail": "Read-only fetch confirmed local 8ff81f8 differs from origin/ops/ac-master-dag-20260921 7238ffa; no further push after the two-push budget. IQN Z05/Z07, A0 PID224643 and tmux heartbeats were live; no IQN recovery action was needed."
+    },
+    {
+      "at": "2026-09-22T00:09:09+08:00",
+      "event": "A0_75K_FORMAL_RECORDED",
+      "detail": "A0 reached step 81700 after 75k formal evaluation. At 75k sample strict CE was 1.0/20 with CE RMS mean 0.034989 and area CV mean 0.088407; argmax strict CE was 0/20 while CE success was 0.8. This is an early/sample signal only; the 200k reproduction contract continues."
+    },
+    {
+      "at": "2026-09-22T00:09:09+08:00",
+      "event": "A1_AUDIT_HANDOFF_USER_GATE",
+      "detail": "Aquinas audit completed: CPU/static checks passed, exact CUDA source remains unresolved, and the only next action is one bounded CUDA step-0 diagnostic with CUDA_LAUNCH_BLOCKING and finite checks after explicit probability construction; user approval is required. No retry/resume started."
+    },
+    {
+      "at": "2026-09-22T00:09:09+08:00",
+      "event": "B1_HANDOFF_RECEIVED",
+      "detail": "B1 completed CPU collection and critic fitting. Epsilon 0.05/0.10 expanded AW9 support to 9 actions, but no global ranking improvement was established; B3 remains gated on B2-R0-FULL."
+    },
+    {
+      "at": "2026-09-22T00:09:09+08:00",
+      "event": "B2_R0_FULL_SPAWNED",
+      "detail": "Preliminary B2 R0 (16 anchors/144 branches) was reclassified as insufficient infrastructure-scale evidence. Spawned Carson for CPU-only B2-R0-FULL in the isolated B2 worktree, target 32 anchors per phase (at least 128 total), same AW9 one-step plus canonical BC continuation, with R1/R2 locked."
+    },
+    {
+      "at": "2026-09-22T00:18:01+08:00",
+      "event": "B2_R0_FULL_RUNTIME_RECONCILED",
+      "detail": "Carson's CPU process PID285669 is alive in the B2 worktree with output artifacts/2026-09-22_b2_r0, at 11/128 anchors and 99/1152 branches; no GPU lease was requested or granted."
     }
   ]
 }
