@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T22:15:00+08:00",
+  "updated_at": "2026-09-21T22:19:00+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -53,32 +53,32 @@
   },
   "gpu_leases": {
     "sampling_contract": "10 samples at 1 second interval before each new GPU job and again after launch",
-    "sample_window": "2026-09-21T21:15:09+08:00/2026-09-21T21:15:19+08:00",
+    "sample_window": "2026-09-21T22:18:39+08:00/2026-09-21T22:18:49+08:00",
     "gpu0": {
       "physical_gpu": 0,
-      "avg_util_percent": 8.8,
-      "peak_util_percent": 16,
-      "min_free_mib": 48327,
-      "temperature_c_range": [65, 65],
-      "active_pids": [17097],
-      "active_jobs": ["IQN-Z05"],
-      "lease": "RESERVED_IQN_NO_OVERLAY_UNTIL_EXPLICIT_MASTER_RECHECK",
+      "avg_util_percent": 4.8,
+      "peak_util_percent": 5,
+      "min_free_mib": 47173,
+      "temperature_c_range": [66, 70],
+      "active_pids": [17097, 224643],
+      "active_jobs": ["IQN-Z05", "A0"],
+      "lease": "A0_FORMAL_GRANTED; IQN-Z05 PRESERVED",
       "heartbeat": "HEALTHY_AT_RECONCILIATION"
     },
     "gpu1": {
       "physical_gpu": 1,
-      "avg_util_percent": 11.5,
-      "peak_util_percent": 26,
-      "min_free_mib": 47579,
-      "temperature_c_range": [77, 79],
-      "active_pids": [19542, 19555],
-      "active_jobs": ["AC-MIX", "IQN-Z07"],
-      "lease": "RESERVED_EXISTING_JOBS_NO_OVERLAY_UNTIL_TASK_SMOKE_AND_MASTER_GRANT",
+      "avg_util_percent": 17.4,
+      "peak_util_percent": 29,
+      "min_free_mib": 47173,
+      "temperature_c_range": [77, 78],
+      "active_pids": [19555, 229509],
+      "active_jobs": ["IQN-Z07", "A1"],
+      "lease": "A1_FORMAL_GRANTED; IQN-Z07 PRESERVED",
       "heartbeat": "HEALTHY_AT_RECONCILIATION"
     }
   },
   "runtime_reconciliation": {
-    "observed_at": "2026-09-21T21:15:19+08:00",
+    "observed_at": "2026-09-21T22:18:49+08:00",
     "iqn_z05": {
       "status": "LIVE",
       "pid": 17097,
@@ -98,6 +98,26 @@
       "runtime": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z07",
       "scientific_contract": "UNCHANGED",
       "recovery_needed": false
+    },
+    "a0_formal": {
+      "status": "LIVE",
+      "pid": 224643,
+      "tmux": "a0_mappo_cov_formal_20260921",
+      "physical_gpu": 0,
+      "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
+      "current_step": 12600,
+      "heartbeat": "LIVE_AT_RECONCILIATION",
+      "scientific_contract": "EXACT_CORRECTED_SCRATCH_MAPPO_PURE_COVERAGE"
+    },
+    "a1_formal": {
+      "status": "LIVE",
+      "pid": 229509,
+      "tmux": "a1_entropy_localq_formal_20260921",
+      "physical_gpu": 1,
+      "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-21_entropy_localq_cov/formal_20260921/ac_entropy_localq_cov_20260921",
+      "current_step": 0,
+      "heartbeat": "LIVE_AT_RECONCILIATION",
+      "scientific_contract": "ACTOR_ENTROPY_ALPHA_0.05_ONLY"
     },
     "ac_mix": {
       "status": "STOPPED_AFTER_300K_FORMAL",
@@ -146,35 +166,35 @@
       "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921",
       "tmux": "a0_mappo_cov_formal_20260921",
       "pid": 224643,
-      "current_step": 0,
-      "latest_formal": "0_CHECKPOINT_STARTED",
+      "current_step": 12600,
+      "latest_formal": "0_CHECKPOINT_STARTED_25K_NEXT",
       "result_classification": "REPRO_FORMAL_RUNNING",
       "next_gate": "MONITOR_25K_THEN_FORMAL_CHECKPOINTS_TO_200K",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T22:12:00+08:00"
+      "updated_at": "2026-09-21T22:22:00+08:00"
     },
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "PREP_COMPLETE_WAITING_GPU_LEASE",
+      "status": "FORMAL_RUNNING_100K_CAUSAL_GATE",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
-      "child_agent": {"agent_id": "01a0c424-8d52-7210-b084-e0692c0a37af", "nickname": "Kierkegaard"},
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_FORMAL_RUNTIME"},
       "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
       "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
       "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
       "gpu_required": true,
-      "gpu_lease": "REQUEST_REQUIRED_BEFORE_SMOKE_OR_FORMAL",
-      "run_dir": null,
-      "tmux": null,
-      "pid": null,
-      "current_step": 1200,
-      "latest_formal": "FORMAL_NOT_STARTED",
-      "result_classification": "PREP_ONLY_NO_FORMAL_CLASSIFICATION",
-      "next_gate": "MASTER_GPU_LEASE_REQUEST_THEN_0_25_50_75_100K_GATE",
+      "gpu_lease": "GPU_LEASE_GRANTED physical_gpu=1 via CUDA_VISIBLE_DEVICES=1; pre_sample_22:16:14-22:16:23 avg=4.8% peak=13% min_free~47579MiB; post_sample_22:18:39-22:18:49 avg=17.4% peak=29% free~47173MiB; IQN-Z07 heartbeat healthy",
+      "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-21_entropy_localq_cov/formal_20260921/ac_entropy_localq_cov_20260921",
+      "tmux": "a1_entropy_localq_formal_20260921",
+      "pid": 229509,
+      "current_step": 0,
+      "latest_formal": "0_GATE_INIT_RUNNING",
+      "result_classification": "FORMAL_RUNNING_NO_CAUSAL_RESULT",
+      "next_gate": "25K_50K_75K_100K_CAUSAL_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:45:00+08:00"
+      "updated_at": "2026-09-21T22:22:00+08:00"
     },
     {
       "task_id": "B1",

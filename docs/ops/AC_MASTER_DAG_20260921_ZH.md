@@ -32,19 +32,19 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | 物理 GPU | active compute | util mean / peak | min free VRAM | 温度 | 结论 |
 |---|---|---:|---:|---:|---|
-| 0 | PID 17097 / Z05 | 8.8% / 16%（21:15 sample） | 48327 MiB | 65 C | IQN 保留；A0 后续仅获 120s CUDA-smoke lease，formal 仍锁定 |
-| 1 | PID 19555 / Z07（AC-MIX 已释放） | 11.5% / 26%（21:15 sample） | 47579 MiB | 77--79 C | IQN 保留；新任务必须重新采样、smoke、显存审计并由 MASTER grant |
+| 0 | PID 17097 / Z05 + 224643 / A0 | 4.8% / 5%（22:18 sample） | 47173 MiB | 66--70 C | A0 formal 已获 lease；IQN Z05 heartbeat 正常 |
+| 1 | PID 19555 / Z07 + 229509 / A1 | 17.4% / 29%（22:18 sample） | 47173 MiB | 77--78 C | A1 formal 已获 lease；IQN Z07 heartbeat 正常 |
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
-根盘当前约 78 GiB free、92% used、inode 6%。任何长训前必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry；优先 latest-only，禁止重复大 replay/resume 累积。
+根盘当前约 75 GiB free、92% used、inode 6%。A0/A1 formal 已分别使用 latest-only/无 replay 累积合同；任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry。
 
 ## DAG gate
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 0，监控至 200k |
-| A1 | PREP_COMPLETE_WAITING_GPU_LEASE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 0/25/50/75/100k entropy causal gate；1200-step CPU smoke passed |
+| A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 12600，25k next |
+| A1 | FORMAL_RUNNING_100K_CAUSAL_GATE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | PID 229509 / tmux `a1_entropy_localq_formal_20260921`；0 gate初始化，向100k causal gate推进 |
 | B1 | ACTIVE_CPU_BOUNDED | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
 | B2 | R0_COMPLETE_R1_GATE_PENDING | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 16 anchors/144 branches；MASTER 判断 R1，R2 仍锁定 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
@@ -55,7 +55,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
 
-第一波最多四个 child：A0、A1、B1、B2。A0 smoke child 已完成并释放 slot；A2/Feynman 与 A3/Hubble 已在两个空闲 slot 中派生。A3 任何时候都停在用户审核 gate，不得自动实现或训练。
+第一波最多四个 child：A0、A1、B1、B2。A0/A1 formal 现在由 MASTER 直接持有已审计的 tmux/PID/GPU lease；B1 仍 bounded CPU，A2/A3 已完成并释放 child slot。A3 已停在用户审核 gate，不得自动实现或训练。
 
 ## Child handoff contract
 
@@ -84,8 +84,8 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；smoke 仅到 step 264，不能计为 formal，0--200k 仍需独立 lease。
-2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal lease 仍由 MASTER 发放。
+1. A0 CPU preflight 与 fresh-output CUDA smoke 均已通过；formal 已启动到 step 12600，0--200k 合同不变。
+2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal 100k 已启动，不能在 100k 前宣称 causal answer。
 3. B2 R0 已完成：16 anchors、144 AW9 branches；D_CF_R0 全 AW9 support、0 branch transition collision、ranking gate 正；R1/R2 不自动启动。
 4. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
 5. A3 proposal 已完成并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；任何实现/训练都暂停到用户明确批准。
