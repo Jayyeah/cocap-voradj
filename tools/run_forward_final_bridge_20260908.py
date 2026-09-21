@@ -88,7 +88,10 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         global_state=None
         if on_transition:
             from cocap_voradj.training.continuous.central_schema import build_central_global_obs
-            global_state=build_central_global_obs(env,max_agents=4,max_evaders=8,max_obstacles=5,self_feature_dim=9)
+            # The diagnostic path must cover every registered curriculum
+            # stage (4/8/12 pursuers); the evaluator does not feed this
+            # tensor to the policy, so use the production central padding.
+            global_state=build_central_global_obs(env,max_agents=12,max_evaders=8,max_obstacles=5,self_feature_dim=9)
         chosen=greedy;entropy=np.zeros(len(active));physical_commands=None
         if physical_policy is not None:
             if actor is not None or on_transition is not None:raise ValueError('Continuous frozen evaluation cannot collect AW9 teacher data')

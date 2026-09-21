@@ -342,7 +342,11 @@ def _mean(summary: Mapping[str, Any], *path: str) -> float:
         value = value[key]
     if isinstance(value, Mapping):
         value = value.get("mean")
-    return float(value) if value is not None else math.inf
+    # Selection reports are written with allow_nan=False.  Missing summary
+    # metrics are valid censored evidence, but must remain JSON-finite; use a
+    # large finite penalty because all current callers rank this quantity low.
+    value = float(value) if value is not None else math.inf
+    return value if math.isfinite(value) else 1.0e30
 
 
 def _harmonic(left: float, right: float) -> float:
