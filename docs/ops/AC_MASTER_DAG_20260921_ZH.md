@@ -46,7 +46,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | A0 | FORMAL_RUNNING | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | PID 224643 / tmux `a0_mappo_cov_formal_20260921`；step 81700；75k formal 已记录，100k next |
 | A1 | AWAITING_USER_APPROVAL_CUDA_STEP0_DIAGNOSTIC | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 工程审计完成；CUDA source 尚未定位；只允许用户批准后的一步 bounded diagnostic，不得宣称科学失败 |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
-| B2 | R0_FULL_ACTIVE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | Carson CPU PID `285669`；run `artifacts/2026-09-22_b2_r0`；11/128 anchors、99/1152 branches；目标 32 anchors/phase；R1/R2 锁定 |
+| B2 | R0_FULL_ACTIVE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | Carson CPU PID `285669`；run `artifacts/2026-09-22_b2_r0`；25/128 anchors、225/1152 branches；目标 32 anchors/phase；R1/R2 锁定 |
 | A2 | PREFLIGHT_PASS_FORMAL_LOCKED | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | commit `9231c25`；9 tests + CPU smoke passed；formal仍锁定 |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
 | B3 | LOCKED_DEPENDENCIES | MASTER-only comparison | select `BEST_PRETRAINED_CRITIC` only if ranking-first evidence supports it |
@@ -100,5 +100,5 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - A0 PID `224643` / GPU0 / tmux `a0_mappo_cov_formal_20260921` alive，step `81700`。75k formal：sample strict CE `1.0/20`，argmax strict CE `0/20`，sample CE RMS mean `0.034989`，area CV mean `0.088407`；只登记 `EARLY_REPRO_SIGNAL_SAMPLE_ONLY`，继续到 200k。
 - A1 审计已 handoff：CPU regression/static checks 通过；CUDA 异步 assert 的 first invalid tensor 仍需一次经用户批准的 bounded CUDA diagnostic 才能定位。无 retry/resume、无科学结论。
 - B1 handoff：BC-only support=8，epsilon 0.05/0.10 support=9；三档 quality PASS，但 overall top1/Spearman 没有形成全局稳定提升，不能直接注册 pretrained critic。
-- B2 preliminary R0：16 anchors/144 branches，仅作样本量不足的 preliminary。Carson 已在独立 B2 worktree 启动 CPU-only R0-FULL，PID `285669`，实际 run `artifacts/2026-09-22_b2_r0`，当前 11/128 anchors、99/1152 branches；目标每 phase 32 anchors（至少 128 total），不含 multi-deviation；完成后 MASTER 再决定 B3 比较或是否满足 R1 条件。
+- B2 preliminary R0：16 anchors/144 branches，仅作样本量不足的 preliminary。Carson 已在独立 B2 worktree 启动 CPU-only R0-FULL，PID `285669`，实际 run `artifacts/2026-09-22_b2_r0`，当前 25/128 anchors、225/1152 branches；目标每 phase 32 anchors（至少 128 total），不含 multi-deviation；完成后 MASTER 再决定 B3 比较或是否满足 R1 条件。
 - A2 仍 `PREFLIGHT_PASS/FORMAL_LOCKED`；A3 仍 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；B4 仍 `BLOCKED_BY_B3`。
