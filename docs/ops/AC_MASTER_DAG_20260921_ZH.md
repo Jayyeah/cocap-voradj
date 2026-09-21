@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，HEAD `668d5f7`，基于 `ops/training-performance-sync-20260921`。
+- MASTER branch：`ops/ac-master-dag-20260921`，中央状态本轮待提交更新，基于 `ops/training-performance-sync-20260921`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -23,7 +23,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 - AC-COV：已有 500k formal；strict CE 0、分类 `NO_CLEAR_SUSTAINED_SIGNAL`。不重启原失败 run。
 - AC-CAP：300k formal artifact 已存在；其后 recovery log 记录 `actor_grad_norm=inf` 与 `finite=0`，当前无 live PID。分类为 `NONFINITE_AFTER_300K_FORMAL`，只保留 forensic summary，不追加旧预算。
-- AC-MIX：当前 PID `19542`、tmux `ac_mix_recovery_20260921`、物理 GPU1，实时约 293k/300k；只允许完成 300k formal closeout，禁止扩 500k。
+- AC-MIX：已完成并保留 `eval_step_000300000.json`；由于从 200k resume 后 additional-step 语义使 telemetry 越过边界到 global step 375k，MASTER 已停止 PID `19542`，tmux 已消失，GPU1 已释放；禁止扩 500k。该线只能做 closeout forensic，不把 375k 后窗口当作新增正式预算。
 - AC-COV/CAP/MIX 的旧 resume 连续性不宣称 bit-exact：COV provenance incomplete，CAP/MIX replay reset 后 functional only。不能把这些旧线当作新 DAG 的 exact baseline。
 
 ## GPU lease 记录
@@ -32,8 +32,8 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | 物理 GPU | active compute | util mean / peak | min free VRAM | 温度 | 结论 |
 |---|---|---:|---:|---:|---|
-| 0 | PID 17097 / Z05 | 8.8% / 16% | 48327 MiB | 65 C | IQN 保留，未发放叠加 lease |
-| 1 | PID 19542 / AC-MIX；19555 / Z07 | 11.5% / 26% | 47579 MiB | 77--79 C | 已有任务保留；新任务必须重新采样、smoke、显存审计并由 MASTER grant |
+| 0 | PID 17097 / Z05 | 8.8% / 16%（21:15 sample） | 48327 MiB | 65 C | IQN 保留；A0 后续仅获 120s CUDA-smoke lease，formal 仍锁定 |
+| 1 | PID 19555 / Z07（AC-MIX 已释放） | 11.5% / 26%（21:15 sample） | 47579 MiB | 77--79 C | IQN 保留；新任务必须重新采样、smoke、显存审计并由 MASTER grant |
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
@@ -43,19 +43,19 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
-| A0 | READY_TO_SPAWN | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | exact 0--200k MAPPO reproduction |
-| A1 | READY_TO_SPAWN | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 0/25/50/75/100k entropy causal gate |
-| B1 | READY_TO_SPAWN | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
-| B2 | READY_TO_SPAWN | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | R0；R1/R2 only under MASTER gate |
-| A2 | LOCKED_CHILD_SLOT | later isolated worktree | implementation/tests/smoke now; formal only after A0 learnable + A1 insufficient |
-| A3 | LOCKED_DESIGN_ONLY | later isolated worktree | proposal then `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL` |
+| A0 | CUDA_SMOKE_FAILED_FRESH_OUTPUT | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 先用全新未创建 output 重试 CUDA smoke；formal 仍锁定 |
+| A1 | PREP_COMPLETE_WAITING_GPU_LEASE | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 0/25/50/75/100k entropy causal gate；1200-step CPU smoke passed |
+| B1 | ACTIVE_CPU_BOUNDED | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | support + ranking handoff |
+| B2 | R0_IMPLEMENTATION_READY_WAITING_CPU_CONTINUATION | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | MASTER 后续派发 R0 CPU；R1/R2 only under MASTER gate |
+| A2 | ACTIVE_IMPLEMENTATION_PREFLIGHT | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | implementation/tests/smoke；formal only after A0 learnable + A1 insufficient |
+| A3 | ACTIVE_DESIGN_ONLY | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal then `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL` |
 | B3 | LOCKED_DEPENDENCIES | MASTER-only comparison | select `BEST_PRETRAINED_CRITIC` only if ranking-first evidence supports it |
 | B4 | LOCKED_DEPENDENCIES | later isolated worktree | step0 retention before any long joint RL |
-| OLD-MIX-CLOSEOUT | LIVE_CLOSEOUT_ONLY | existing live worktree | 300k formal then release |
+| OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
 | IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
 
-第一波最多四个 child：A0、A1、B1、B2。A2/A3 只能在 slot 释放后派生；A3 任何时候都停在用户审核 gate，不得自动实现或训练。
+第一波最多四个 child：A0、A1、B1、B2。A0 smoke child 已完成并释放 slot；A2/Feynman 与 A3/Hubble 已在两个空闲 slot 中派生。A3 任何时候都停在用户审核 gate，不得自动实现或训练。
 
 ## Child handoff contract
 
@@ -84,8 +84,10 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 ## 当前自动转移
 
-1. 先派生 A0/A1/B1/B2；A0/A1 若需 GPU，必须先获得 lease。B1/B2 默认 CPU/offline，不因已有 GPU 低利用率而强占。
-2. A2 只在 slot 释放后做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
-3. A3 只做 design，完成后写 proposal 并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`。
-4. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
-5. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。
+1. A0 CPU preflight 已通过，但第一次 CUDA smoke 因 output directory 已存在而在训练前退出；不得把它计为 formal，必须 fresh-output 重试。
+2. A1 已完成 py_compile、18 个 contract tests、1200-step CPU smoke；formal lease 仍由 MASTER 发放。
+3. B2 已完成 R0 实现与 syntax validation，但未生成 R0 数据集；后续需由 MASTER 在 slot 释放后派发 CPU continuation。
+4. A2 只做 implementation/tests/smoke/config；其 formal 100k 仍锁在 A0/A1 gate。
+5. A3 只做 design，完成后写 proposal 并停在 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`。
+6. A0 未得到 reproduction classification 前，MASTER 不宣称当前环境 drift 或 no-drift；A1 100k 前不宣称 entropy causal answer。
+7. 只有 `A0 indicates learnable` 且 `A1=ENTROPY_NOT_SUFFICIENT` 才解锁 A2 formal；只有 BC qualified + B3 selected critic 才解锁 B4。

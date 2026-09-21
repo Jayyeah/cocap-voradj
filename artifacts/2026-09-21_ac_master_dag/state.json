@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-21T21:16:00+08:00",
+  "updated_at": "2026-09-21T21:45:00+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -100,15 +100,17 @@
       "recovery_needed": false
     },
     "ac_mix": {
-      "status": "LIVE_CLOSEOUT",
-      "pid": 19542,
-      "tmux": "ac_mix_recovery_20260921",
+      "status": "STOPPED_AFTER_300K_FORMAL",
+      "pid": null,
+      "tmux": null,
       "physical_gpu": 1,
-      "current_live_step_observed": 293000,
-      "latest_formal": 150000,
+      "current_live_step_observed": 375000,
+      "latest_formal": 300000,
       "target": 300000,
       "runtime": "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1",
-      "scientific_contract": "OLD_MIX_CLOSEOUT_ONLY_NO_500K"
+      "scientific_contract": "OLD_MIX_CLOSEOUT_ONLY_NO_500K",
+      "stop_reason": "MASTER_STOPPED_AFTER_AUTHORIZED_300K_FORMAL; process had continued 75k beyond boundary due resume/additional-step semantics",
+      "formal_artifact": "runs/ac_capability_mix_stage1/evaluations/eval_step_000300000.json"
     },
     "ac_cap": {
       "status": "STOPPED_AFTER_300K_FORMAL_WITH_NONFINITE_RECOVERY_FAILURE",
@@ -131,30 +133,30 @@
     {
       "task_id": "A0",
       "task_name": "MAPPO-COV-REPRO",
-      "status": "SPAWNED_PREP",
+      "status": "CUDA_SMOKE_FAILED_FRESH_OUTPUT",
       "dependencies": [],
       "branch": "experiment/ac-mappo-cov-repro-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921",
-      "child_agent": {"agent_id": "01a0c424-8ceb-7330-a359-98d96de80589", "nickname": "Confucius"},
+      "child_agent": {"agent_id": "01a0c432-3daa-75a0-aff3-07841e8a093f", "nickname": "Carver", "role": "A0_LEASE_CONTINUATION", "status": "completed"},
       "scientific_question": "Can historical corrected Scratch MAPPO Pure-Coverage success be reproduced under the current repository/environment?",
       "allowed_changes": "Exact reproduction implementation, tests, configs, isolated run artifacts; no entropy/reward/spawn/curriculum/BC changes.",
       "forbidden_changes": "IQN runtime or contract; central DAG/state; other worktrees; extra long runs; nested agents.",
       "gpu_required": true,
-      "gpu_lease": "REQUEST_REQUIRED_BEFORE_SMOKE_OR_FORMAL",
-      "run_dir": null,
+      "gpu_lease": "GPU_LEASE_REVOKED_SMOKE_SETUP_FAILURE; no formal lease; retry requires genuinely uncreated output directory",
+      "run_dir": "/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921/artifacts/2026-09-21_ac_mappo_cov_repro",
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": null,
-      "result_classification": null,
-      "next_gate": "A0_REPRO_PASS_OR_PARTIAL_OR_FAIL",
+      "current_step": 264,
+      "latest_formal": "NOT_STARTED",
+      "result_classification": "REPRO_PARTIAL",
+      "next_gate": "FRESH_OUTPUT_CUDA_SMOKE_RETRY_THEN_FORMAL_LEASE_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:17:00+08:00"
+      "updated_at": "2026-09-21T21:45:00+08:00"
     },
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "SPAWNED_PREP",
+      "status": "PREP_COMPLETE_WAITING_GPU_LEASE",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
@@ -167,12 +169,12 @@
       "run_dir": null,
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": null,
-      "result_classification": null,
-      "next_gate": "A1_100K_CAUSAL_GATE",
+      "current_step": 1200,
+      "latest_formal": "FORMAL_NOT_STARTED",
+      "result_classification": "PREP_ONLY_NO_FORMAL_CLASSIFICATION",
+      "next_gate": "MASTER_GPU_LEASE_REQUEST_THEN_0_25_50_75_100K_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:17:00+08:00"
+      "updated_at": "2026-09-21T21:45:00+08:00"
     },
     {
       "task_id": "B1",
@@ -200,11 +202,11 @@
     {
       "task_id": "B2",
       "task_name": "BC-COUNTERFACTUAL-CRITIC",
-      "status": "ACTIVE_R0_CPU_BOUNDED",
+      "status": "R0_IMPLEMENTATION_READY_WAITING_CPU_CONTINUATION",
       "dependencies": ["BC_CANONICAL_QUALIFIED"],
       "branch": "experiment/ac-bc-counterfactual-critic-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921",
-      "child_agent": {"agent_id": "01a0c424-8d9a-7d10-bffa-356d36444375", "nickname": "Maxwell"},
+      "child_agent": {"agent_id": "01a0c424-8d9a-7d10-bffa-356d36444375", "nickname": "Maxwell", "status": "completed"},
       "scientific_question": "Can iterative counterfactual dataset aggregation improve full-AW9 ranking while expanding modestly off-BC state support?",
       "allowed_changes": "R0 all-9 one-step branch plus BC continuation; conditional bounded-deviation R1/R2 only under registered gates; independent datasets/reports.",
       "forbidden_changes": "9^H tree expansion, unlimited rounds, actor updates, online RL, reward/obs changes, central DAG/state, nested agents.",
@@ -214,20 +216,20 @@
       "tmux": null,
       "pid": null,
       "current_step": 0,
-      "latest_formal": "AC4B_EXISTING_RANKING_REFERENCE",
-      "result_classification": null,
-      "next_gate": "B2_R0_HANDOFF_THEN_MASTER_R1_GATE",
+      "latest_formal": "R0_NOT_STARTED",
+      "result_classification": "R0_IMPLEMENTATION_READY_NO_CPU_ARTIFACTS",
+      "next_gate": "MASTER_SPAWN_B2_R0_CPU_CONTINUATION_THEN_R1_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:17:00+08:00"
+      "updated_at": "2026-09-21T21:45:00+08:00"
     },
     {
       "task_id": "A2",
       "task_name": "DISCRETE-SAC-PREFLIGHT",
-      "status": "LOCKED_CHILD_SLOT",
+      "status": "ACTIVE_IMPLEMENTATION_PREFLIGHT",
       "dependencies": ["A0_GATE", "A1_ENTROPY_NOT_SUFFICIENT"],
       "branch": "experiment/ac-discrete-sac-preflight-20260921",
-      "worktree": null,
-      "child_agent": null,
+      "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
+      "child_agent": {"agent_id": "01a0c43b-2d2f-7cf3-9c32-4cfeb4b788a6", "nickname": "Feynman", "role": "A2_PREFLIGHT"},
       "scientific_question": "Does exact categorical AW9 SAC provide a controlled twin-Q entropy target after A0 remains learnable and A1 is insufficient?",
       "allowed_changes": "Implementation/tests/smoke/config only now; later exact categorical SAC formal 100k if MASTER unlocks.",
       "forbidden_changes": "Gumbel, continuous conversion, architecture/reward/curriculum changes, autonomous formal long run, central DAG/state.",
@@ -241,16 +243,16 @@
       "result_classification": null,
       "next_gate": "A2_PREFLIGHT_READY_THEN_MASTER_GATE",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:16:00+08:00"
+      "updated_at": "2026-09-21T21:45:00+08:00"
     },
     {
       "task_id": "A3",
       "task_name": "CAPTURE-CURRICULUM-DESIGN",
-      "status": "LOCKED_DESIGN_ONLY",
+      "status": "ACTIVE_DESIGN_ONLY",
       "dependencies": [],
       "branch": "design/ac-capture-curriculum-20260921",
-      "worktree": null,
-      "child_agent": null,
+      "worktree": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921",
+      "child_agent": {"agent_id": "01a0c43b-2d86-7a61-b021-ee4537a6bfc3", "nickname": "Hubble", "role": "A3_DESIGN_ONLY"},
       "scientific_question": "Can an initialization-only capture curriculum bridge capture without changing Final Capture reward?",
       "allowed_changes": "Read/audit/design/proposal only; exact numeric candidate stages, Final diff, risks, budgets, promotion/rollback gates.",
       "forbidden_changes": "Implementation, spawn edits, reward curriculum, training, GPU job, central DAG/state, self-approval.",
@@ -264,7 +266,7 @@
       "result_classification": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL",
       "next_gate": "USER_EXPLICIT_APPROVAL_REQUIRED",
       "user_approval_required": true,
-      "updated_at": "2026-09-21T21:16:00+08:00"
+      "updated_at": "2026-09-21T21:45:00+08:00"
     },
     {
       "task_id": "B3",
@@ -315,7 +317,7 @@
     {
       "task_id": "OLD-MIX-CLOSEOUT",
       "task_name": "OLD-MIX-CLOSEOUT",
-      "status": "LIVE_CLOSEOUT_ONLY",
+      "status": "CLOSED_300K_FORMAL",
       "dependencies": [],
       "branch": "experiment/ac-capability-mix-stage1-20260920",
       "worktree": "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit",
@@ -324,14 +326,14 @@
       "allowed_changes": "Finish existing 300k run, save compact summary/formal evidence, close line.",
       "forbidden_changes": "500k extension, IQN interference, contract changes, restart under new science.",
       "gpu_required": true,
-      "gpu_lease": "EXISTING_LEASE_GPU1_PID19542",
+      "gpu_lease": "RELEASED_AFTER_CLOSEOUT",
       "run_dir": "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1",
-      "tmux": "ac_mix_recovery_20260921",
-      "pid": 19542,
-      "current_step": 293000,
-      "latest_formal": 150000,
-      "result_classification": "PENDING_300K_FORMAL",
-      "next_gate": "CLOSE_AND_RELEASE_GPU_AFTER_300K_OR_FAIL_SAFE",
+      "tmux": null,
+      "pid": null,
+      "current_step": 375000,
+      "latest_formal": 300000,
+      "result_classification": "CLOSEOUT_FORMAL_300K_WITH_POST_BOUNDARY_OVERFLOW_TO_375K",
+      "next_gate": "RELEASED_NO_500K_EXTENSION",
       "user_approval_required": false,
       "updated_at": "2026-09-21T21:16:00+08:00"
     },
@@ -420,6 +422,36 @@
       "at": "2026-09-21T21:16:00+08:00",
       "event": "OLD_CAP_CLOSED",
       "detail": "300k formal exists; subsequent nonfinite actor gradient failure classified and no extension authorized."
+    },
+    {
+      "at": "2026-09-21T21:31:00+08:00",
+      "event": "OLD_MIX_CLOSEOUT_ENFORCED",
+      "detail": "AC-MIX had eval_step_000300000.json but continued to global_step 375000 after resume/additional-step semantics; MASTER stopped PID 19542, preserved artifacts, and prohibited 500k extension."
+    },
+    {
+      "at": "2026-09-21T21:31:00+08:00",
+      "event": "A0_GPU_LEASE_REQUESTED",
+      "detail": "A0 CPU smoke passed; formal remains pending exact launch/VRAM estimate and limited CUDA smoke lease."
+    },
+    {
+      "at": "2026-09-21T21:38:00+08:00",
+      "event": "A0_GPU_LEASE_GRANTED",
+      "detail": "Granted A0 physical GPU0 for CUDA smoke only, max 120s; formal 0-200k remains locked pending post-launch sample and health checks."
+    },
+    {
+      "at": "2026-09-21T21:45:00+08:00",
+      "event": "A0_CUDA_SMOKE_FAILED_NO_FORMAL",
+      "detail": "A0 CUDA smoke exited before training because the output directory already existed (Fresh output required); no formal run launched and the smoke lease was revoked."
+    },
+    {
+      "at": "2026-09-21T21:45:00+08:00",
+      "event": "A1_PREP_COMPLETE",
+      "detail": "A1 py_compile, 18 contract tests, and 1200-step CPU smoke passed; formal 0-100k remains pending MASTER GPU lease."
+    },
+    {
+      "at": "2026-09-21T21:45:00+08:00",
+      "event": "B2_R0_IMPLEMENTATION_READY",
+      "detail": "B2 added bounded R0 counterfactual aggregation implementation and syntax validation; no R0 dataset was run, so CPU continuation remains a MASTER-controlled next step."
     }
   ]
 }
