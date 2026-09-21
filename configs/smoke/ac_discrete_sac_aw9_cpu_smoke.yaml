@@ -1,0 +1,39 @@
+extends: ../experiments/ac_capability_20260920/common.yaml
+
+# Bounded A2 preflight only.  This config is intentionally CPU-only and is not
+# a formal training launch configuration.
+seed: 2026092102
+device: cpu
+run_name: ac_discrete_sac_aw9_cpu_smoke
+total_timesteps: 8
+
+ac:
+  learner: discrete_sac_aw9_preflight
+  mode: coverage
+  network:
+    hidden_dim: 32
+    num_heads: 4
+    num_layers: 1
+    action_size: 9
+    self_feature_dim: 9
+    max_pursuers: 8
+    max_evaders: 8
+    max_obstacles: 5
+    pursuing_embed_dim: 8
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0003
+  critic_lr: 0.0003
+  alpha_lr: 0.0003
+  alpha_init: 0.2
+  adam_eps: 1.0e-8
+  max_grad_norm: 0.5
+  batch_size: 8
+  smoke:
+    steps: 4
+    batch_size: 8
+
+experiment_metadata:
+  capability_line: discrete_sac_aw9_preflight
+  formal_training_started: false
+  environment_contract: existing_aw9_discrete_coverage
