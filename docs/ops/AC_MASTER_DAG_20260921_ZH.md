@@ -52,7 +52,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
 | B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
 | OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
-| IQN-METRIC-AUGMENT | QUEUED_READ_ONLY | future isolated branch | evaluation-only changes; no live training impact |
+| IQN-METRIC-AUGMENT | IMPLEMENTED_TESTED_PENDING_INTEGRATION | `evaluation/iqn-metric-augment-20260922` / `/home/yjq/rl/CoCap1/iqn-metric-augment-20260922` | HEAD `5c146f7`；CPU compile、指标回归与 IQN contract tests 通过；只在下一次 formal evaluation 接入，不改 live training |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
 
 第一波最多四个 child：A0、A1、B1、B2。A0/A1 formal 现在由 MASTER 直接持有已审计的 tmux/PID/GPU lease；B1/B2 已完成并释放 child slot，A2/A3 已完成 preflight/design。A3 已停在用户审核 gate，不得自动实现或训练。
@@ -150,3 +150,11 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - MASTER 直接执行了与 production 相同顺序的 bounded exact diagnostic：`_gate_evaluation(0)` 先完成 3000 deterministic steps，再 `_collect_step()` 到 `global_step=1`。CPU PASS；GPU1 + `CUDA_LAUNCH_BLOCKING=1` 也 PASS，alpha `0.05`，无 invalid tensor/probability/index。
 - 真实 runner 1-step smoke 只生成了初始 `eval_step_000000000.json`，在 120 秒上限内因末尾第二次 deterministic evaluation 未完成而 timeout；没有新的 CUDA traceback。该 timeout 不是科学结果，也不证明 formal 已修复。
 - 最终分类：`ENGINEERING_BLOCKED_UNREPRODUCED_FORMAL_ASSERT`。原 PID `317964` 的 formal-width assert 仍保留为 engineering evidence，但没有可复现 root cause，也没有合理最小 production fix；A1 不重启 formal，A2 不解锁。
+
+## 2026-09-22 22:00 MASTER reconciliation / IQN-METRIC-AUGMENT
+
+- IQN 正常且未受干扰：Z05 PID `17097` / tmux `iqn_z05_recovery_20260921` / physical GPU0；heartbeat `400000/400000`，最新 heartbeat `22:00:39`。Z07 PID `19555` / tmux `iqn_z07_recovery_20260921` / physical GPU1（`CUDA_VISIBLE_DEVICES=1` 映射）；heartbeat `400000/400000`，最新 heartbeat `22:00:43`，处于 formal-evaluation 状态。两条均无 dead PID、broken tmux 或 resume-needed 证据，不恢复、不迁移、不改科学合同。
+- 只读资源审计：GPU0 `17%` util、`30722 MiB` free、`54 C`，另有不属于 MASTER 的 external LightNav PID `754220` 占用显存；GPU1 `0%` util、`47726 MiB` free、`73 C`，仅有 IQN-Z07。根盘约 `38 GiB` free、`96%` used；本轮没有申请新 GPU lease，也没有启动长训。
+- `IQN-METRIC-AUGMENT` 已在独立 worktree `/home/yjq/rl/CoCap1/iqn-metric-augment-20260922`、branch `evaluation/iqn-metric-augment-20260922` 完成实现并提交 HEAD `5c146f7`，没有修改 live IQN worktree/runtime。评估层新增：Pure Capture 的 `capture_steps/capture_seconds`；Pure Coverage 的 `time_to_strict_CE_steps/time_to_strict_CE_seconds`；Mixed 的 `capture/recovery/mission steps/time` 与 `post_capture_CE`。所有时间统计保留 `mean/median/p90/success_n`，并显式分开 `failure_n/censored_n`，失败或 censored episode 不进入成功时间均值。
+- 验证：`py_compile` 通过；`tests/test_iqn_efficiency_metrics.py` `2 passed`；`tests/test_iqn_z_unified_decay_curriculum_contract.py` `14 passed`。没有进行 live GPU evaluation overlay；现有 Z05/Z07 formal reports 保持原样，下一 gate 是在下一次 formal evaluation 前由 MASTER 选择/接入该隔离分支。
+- AC gate 不变：A0 `REPRO_PASS`；A1/A2 均 deferred engineering blocker，无科学重试；B3 `NO_RANKING_QUALIFIED_CRITIC`，B4 blocked；A3 继续 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`。当前没有可合法启动的 AC overnight 长训线。

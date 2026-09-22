@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-22T03:06:15+08:00",
+  "updated_at": "2026-09-22T22:00:49+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -15,7 +15,7 @@
     "max_push_attempts_per_blocked_upload": 2,
     "normal_pushes_allowed": true,
     "last_reconciled_commit": "639eff5b0ed4d88751dfdfd43f1b43f91122c4bd",
-    "last_remote_fetch_at": "2026-09-22T02:57:50+08:00",
+    "last_remote_fetch_at": "2026-09-22T22:00:49+08:00",
     "last_push_at": "2026-09-22T03:06:15+08:00",
     "remote_sync_status": "REMOTE_SYNCED",
     "remote_sync_reason": "explicit 127.0.0.1:17892 command-level proxy push succeeded at 2026-09-22T03:06:15+08:00; remote now matches 639eff5; no stale 17891 or permanent proxy used"
@@ -179,12 +179,15 @@
     }
   },
   "runtime_reconciliation": {
-    "observed_at": "2026-09-22T02:57:50+08:00",
+    "observed_at": "2026-09-22T22:00:49+08:00",
     "iqn_z05": {
       "status": "LIVE",
       "pid": 17097,
       "tmux": "iqn_z05_recovery_20260921",
       "physical_gpu": 0,
+      "heartbeat_current_step": 400000,
+      "heartbeat_target_step": 400000,
+      "heartbeat_updated_at": "2026-09-22T22:00:39+0800",
       "command_contract": "supervise --arm z05 --device cuda:0",
       "runtime": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05",
       "scientific_contract": "UNCHANGED",
@@ -195,6 +198,9 @@
       "pid": 19555,
       "tmux": "iqn_z07_recovery_20260921",
       "physical_gpu": 1,
+      "heartbeat_current_step": 400000,
+      "heartbeat_target_step": 400000,
+      "heartbeat_updated_at": "2026-09-22T22:00:43+0800",
       "command_contract": "supervise --arm z07 --device cuda:0 with CUDA_VISIBLE_DEVICES=1 mapping",
       "runtime": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z07",
       "scientific_contract": "UNCHANGED",
@@ -290,6 +296,33 @@
       "latest_formal": 500000,
       "classification": "NO_CLEAR_SUSTAINED_SIGNAL",
       "next_action": "DO_NOT_RESTART_OR_EXTEND"
+    },
+    "latest_read_only_gpu_audit": {
+      "observed_at": "2026-09-22T22:00:49+08:00",
+      "gpu0": {
+        "util_percent": 17,
+        "memory_used_mib": 17819,
+        "memory_free_mib": 30722,
+        "temperature_c": 54,
+        "active_pids": [17097, 754220],
+        "active_jobs": ["IQN-Z05", "EXTERNAL_LIGHTNAV_NOT_MASTER_OWNED"],
+        "decision": "NO_NEW_LEASE; preserve IQN and external process"
+      },
+      "gpu1": {
+        "util_percent": 0,
+        "memory_used_mib": 815,
+        "memory_free_mib": 47726,
+        "temperature_c": 73,
+        "active_pids": [19555],
+        "active_jobs": ["IQN-Z07"],
+        "decision": "IDLE_BUT_NO_NEW_GPU_JOB_REQUESTED"
+      },
+      "disk": {
+        "root_free_gib_approx": 38,
+        "root_use_percent": 96,
+        "inode_use_percent": 6,
+        "decision": "NO_LARGE_RUNTIME"
+      }
     }
   },
   "tasks": [
@@ -526,25 +559,31 @@
     {
       "task_id": "IQN-METRIC-AUGMENT",
       "task_name": "IQN-METRIC-AUGMENT",
-      "status": "QUEUED_READ_ONLY",
+      "status": "IMPLEMENTED_TESTED_PENDING_INTEGRATION",
       "dependencies": [],
-      "branch": null,
-      "worktree": null,
-      "child_agent": null,
+      "branch": "evaluation/iqn-metric-augment-20260922",
+      "worktree": "/home/yjq/rl/CoCap1/iqn-metric-augment-20260922",
+      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "MASTER_DIRECT_BOUNDED_EVALUATION_IMPLEMENTATION"},
       "scientific_question": "Add capture/coverage/mixed efficiency metrics to formal evaluation without changing live IQN policy/reward/environment training.",
       "allowed_changes": "Evaluation/reporting code and tests only; capture_steps/seconds, strict CE time steps/seconds, mixed capture/recovery/mission and outcome classes.",
       "forbidden_changes": "Live training code, reward, environment, policy, resume payload, IQN runtime restart unless abnormal interruption contract requires it.",
       "gpu_required": false,
-      "gpu_lease": "CPU_OR_EVAL_ONLY; NO_LIVE_TRAINING_OVERLAY",
+      "gpu_lease": "CPU_TEST_ONLY; NO_LIVE_TRAINING_OVERLAY",
       "run_dir": null,
       "tmux": null,
       "pid": null,
-      "current_step": 0,
-      "latest_formal": "Existing IQN reports remain valid; augmentation starts on next formal evaluation",
-      "result_classification": null,
-      "next_gate": "IMPLEMENT_ON_ISOLATED_BRANCH_THEN_TEST_BEFORE_NEXT_EVAL",
+      "current_step": "CODE_AND_TESTS_COMPLETE",
+      "latest_formal": "NOT_RUN; existing IQN reports remain valid",
+      "result_classification": "IMPLEMENTED_CPU_TESTED_NO_LIVE_EVAL",
+      "next_gate": "INTEGRATE_OR_EXPLICITLY_SELECT_BRANCH_BEFORE_NEXT_FORMAL_EVALUATION",
       "user_approval_required": false,
-      "updated_at": "2026-09-21T21:16:00+08:00"
+      "head": "5c146f74752073414af416b0db6c686e1c588a07",
+      "tests": [
+        "python3 -m py_compile tools/run_forward_final_bridge_20260908.py tools/iqn_token_matched_20260919.py tests/test_iqn_efficiency_metrics.py",
+        "python3 -m pytest -q tests/test_iqn_efficiency_metrics.py: 2 passed",
+        "python3 -m pytest -q tests/test_iqn_z_unified_decay_curriculum_contract.py: 14 passed"
+      ],
+      "updated_at": "2026-09-22T22:00:49+08:00"
     },
     {
       "task_id": "A4",
