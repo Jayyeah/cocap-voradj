@@ -37,7 +37,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
-根盘当前约 74 GiB free、92% used、inode 6%。A0/A1 formal 已分别使用 latest-only/无 replay 累积合同；任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry。
+根盘当前约 37 GiB free、96% used、inode 6%。A0/A1 formal 已分别使用 latest-only/无 replay 累积合同；任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry。
 
 ## DAG gate
 
@@ -154,7 +154,7 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 ## 2026-09-22 22:00 MASTER reconciliation / IQN-METRIC-AUGMENT
 
 - IQN 正常且未受干扰：Z05 PID `17097` / tmux `iqn_z05_recovery_20260921` / physical GPU0；heartbeat `400000/400000`，最新 heartbeat `22:00:39`。Z07 PID `19555` / tmux `iqn_z07_recovery_20260921` / physical GPU1（`CUDA_VISIBLE_DEVICES=1` 映射）；heartbeat `400000/400000`，最新 heartbeat `22:00:43`，处于 formal-evaluation 状态。两条均无 dead PID、broken tmux 或 resume-needed 证据，不恢复、不迁移、不改科学合同。
-- 只读资源审计：GPU0 `17%` util、`30722 MiB` free、`54 C`，另有不属于 MASTER 的 external LightNav PID `754220` 占用显存；GPU1 `0%` util、`47726 MiB` free、`73 C`，仅有 IQN-Z07。根盘约 `38 GiB` free、`96%` used；本轮没有申请新 GPU lease，也没有启动长训。
+- 只读资源审计：GPU0 `17%` util、`30722 MiB` free、`54 C`，另有不属于 MASTER 的 external LightNav PID `754220` 占用显存；GPU1 `0%` util、`47726 MiB` free、`73 C`，仅有 IQN-Z07。根盘约 `37 GiB` free、`96%` used；本轮没有申请新 GPU lease，也没有启动长训。
 - `IQN-METRIC-AUGMENT` 已在独立 worktree `/home/yjq/rl/CoCap1/iqn-metric-augment-20260922`、branch `evaluation/iqn-metric-augment-20260922` 完成实现并提交 HEAD `5c146f7`，没有修改 live IQN worktree/runtime。评估层新增：Pure Capture 的 `capture_steps/capture_seconds`；Pure Coverage 的 `time_to_strict_CE_steps/time_to_strict_CE_seconds`；Mixed 的 `capture/recovery/mission steps/time` 与 `post_capture_CE`。所有时间统计保留 `mean/median/p90/success_n`，并显式分开 `failure_n/censored_n`，失败或 censored episode 不进入成功时间均值。
 - 验证：`py_compile` 通过；`tests/test_iqn_efficiency_metrics.py` `2 passed`；`tests/test_iqn_z_unified_decay_curriculum_contract.py` `14 passed`。没有进行 live GPU evaluation overlay；现有 Z05/Z07 formal reports 保持原样，下一 gate 是在下一次 formal evaluation 前由 MASTER 选择/接入该隔离分支。
 - AC gate 不变：A0 `REPRO_PASS`；A1/A2 均 deferred engineering blocker，无科学重试；B3 `NO_RANKING_QUALIFIED_CRITIC`，B4 blocked；A3 继续 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`。当前没有可合法启动的 AC overnight 长训线。
