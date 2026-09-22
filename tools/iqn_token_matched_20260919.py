@@ -356,6 +356,40 @@ def numeric_summary(values: list[float]) -> dict[str, Any]:
     }
 
 
+def efficiency_timing_summary(
+    rows: list[Mapping[str, Any]],
+    *,
+    success_key: str,
+    value_key: str,
+) -> dict[str, Any]:
+    """Summarize completion time without imputing failed/censored episodes.
+
+    ``success_n`` is the denominator for the timing distribution.  Episodes
+    that collide or hit a boundary before the requested event are reported as
+    failures; non-success episodes without those terminal events are reported
+    as right-censored.  Neither group contributes a value to mean/median/p90.
+    """
+    successful = [row for row in rows if bool(row.get(success_key, False))]
+    values = [row.get(value_key) for row in successful]
+    summary = numeric_summary(values)
+    summary["median"] = summary["p50"]
+    summary["episodes"] = len(rows)
+    summary["success_n"] = len(successful)
+    summary["missing_time_n"] = len(successful) - summary["n"]
+    summary["collision_n"] = sum(bool(row.get("collision", False)) for row in rows)
+    summary["boundary_n"] = sum(bool(row.get("boundary", False)) for row in rows)
+    failed = [
+        row
+        for row in rows
+        if not bool(row.get(success_key, False))
+        and (bool(row.get("collision", False)) or bool(row.get("boundary", False)))
+    ]
+    summary["failure_n"] = len(failed)
+    summary["censored_n"] = len(rows) - len(successful) - len(failed)
+    summary["unsuccessful_n"] = len(rows) - len(successful)
+    return summary
+
+
 def json_finite(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {key: json_finite(item) for key, item in value.items()}
@@ -568,7 +602,17 @@ def evaluate_checkpoint(
             "ce_max": numeric_summary([row["ce_max"] for row in coverage]),
             "area_cv": numeric_summary([row["area_cv"] for row in coverage]),
             "collision_rate": rate(coverage, "collision"),
-            "time_to_ce_seconds": numeric_summary([row["mission_seconds"] for row in coverage]),
+            "time_to_strict_CE_steps": efficiency_timing_summary(
+                coverage, success_key="ce_success", value_key="time_to_strict_CE_steps"
+            ),
+            "time_to_strict_CE_seconds": efficiency_timing_summary(
+                coverage, success_key="ce_success", value_key="time_to_strict_CE_seconds"
+            ),
+            # Retain the historical safe-completion timing field unchanged in
+            # meaning while adding explicit failure/censor accounting.
+            "time_to_ce_seconds": efficiency_timing_summary(
+                coverage, success_key="safe_complete", value_key="mission_seconds"
+            ),
         },
         "capture": {
             "episodes": len(capture),
@@ -578,7 +622,12 @@ def evaluate_checkpoint(
             "ring2_seen_rate": rate(capture, "ring2_seen"),
             "ring3_reached_rate": rate(capture, "ring3_reached"),
             "collision_rate": rate(capture, "collision"),
-            "capture_seconds": numeric_summary([row["capture_seconds"] for row in capture]),
+            "capture_steps": efficiency_timing_summary(
+                capture, success_key="captured", value_key="capture_steps"
+            ),
+            "capture_seconds": efficiency_timing_summary(
+                capture, success_key="captured", value_key="capture_seconds"
+            ),
         },
         "mixed": {
             "episodes": len(mixed),
@@ -586,9 +635,29 @@ def evaluate_checkpoint(
             "collision_rate": rate(mixed, "collision"),
             "post_capture_ce_rate": rate(mixed, "ce_success"),
             "safe_complete_rate": rate(mixed, "safe_complete"),
-            "capture_seconds": numeric_summary([row["capture_seconds"] for row in mixed]),
-            "recovery_seconds": numeric_summary([row["recovery_seconds"] for row in mixed]),
-            "mission_seconds": numeric_summary([row["mission_seconds"] for row in mixed]),
+            "post_capture_CE": {
+                "episodes": len(mixed),
+                "success_n": sum(bool(row["ce_success"]) for row in mixed),
+                "success_rate": rate(mixed, "ce_success"),
+            },
+            "capture_steps": efficiency_timing_summary(
+                mixed, success_key="captured", value_key="capture_steps"
+            ),
+            "capture_seconds": efficiency_timing_summary(
+                mixed, success_key="captured", value_key="capture_seconds"
+            ),
+            "recovery_steps": efficiency_timing_summary(
+                mixed, success_key="ce_success", value_key="recovery_steps"
+            ),
+            "recovery_seconds": efficiency_timing_summary(
+                mixed, success_key="ce_success", value_key="recovery_seconds"
+            ),
+            "mission_steps": efficiency_timing_summary(
+                mixed, success_key="safe_complete", value_key="mission_steps"
+            ),
+            "mission_seconds": efficiency_timing_summary(
+                mixed, success_key="safe_complete", value_key="mission_seconds"
+            ),
         },
         "actions": {
             "histogram": action_hist,
