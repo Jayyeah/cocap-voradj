@@ -1,0 +1,488 @@
+{
+  "written_before_fix_at": "2026-09-22T22:48:30.208519",
+  "classification": "SHARED_ROOT_CAUSE_CONFIRMED",
+  "mechanism": "inactive terminal next_obs is zero-filled including every valid-token mask; fused Transformer layer 0 native masked softmax has no allowed key -> NaN -> attention output -> residual -> self token -> actor logits; terminal multiplication by zero cannot remove NaN",
+  "production_bug": true,
+  "not_cuda_exclusive": true,
+  "scientific_contract_preserved_by_proposed_fix": "Retain a finite self token only internally for fully masked placeholders. Unchanged masks/observations for every valid row; no reward, entropy, SAC, replay, optimizer, bootstrap termination or observation packing changes. No backend switch and no output sanitization.",
+  "proposed_fix": "LocalObservationEncoder.features uses a cloned effective mask that unmasks slot 0 only if no token is valid; same effective mask used in attention and pooling. Original observation and evader mask unchanged.",
+  "historical_fix": "530ecb9/62f1f8f/766283d have same missing all-masked boundary repair; neither A1 nor A2 model file includes it. Current row evidence independently proves same bug.",
+  "evidence": {
+    "a1": {
+      "step": 760,
+      "entrypoint": "target_actor.next_obs_no_grad",
+      "bad_rows": [
+        31
+      ],
+      "row_provenance": {
+        "collection_global_step": 313,
+        "episode_id": 1,
+        "agent_id": 2,
+        "active_before": true,
+        "active_after": false,
+        "next_obs_source": "inactive_zero_filled",
+        "task": "voradj_coverage",
+        "phase": "pure_coverage",
+        "done": true,
+        "terminated": true,
+        "truncated": false,
+        "replay_class": "recovery_pure",
+        "reset_source": "environment_default",
+        "metadata": {
+          "terminated": true,
+          "truncated": false,
+          "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2",
+          "task_label": "coverage",
+          "next_task_label": "inactive",
+          "task_switched": true,
+          "raw_task_label": "coverage",
+          "next_raw_task_label": "inactive",
+          "phase": "pure_coverage",
+          "reward_role": "coverage",
+          "reward_coverage": 0.0,
+          "reward_capture": 0.0,
+          "reward_safety": -160.0,
+          "reward_terminal": 0.0,
+          "reward_speed_repeat": 0.0,
+          "reward_early_speed": 0.0,
+          "reward_deceleration": 0.0,
+          "reward_settled_terminal": 0.0,
+          "reward_motion_penalty": 0.0,
+          "reward_ce_center": 0.0,
+          "reward_ce_control": 0.0,
+          "reward_ce_pbrs": 0.0,
+          "reward_ce_terminal_correction": 0.0,
+          "reward_support_blend_capture": 0.0,
+          "reward_support_blend_coverage": 0.0,
+          "coverage_ce_pbrs_reset_reason": "none",
+          "coverage_ce_pbrs_reset_mode": "phase_and_all_terminal",
+          "coverage_ce_speed_weight": 0.0,
+          "coverage_ce_acceleration_weight": 0.0,
+          "coverage_ce_angular_velocity_weight": 0.0,
+          "reward_total": -160.0,
+          "collision_types": [
+            "boundary"
+          ],
+          "enemy_neighbor_count": 0,
+          "effective_pursuing": false,
+          "friend_neighbor_count": 2,
+          "support_candidate": false,
+          "support_pursuing_friend_count": 0,
+          "support_reward_blend_active": false,
+          "support_reward_capture_weight": 0.0,
+          "support_reward_coverage_weight": 0.0,
+          "support_reward_capture_target_mode": "neighbor_visible",
+          "support_reward_capture_component_mode": "approach_only",
+          "support_enemy_token_visible": false,
+          "support_has_pursuing_friend": false,
+          "support_pursuing_friend_distance": 0.0,
+          "support_pursuing_friend_distance_delta": 0.0,
+          "support_enemy_distance": 0.0,
+          "support_enemy_distance_progress": 0.0,
+          "support_in_ring": false,
+          "support_entered_ring": false,
+          "support_upgraded_to_capture": false,
+          "perception_topology_version": "friendly_voronoi_comm_v0",
+          "vct_ls_enabled": true,
+          "vct_ls_direct_enemy_count": 0
+        },
+        "replay_slot": 1254
+      },
+      "mask_tokens": {
+        "valid_tokens": 0,
+        "self_valid": false,
+        "friends_valid": 0,
+        "enemies_valid": 0,
+        "obstacles_valid": 0,
+        "all_masked": true,
+        "all_values_zero": true,
+        "mask": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "types": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "model_hash": "9788d731317d29a976b1aab731edc3ff2e7d860aa47fc2e2606cb3cdeb33d675",
+      "all_weights_finite": true,
+      "dump_sha256": "fa1922857bb5de514f38028d178ad294aeea4a6888ccb1692b18a8e1738c738f",
+      "first_bad_layer": "encoder.transformer.layers.0 / torch._transformer_encoder_layer_fwd",
+      "last_finite_attention_tensor": "qk_scores",
+      "first_nan_operation": "aten._masked_softmax",
+      "cpu_and_cuda_fail": true,
+      "trace_does_not_change_path": {
+        "cpu_traced_vs_untraced": {
+          "finite_pattern_equal": true,
+          "max_abs_common_finite": 0.0,
+          "fused_layer_call_count": 4
+        },
+        "cuda_traced_vs_untraced": {
+          "finite_pattern_equal": true,
+          "max_abs_common_finite": 0.0,
+          "fused_layer_call_count": 4
+        }
+      },
+      "decomposition_matches_fused": {
+        "cpu": {
+          "bad_rows_softmax": [
+            31
+          ],
+          "bad_rows_attention": [
+            31
+          ],
+          "fused_vs_decomposed_finite_pattern_equal": true,
+          "fused_vs_decomposed_max_abs_common_finite": 0.0
+        },
+        "cuda": {
+          "bad_rows_softmax": [
+            31
+          ],
+          "bad_rows_attention": [
+            31
+          ],
+          "fused_vs_decomposed_finite_pattern_equal": true,
+          "fused_vs_decomposed_max_abs_common_finite": 0.0
+        }
+      },
+      "reproducer": {
+        "single_row": [
+          {
+            "runs": 1,
+            "failure_count": 1,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.015554045006865636
+          },
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.11410930201236624
+          },
+          {
+            "runs": 100,
+            "failure_count": 100,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 1.760587155004032
+          },
+          {
+            "runs": 1000,
+            "failure_count": 1000,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 18.53558512199379
+          }
+        ],
+        "original_full_batch": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.5105719849962043
+          }
+        ],
+        "reversed_full_batch": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.510001842994825
+          }
+        ],
+        "duplicate_bad_row": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.5194278939889045
+          }
+        ]
+      }
+    },
+    "a2": {
+      "step": 808,
+      "entrypoint": "actor.next_obs_no_grad",
+      "bad_rows": [
+        69
+      ],
+      "row_provenance": {
+        "collection_global_step": 774,
+        "episode_id": 2,
+        "agent_id": 3,
+        "active_before": true,
+        "active_after": false,
+        "next_obs_source": "inactive_zero_filled",
+        "task": "voradj_coverage",
+        "phase": "pure_coverage",
+        "done": true,
+        "terminated": true,
+        "truncated": false,
+        "replay_class": "recovery_pure",
+        "reset_source": "environment_default",
+        "metadata": {
+          "terminated": true,
+          "truncated": false,
+          "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2",
+          "task_label": "coverage",
+          "next_task_label": "inactive",
+          "task_switched": true,
+          "raw_task_label": "coverage",
+          "next_raw_task_label": "inactive",
+          "phase": "pure_coverage",
+          "reward_role": "coverage",
+          "reward_coverage": 0.0,
+          "reward_capture": 0.0,
+          "reward_safety": -160.0,
+          "reward_terminal": 0.0,
+          "reward_speed_repeat": 0.0,
+          "reward_early_speed": 0.0,
+          "reward_deceleration": 0.0,
+          "reward_settled_terminal": 0.0,
+          "reward_motion_penalty": 0.0,
+          "reward_ce_center": 0.0,
+          "reward_ce_control": 0.0,
+          "reward_ce_pbrs": 0.0,
+          "reward_ce_terminal_correction": 0.0,
+          "reward_support_blend_capture": 0.0,
+          "reward_support_blend_coverage": 0.0,
+          "coverage_ce_pbrs_reset_reason": "none",
+          "coverage_ce_pbrs_reset_mode": "phase_and_all_terminal",
+          "coverage_ce_speed_weight": 0.0,
+          "coverage_ce_acceleration_weight": 0.0,
+          "coverage_ce_angular_velocity_weight": 0.0,
+          "reward_total": -160.0,
+          "collision_types": [
+            "boundary"
+          ],
+          "enemy_neighbor_count": 0,
+          "effective_pursuing": false,
+          "friend_neighbor_count": 2,
+          "support_candidate": false,
+          "support_pursuing_friend_count": 0,
+          "support_reward_blend_active": false,
+          "support_reward_capture_weight": 0.0,
+          "support_reward_coverage_weight": 0.0,
+          "support_reward_capture_target_mode": "neighbor_visible",
+          "support_reward_capture_component_mode": "approach_only",
+          "support_enemy_token_visible": false,
+          "support_has_pursuing_friend": false,
+          "support_pursuing_friend_distance": 0.0,
+          "support_pursuing_friend_distance_delta": 0.0,
+          "support_enemy_distance": 0.0,
+          "support_enemy_distance_progress": 0.0,
+          "support_in_ring": false,
+          "support_entered_ring": false,
+          "support_upgraded_to_capture": false,
+          "perception_topology_version": "friendly_voronoi_comm_v0",
+          "vct_ls_enabled": true,
+          "vct_ls_direct_enemy_count": 0
+        },
+        "replay_slot": 3099
+      },
+      "mask_tokens": {
+        "valid_tokens": 0,
+        "self_valid": false,
+        "friends_valid": 0,
+        "enemies_valid": 0,
+        "obstacles_valid": 0,
+        "all_masked": true,
+        "all_values_zero": true,
+        "mask": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "types": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "model_hash": "9ab1fcb5a0ffe3f1fb9f819ff88dc91548d2c5a4142a228285fa7a763eaf7564",
+      "all_weights_finite": true,
+      "dump_sha256": "0fd3c70b8c6a4bae59df4990007371612ce7b3c3ae709aca1702edfece0845bc",
+      "first_bad_layer": "encoder.transformer.layers.0 / torch._transformer_encoder_layer_fwd",
+      "last_finite_attention_tensor": "qk_scores",
+      "first_nan_operation": "aten._masked_softmax",
+      "cpu_and_cuda_fail": true,
+      "trace_does_not_change_path": {
+        "cpu_traced_vs_untraced": {
+          "finite_pattern_equal": true,
+          "max_abs_common_finite": 0.0,
+          "fused_layer_call_count": 4
+        },
+        "cuda_traced_vs_untraced": {
+          "finite_pattern_equal": true,
+          "max_abs_common_finite": 0.0,
+          "fused_layer_call_count": 4
+        }
+      },
+      "decomposition_matches_fused": {
+        "cpu": {
+          "bad_rows_softmax": [
+            69
+          ],
+          "bad_rows_attention": [
+            69
+          ],
+          "fused_vs_decomposed_finite_pattern_equal": true,
+          "fused_vs_decomposed_max_abs_common_finite": 0.0
+        },
+        "cuda": {
+          "bad_rows_softmax": [
+            69
+          ],
+          "bad_rows_attention": [
+            69
+          ],
+          "fused_vs_decomposed_finite_pattern_equal": true,
+          "fused_vs_decomposed_max_abs_common_finite": 0.0
+        }
+      },
+      "reproducer": {
+        "single_row": [
+          {
+            "runs": 1,
+            "failure_count": 1,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.015340903992182575
+          },
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.11953394098964054
+          },
+          {
+            "runs": 100,
+            "failure_count": 100,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 1.797725034004543
+          },
+          {
+            "runs": 1000,
+            "failure_count": 1000,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 18.57542664000357
+          }
+        ],
+        "original_full_batch": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.5106087559979642
+          }
+        ],
+        "reversed_full_batch": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.5114974269963568
+          }
+        ],
+        "duplicate_bad_row": [
+          {
+            "runs": 10,
+            "failure_count": 10,
+            "first_failing_iteration_1based": 1,
+            "finite_pattern_deterministic": true,
+            "seconds": 0.5115115780063206
+          }
+        ]
+      }
+    }
+  }
+}

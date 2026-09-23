@@ -1,0 +1,27 @@
+diff --git a/src/cocap_voradj/models/shared_local_ac.py b/src/cocap_voradj/models/shared_local_ac.py
+index 0dff049..d817da6 100644
+--- a/src/cocap_voradj/models/shared_local_ac.py
++++ b/src/cocap_voradj/models/shared_local_ac.py
+@@ -114,11 +114,18 @@ class LocalObservationEncoder(nn.Module):
+         encoded.append(self.encoders["obstacles"](obs["obstacles"]))
+         tokens = torch.cat(encoded, dim=1) + self.type_embedding(obs["types"].long())
+         mask = obs["masks"].bool()
+-        trans = self.transformer(tokens, src_key_padding_mask=~mask)
+-        masked = trans.masked_fill(~mask.unsqueeze(-1), 0.0)
+-        count = mask.sum(dim=1, keepdim=True).clamp_min(1).to(trans.dtype)
++        # Runners zero-fill next_obs for inactive terminal agents. A fully
++        # masked key set makes native attention softmax undefined, before the
++        # learner can exclude this row from its terminal bootstrap. Retain a
++        # finite self token only inside the encoder for those placeholders;
++        # nonempty observations and the stored replay masks stay unchanged.
++        encoder_mask = mask.clone()
++        encoder_mask[:, 0] |= ~mask.any(dim=1)
++        trans = self.transformer(tokens, src_key_padding_mask=~encoder_mask)
++        masked = trans.masked_fill(~encoder_mask.unsqueeze(-1), 0.0)
++        count = encoder_mask.sum(dim=1, keepdim=True).clamp_min(1).to(trans.dtype)
+         mean_context = masked.sum(dim=1) / count
+-        max_context = trans.masked_fill(~mask.unsqueeze(-1), -1e9).max(dim=1).values
++        max_context = trans.masked_fill(~encoder_mask.unsqueeze(-1), -1e9).max(dim=1).values
+         max_context = torch.where(torch.isfinite(max_context), max_context, torch.zeros_like(max_context))
+         evader_start = 1 + int(self.config.max_pursuers)
+         evader_end = evader_start + int(self.config.max_evaders)

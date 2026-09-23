@@ -1,0 +1,187 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_zero_filled_terminal_next_obs_has_finite_forward[actor] _________
+
+kind = 'actor'
+
+    @pytest.mark.parametrize('kind',['actor','target_actor','critic'])
+    def test_zero_filled_terminal_next_obs_has_finite_forward(kind):
+        torch.manual_seed(7)
+        config=SharedLocalACNetworkConfig(hidden_dim=32,num_heads=4,num_layers=2)
+        model=(SharedLocalQ(config) if kind=='critic' else SharedLocalActor(config)).eval()
+        if kind=='target_actor': model=hard_copy(model)
+        obs=observations()
+        for value in obs.values(): value[3].zero_()
+        original={k:v.clone() for k,v in obs.items()}
+        with torch.no_grad():
+            values=model(obs) if kind=='critic' else model.logits(obs)
+>       assert torch.isfinite(values).all()
+E       assert tensor(False)
+E        +  where tensor(False) = <built-in method all of Tensor object at 0x74367cc57ac0>()
+E        +    where <built-in method all of Tensor object at 0x74367cc57ac0> = tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]).all
+E        +      where tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]) = <built-in method isfinite of type object at 0x7437881d6c20>(tensor([[ 0.8635, -0.0382,  0.8546, -0.0896,  0.2227, -0.2224, -0.4092,  0.2500,\n         -0.1587],\n        [ 0.6464, ...         -0.3438],\n        [    nan,     nan,     nan,     nan,     nan,     nan,     nan,     nan,\n             nan]]))
+E        +        where <built-in method isfinite of type object at 0x7437881d6c20> = torch.isfinite
+
+tests/test_shared_local_terminal_rows.py:37: AssertionError
+_____ test_zero_filled_terminal_next_obs_has_finite_forward[target_actor] ______
+
+kind = 'target_actor'
+
+    @pytest.mark.parametrize('kind',['actor','target_actor','critic'])
+    def test_zero_filled_terminal_next_obs_has_finite_forward(kind):
+        torch.manual_seed(7)
+        config=SharedLocalACNetworkConfig(hidden_dim=32,num_heads=4,num_layers=2)
+        model=(SharedLocalQ(config) if kind=='critic' else SharedLocalActor(config)).eval()
+        if kind=='target_actor': model=hard_copy(model)
+        obs=observations()
+        for value in obs.values(): value[3].zero_()
+        original={k:v.clone() for k,v in obs.items()}
+        with torch.no_grad():
+            values=model(obs) if kind=='critic' else model.logits(obs)
+>       assert torch.isfinite(values).all()
+E       assert tensor(False)
+E        +  where tensor(False) = <built-in method all of Tensor object at 0x74367d0895e0>()
+E        +    where <built-in method all of Tensor object at 0x74367d0895e0> = tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]).all
+E        +      where tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]) = <built-in method isfinite of type object at 0x7437881d6c20>(tensor([[ 0.8635, -0.0382,  0.8546, -0.0896,  0.2227, -0.2224, -0.4092,  0.2500,\n         -0.1587],\n        [ 0.6464, ...         -0.3438],\n        [    nan,     nan,     nan,     nan,     nan,     nan,     nan,     nan,\n             nan]]))
+E        +        where <built-in method isfinite of type object at 0x7437881d6c20> = torch.isfinite
+
+tests/test_shared_local_terminal_rows.py:37: AssertionError
+________ test_zero_filled_terminal_next_obs_has_finite_forward[critic] _________
+
+kind = 'critic'
+
+    @pytest.mark.parametrize('kind',['actor','target_actor','critic'])
+    def test_zero_filled_terminal_next_obs_has_finite_forward(kind):
+        torch.manual_seed(7)
+        config=SharedLocalACNetworkConfig(hidden_dim=32,num_heads=4,num_layers=2)
+        model=(SharedLocalQ(config) if kind=='critic' else SharedLocalActor(config)).eval()
+        if kind=='target_actor': model=hard_copy(model)
+        obs=observations()
+        for value in obs.values(): value[3].zero_()
+        original={k:v.clone() for k,v in obs.items()}
+        with torch.no_grad():
+            values=model(obs) if kind=='critic' else model.logits(obs)
+>       assert torch.isfinite(values).all()
+E       assert tensor(False)
+E        +  where tensor(False) = <built-in method all of Tensor object at 0x74367d08b070>()
+E        +    where <built-in method all of Tensor object at 0x74367d08b070> = tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]).all
+E        +      where tensor([[ True,  True,  True,  True,  True,  True,  True,  True,  True],\n        [ True,  True,  True,  True,  True,  ...e,  True,  True,  True,  True,  True,  True],\n        [False, False, False, False, False, False, False, False, False]]) = <built-in method isfinite of type object at 0x7437881d6c20>(tensor([[ 0.8635, -0.0382,  0.8546, -0.0896,  0.2227, -0.2224, -0.4092,  0.2500,\n         -0.1587],\n        [ 0.6464, ...         -0.3438],\n        [    nan,     nan,     nan,     nan,     nan,     nan,     nan,     nan,\n             nan]]))
+E        +        where <built-in method isfinite of type object at 0x7437881d6c20> = torch.isfinite
+
+tests/test_shared_local_terminal_rows.py:37: AssertionError
+_________ test_valid_empty_neighborhood_self_token_semantics_unchanged _________
+
+    def test_valid_empty_neighborhood_self_token_semantics_unchanged():
+        torch.manual_seed(11)
+        model=SharedLocalActor(SharedLocalACNetworkConfig(hidden_dim=32,num_heads=4,num_layers=2)).eval()
+        obs=observations()
+        # The same terminal placeholder with its self token explicitly marked
+        # valid is the finite reference. Existing self-valid empty neighborhoods
+        # remain fully valid observations, including an all-zero self feature.
+        for value in obs.values(): value[3].zero_()
+        reference={k:v.clone() for k,v in obs.items()}
+        reference['masks'][3,0]=True
+        with torch.no_grad():
+            actual=model.logits(obs)
+            expected=model.logits(reference)
+>       torch.testing.assert_close(actual,expected,rtol=0,atol=0)
+E       AssertionError: Tensor-likes are not equal!
+E       
+E       Mismatched elements: 9 / 36 (25.0%)
+E       Greatest absolute difference: nan at index (3, 0)
+E       Greatest relative difference: nan at index (3, 0)
+
+tests/test_shared_local_terminal_rows.py:54: AssertionError
+_______ test_sac_update_with_terminal_zero_row_preserves_finite_weights ________
+
+self = <cocap_voradj.training.discrete_sac.DiscreteSACTrainer object at 0x74367c8bbdd0>
+batch = {'actions': tensor([0, 1, 2, 3]), 'next_obs': {'evaders': tensor([[[-0.1076,  1.1732, -0.3022, -0.0183,  1.0602, -0.04..., -0.8488, -1.3008,  0.3722, -0.9208,  0.9743,  1.9598]]]), ...}, 'rewards': tensor([   0.,    1.,   -1., -160.]), ...}
+
+    def update(self, batch: Mapping[str, Any]) -> dict[str, float]:
+        obs, next_obs, actions, rewards, terminated = self._batch_tensors(batch)
+        for name, mapping in (("obs", obs), ("next_obs", next_obs)):
+            for key, value in mapping.items():
+                self._assert_finite_tensor(f"batch.{name}.{key}", value.float())
+        self._assert_finite_tensor("batch.rewards", rewards)
+        with torch.no_grad():
+            policy_logits = self.actor.logits(next_obs)
+            q1_target = self.target_critic1(next_obs)
+            q2_target = self.target_critic2(next_obs)
+            try:
+>               self._assert_finite_tensor("target_policy_logits", policy_logits)
+
+src/cocap_voradj/training/discrete_sac.py:218: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'target_policy_logits'
+value = tensor([[-0.3540,  0.0337,  0.4826, -0.4566, -0.1670,  0.1469,  0.3709, -0.2906,
+         -0.1594],
+        [ 0.1172, ...         -0.1986],
+        [    nan,     nan,     nan,     nan,     nan,     nan,     nan,     nan,
+             nan]])
+
+    @staticmethod
+    def _assert_finite_tensor(name: str, value: torch.Tensor) -> None:
+        if not bool(torch.isfinite(value).all()):
+            finite = value[torch.isfinite(value)]
+            finite_max = float(finite.abs().max().detach().cpu()) if finite.numel() else None
+>           raise FloatingPointError(
+                f"discrete SAC non-finite tensor at {name}: shape={tuple(value.shape)} "
+                f"finite_count={int(finite.numel())}/{value.numel()} finite_max_abs={finite_max}"
+            )
+E           FloatingPointError: discrete SAC non-finite tensor at target_policy_logits: shape=(4, 9) finite_count=27/36 finite_max_abs=0.5992050170898438
+
+src/cocap_voradj/training/discrete_sac.py:179: FloatingPointError
+
+The above exception was the direct cause of the following exception:
+
+    def test_sac_update_with_terminal_zero_row_preserves_finite_weights():
+        torch.manual_seed(19)
+        model=DiscreteSACTrainer(SharedLocalACNetworkConfig(hidden_dim=32,num_heads=4,num_layers=1),DiscreteSACConfig(),device='cpu')
+        obs=observations()
+        nxt={k:v.clone() for k,v in obs.items()}
+        for value in nxt.values(): value[3].zero_()
+        batch={'obs':obs,'next_obs':nxt,'actions':torch.arange(4),'rewards':torch.tensor([0.,1.,-1.,-160.]),'terminated':torch.tensor([False,False,False,True])}
+        before={k:v.clone() for k,v in nxt.items()}
+>       stats=model.update(batch)
+
+tests/test_shared_local_terminal_rows.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <cocap_voradj.training.discrete_sac.DiscreteSACTrainer object at 0x74367c8bbdd0>
+batch = {'actions': tensor([0, 1, 2, 3]), 'next_obs': {'evaders': tensor([[[-0.1076,  1.1732, -0.3022, -0.0183,  1.0602, -0.04..., -0.8488, -1.3008,  0.3722, -0.9208,  0.9743,  1.9598]]]), ...}, 'rewards': tensor([   0.,    1.,   -1., -160.]), ...}
+
+    def update(self, batch: Mapping[str, Any]) -> dict[str, float]:
+        obs, next_obs, actions, rewards, terminated = self._batch_tensors(batch)
+        for name, mapping in (("obs", obs), ("next_obs", next_obs)):
+            for key, value in mapping.items():
+                self._assert_finite_tensor(f"batch.{name}.{key}", value.float())
+        self._assert_finite_tensor("batch.rewards", rewards)
+        with torch.no_grad():
+            policy_logits = self.actor.logits(next_obs)
+            q1_target = self.target_critic1(next_obs)
+            q2_target = self.target_critic2(next_obs)
+            try:
+                self._assert_finite_tensor("target_policy_logits", policy_logits)
+            except FloatingPointError as error:
+>               raise FloatingPointError(
+                    f"{error}; next_obs={self._mapping_summary(next_obs)}"
+                ) from error
+E               FloatingPointError: discrete SAC non-finite tensor at target_policy_logits: shape=(4, 9) finite_count=27/36 finite_max_abs=0.5992050170898438; next_obs={'self': {'shape': [4, 9], 'finite': True, 'finite_count': 36, 'max_abs': 2.1022768020629883}, 'pursuers': {'shape': [4, 8, 7], 'finite': True, 'finite_count': 224, 'max_abs': 2.895078420639038}, 'evaders': {'shape': [4, 8, 7], 'finite': True, 'finite_count': 224, 'max_abs': 2.48411226272583}, 'obstacles': {'shape': [4, 5, 5], 'finite': True, 'finite_count': 100, 'max_abs': 2.608095169067383}, 'types': {'shape': [4, 22], 'finite': True, 'finite_count': 88, 'max_abs': 3.0}, 'masks': {'shape': [4, 22], 'finite': True, 'finite_count': 88, 'max_abs': 1.0}}
+
+src/cocap_voradj/training/discrete_sac.py:220: FloatingPointError
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_shared_local_terminal_rows.py::test_zero_filled_terminal_next_obs_has_finite_forward[actor]
+FAILED tests/test_shared_local_terminal_rows.py::test_zero_filled_terminal_next_obs_has_finite_forward[target_actor]
+FAILED tests/test_shared_local_terminal_rows.py::test_zero_filled_terminal_next_obs_has_finite_forward[critic]
+FAILED tests/test_shared_local_terminal_rows.py::test_valid_empty_neighborhood_self_token_semantics_unchanged
+FAILED tests/test_shared_local_terminal_rows.py::test_sac_update_with_terminal_zero_row_preserves_finite_weights
+5 failed, 2 warnings in 2.96s

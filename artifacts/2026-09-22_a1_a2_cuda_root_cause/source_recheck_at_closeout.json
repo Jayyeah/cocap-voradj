@@ -1,0 +1,91 @@
+{
+  "a1": {
+    "head_now": "dc14560e1f2761ee92e36ee8ce769fe0caa8eb11",
+    "files_equal_to_audit_start": {
+      "src/cocap_voradj/models/shared_local_ac.py": true,
+      "src/cocap_voradj/training/shared_local_ac.py": true,
+      "tools/run_shared_local_ac_capability.py": true,
+      "configs/experiments/ac_entropy_localq_cov_20260921/stage1.yaml": true
+    },
+    "status_now": " M src/cocap_voradj/training/shared_local_ac.py\n M tools/run_shared_local_ac_capability.py\n?? artifacts/2026-09-21_entropy_localq_cov/\n?? artifacts/2026-09-22_entropy_localq_cov/\n?? configs/experiments/ac_entropy_localq_cov_20260921/\n?? tests/test_a1_cuda_step0_diagnostic.py\n?? tests/test_entropy_localq_cov.py\n?? tools/a1_cuda_step0_diagnostic.py\n"
+  },
+  "a2": {
+    "head_now": "e383c035c3caed041e7af9aff2d0e84e1644e2b7",
+    "files_equal_to_audit_start": {
+      "src/cocap_voradj/models/shared_local_ac.py": true,
+      "src/cocap_voradj/training/discrete_sac.py": true,
+      "tools/run_discrete_sac_coverage_20260922.py": true
+    },
+    "status_now": "?? artifacts/2026-09-22_discrete_sac_cov/\n"
+  },
+  "central": {
+    "head_now": "4538aca38571b1f6aec8a9bfa7f69bca2c871562",
+    "files_equal_to_audit_start": {
+      "docs/ops/AC_MASTER_DAG_20260921_ZH.md": true,
+      "artifacts/2026-09-21_ac_master_dag/state.json": true
+    },
+    "status_now": ""
+  },
+  "central_latest": {
+    "updated_at": "2026-09-22T22:10:25+08:00",
+    "tasks": [
+      {
+        "task_id": "A1",
+        "task_name": "ENTROPY-LOCALQ-COV",
+        "status": "A1_ENGINEERING_BLOCKED_DEFERRED",
+        "dependencies": [],
+        "branch": "experiment/ac-entropy-cov-20260921",
+        "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
+        "child_agent": {
+          "agent_id": null,
+          "nickname": "MASTER",
+          "role": "A1_FINAL_BOUNDED_AUDIT_DEFERRED"
+        },
+        "scientific_question": "Is current local single-Q off-policy AC failure primarily premature actor entropy collapse?",
+        "allowed_changes": "Actor entropy regularization only; exact existing actor/local-Q/AW9/replay/epsilon/LR/gamma/tau/reward/obs/env contract; smoke and 0-100k gate then conditional 300k.",
+        "forbidden_changes": "Twin Q, SAC target, reward scaling, curriculum, BC, observation/environment/replay/epsilon/LR changes; IQN or central DAG.",
+        "gpu_required": true,
+        "gpu_lease": "RELEASED_AFTER_FINAL_BOUNDED_AUDIT; IQN-Z07 preserved and healthy",
+        "run_dir": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-22_entropy_localq_cov/ac_entropy_localq_cov_20260922",
+        "tmux": null,
+        "pid": null,
+        "current_step": 0,
+        "latest_formal": "FINAL_BOUNDED_CPU_CUDA_EXACT_SEQUENCE_PASS_NO_STABLE_PRODUCTION_REPRO",
+        "result_classification": "A1_ENGINEERING_BLOCKED_DEFERRED_NO_SCIENTIFIC_RESULT",
+        "next_gate": "DEFERRED_NO_BLOCK_ON_A2; NO_FORMAL_RETRY_UNLESS_NEW_REPRODUCIBLE_ENGINEERING_EVIDENCE",
+        "user_approval_required": false,
+        "updated_at": "2026-09-22T02:57:50+08:00"
+      },
+      {
+        "task_id": "A2",
+        "task_name": "DISCRETE-SAC-PREFLIGHT",
+        "status": "A2_ENGINEERING_BLOCKED_DEFERRED",
+        "dependencies": [
+          "A0_REPRO_PASS",
+          "A1_FINAL_BOUNDED_ENGINEERING_DEFERRED"
+        ],
+        "branch": "experiment/ac-discrete-sac-preflight-20260921",
+        "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
+        "child_agent": {
+          "agent_id": null,
+          "nickname": "MASTER",
+          "role": "A2_FORMAL_MASTER_DIRECT_BOUNDED_DIAGNOSTIC_DEFERRED"
+        },
+        "scientific_question": "Does exact categorical AW9 SAC provide a controlled twin-Q entropy target after A0 remains learnable and A1 is insufficient?",
+        "allowed_changes": "Exact categorical AW9 SAC implementation/tests/smoke/config and one MASTER-controlled formal attempt; no new long run after unresolved CUDA forward non-finite.",
+        "forbidden_changes": "Gumbel, continuous conversion, architecture/reward/curriculum changes, autonomous formal long run, central DAG/state.",
+        "gpu_required": true,
+        "gpu_lease": "A2_FORMAL_LEASE_REVOKED_AFTER_STEP_808_NONFINITE; GPU1/IQN-Z07 PRESERVED",
+        "run_dir": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-22_discrete_sac_cov/ac_discrete_sac_cov_formal_20260922",
+        "tmux": null,
+        "pid": null,
+        "current_step": 808,
+        "latest_formal": "FORMAL_ATTEMPT_EXITED_STEP_808; DIAGNOSED_TARGET_POLICY_LOGITS_NONFINITE",
+        "result_classification": "A2_ENGINEERING_BLOCKED_DEFERRED_NO_STABLE_CUDA_FORWARD",
+        "next_gate": "NO_OVERNIGHT_RETRY; requires new approved engineering evidence or re-registration",
+        "user_approval_required": false,
+        "updated_at": "2026-09-22T02:57:50+08:00"
+      }
+    ]
+  }
+}

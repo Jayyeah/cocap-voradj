@@ -1,0 +1,151 @@
+{
+  "TASK_ID": "A1_A2_SHARED_CUDA_ROOT_CAUSE",
+  "branch": "audit/a1-a2-cuda-root-cause-20260922",
+  "HEAD": "4e210c090ec696bda73ff36877f8e33270ef8a86",
+  "HEAD_scope": "validated implementation commit; final evidence-only delivery HEAD recorded in delivery.json",
+  "worktree": "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922",
+  "scientific_question": "Engineering audit only: do A1 and A2 share a first nonfinite source?",
+  "exact_changes": {
+    "production": [
+      "LocalObservationEncoder.features: self-token fallback for all-masked placeholders only; cloned mask, same effective attention/pooling mask"
+    ],
+    "regression": [
+      "tests/test_shared_local_terminal_rows.py"
+    ],
+    "instrumentation": [
+      "tools/a1_a2_cuda_audit.py",
+      "tools/a1_a2_cuda_replay.py",
+      "tools/a1_a2_bounded_launch.py"
+    ],
+    "patch": "artifacts/2026-09-22_a1_a2_cuda_root_cause/production_fix.patch"
+  },
+  "tests": {
+    "new_regression_before_fix": "5 failed as expected",
+    "cpu_regressions_after_fix": "14 passed",
+    "a1_existing_contracts_after_fix": "7 passed"
+  },
+  "smoke_results": {
+    "a1_fixed_cpu_smoke": {
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "global_step": 1000,
+      "update_count": 63,
+      "seconds": 200.1464760939998,
+      "final_module_finite": {
+        "actor": true,
+        "target_actor": true,
+        "critic": true,
+        "target_critic": true
+      },
+      "telemetry_finite": true
+    },
+    "a2_fixed_cpu_smoke": {
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "global_step": 1000,
+      "update_count": 63,
+      "seconds": 191.747080207002,
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true
+    },
+    "a1_fixed_cuda_smoke": {
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "global_step": 1000,
+      "update_count": 63,
+      "seconds": 82.54207132899319,
+      "final_module_finite": {
+        "actor": true,
+        "target_actor": true,
+        "critic": true,
+        "target_critic": true
+      },
+      "telemetry_finite": true
+    },
+    "a2_fixed_cuda_smoke": {
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "global_step": 1000,
+      "update_count": 63,
+      "seconds": 42.05463686599978,
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true
+    },
+    "a2_current_fixed_cuda_smoke_v2": {
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "global_step": 900,
+      "update_count": 38,
+      "seconds": 39.16967402098817,
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true
+    }
+  },
+  "artifact_paths": [
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/README_ZH.md",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/shared_forward_diff.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/first_bad_tensor.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/failing_row_manifest.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/cpu_cuda_layer_compare.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/minimal_reproducer_result.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/root_cause_summary.json",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/tests.txt",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/ROOT_CAUSE_PROOF.md",
+    "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause/production_fix.patch"
+  ],
+  "runtime_status": "ALL_NEW_DIAGNOSTICS_EXITED",
+  "GPU_PID_tmux": null,
+  "current_step": "A1/A2 original-source bounded smokes1000 each; current A2 bounded smoke900",
+  "formal_results": "NONE; no science failure or new formal result",
+  "classification": "ROOT_CAUSE_CONFIRMED_FIXED",
+  "shared_classification": "SHARED_ROOT_CAUSE_CONFIRMED",
+  "blockers": [],
+  "next_gate": "MASTER integrates4e210c0 encoder fix into A1/A2; next formal budget is separate decision. No unresolved first-source probe required.",
+  "whether_user_approval_is_required": "No further approval required for completed audit. Formal long run explicitly out of this task and left to next round.",
+  "central_files_unchanged": true,
+  "original_a1_a2_sources_unchanged": true,
+  "runtime_artifact_sha256": {
+    "a1_original/failure.pt": "fa1922857bb5de514f38028d178ad294aeea4a6888ccb1692b18a8e1738c738f",
+    "a2_original/failure.pt": "0fd3c70b8c6a4bae59df4990007371612ce7b3c3ae709aca1702edfece0845bc"
+  },
+  "heartbeat": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 700000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:07:52+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 2.623783826828003
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 690000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:07:53+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 1.4822719097137451
+    }
+  },
+  "gpu_compute_apps_at_closeout": "pid, gpu_uuid, used_gpu_memory [MiB]\n17097, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 790 MiB\n19555, GPU-71b66566-de04-56b5-4331-8c12d4967672, 790 MiB\n",
+  "completed_at": "2026-09-23T08:07:55.362450+08:00",
+  "remote_sync": "LOCAL_ONLY; no external messages or push"
+}

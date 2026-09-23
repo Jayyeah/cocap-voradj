@@ -1,0 +1,57 @@
+{
+  "status": "AUDITED",
+  "findings": [
+    {
+      "operation": "gather / action indices",
+      "finding": "AW9 sampler uses multinomial(mu,1).squeeze(-1) -> (B,); gather uses action[:,None] -> (B,1), then squeeze(1). SAC validates 0<=actions<9. No out-of-range access in captured failing forward (failure precedes gather)."
+    },
+    {
+      "operation": "scatter / index_select",
+      "finding": "No scatter/index_select in the shared encoder/actor forward. Replay selection uses numpy choice without replacement and the same Transition order for every field."
+    },
+    {
+      "operation": "advanced indexing / agent-slot mapping",
+      "finding": "Both collection runners enumerate active slots, stack in that order, and map row back to slot with enumerate/zip. Bad rows originated from active agents and became inactive only in next_obs; provenance uses original Transition object identity and replay slot, without changing RNG."
+    },
+    {
+      "operation": "padding / masks",
+      "finding": "Environment _pad uses np.zeros, masks are exact 22 entries, types are range0..3. Valid self flag is always true in packed active observations. Runners zero all fields for None next_obs, intentionally creating an all-false validity mask. This is the proven invalid attention-domain boundary."
+    },
+    {
+      "operation": "reshape / view / squeeze / broadcast",
+      "finding": "Observed B128,H8,T22,D32 QKV; bool padding mask B128,T22. has_evader is B and scores mask is B,1,E8; summary padding B,3; pursuing_scalar B,1; no accidental broadcasting across batch. A1 old harness (B,1) vs (B,) bug is test-only and independent of this production source."
+    },
+    {
+      "operation": "masked_fill / pooled context",
+      "finding": "Key padding all true maps to all -inf native softmax row. Pool masks would zero masked values afterwards, but self_token=trans[:,0] remains NaN. Existing max_context isfinite fallback cannot prevent this source. Summary attention always has mean/max slots unmasked; empty-enemy guarded target attention is not first bad op."
+    },
+    {
+      "operation": "initialization / stale memory",
+      "finding": "Input, masks, model parameters and QKV finite; no torch.empty in this shared forward. Single-row failure deterministic 1111/1111, insensitive to full/reversed/duplicated batching; CPU matches CUDA. Evidence supports row-local all-masked attention, not stale memory or undefined indexing."
+    },
+    {
+      "operation": "terminated/truncated",
+      "finding": "Both failing rows terminated=true,truncated=false; original input represented no physical active next state. Valid truncated states retain self=true. Learners multiply bootstrap by ~terminated AFTER forward; 0*NaN propagates. Fix leaves that scientific contract unchanged."
+    }
+  ],
+  "historical_fixes": [
+    {
+      "commit": "530ecb9",
+      "subject": "AC capability: guard all-masked target observations",
+      "ancestor_of_a1": false,
+      "ancestor_of_a2": false
+    },
+    {
+      "commit": "62f1f8f",
+      "subject": "AC capability: guard all-masked target observations",
+      "ancestor_of_a1": false,
+      "ancestor_of_a2": false
+    },
+    {
+      "commit": "766283d",
+      "subject": "AC capability: guard all-masked target observations",
+      "ancestor_of_a1": false,
+      "ancestor_of_a2": false
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "task": "a2",
+  "source": "current",
+  "pid": 924654,
+  "max_steps": 900,
+  "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+  "device": "cuda:0",
+  "backend": {
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "cuda_visible_devices": "1",
+    "launch_blocking": null,
+    "mha_fastpath": false,
+    "flash_sdp": false,
+    "memory_efficient_sdp": false,
+    "math_sdp": true,
+    "tf32_matmul": false,
+    "tf32_cudnn": false,
+    "float32_precision": {
+      "query_error": "PyTorch is checking the matmul precision without a specific backend name,Current status indicate that you have used mix of the legacy and new APIs to set the matmul precision. We suggest only using the new API for matmul precision. See also: https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices"
+    },
+    "autocast": false,
+    "cpu_threads": 1,
+    "device_name": "NVIDIA RTX A6000"
+  },
+  "heartbeat_before": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 700000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:03:37+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 6.266250371932983
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 686000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:03:38+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 4.968469142913818
+    }
+  },
+  "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+  "network": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "action_size": 9,
+    "self_feature_dim": 9,
+    "max_pursuers": 8,
+    "max_evaders": 8,
+    "max_obstacles": 5,
+    "pursuing_embed_dim": 8
+  },
+  "status": "PASS_BOUNDED_NO_FAILURE",
+  "final_module_finite": {
+    "actor": true,
+    "critic1": true,
+    "critic2": true,
+    "target_critic1": true,
+    "target_critic2": true
+  },
+  "telemetry_finite": true,
+  "telemetry_last": [
+    {
+      "critic_loss": 17.186962127685547,
+      "actor_loss": 1.0411783456802368,
+      "alpha_loss": 0.32174548506736755,
+      "alpha": 0.20073190331459045,
+      "entropy": 1.9529235363006592,
+      "td_target_mean": -1.7744770050048828,
+      "q1_mean": -1.371948480606079,
+      "q2_mean": -1.4968870878219604,
+      "critic_grad_norm": 13.091019630432129,
+      "actor_grad_norm": 0.6664594411849976,
+      "alpha_grad_norm": 0.20035652816295624,
+      "finite": 1.0,
+      "update_count": 38.0,
+      "global_step": 900,
+      "replay_size": 3600
+    }
+  ],
+  "terminal_zero_rows_collected": 3,
+  "seconds": 39.16967402098817,
+  "global_step": 900,
+  "update_count": 38,
+  "calls": {
+    "actor.initial_evaluation": 792,
+    "actor.collection": 900,
+    "actor.next_obs_no_grad": 38,
+    "actor.update": 76
+  },
+  "heartbeat_after": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 700000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:04:22+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 0.37885189056396484
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 687000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:04:08+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 14.105693817138672
+    }
+  },
+  "skip_initial_eval": false
+}

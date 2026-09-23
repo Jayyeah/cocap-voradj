@@ -1,0 +1,153 @@
+{
+  "task": "a1",
+  "source": "formal",
+  "pid": 794728,
+  "max_steps": 1000,
+  "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+  "backend": {
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "cuda_visible_devices": null,
+    "launch_blocking": null,
+    "mha_fastpath": true,
+    "flash_sdp": true,
+    "memory_efficient_sdp": true,
+    "math_sdp": true,
+    "tf32_matmul": false,
+    "tf32_cudnn": true,
+    "float32_precision": "highest",
+    "autocast": false,
+    "cpu_threads": 1,
+    "device_name": "NVIDIA RTX A6000"
+  },
+  "heartbeat_before": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 400000,
+      "target_step": 400000,
+      "updated_at": "2026-09-22T22:52:02+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 9.67366075515747
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 433000,
+      "target_step": 500000,
+      "updated_at": "2026-09-22T22:52:07+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 5.148783206939697
+    }
+  },
+  "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+  "network": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "action_size": 9,
+    "self_feature_dim": 9,
+    "max_pursuers": 8,
+    "max_evaders": 8,
+    "max_obstacles": 5,
+    "pursuing_embed_dim": 8
+  },
+  "status": "PASS_BOUNDED_NO_FAILURE",
+  "final_module_finite": {
+    "actor": true,
+    "target_actor": true,
+    "critic": true,
+    "target_critic": true
+  },
+  "telemetry_finite": true,
+  "telemetry_last": [
+    {
+      "critic_loss": 1.178823709487915,
+      "actor_loss": 0.9889044761657715,
+      "actor_objective": -0.9889044761657715,
+      "actor_q_objective": -1.0869864225387573,
+      "actor_entropy_alpha": 0.05,
+      "actor_entropy_bonus": 0.09808193147182465,
+      "actor_entropy": 1.9616385698318481,
+      "behavior_entropy": 2.1596381664276123,
+      "policy_action_distribution": [
+        0.0753881186246872,
+        0.14034956693649292,
+        0.026123974472284317,
+        0.06007201969623566,
+        0.03869650140404701,
+        0.2620985507965088,
+        0.05290675163269043,
+        0.2156309187412262,
+        0.12873360514640808
+      ],
+      "behavior_action_distribution": [
+        0.09680170565843582,
+        0.12282298505306244,
+        0.07706823199987411,
+        0.09066660702228546,
+        0.08210433274507523,
+        0.1715913712978363,
+        0.08779647946357727,
+        0.15297822654247284,
+        0.11817005276679993
+      ],
+      "critic_grad_norm": 1.214613676071167,
+      "actor_grad_norm": 0.21216925978660583,
+      "q_mean": -1.0847110748291016,
+      "q_std": 0.22559824585914612,
+      "q_min": -1.7528902292251587,
+      "q_max": -0.5195840001106262,
+      "td_target_mean": -2.2519845962524414,
+      "td_target_std": 3.32478404045105,
+      "bellman_residual_mean": 1.1748855113983154,
+      "bellman_residual_abs_mean": 1.4845627546310425,
+      "finite": 1.0,
+      "update_count": 63.0,
+      "global_step": 1000,
+      "sampler": "uniform_shared",
+      "sample_actual_counts": {
+        "recovery_pure": 128
+      }
+    }
+  ],
+  "terminal_zero_rows_collected": 6,
+  "seconds": 200.1464760939998,
+  "global_step": 1000,
+  "update_count": 63,
+  "calls": {
+    "actor.initial_evaluation": 3000,
+    "actor.collection": 2000,
+    "target_actor.next_obs_no_grad": 63,
+    "actor.update": 63
+  },
+  "heartbeat_after": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 400000,
+      "target_step": 400000,
+      "updated_at": "2026-09-22T22:55:18+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 14.600212574005127
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 436000,
+      "target_step": 500000,
+      "updated_at": "2026-09-22T22:55:22+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 10.152415752410889
+    }
+  },
+  "skip_initial_eval": false
+}

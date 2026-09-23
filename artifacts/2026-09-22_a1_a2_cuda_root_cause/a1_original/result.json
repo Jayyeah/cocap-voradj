@@ -1,0 +1,115 @@
+{
+  "task": "a1",
+  "source": "formal",
+  "pid": 789746,
+  "max_steps": 1000,
+  "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+  "backend": {
+    "torch": "2.9.1+cu128",
+    "cuda": "12.8",
+    "cuda_visible_devices": "1",
+    "launch_blocking": null,
+    "mha_fastpath": true,
+    "flash_sdp": true,
+    "memory_efficient_sdp": true,
+    "math_sdp": true,
+    "tf32_matmul": false,
+    "tf32_cudnn": true,
+    "float32_precision": "highest",
+    "autocast": false,
+    "cpu_threads": 1,
+    "device_name": "NVIDIA RTX A6000"
+  },
+  "heartbeat_before": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 400000,
+      "target_step": 400000,
+      "updated_at": "2026-09-22T22:40:02+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 5.155202627182007
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 422000,
+      "target_step": 500000,
+      "updated_at": "2026-09-22T22:40:06+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 0.17533516883850098
+    }
+  },
+  "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+  "network": {
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "action_size": 9,
+    "self_feature_dim": 9,
+    "max_pursuers": 8,
+    "max_evaders": 8,
+    "max_obstacles": 5,
+    "pursuing_embed_dim": 8
+  },
+  "failure": {
+    "global_step": 760,
+    "updates_completed": 2,
+    "entrypoint": "target_actor.next_obs_no_grad",
+    "bad_rows": [
+      31
+    ],
+    "logits": {
+      "shape": [
+        128,
+        9
+      ],
+      "dtype": "torch.float32",
+      "finite": false,
+      "finite_count": 1143,
+      "numel": 1152,
+      "max_abs_finite": 0.9349409937858582
+    },
+    "all_input_finite": true,
+    "model_hash": "9788d731317d29a976b1aab731edc3ff2e7d860aa47fc2e2606cb3cdeb33d675"
+  },
+  "status": "CAPTURED_NONFINITE",
+  "seconds": 71.73758708500827,
+  "global_step": 760,
+  "update_count": 2,
+  "calls": {
+    "actor.initial_evaluation": 3000,
+    "actor.collection": 1520,
+    "target_actor.next_obs_no_grad": 3,
+    "actor.update": 2
+  },
+  "heartbeat_after": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 400000,
+      "target_step": 400000,
+      "updated_at": "2026-09-22T22:41:17+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 1.7929577827453613
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 423000,
+      "target_step": 500000,
+      "updated_at": "2026-09-22T22:41:07+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 11.875481367111206
+    }
+  },
+  "skip_initial_eval": false
+}

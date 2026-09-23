@@ -1,0 +1,156 @@
+{
+  "classification": "SHARED_ROOT_CAUSE_CONFIRMED",
+  "common": {
+    "encoder_file": "src/cocap_voradj/models/shared_local_ac.py",
+    "source_sha256": "567855d626403bcea549c4806ccae0951f57cc24540925d92ca6197d530b1de5",
+    "hidden_dim": 256,
+    "heads": 8,
+    "layers": 4,
+    "tokens": 22,
+    "network_dtype": "float32",
+    "model_mode": "eval (all submodules)",
+    "dropout_configured": 0.1,
+    "dropout_effective": false,
+    "autocast": false,
+    "device_formal": "physical GPU1 / logical cuda:0",
+    "padding": "fixed [1 self,8 friends,8 enemies,5 obstacles]",
+    "mask_shape_collection": [
+      4,
+      22
+    ],
+    "mask_shape_update": [
+      128,
+      22
+    ],
+    "valid_mask_meaning": "True means token exists; Transformer key_padding_mask is its inverse",
+    "normalization": "VorAdjEnv packs normalized float32 observations; stack_obs/tensor_obs only stack and cast, no additional normalization",
+    "episode_max_length": 3000,
+    "terminal_next_obs": "None -> zeros_like on all six observation arrays, including masks and types",
+    "batch_size_update": 128,
+    "min_replay_size": 3000,
+    "train_freq": 4,
+    "batching": "agent-slot-preserving active list for collection; same Transition list order for all update tensors"
+  },
+  "paths": [
+    {
+      "path": "A1 online behavior",
+      "code": "SharedLocalActor.sample_behavior -> probabilities -> logits -> encoder.decision_feature",
+      "model": "actor",
+      "input": "current active observation only",
+      "batch_size": 4,
+      "grad_enabled": false,
+      "mode": "eval",
+      "epsilon_mixture": true,
+      "target_sync": "online weights changed by actor_optimizer each update"
+    },
+    {
+      "path": "A1 online actor update",
+      "code": "SharedLocalACTrainer.update -> actor.probabilities(obs)",
+      "model": "actor",
+      "input": "sampled obs (active at collection)",
+      "batch_size": 128,
+      "grad_enabled": true,
+      "mode": "eval",
+      "epsilon_mixture": false,
+      "target_sync": "N/A"
+    },
+    {
+      "path": "A1 target actor",
+      "code": "SharedLocalACTrainer.update -> target_actor.probabilities(next_obs)",
+      "model": "separate hard-copy target_actor, requires_grad=False",
+      "input": "sampled next_obs, including inactive terminal placeholders",
+      "batch_size": 128,
+      "grad_enabled": false,
+      "mode": "eval",
+      "epsilon_mixture": false,
+      "target_sync": "hard_copy initially; soft_update tau=0.005 after each completed update; copy buffers"
+    },
+    {
+      "path": "A2 online behavior",
+      "code": "SharedLocalActor.sample_behavior -> probabilities -> logits -> encoder.decision_feature",
+      "model": "actor",
+      "input": "current active observation only",
+      "batch_size": 4,
+      "grad_enabled": false,
+      "mode": "eval",
+      "epsilon_mixture": true,
+      "target_sync": "online weights changed by actor_optimizer each update"
+    },
+    {
+      "path": "A2 online actor update",
+      "code": "DiscreteSACTrainer.update -> actor.logits(obs)",
+      "model": "actor",
+      "input": "sampled obs (active at collection)",
+      "batch_size": 128,
+      "grad_enabled": true,
+      "mode": "eval",
+      "epsilon_mixture": false,
+      "target_sync": "N/A"
+    },
+    {
+      "path": "A2 target-policy computation",
+      "code": "DiscreteSACTrainer.update -> actor.logits(next_obs)",
+      "model": "SAME online actor; there is NO target_actor",
+      "input": "sampled next_obs, including inactive terminal placeholders",
+      "batch_size": 128,
+      "grad_enabled": false,
+      "mode": "eval",
+      "epsilon_mixture": false,
+      "target_sync": "only twin critics are target networks; initial hard-copy and tau=0.005 soft update"
+    },
+    {
+      "path": "A1/A2 initial evaluation",
+      "code": "deterministic_action -> logits -> argmax",
+      "model": "online actor",
+      "input": "active observations only",
+      "batch_size": 4,
+      "grad_enabled": false,
+      "mode": "eval",
+      "epsilon_mixture": false,
+      "target_sync": "evaluation does not update weights"
+    }
+  ],
+  "differences": {
+    "a1_seed": 2026092101,
+    "a2_seed": 2026092202,
+    "a1_initial_eval": "1 episode, min(3000,max_length), observed 3000 steps",
+    "a2_initial_eval": "20 episodes, observed total 792 steps",
+    "a1_collection_forwards_per_step": 2,
+    "a2_collection_forwards_per_step": 1,
+    "a1_failure": "step760 target_actor no_grad third update",
+    "a2_failure": "step808 online actor next_obs no_grad fifteenth update",
+    "a1_replay_rng": "seed+902",
+    "a2_replay_rng": "seed+902",
+    "a1_scientific_entropy_alpha": 0.05,
+    "a2_alpha_init": 0.2,
+    "backend_formal": "PyTorch defaults: MHA fastpath true; all SDP backends enabled; tf32 matmul false, cudnn true; no launch blocking",
+    "a2_current_e383c03": "runner has backend switches disabling MHA fastpath/flash/memory-efficient SDP. Our formal-source probe restores the archived 135eca3 runner and learner, without adding experimental flag switches."
+  },
+  "smoke_coverage_gap": {
+    "a1": "_apply_smoke_overrides replaces model H256/L4 with H64/L1, batch32,min replay64; step0 diagnostics use active B4 and end before formal replay warmup",
+    "a2": "runner smoke uses B32,min replay64,episode length24; focused preflight tests use self-valid synthetic observations with H16/H32, no all-masked row. Finite smokes do not cover captured inactive next_obs under formal source backend."
+  },
+  "sources": {
+    "a1": {
+      "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
+      "head": "dc14560e1f2761ee92e36ee8ce769fe0caa8eb11",
+      "status": " M src/cocap_voradj/training/shared_local_ac.py\n M tools/run_shared_local_ac_capability.py\n?? artifacts/2026-09-21_entropy_localq_cov/\n?? artifacts/2026-09-22_entropy_localq_cov/\n?? configs/experiments/ac_entropy_localq_cov_20260921/\n?? tests/test_a1_cuda_step0_diagnostic.py\n?? tests/test_entropy_localq_cov.py\n?? tools/a1_cuda_step0_diagnostic.py\n",
+      "files": {
+        "src/cocap_voradj/models/shared_local_ac.py": "567855d626403bcea549c4806ccae0951f57cc24540925d92ca6197d530b1de5",
+        "src/cocap_voradj/training/shared_local_ac.py": "da9bbb08db06883e919e194320c49d87232f0cea813862597c15adf167ab068c",
+        "tools/run_shared_local_ac_capability.py": "06a54c5443a27b17ff2a2717d8701f37708cecffdadb90d9cedabd27afc960f2",
+        "configs/experiments/ac_entropy_localq_cov_20260921/stage1.yaml": "f10556d67be9ae4865c5bfe2fa529faa3ce607eb59b01c9200c88180b47674a9"
+      }
+    },
+    "a2": {
+      "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
+      "head": "e383c035c3caed041e7af9aff2d0e84e1644e2b7",
+      "status": "?? artifacts/2026-09-22_discrete_sac_cov/\n",
+      "files": {
+        "src/cocap_voradj/models/shared_local_ac.py": "567855d626403bcea549c4806ccae0951f57cc24540925d92ca6197d530b1de5",
+        "src/cocap_voradj/training/discrete_sac.py": "f5a46786b25d3deb8607995481bc61016769803b4e64e2080fb1fc46dee4ade8",
+        "tools/run_discrete_sac_coverage_20260922.py": "6746ac7fcbbe3d8f2346dee1b5854a05d97ed00cc9270302f62856c8b4c06323"
+      }
+    }
+  }
+}

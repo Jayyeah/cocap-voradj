@@ -1,0 +1,798 @@
+{
+  "classification": "ROOT_CAUSE_CONFIRMED_FIXED",
+  "shared_classification": "SHARED_ROOT_CAUSE_CONFIRMED",
+  "task_id": "A1_A2_SHARED_CUDA_ROOT_CAUSE",
+  "branch": "audit/a1-a2-cuda-root-cause-20260922",
+  "base_head": "e383c035c3caed041e7af9aff2d0e84e1644e2b7",
+  "worktree": "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922",
+  "central_source_head": "4538aca38571b1f6aec8a9bfa7f69bca2c871562",
+  "proof_written_before_fix": true,
+  "production_fix": "src/cocap_voradj/models/shared_local_ac.py: LocalObservationEncoder.features only",
+  "fix_description": "clone effective mask; self slot unmasked only for all-masked placeholder; attention/pooling use effective mask. No changes to any valid observation, scientific hyperparameter, equation, reward, replay or backend.",
+  "valid_row_semantics": "bit-exact before/after for all127 valid rows of BOTH captured batches on BOTH CPU and CUDA",
+  "first_bad": {
+    "a1": {
+      "global_step": 760,
+      "completed_updates": 2,
+      "entrypoint": "target_actor.next_obs_no_grad",
+      "bad_row": 31,
+      "first_bad_layer": "encoder.transformer.layers.0",
+      "exact_production_operation": "torch._transformer_encoder_layer_fwd",
+      "last_finite_production_tensor": "embedded tokens at layer0 input [128,22,256]",
+      "last_finite_attention_tensor": "QK scores [128,8,22,22]",
+      "intentional_nonfinite_mask": "canonical key-padding mask and masked scores contain -inf by design; this is not the unexpected NaN",
+      "first_unexpected_nonfinite": "aten._masked_softmax with no allowed key in row",
+      "native_attention_bad_shape": [
+        128,
+        22,
+        256
+      ],
+      "native_attention_nonfinite_values_in_bad_row": 5632,
+      "final_nonfinite_logits": 9,
+      "all_raw_inputs_and_weights_finite": true,
+      "cpu_same_failure": true,
+      "exact_layer_trace": "a1_replay_original/layer_compare.json",
+      "native_decomposition": "a1_replay_original/attention_decomposition.json"
+    },
+    "a2": {
+      "global_step": 808,
+      "completed_updates": 14,
+      "entrypoint": "actor.next_obs_no_grad",
+      "bad_row": 69,
+      "first_bad_layer": "encoder.transformer.layers.0",
+      "exact_production_operation": "torch._transformer_encoder_layer_fwd",
+      "last_finite_production_tensor": "embedded tokens at layer0 input [128,22,256]",
+      "last_finite_attention_tensor": "QK scores [128,8,22,22]",
+      "intentional_nonfinite_mask": "canonical key-padding mask and masked scores contain -inf by design; this is not the unexpected NaN",
+      "first_unexpected_nonfinite": "aten._masked_softmax with no allowed key in row",
+      "native_attention_bad_shape": [
+        128,
+        22,
+        256
+      ],
+      "native_attention_nonfinite_values_in_bad_row": 5632,
+      "final_nonfinite_logits": 9,
+      "all_raw_inputs_and_weights_finite": true,
+      "cpu_same_failure": true,
+      "exact_layer_trace": "a2_replay_original_v2/layer_compare.json",
+      "native_decomposition": "a2_replay_original_v2/attention_decomposition.json"
+    }
+  },
+  "smokes": {
+    "a1_fixed_cpu_smoke": {
+      "task": "a1",
+      "source": "formal",
+      "pid": 794728,
+      "max_steps": 1000,
+      "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+      "backend": {
+        "torch": "2.9.1+cu128",
+        "cuda": "12.8",
+        "cuda_visible_devices": null,
+        "launch_blocking": null,
+        "mha_fastpath": true,
+        "flash_sdp": true,
+        "memory_efficient_sdp": true,
+        "math_sdp": true,
+        "tf32_matmul": false,
+        "tf32_cudnn": true,
+        "float32_precision": "highest",
+        "autocast": false,
+        "cpu_threads": 1,
+        "device_name": "NVIDIA RTX A6000"
+      },
+      "heartbeat_before": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:52:02+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 9.67366075515747
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 433000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:52:07+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 5.148783206939697
+        }
+      },
+      "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+      "network": {
+        "hidden_dim": 256,
+        "num_heads": 8,
+        "num_layers": 4,
+        "action_size": 9,
+        "self_feature_dim": 9,
+        "max_pursuers": 8,
+        "max_evaders": 8,
+        "max_obstacles": 5,
+        "pursuing_embed_dim": 8
+      },
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "final_module_finite": {
+        "actor": true,
+        "target_actor": true,
+        "critic": true,
+        "target_critic": true
+      },
+      "telemetry_finite": true,
+      "telemetry_last": [
+        {
+          "critic_loss": 1.178823709487915,
+          "actor_loss": 0.9889044761657715,
+          "actor_objective": -0.9889044761657715,
+          "actor_q_objective": -1.0869864225387573,
+          "actor_entropy_alpha": 0.05,
+          "actor_entropy_bonus": 0.09808193147182465,
+          "actor_entropy": 1.9616385698318481,
+          "behavior_entropy": 2.1596381664276123,
+          "policy_action_distribution": [
+            0.0753881186246872,
+            0.14034956693649292,
+            0.026123974472284317,
+            0.06007201969623566,
+            0.03869650140404701,
+            0.2620985507965088,
+            0.05290675163269043,
+            0.2156309187412262,
+            0.12873360514640808
+          ],
+          "behavior_action_distribution": [
+            0.09680170565843582,
+            0.12282298505306244,
+            0.07706823199987411,
+            0.09066660702228546,
+            0.08210433274507523,
+            0.1715913712978363,
+            0.08779647946357727,
+            0.15297822654247284,
+            0.11817005276679993
+          ],
+          "critic_grad_norm": 1.214613676071167,
+          "actor_grad_norm": 0.21216925978660583,
+          "q_mean": -1.0847110748291016,
+          "q_std": 0.22559824585914612,
+          "q_min": -1.7528902292251587,
+          "q_max": -0.5195840001106262,
+          "td_target_mean": -2.2519845962524414,
+          "td_target_std": 3.32478404045105,
+          "bellman_residual_mean": 1.1748855113983154,
+          "bellman_residual_abs_mean": 1.4845627546310425,
+          "finite": 1.0,
+          "update_count": 63.0,
+          "global_step": 1000,
+          "sampler": "uniform_shared",
+          "sample_actual_counts": {
+            "recovery_pure": 128
+          }
+        }
+      ],
+      "terminal_zero_rows_collected": 6,
+      "seconds": 200.1464760939998,
+      "global_step": 1000,
+      "update_count": 63,
+      "calls": {
+        "actor.initial_evaluation": 3000,
+        "actor.collection": 2000,
+        "target_actor.next_obs_no_grad": 63,
+        "actor.update": 63
+      },
+      "heartbeat_after": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:55:18+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 14.600212574005127
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 436000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:55:22+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 10.152415752410889
+        }
+      },
+      "skip_initial_eval": false
+    },
+    "a2_fixed_cpu_smoke": {
+      "task": "a2",
+      "source": "formal",
+      "pid": 794106,
+      "max_steps": 1000,
+      "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+      "backend": {
+        "torch": "2.9.1+cu128",
+        "cuda": "12.8",
+        "cuda_visible_devices": null,
+        "launch_blocking": null,
+        "mha_fastpath": true,
+        "flash_sdp": true,
+        "memory_efficient_sdp": true,
+        "math_sdp": true,
+        "tf32_matmul": false,
+        "tf32_cudnn": true,
+        "float32_precision": "highest",
+        "autocast": false,
+        "cpu_threads": 1,
+        "device_name": "NVIDIA RTX A6000"
+      },
+      "heartbeat_before": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:50:32+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 1.3540143966674805
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 432000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:50:22+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 11.812827587127686
+        }
+      },
+      "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+      "network": {
+        "hidden_dim": 256,
+        "num_heads": 8,
+        "num_layers": 4,
+        "action_size": 9,
+        "self_feature_dim": 9,
+        "max_pursuers": 8,
+        "max_evaders": 8,
+        "max_obstacles": 5,
+        "pursuing_embed_dim": 8
+      },
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true,
+      "telemetry_last": [
+        {
+          "critic_loss": 32.26427459716797,
+          "actor_loss": 1.5408962965011597,
+          "alpha_loss": 0.4149859547615051,
+          "alpha": 0.20120322704315186,
+          "entropy": 1.8944876194000244,
+          "td_target_mean": -3.1641039848327637,
+          "q1_mean": -1.9690155982971191,
+          "q2_mean": -2.0166547298431396,
+          "critic_grad_norm": 26.524293899536133,
+          "actor_grad_norm": 0.8759977221488953,
+          "alpha_grad_norm": 0.2587924301624298,
+          "finite": 1.0,
+          "update_count": 63.0,
+          "global_step": 1000,
+          "replay_size": 4000
+        }
+      ],
+      "terminal_zero_rows_collected": 1,
+      "seconds": 191.747080207002,
+      "global_step": 1000,
+      "update_count": 63,
+      "calls": {
+        "actor.initial_evaluation": 792,
+        "actor.collection": 1000,
+        "actor.next_obs_no_grad": 63,
+        "actor.update": 63
+      },
+      "heartbeat_after": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:53:33+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 12.919816732406616
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 434000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:53:37+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 8.416353940963745
+        }
+      },
+      "skip_initial_eval": false
+    },
+    "a1_fixed_cuda_smoke": {
+      "task": "a1",
+      "source": "formal",
+      "pid": 796122,
+      "max_steps": 1000,
+      "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+      "backend": {
+        "torch": "2.9.1+cu128",
+        "cuda": "12.8",
+        "cuda_visible_devices": "1",
+        "launch_blocking": null,
+        "mha_fastpath": true,
+        "flash_sdp": true,
+        "memory_efficient_sdp": true,
+        "math_sdp": true,
+        "tf32_matmul": false,
+        "tf32_cudnn": true,
+        "float32_precision": "highest",
+        "autocast": false,
+        "cpu_threads": 1,
+        "device_name": "NVIDIA RTX A6000"
+      },
+      "heartbeat_before": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:55:18+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 7.2264955043792725
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 436000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:55:22+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 2.7786972522735596
+        }
+      },
+      "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+      "network": {
+        "hidden_dim": 256,
+        "num_heads": 8,
+        "num_layers": 4,
+        "action_size": 9,
+        "self_feature_dim": 9,
+        "max_pursuers": 8,
+        "max_evaders": 8,
+        "max_obstacles": 5,
+        "pursuing_embed_dim": 8
+      },
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "final_module_finite": {
+        "actor": true,
+        "target_actor": true,
+        "critic": true,
+        "target_critic": true
+      },
+      "telemetry_finite": true,
+      "telemetry_last": [
+        {
+          "critic_loss": 0.4228273630142212,
+          "actor_loss": 0.5976831316947937,
+          "actor_objective": -0.5976831316947937,
+          "actor_q_objective": -0.6850515007972717,
+          "actor_entropy_alpha": 0.05,
+          "actor_entropy_bonus": 0.08736839145421982,
+          "actor_entropy": 1.7473678588867188,
+          "behavior_entropy": 2.1205246448516846,
+          "policy_action_distribution": [
+            0.19579975306987762,
+            0.04192296415567398,
+            0.06434940546751022,
+            0.04002554714679718,
+            0.055339254438877106,
+            0.4002750515937805,
+            0.014493007212877274,
+            0.03329737111926079,
+            0.1544976532459259
+          ],
+          "behavior_action_distribution": [
+            0.14503450691699982,
+            0.08339674770832062,
+            0.09238000214099884,
+            0.08263672143220901,
+            0.08877085149288177,
+            0.22694005072116852,
+            0.0724092647433281,
+            0.07994165271520615,
+            0.12849025428295135
+          ],
+          "critic_grad_norm": 0.9581444263458252,
+          "actor_grad_norm": 0.24646252393722534,
+          "q_mean": -0.7076367139816284,
+          "q_std": 0.284702867269516,
+          "q_min": -1.4493911266326904,
+          "q_max": -0.1759343445301056,
+          "td_target_mean": -1.0873847007751465,
+          "td_target_std": 2.0238037109375,
+          "bellman_residual_mean": 0.3783748745918274,
+          "bellman_residual_abs_mean": 0.6538469791412354,
+          "finite": 1.0,
+          "update_count": 63.0,
+          "global_step": 1000,
+          "sampler": "uniform_shared",
+          "sample_actual_counts": {
+            "recovery_pure": 128
+          }
+        }
+      ],
+      "terminal_zero_rows_collected": 4,
+      "seconds": 82.54207132899319,
+      "global_step": 1000,
+      "update_count": 63,
+      "calls": {
+        "actor.initial_evaluation": 3000,
+        "actor.collection": 2000,
+        "target_actor.next_obs_no_grad": 63,
+        "actor.update": 63
+      },
+      "heartbeat_after": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:56:33+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 14.68608832359314
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 437000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:56:37+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 10.273114442825317
+        }
+      },
+      "skip_initial_eval": false
+    },
+    "a2_fixed_cuda_smoke": {
+      "task": "a2",
+      "source": "formal",
+      "pid": 795200,
+      "max_steps": 1000,
+      "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+      "backend": {
+        "torch": "2.9.1+cu128",
+        "cuda": "12.8",
+        "cuda_visible_devices": "1",
+        "launch_blocking": null,
+        "mha_fastpath": true,
+        "flash_sdp": true,
+        "memory_efficient_sdp": true,
+        "math_sdp": true,
+        "tf32_matmul": false,
+        "tf32_cudnn": true,
+        "float32_precision": "highest",
+        "autocast": false,
+        "cpu_threads": 1,
+        "device_name": "NVIDIA RTX A6000"
+      },
+      "heartbeat_before": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:53:03+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 5.751912355422974
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 434000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:53:07+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 1.2364153861999512
+        }
+      },
+      "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+      "network": {
+        "hidden_dim": 256,
+        "num_heads": 8,
+        "num_layers": 4,
+        "action_size": 9,
+        "self_feature_dim": 9,
+        "max_pursuers": 8,
+        "max_evaders": 8,
+        "max_obstacles": 5,
+        "pursuing_embed_dim": 8
+      },
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true,
+      "telemetry_last": [
+        {
+          "critic_loss": 19.66160774230957,
+          "actor_loss": 1.1594607830047607,
+          "alpha_loss": 0.7441942095756531,
+          "alpha": 0.20116521418094635,
+          "entropy": 1.689243197441101,
+          "td_target_mean": -2.103422164916992,
+          "q1_mean": -1.4683246612548828,
+          "q2_mean": -1.3509255647659302,
+          "critic_grad_norm": 18.57305145263672,
+          "actor_grad_norm": 1.5466220378875732,
+          "alpha_grad_norm": 0.464036762714386,
+          "finite": 1.0,
+          "update_count": 63.0,
+          "global_step": 1000,
+          "replay_size": 4000
+        }
+      ],
+      "terminal_zero_rows_collected": 3,
+      "seconds": 42.05463686599978,
+      "global_step": 1000,
+      "update_count": 63,
+      "calls": {
+        "actor.initial_evaluation": 792,
+        "actor.collection": 1000,
+        "actor.next_obs_no_grad": 63,
+        "actor.update": 63
+      },
+      "heartbeat_after": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 400000,
+          "target_step": 400000,
+          "updated_at": "2026-09-22T22:53:48+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 2.7662856578826904
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 434000,
+          "target_step": 500000,
+          "updated_at": "2026-09-22T22:53:37+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 13.272616624832153
+        }
+      },
+      "skip_initial_eval": false
+    },
+    "a2_current_fixed_cuda_smoke_v2": {
+      "task": "a2",
+      "source": "current",
+      "pid": 924654,
+      "max_steps": 900,
+      "entrypoint": "initial evaluation -> production _collect_step/_maybe_update",
+      "device": "cuda:0",
+      "backend": {
+        "torch": "2.9.1+cu128",
+        "cuda": "12.8",
+        "cuda_visible_devices": "1",
+        "launch_blocking": null,
+        "mha_fastpath": false,
+        "flash_sdp": false,
+        "memory_efficient_sdp": false,
+        "math_sdp": true,
+        "tf32_matmul": false,
+        "tf32_cudnn": false,
+        "float32_precision": {
+          "query_error": "PyTorch is checking the matmul precision without a specific backend name,Current status indicate that you have used mix of the legacy and new APIs to set the matmul precision. We suggest only using the new API for matmul precision. See also: https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices"
+        },
+        "autocast": false,
+        "cpu_threads": 1,
+        "device_name": "NVIDIA RTX A6000"
+      },
+      "heartbeat_before": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 700000,
+          "target_step": 700000,
+          "updated_at": "2026-09-23T08:03:37+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 6.266250371932983
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 686000,
+          "target_step": 700000,
+          "updated_at": "2026-09-23T08:03:38+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 4.968469142913818
+        }
+      },
+      "instrumentation": "method wrappers; no module hooks; no pre-forward synchronization; logits finite check after exact forward",
+      "network": {
+        "hidden_dim": 256,
+        "num_heads": 8,
+        "num_layers": 4,
+        "action_size": 9,
+        "self_feature_dim": 9,
+        "max_pursuers": 8,
+        "max_evaders": 8,
+        "max_obstacles": 5,
+        "pursuing_embed_dim": 8
+      },
+      "status": "PASS_BOUNDED_NO_FAILURE",
+      "final_module_finite": {
+        "actor": true,
+        "critic1": true,
+        "critic2": true,
+        "target_critic1": true,
+        "target_critic2": true
+      },
+      "telemetry_finite": true,
+      "telemetry_last": [
+        {
+          "critic_loss": 17.186962127685547,
+          "actor_loss": 1.0411783456802368,
+          "alpha_loss": 0.32174548506736755,
+          "alpha": 0.20073190331459045,
+          "entropy": 1.9529235363006592,
+          "td_target_mean": -1.7744770050048828,
+          "q1_mean": -1.371948480606079,
+          "q2_mean": -1.4968870878219604,
+          "critic_grad_norm": 13.091019630432129,
+          "actor_grad_norm": 0.6664594411849976,
+          "alpha_grad_norm": 0.20035652816295624,
+          "finite": 1.0,
+          "update_count": 38.0,
+          "global_step": 900,
+          "replay_size": 3600
+        }
+      ],
+      "terminal_zero_rows_collected": 3,
+      "seconds": 39.16967402098817,
+      "global_step": 900,
+      "update_count": 38,
+      "calls": {
+        "actor.initial_evaluation": 792,
+        "actor.collection": 900,
+        "actor.next_obs_no_grad": 38,
+        "actor.update": 76
+      },
+      "heartbeat_after": {
+        "z05": {
+          "pid": 17097,
+          "status": "running",
+          "phase": "formal_evaluation",
+          "stage": "stage3",
+          "current_step": 700000,
+          "target_step": 700000,
+          "updated_at": "2026-09-23T08:04:22+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 0.37885189056396484
+        },
+        "z07": {
+          "pid": 19555,
+          "status": "running",
+          "phase": "training",
+          "stage": "stage3",
+          "current_step": 687000,
+          "target_step": 700000,
+          "updated_at": "2026-09-23T08:04:08+0800",
+          "pid_alive": true,
+          "mtime_age_seconds": 14.105693817138672
+        }
+      },
+      "skip_initial_eval": false
+    }
+  },
+  "tests": {
+    "new_regression_before_fix": "5 failed as expected",
+    "cpu_regressions_after_fix": "14 passed",
+    "a1_existing_contracts_after_fix": "7 passed"
+  },
+  "new_formal_long_runs_started": false,
+  "iqn_scientific_contract_changed": false,
+  "original_worktrees_modified": false,
+  "central_files_modified": false,
+  "historical_scientific_results": "A1/A2 still have no completed scientific result; failures are engineering, not entropy/SAC scientific failures",
+  "restart_recommendation": "YES after MASTER integrates the encoder-only fix and reviews this handoff; next formal launch is a later decision, not authorized/executed in this audit. Use fresh finite initialization, not a NaN-contaminated state.",
+  "remaining_limits": [
+    "No claim about 100k/300k convergence or stability.",
+    "Original A1 historical log did not record global_step or dump its original weights; this audit reproduces first source at measured step760 under its recovered runtime/config.",
+    "Current A2 e383c03 backend guards are preserved; original formal-source validation uses archived135eca3/default backend to ensure repair does not depend on disabling the failing path."
+  ],
+  "ruled_out_for_observed_failure": [
+    "CUDA-only failure",
+    "nondeterministic kernel as necessary cause",
+    "batch-position interaction",
+    "nonfinite raw observation",
+    "nonfinite weights before first failure",
+    "empty-enemy summary attention as first bad op",
+    "action gather/index shape bug",
+    "entropy/SAC objective as first nonfinite source"
+  ],
+  "next_highest_information_probe": "No unresolved source for these captured failures. After integration, resource-gated original-width production smoke is the integration gate (already passed in this isolated worktree); subsequent formal budgets remain a MASTER/user decision.",
+  "runtime_artifact_policy": "~34MiB including two exact-weight/batch .pt dumps; .pt are local ignored runtime artifacts, hashes/manifests and compact reports are tracked. No checkpoint/replay histories generated.",
+  "implementation_HEAD": "4e210c090ec696bda73ff36877f8e33270ef8a86",
+  "local_delivery_status": "IMPLEMENTATION_COMMITTED_EVIDENCE_COMMIT_PENDING",
+  "diagnostic_tool_limitations": [
+    "Initial trace Bool abs metadata issue corrected; successful original replay retained under a2_replay_original_v2.",
+    "Initial current A2 probe failed before forward while reading aggregate precision; query error recorded without changing backend. Retry a2_current_fixed_cuda_smoke_v2 passed900steps/38updates.",
+    "Evaluation Infinity sentinels serialized as strings to preserve strict JSON; see serialization_notes.json. No model tensors or numeric values replaced."
+  ],
+  "runtime_status": "ALL_BOUNDED_DIAGNOSTICS_EXITED_NO_NEW_FORMAL_RUN",
+  "heartbeat_closeout": {
+    "z05": {
+      "pid": 17097,
+      "status": "running",
+      "phase": "formal_evaluation",
+      "stage": "stage3",
+      "current_step": 700000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:07:52+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 2.5454885959625244
+    },
+    "z07": {
+      "pid": 19555,
+      "status": "running",
+      "phase": "training",
+      "stage": "stage3",
+      "current_step": 690000,
+      "target_step": 700000,
+      "updated_at": "2026-09-23T08:07:53+0800",
+      "pid_alive": true,
+      "mtime_age_seconds": 1.4039807319641113
+    }
+  }
+}

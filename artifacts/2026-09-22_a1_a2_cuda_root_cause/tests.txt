@@ -1,0 +1,32 @@
+A1/A2 shared CUDA root cause tests — all commands executed in isolated audit worktree.
+
+BEFORE FIX (expected red):
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONPATH=src:. python -m pytest -q tests/test_shared_local_terminal_rows.py
+5 failed. See regression_before_fix.txt. Same production root reproduces on CPU.
+
+AFTER FIX:
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONPATH=src:. python -m pytest -q tests/test_shared_local_terminal_rows.py tests/test_discrete_sac_preflight.py tests/test_shared_local_ac_capability.py
+14 passed. See regression_after_fix.txt.
+A1 original entropy + multinomial shape tests, with snapshot training module and audit fixed encoder:
+7 passed. See a1_regression_after_fix.txt.
+
+Original capture and replay:
+A1 exact gate_evaluation(0) [3000 steps] -> collection/update: first bad at step760, target_actor next_obs batch31.
+A2 exact evaluate(0) [20 episodes / 792 steps] -> collection/update: first bad at step808, actor next_obs batch69.
+Original captured single row: A1 and A2 each 1/1,10/10,100/100,1000/1000 nonfinite; first iteration1.
+Original full batch / reversed / duplicate: each10/10 failures for each actor.
+Fixed captured single row: each0/1,0/10,0/100,0/1000 failures; each0/10 for other variants.
+Matched CPU/CUDA: original BOTH nonfinite at layer0; fixed BOTH finite. All127 valid rows bit-identical before/after per device.
+No module hooks; four fused Transformer calls still execute. Traced vs untraced logits exact on common finite entries with identical nonfinite pattern.
+
+Bounded smokes (no run(), no formal long run; formal dimensions/replay/episode length/science preserved):
+a1_fixed_cpu_smoke: PASS_BOUNDED_NO_FAILURE; steps=1000; updates=63; seconds=200.146; collected_terminal_zero_rows=6; finite_weights=True; finite_telemetry=True
+a2_fixed_cpu_smoke: PASS_BOUNDED_NO_FAILURE; steps=1000; updates=63; seconds=191.747; collected_terminal_zero_rows=1; finite_weights=True; finite_telemetry=True
+a1_fixed_cuda_smoke: PASS_BOUNDED_NO_FAILURE; steps=1000; updates=63; seconds=82.542; collected_terminal_zero_rows=4; finite_weights=True; finite_telemetry=True
+a2_fixed_cuda_smoke: PASS_BOUNDED_NO_FAILURE; steps=1000; updates=63; seconds=42.055; collected_terminal_zero_rows=3; finite_weights=True; finite_telemetry=True
+a2_current_fixed_cuda_smoke_v2: PASS_BOUNDED_NO_FAILURE; steps=900; updates=38; seconds=39.170; collected_terminal_zero_rows=3; finite_weights=True; finite_telemetry=True
+
+Audit-only failed attempt: initial layer-summary tool called abs() on Bool; corrected metadata utility only; a2_replay_original_v2 rerun passed. Not a production bug.
+
+Current-runner introspection-only failure: a2_current_fixed_cuda_smoke exited before forward when aggregate matmul-precision getter rejected mixed API state. No backend change made. a2_current_fixed_cuda_smoke_v2 passed 900 steps / 38 updates with all final modules/telemetry finite.
+Evaluation Infinity sentinels encoded as explicit strings for strict JSON; see serialization_notes.json. No model tensor sanitization.
