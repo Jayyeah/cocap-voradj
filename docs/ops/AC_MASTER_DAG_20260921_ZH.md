@@ -44,10 +44,10 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
-| A1 | A1_ROOT_CAUSE_CONFIRMED_FIXED_READY_FORMAL | `experiment/ac-entropy-cov-20260921` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | Astra shared-root-cause fix `4e210c0` 已验证；先跑 branch CPU/CUDA regression 与 bounded production gate，再 fresh 0/25k/50k/75k/100k entropy-only formal；尚无科学结果 |
+| A1 | A1_FORMAL_RUNNING_AFTER_ROOT_CAUSE_FIX | `experiment/ac-entropy-cov-20260921` @ `78adf78` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | PID `963907` / tmux `a1_entropy_localq_cov_formal_20260923` / physical GPU0；fresh 0→100k，25k/50k/75k/100k checkpoints；尚无科学分类 |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
-| A2 | A2_ROOT_CAUSE_CONFIRMED_FIXED_READY_FORMAL | `experiment/ac-discrete-sac-preflight-20260921` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | Astra shared-root-cause fix `4e210c0` 已验证；先完成 >808 production path gate（replay/actor/target/Q1/Q2/target/update 全 finite），再 fresh 0/25k/50k/75k/100k exact categorical AW9 SAC formal；尚无科学结果 |
+| A2 | A2_FORMAL_RUNNING_AFTER_ROOT_CAUSE_FIX | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | PID `963912` / tmux `a2_discrete_sac_cov_formal_20260923` / physical GPU1；fresh 0→100k，25k/50k/75k/100k checkpoints；尚无科学分类 |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
 | B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
@@ -165,3 +165,10 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - 最小 production fix 为 commit `4e210c0`：仅在 encoder 前为全 mask terminal row 打开 placeholder token，保留有效 row bit-exact；不改 entropy、SAC、reward、replay、epsilon、LR、gamma、tau、observation 或 environment 合同。Astra 的 exact failing-row replay、CPU/CUDA regression、14 项 shared tests、A1 7 项 tests，以及 A1/A2 post-fix finite production smokes 均通过。
 - 当前 A1/A2 只表示 `ROOT_CAUSE_CONFIRMED_FIXED_NO_SCIENTIFIC_RESULT`。下一门禁是把 `4e210c0` cherry-pick 到两条实验 branch，分别完成 CPU/CUDA regression；A1 完成 bounded production path，A2 必须超过 step 808 并验证 replay、actor、target、Q1/Q2、target、update 全部 finite。通过后才启动全新 0/25k/50k/75k/100k formal；100k 后是否追加 300k 由 registered positive signal 决定。
 - 正式 run 采用 latest-only 输出根目录与独立新 run 名称；启动前重做 `df -h /`、`df -i /`、planned root `du -sh` 及 IQN heartbeat/GPU 10×1s 资源审计。现有 IQN 进程保持原 PID、GPU、tmux 与科学合同，不作停止、迁移或修改。
+
+## 2026-09-23 A1/A2 formal 已启动
+
+- A1 branch HEAD `78adf78` 的真实 CUDA bounded production path 完成 1000 steps / 63 updates，actor、critic、target 均发生参数更新且 telemetry 全 finite。A2 branch HEAD `59faae3` 的真实 CUDA 900-step path 越过历史 step 808，replay `3600`、38 次 twin-Q SAC update，actor/critic1/critic2 均更新且 telemetry 全 finite。
+- A1 fresh formal：PID `963907`，tmux `a1_entropy_localq_cov_formal_20260923`，physical GPU0（`CUDA_VISIBLE_DEVICES=0`），run root `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923`，预算 `100000`。
+- A2 fresh formal：PID `963912`，tmux `a2_discrete_sac_cov_formal_20260923`，physical GPU1（`CUDA_VISIBLE_DEVICES=1`），run root `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923`，预算 `100000`。
+- 启动前根盘为 `34 GiB` free、`97%` used、inode `7%`；启动后 10×1s 采样为 GPU0 util `4–6%`、free `47320 MiB`，GPU1 util `5–7%`、free `47304 MiB`。Z05 PID `17097` 与 Z07 PID `19555` 仍 live，未停止、迁移或修改。正式检查点为 `25k/50k/75k/100k`；100k 后是否追加 300k 只按 registered positive signal 决定。
