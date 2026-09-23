@@ -94,11 +94,17 @@ class LocalEntityTokenEncoder(nn.Module):
         )
         tokens = torch.cat(encoded, dim=1) + self.type_embedding(obs["types"].long())
         mask = obs["masks"].bool()
-        transformed = self.transformer(tokens, src_key_padding_mask=~mask)
-        masked = transformed.masked_fill(~mask.unsqueeze(-1), 0.0)
-        count = mask.sum(dim=1, keepdim=True).clamp_min(1).to(transformed.dtype)
+        # Terminal placeholders may be zero-filled with every token masked.
+        # Native attention produces NaNs for an all-masked row; retain only a
+        # finite self token inside the encoder. The stored observation mask
+        # and all non-empty rows remain unchanged.
+        encoder_mask = mask.clone()
+        encoder_mask[:, 0] |= ~encoder_mask.any(dim=1)
+        transformed = self.transformer(tokens, src_key_padding_mask=~encoder_mask)
+        masked = transformed.masked_fill(~encoder_mask.unsqueeze(-1), 0.0)
+        count = encoder_mask.sum(dim=1, keepdim=True).clamp_min(1).to(transformed.dtype)
         mean_context = masked.sum(dim=1) / count
-        max_context = transformed.masked_fill(~mask.unsqueeze(-1), -1e9).max(dim=1).values
+        max_context = transformed.masked_fill(~encoder_mask.unsqueeze(-1), -1e9).max(dim=1).values
         max_context = torch.where(torch.isfinite(max_context), max_context, torch.zeros_like(max_context))
         start = 1 + self.config.max_pursuers
         end = start + self.config.max_evaders
@@ -237,11 +243,15 @@ class LegacyVorAdjFeatureBackbone(nn.Module):
         encoded.append(self.encoders["obstacles"](obs["obstacles"]))
         tokens = torch.cat(encoded, dim=1) + self.type_embedding(obs["types"].long())
         mask = obs["masks"].bool()
-        transformed = self.transformer(tokens, src_key_padding_mask=~mask)
-        masked = transformed.masked_fill(~mask.unsqueeze(-1), 0.0)
-        count = mask.sum(dim=1, keepdim=True).clamp_min(1).to(transformed.dtype)
+        # Keep all-masked terminal rows finite for MAPPO target/next-observation
+        # probes. This is an encoder-only fallback, not a replay-mask change.
+        encoder_mask = mask.clone()
+        encoder_mask[:, 0] |= ~encoder_mask.any(dim=1)
+        transformed = self.transformer(tokens, src_key_padding_mask=~encoder_mask)
+        masked = transformed.masked_fill(~encoder_mask.unsqueeze(-1), 0.0)
+        count = encoder_mask.sum(dim=1, keepdim=True).clamp_min(1).to(transformed.dtype)
         mean_context = masked.sum(dim=1) / count
-        max_context = transformed.masked_fill(~mask.unsqueeze(-1), -1e9).max(dim=1).values
+        max_context = transformed.masked_fill(~encoder_mask.unsqueeze(-1), -1e9).max(dim=1).values
         max_context = torch.where(torch.isfinite(max_context), max_context, torch.zeros_like(max_context))
         start = 1 + int(self.config.max_pursuers)
         end = start + int(self.config.max_evaders)

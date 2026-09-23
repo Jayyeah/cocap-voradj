@@ -1,0 +1,69 @@
+{
+  "schema": "cocap-mappo-scratch-contract-audit-20260923-v1",
+  "date": "2026-09-23",
+  "latest_origin": "origin/ops/ac-master-dag-20260921",
+  "canonical_learner_parent": "25dd0f8",
+  "canonical_coverage_result_commits": ["d9ede24", "e696dec"],
+  "branch": "experiment/mappo-scratch-primitives-20260923",
+  "worktree": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923",
+  "scope": ["M-COV", "M-CAP"],
+  "excluded": ["A1", "A2", "A3", "B", "IQN", "Z", "reward_curriculum", "initialization_curriculum", "local-friendly V3", "post-capture recovery"],
+  "classifications": {
+    "CORRECTNESS_REQUIRED": [
+      "collision semantics: synchronized_swept_v1",
+      "terminal/truncation/bootstrap and GAE recursion cut",
+      "active-agent masks for actor and centralized V",
+      "fully-masked terminal row finite encoder guard",
+      "canonical MAPPO update",
+      "ValueNorm",
+      "central action-free V",
+      "AW9 mapping",
+      "observation token dimensions",
+      "is_pursuing state semantics",
+      "friend ordering",
+      "legacy R20 sensing for M-COV",
+      "spawn/reset",
+      "horizon 3000",
+      "Final reward semantics and no success bonus"
+    ],
+    "TASK_REQUIRED": [
+      "M-COV Pure Coverage scene and reward",
+      "M-CAP Pure Capture scene and terminal reward",
+      "M-CAP NormSense V2 official resolver"
+    ],
+    "EXPERIMENTAL_OR_OUT_OF_SCOPE": [
+      "Z",
+      "IQN and Full-Mix",
+      "local-friendly V3",
+      "post-capture/conservative recovery",
+      "reward curriculum",
+      "initialization curriculum",
+      "R20-vs-NormSense Capture ablation"
+    ]
+  },
+  "fully_masked_fix": {
+    "status": "absorbed_as_correctness_only",
+    "implementation": "LegacyVorAdjFeatureBackbone encoder fallback opens only self token for an all-masked row; stored mask and architecture remain unchanged",
+    "test": "test/test_mappo_terminal_rows_20260923.py"
+  },
+  "capture_sensing": {
+    "A_eff": 14360.0,
+    "k": 0.8715,
+    "raw_R": 52.21732449580312,
+    "resolved_R": 52.21732449580312,
+    "floor_m": 20.0,
+    "map_scale": 1.0,
+    "map_size": [120, 120],
+    "N": 4,
+    "surface_distance_semantics": "surface_clearance",
+    "resolver": "src/cocap_voradj/envs/density_sensing.py",
+    "friendly_topology": "historical global-friendly VorAdj/free_mask_projected",
+    "global_enemy_information": false
+  },
+  "verification": {
+    "targeted_tests": "21 passed",
+    "smoke_mcap": "completed 256 steps",
+    "smoke_mcov": "completed 256 steps",
+    "latest_only_checkpoint": true
+  }
+}
