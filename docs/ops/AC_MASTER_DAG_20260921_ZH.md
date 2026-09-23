@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD `e40c635`，origin 基线 `4538aca`；用户已授权推送，但自动 review 仍拒绝这次包含私有运行路径/状态的 payload，未尝试 workaround。基于 `ops/training-performance-sync-20260921`；push 使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD 与 origin 均为 `4b54394`；已用命令级 proxy `127.0.0.1:17892` 完成用户授权的同步推送，分支干净。基于 `ops/training-performance-sync-20260921`；push 使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -172,7 +172,7 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - A1 fresh formal：PID `963907`，tmux `a1_entropy_localq_cov_formal_20260923`，physical GPU0（`CUDA_VISIBLE_DEVICES=0`），run root `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923`，预算 `100000`。
 - A2 fresh formal：PID `963912`，tmux `a2_discrete_sac_cov_formal_20260923`，physical GPU1（`CUDA_VISIBLE_DEVICES=1`），run root `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923`，预算 `100000`。
 - 启动前根盘为 `34 GiB` free、`97%` used、inode `7%`；启动后 10×1s 采样为 GPU0 util `4–6%`、free `47320 MiB`，GPU1 util `5–7%`、free `47304 MiB`。Z05 PID `17097` 与 Z07 PID `19555` 仍 live，未停止、迁移或修改。正式检查点为 `25k/50k/75k/100k`；100k 后是否追加 300k 只按 registered positive signal 决定。
-- 本地中央记录 commit `e40c635` 已包含本轮所有事实；origin 仍为 `4538aca`，自动 review 拒绝了显式 proxy push。
+- 本地中央记录 commit `4b54394` 已包含本轮所有事实；随后已通过显式 proxy 推送，origin 已同步到 `4b54394`。
 
 ## 2026-09-23 13:33 final reconciliation：DAG 各线与 IQN Z 线
 
@@ -186,3 +186,7 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - **IQN Z05**：PID `17097` 已 clean complete，training target `700000`；alpha `0.5`，stage3 selected checkpoint `600000`，final report 的 stage3 指标为 pure capture `1.0`、pure coverage strict CE `1.0`、mixed post-capture CE/safe-complete `0.85/0.85`、worst collision `0.10`。
 - **IQN Z07**：PID `19555` 已 clean complete，training target `700000`；alpha `0.7`，stage3 selected checkpoint `300000`，final report 的 stage3 指标为 pure capture `0.95`、pure coverage strict CE `0.85`、mixed post-capture CE/safe-complete `0.65/0.65`、worst collision `0.05`。
 - Z05/Z07 final reports 已写入各 runtime 目录，PID/tmux 均已释放；当前 GPU0/GPU1 idle，各约 `48524 MiB` free。根盘 `33 GiB` free、`97%` used、inode `7%`。
+## 2026-09-23 15:30 repository sync
+
+- 用户授权的命令级 proxy push 已成功：`4538aca..4b54394` 推送到 `origin/ops/ac-master-dag-20260921`。
+- 推送后校验：本地 HEAD 与 origin 均为 `4b54394af011515f40ca26ba316c6755579119e7`，工作树干净；中央 JSON 与本文件的远端同步状态已更新为 `PUSHED_SYNCED`。
