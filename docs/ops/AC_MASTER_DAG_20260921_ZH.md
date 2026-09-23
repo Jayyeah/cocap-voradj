@@ -44,10 +44,10 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
-| A1 | A1_FORMAL_RUNNING_AFTER_ROOT_CAUSE_FIX | `experiment/ac-entropy-cov-20260921` @ `78adf78` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | PID `963907` / tmux `a1_entropy_localq_cov_formal_20260923` / physical GPU0；fresh 0→100k，25k/50k/75k/100k checkpoints；尚无科学分类 |
+| A1 | A1_100K_FORMAL_COMPLETE_NO_SUSTAINED_SIGNAL | `experiment/ac-entropy-cov-20260921` @ `78adf78` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 100k complete；0/25k/50k/75k/100k checkpoints 齐全，telemetry finite；75k 单评估成功但 100k 失败并碰撞；不扩 300k |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
-| A2 | A2_FORMAL_RUNNING_AFTER_ROOT_CAUSE_FIX | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | PID `963912` / tmux `a2_discrete_sac_cov_formal_20260923` / physical GPU1；fresh 0→100k，25k/50k/75k/100k checkpoints；尚无科学分类 |
+| A2 | A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 100k complete；replay 400k、24813 updates、telemetry finite；final strict CE 0/20、collision 2/20；不扩 300k |
 | A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
 | B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
@@ -173,3 +173,16 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 - A2 fresh formal：PID `963912`，tmux `a2_discrete_sac_cov_formal_20260923`，physical GPU1（`CUDA_VISIBLE_DEVICES=1`），run root `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923`，预算 `100000`。
 - 启动前根盘为 `34 GiB` free、`97%` used、inode `7%`；启动后 10×1s 采样为 GPU0 util `4–6%`、free `47320 MiB`，GPU1 util `5–7%`、free `47304 MiB`。Z05 PID `17097` 与 Z07 PID `19555` 仍 live，未停止、迁移或修改。正式检查点为 `25k/50k/75k/100k`；100k 后是否追加 300k 只按 registered positive signal 决定。
 - 本地中央记录 commit `dea801f` 已包含本轮所有事实；origin 仍为 `4538aca`，因为显式 proxy push 被自动 review 拒绝，未通过其他路径外传。
+
+## 2026-09-23 13:33 final reconciliation：DAG 各线与 IQN Z 线
+
+- **A0**：`200000/200000`，`REPRO_PASS`；最终 argmax/sample strict CE 均 `20/20`，collision `0`，已释放 GPU0。
+- **A1**：fresh `100000/100000` complete；0/25k/50k/75k/100k checkpoints、actor/critic/target 更新和 telemetry finite 均通过。75k 单 deterministic eval strict CE 成功，100k 单 eval strict CE 失败并发生 collision；当前分类 `A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL`，不追加 300k。
+- **A2**：exact categorical AW9 SAC fresh `100000/100000` complete；replay `400000`、`24813` updates、telemetry 全 finite、alpha `0.9786`。最终 20-episode deterministic eval strict CE `0/20`、collision `2/20`、CE RMS mean `0.2165`、area CV mean `0.4671`；当前分类 `A2_FORMAL_100K_COMPLETE_NO_STRICT_CE_SIGNAL`，不追加 300k。
+- **B1/B2**：均为 `COMPLETE`，保留既有 handoff；B1 没有全局 ranking 稳定提升，B2 R0 完成但 state support 有限。
+- **B3/B4**：B3 为 `NO_RANKING_QUALIFIED_CRITIC`，B4 保持 blocked。
+- **A3/A4**：A3 仍 `CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL`；A4 保持 `BLOCKED`，没有实现或训练。
+- **旧 AC-COV/CAP/MIX**：分别保持旧线 closeout、300k nonfinite closeout、300k closeout，不恢复、不扩预算。
+- **IQN Z05**：PID `17097` 已 clean complete，training target `700000`；alpha `0.5`，stage3 selected checkpoint `600000`，final report 的 stage3 指标为 pure capture `1.0`、pure coverage strict CE `1.0`、mixed post-capture CE/safe-complete `0.85/0.85`、worst collision `0.10`。
+- **IQN Z07**：PID `19555` 已 clean complete，training target `700000`；alpha `0.7`，stage3 selected checkpoint `300000`，final report 的 stage3 指标为 pure capture `0.95`、pure coverage strict CE `0.85`、mixed post-capture CE/safe-complete `0.65/0.65`、worst collision `0.05`。
+- Z05/Z07 final reports 已写入各 runtime 目录，PID/tmux 均已释放；当前 GPU0/GPU1 idle，各约 `48524 MiB` free。根盘 `33 GiB` free、`97%` used、inode `7%`。
