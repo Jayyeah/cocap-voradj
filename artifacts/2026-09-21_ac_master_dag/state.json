@@ -17,8 +17,8 @@
     "last_reconciled_commit": "a5ae7a7bb43891dc499d7c25a39ee5e038c26536",
     "last_remote_fetch_at": "2026-09-22T22:00:49+08:00",
     "last_push_at": "2026-09-22T22:10:25+08:00",
-    "remote_sync_status": "LOCAL_AHEAD_AUTHORIZED_PROXY_PUSH_PENDING",
-    "remote_sync_reason": "user explicitly authorized pushing the final DAG/IQN reconciliation via 127.0.0.1:17892; local commit a5ae7a7 is ready and origin remains 4538aca until push completes"
+    "remote_sync_status": "PUSH_REJECTED_AUTO_REVIEW_LOCAL_AHEAD",
+    "remote_sync_reason": "user authorized the final push, but automatic review still rejected the explicit 127.0.0.1:17892 push because central documents contain private runtime paths/status for an unverified remote; no workaround attempted; origin remains 4538aca"
   },
   "repo": {
     "remote": "https://github.com/Jayyeah/cocap-voradj.git",
@@ -951,6 +951,11 @@
       "at": "2026-09-23T13:33:38+08:00",
       "event": "MASTER_FINAL_RECONCILIATION_A1_A2_100K_IQN_COMPLETE",
       "detail": "A1 fresh formal completed 100000/100000 with all telemetry finite, actor/critic/target updates, checkpoints at 0/25k/50k/75k/100k, and no sustained entropy signal: the 75k single deterministic evaluation passed strict CE while the 100k evaluation failed strict CE and collided. A2 fresh exact categorical AW9 SAC completed 100000/100000 with replay 400000, all telemetry finite, 24813 updates, final alpha 0.9786, and final deterministic evaluation strict CE 0/20 with collision 2/20; no positive signal for a 300k extension. IQN Z05 and Z07 both completed their 700000 training targets cleanly; selected final checkpoints are stage3 step 600000 and 300000 respectively, final reports are present, PIDs/tmux are gone, and both GPUs are idle. All DAG line statuses are captured in current_snapshot; no new training was launched."
+    },
+    {
+      "at": "2026-09-23T13:33:38+08:00",
+      "event": "MASTER_AUTHORIZED_PROXY_PUSH_AUTO_REVIEW_REJECTED",
+      "detail": "The user explicitly authorized repository synchronization, but automatic review rejected the explicit 127.0.0.1:17892 push of the final central payload because it contains private runtime paths and operational status for an unverified remote. No alternate route or workaround was attempted; origin remains 4538aca and local state remains complete."
     }
   ]
 }
