@@ -60,7 +60,7 @@ def c0_gate(summary):
 
 
 @torch.no_grad()
-def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None,env_factory=None,physical_policy=None):
+def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None,env_factory=None,physical_policy=None,diagnostic_central_schema=True):
     if policy_mode not in ('iqn_greedy','bc_argmax','bc_sample'):raise ValueError(policy_mode)
     if (actor is None)!=(policy_mode=='iqn_greedy'):raise ValueError('Policy mode/actor mismatch')
     if actor is not None and on_transition is not None:raise ValueError('Teacher dataset collection must remain greedy IQN')
@@ -86,7 +86,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         state=snapshot(env,observations)
         phase='pure_coverage' if scene=='coverage' else ('post_capture' if capture_step is not None else 'pre_capture')
         global_state=None
-        if on_transition:
+        if on_transition and diagnostic_central_schema:
             from cocap_voradj.training.continuous.central_schema import build_central_global_obs
             # The diagnostic path must cover every registered curriculum
             # stage (4/8/12 pursuers); the evaluator does not feed this
