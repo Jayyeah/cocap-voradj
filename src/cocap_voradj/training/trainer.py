@@ -174,8 +174,18 @@ class CoCapTrainer:
         if self.device.startswith("cuda") and not torch.cuda.is_available():
             self.device = "cpu"
         self.train_mode = self.config.get("train_mode", "coverage")
-        if self.train_mode not in {"coverage", "encirclement", "m1new", "voradj", "voradj_mixed_coverage"}:
-            raise ValueError("train_mode must be coverage, encirclement, m1new, voradj, or voradj_mixed_coverage")
+        if self.train_mode not in {
+            "coverage",
+            "encirclement",
+            "m1new",
+            "voradj",
+            "voradj_coverage",
+            "voradj_mixed_coverage",
+        }:
+            raise ValueError(
+                "train_mode must be coverage, encirclement, m1new, voradj, "
+                "voradj_coverage, or voradj_mixed_coverage"
+            )
 
         run_root = Path(self.config.get("output_root", "runs"))
         run_name = self.config.get("run_name", f"{self.train_mode}_{time.strftime('%Y%m%d_%H%M%S')}")
@@ -362,8 +372,8 @@ class CoCapTrainer:
             self.last_batch_buffer_counts: Dict[str, int] = {}
             self.last_batch_reward_stats: Dict[str, Any] = {}
             self.last_batch_role_switch_count = 0
-        elif self.train_mode == "voradj":
-            task = "voradj"
+        elif self.train_mode in {"voradj", "voradj_coverage"}:
+            task = self.train_mode
             self.task_order = [task]
             self.replays = {task: ReplayBuffer(capacity)}
             self.cross_init = {"coverage": deque(maxlen=1), "encirclement": deque(maxlen=1)}
@@ -794,7 +804,7 @@ class CoCapTrainer:
             replay = self.replays[task]
             if len(replay) < max(self.min_replay_size, self.batch_size):
                 return None
-            if self.train_mode == "voradj":
+            if self.train_mode in {"voradj", "voradj_coverage"}:
                 # Direct random sampling avoids an O(replay_size) metadata scan on
                 # every update. Task/phase counts are still reported from the
                 # sampled batch for monitoring.
@@ -1214,7 +1224,7 @@ class CoCapTrainer:
                 if i < len(result.infos) and isinstance(result.infos[i], dict):
                     metadata = result.infos[i].get("replay_metadata", {}) or {}
                 metadata = dict(metadata)
-                if self.train_mode in {"voradj", "voradj_mixed_coverage"}:
+                if self.train_mode in {"voradj", "voradj_coverage", "voradj_mixed_coverage"}:
                     metadata.setdefault("scene", task)
                 if self.train_mode == "voradj_mixed_coverage":
                     metadata.setdefault(
@@ -1258,7 +1268,7 @@ class CoCapTrainer:
                         "replay_size_encirclement": len(self.replays["encirclement"]),
                         "update_rebalance_enabled": bool(self.update_rebalance_enabled),
                     })
-                if self.train_mode in {"voradj", "voradj_mixed_coverage"}:
+                if self.train_mode in {"voradj", "voradj_coverage", "voradj_mixed_coverage"}:
                     metric_payload.update({
                         "batch_task_counts": getattr(self, "last_batch_task_counts", {}),
                         "batch_phase_counts": getattr(self, "last_batch_phase_counts", {}),
