@@ -1,0 +1,76 @@
+{
+  "schema": "a2-discrete-sac-semantic-audit-v1",
+  "audited_at": "2026-09-25T20:24:00+08:00",
+  "status": "A2_SEMANTICS_IMPLEMENTATION_CORRECT_BUT_TEMPERATURE_TARGET_IS_STRONG",
+  "training_prohibited": true,
+  "question": "A2 transient sample-only learning is due to a SAC semantic/sign/target bug, or to an overly strong entropy target?",
+  "source": {
+    "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
+    "branch": "experiment/ac-discrete-sac-preflight-20260921",
+    "config": "configs/experiments/ac_capability_20260920/ac_discrete_sac_cov_stage1.yaml",
+    "trainer": "src/cocap_voradj/training/discrete_sac.py",
+    "formal_report": "artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/report.json"
+  },
+  "contract_tests": {
+    "command": "PYTHONPATH=src python3 -m pytest -q tests/test_discrete_sac_preflight.py",
+    "result": "4 passed",
+    "warnings": 2
+  },
+  "semantics": {
+    "action_space": 9,
+    "target_entropy_formula": "0.98 * log(9) when target_entropy is null",
+    "target_entropy": 2.153279317,
+    "max_entropy_log9": 2.197224577,
+    "categorical_target_value": "sum_a pi(a|s') * (min(Q1_target,Q2_target)(s',a) - alpha * log pi(a|s'))",
+    "td_target": "r + gamma * (1 - terminated) * target_value",
+    "critic_loss": "mean((Q1(s,a)-td_target)^2 + (Q2(s,a)-td_target)^2)",
+    "actor_loss": "mean(sum_a pi(a|s) * (alpha.detach() * log pi(a|s) - min(Q1,Q2)(s,a)))",
+    "alpha_loss": "mean(log_alpha * (entropy.detach() - target_entropy))",
+    "bootstrap_semantics": "terminated masks bootstrap; truncation remains bootstrap-compatible",
+    "critic_target_update": "target <- (1-tau)*target + tau*online",
+    "implementation_findings": [
+      "Twin target critics and the categorical expectation are present.",
+      "The actor and alpha loss signs are standard and internally consistent.",
+      "No Gumbel/continuous conversion or hidden target-actor substitution was found.",
+      "No formula, sign, termination-mask, or target-update defect was found in this bounded audit."
+    ]
+  },
+  "configuration": {
+    "gamma": 0.99,
+    "tau": 0.005,
+    "actor_lr": 0.0001,
+    "critic_lr": 0.0001,
+    "alpha_lr": 0.0001,
+    "alpha_init": 0.2,
+    "target_entropy_config": null,
+    "target_entropy_policy": "0.98*log(9), approximately 98% of the maximum categorical entropy",
+    "coverage_ce_reward_scale": 10.0,
+    "replay_capacity": 1000000,
+    "formal_steps": [25000, 50000, 75000, 100000]
+  },
+  "checkpoint_temperature_trajectory": [
+    {"step": 0, "updates": 0, "alpha": 0.199999994},
+    {"step": 25000, "updates": 6063, "alpha": 0.324219994},
+    {"step": 50000, "updates": 12313, "alpha": 0.532026599},
+    {"step": 75000, "updates": 18563, "alpha": 0.793612454},
+    {"step": 100000, "updates": 24813, "alpha": 0.978555747}
+  ],
+  "scale_check": {
+    "final_action_entropy": 2.19698555,
+    "final_entropy_target_gap": 0.04370623,
+    "final_q_scale": "approximately 70-76 from formal progress telemetry",
+    "final_alpha_times_entropy": "approximately 2.13",
+    "interpretation": "The entropy term is not numerically dominant relative to Q, but alpha rises to approximately 0.98 and drives the policy close to uniform entropy. This is a strong exploration target for a 9-action task and is a plausible contributor to the transient sample-only signal; it is not proven causal by this audit."
+  },
+  "scientific_result": {
+    "fixed_seed_reevaluation": "argmax strict CE 0/20 at every checkpoint; sample strict CE 6/20 at 25k, 5/20 at 50k, then 0/20 at 75k and 100k",
+    "classification": "A2_TRANSIENT_LEARNING",
+    "causal_conclusion": "No implementation semantic bug identified. Strong near-max target entropy/temperature behavior is the leading bounded semantic hypothesis, but causal isolation would require a new registered experiment and is not authorized in this audit.",
+    "next_gate": "Keep A2 training and 300k extension locked; retain report for MASTER decision."
+  },
+  "reproducibility": {
+    "checkpoint_pattern": "artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/checkpoints/model_step_*.pt",
+    "reevaluation_parameter_updates": 0,
+    "reevaluation_trainer_update_calls": 0
+  }
+}
