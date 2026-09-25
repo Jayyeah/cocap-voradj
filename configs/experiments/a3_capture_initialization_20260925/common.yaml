@@ -5,6 +5,11 @@ device: cuda:0
 output_root: runs
 train_mode: voradj_mixed_coverage
 
+# I1-I3 may only start from a promoted full-resume checkpoint.  The actual
+# path is supplied by the MASTER launch command after the previous stage gate.
+checkpointing:
+  full_resume: true
+
 # A3 changes reset initialization only.  Final reward, observation, action,
 # dynamics, collision, horizon, and post-capture contracts come from the parent.
 a3_initialization_curriculum:
