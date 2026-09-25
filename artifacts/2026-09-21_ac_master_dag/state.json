@@ -563,7 +563,11 @@
         "checkpoint_paths": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/checkpoints/model_step_*.pt"
       },
       "reevaluation_audit": {
-        "status": "PARTIAL_AUDIT_COMPLETE_FULL_FIXED_SEED_EVAL_MISSING",
+        "status": "REEVALUATION_BLOCKED_BY_BOUNDED_EVALUATOR_RUNTIME",
+        "attempts": [
+          {"child": "A2-REEVAL", "outcome": "checkpoint audit returned; no fixed-seed evaluation artifact"},
+          {"child": "A2-REEVAL-BOUNDED-RETRY", "outcome": "bounded retry exceeded response window; shutdown before any result was registered"}
+        ],
         "existing_100k_argmax": {
           "strict_ce": "0/20",
           "collision": "2/20",
@@ -577,7 +581,8 @@
           "q1_q2_mean": [71.0558, 70.8929]
         },
         "missing": ["fixed_seed_list", "per_checkpoint_argmax", "per_checkpoint_sample", "collision", "hold", "time_to_ce", "policy_entropy", "q_scale"],
-        "classification_until_completion": "DO_NOT_FINALIZE_FROM_SINGLE_100K_EVAL"
+        "classification_until_completion": "UNDETERMINED_DO_NOT_FINALIZE_FROM_SINGLE_100K_EVAL",
+        "runtime_blocker": "Existing checkpoint evaluator did not complete within two bounded child windows; no long evaluation or training authorized."
       },
       "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86",
       "astra_audit_head": "8fd2401d8d04bc3b12be17db901bd8cc3b2edcbc",
@@ -1137,6 +1142,11 @@
       "at": "2026-09-25T15:32:54+08:00",
       "event": "MAPPO_CAP_ROOTCAUSE_BOUNDED_COMPLETE",
       "detail": "M-CAP old='WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED'; new evidence=enemy visible 98.76%/99.16%, ring3 visitation 15%/30%, ring3 max hold 0.85/1.65 steps, final collision 90%/90%, explained variance 0.356 vs M-COV 0.792; new='GEOMETRY_LIMITED primary + STATE_VISITATION_LIMITED ring3 transition, amplified by COLLISION_LIMITED/CRITIC_CREDIT_LIMITED/REWARD_SCALE_LIMITED'; why changed=detection limitation and PPO entropy/KL collapse are ruled out, but exact geometry/collision/credit causal ranking remains unresolved. A3 implementation/training remains user-approval gated."
+    },
+    {
+      "at": "2026-09-25T15:41:20+08:00",
+      "event": "A2_REEVALUATION_BOUNDED_RUNTIME_BLOCKED",
+      "detail": "A2 old='A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL'; new evidence=five checkpoints are present and the existing 100k single argmax artifact is available, but two independent bounded child attempts did not return a fixed-seed per-checkpoint argmax+sample artifact within their response windows; new='A2_REEVALUATION_INCOMPLETE / UNDETERMINED'; why changed=the requested re-evaluation cannot be scientifically finalized from one 100k point, and no long evaluation/training is authorized. Keep semantic audit and 300k extension locked."
     }
   ]
 }

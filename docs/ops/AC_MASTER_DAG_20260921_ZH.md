@@ -265,3 +265,9 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 `MAPPO-CAP-ROOTCAUSE` 已完成只读分析，未实现/训练 A3。M-CAP 的 enemy visible fraction 为 `98.76%/99.16%`，first detection 通常 latency=1，因此 `DETECTION_LIMITED` 排除；ring3 visitation 仅 `15%/30%`，ring3 max hold `0.85/1.65` steps，支持 `GEOMETRY_LIMITED` 主因及 `STATE_VISITATION_LIMITED` 的 ring2→ring3 transition 瓶颈。终点 collision `90%/90%`，其中 agent-agent collision 占主要部分，故 `COLLISION_LIMITED` 是强放大器；M-CAP explained variance `0.356` 对比 M-COV `0.792`，GAE/return 方差与 safety-dominated negative return 支持 `CRITIC_CREDIT_LIMITED`/`REWARD_SCALE_LIMITED` 次级放大。Entropy、KL、clip fraction 没有显示 PPO collapse/early-stop 饥饿。精确的 geometry vs collision vs critic/reward 因果排序仍为 `UNRESOLVED`。
 
 因此 A3 仍为 `CAPTURE_CURRICULUM_CONDITIONAL_HOLD`；只有在用户明确批准、且后续 gate 认为 initialization/visitation 是主要可修复瓶颈后，才可实现或训练 curriculum。
+
+### A2 bounded evaluator blocker
+
+A2 的两个独立 bounded child 尝试均未在响应窗口内产生 fixed-seed per-checkpoint 双模式 artifact：第一 child 完成 checkpoint/provenance audit 但没有可复用的完整 evaluator 结果；第二 child 的短时 retry 也超时后被关闭。没有任何 partial 结果被冒充为完整评测，也没有启动长评测或训练。
+
+因此当前状态保持 `A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`，最终四分类为 `UNDETERMINED`；旧 100k 单次 argmax 仅保留为历史证据。下一步仍是找到/修复一个 bounded existing-checkpoint evaluator，完成固定 seeds 的 argmax+sample 后再分类；在此之前不做 A2 semantic audit、不扩 300k、不解锁其他依赖。
