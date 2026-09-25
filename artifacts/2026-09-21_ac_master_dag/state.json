@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-23T15:30:01+08:00",
+  "updated_at": "2026-09-25T15:05:59+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -10,12 +10,12 @@
     "remote_head": "4b54394af011515f40ca26ba316c6755579119e7",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
-    "child_concurrency_limit": 4,
+    "child_parallelism_policy": "DYNAMIC_BY_SCIENTIFIC_DEPENDENCY_AND_REAL_RESOURCE_CAPACITY; NO_STATIC_CHILD_COUNT_LIMIT; MASTER_TO_CHILD_ONLY",
     "git_proxy": "127.0.0.1:17892",
     "max_push_attempts_per_blocked_upload": 2,
     "normal_pushes_allowed": true,
     "last_reconciled_commit": "4b54394af011515f40ca26ba316c6755579119e7",
-    "last_remote_fetch_at": "2026-09-22T22:00:49+08:00",
+    "last_remote_fetch_at": "2026-09-25T15:05:59+08:00",
     "last_push_at": "2026-09-23T15:30:01+08:00",
     "remote_sync_status": "PUSHED_SYNCED",
     "remote_sync_reason": "User-authorized command-level proxy push succeeded; local HEAD and origin/ops/ac-master-dag-20260921 both equal 4b54394af011515f40ca26ba316c6755579119e7 and the branch is clean."
@@ -29,10 +29,10 @@
     "live_iqn_worktree": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919",
     "root_disk": {
       "filesystem": "/dev/nvme0n1p2",
-      "free_gib_approx": 37,
-      "use_percent": 96,
-      "inode_use_percent": 6,
-      "warning": "new large runtime requires latest-only storage and explicit margin"
+      "free_gib_approx": 26,
+      "use_percent": 98,
+      "inode_use_percent": 7,
+      "warning": "storage blocker for new long runtime until planned root and margin are explicitly cleared"
     }
   },
   "central_files": {
@@ -185,7 +185,7 @@
     }
   },
   "runtime_reconciliation": {
-    "observed_at": "2026-09-23T13:33:38+08:00",
+    "observed_at": "2026-09-25T15:05:59+08:00",
     "iqn_z05": {
       "status": "COMPLETE",
       "pid": null,
@@ -238,7 +238,7 @@
       "final_review": "artifacts/2026-09-21_ac_mappo_cov_repro/formal_20260921/review_200000.json"
     },
     "a1_formal": {
-      "status": "A1_100K_FORMAL_COMPLETE_NO_SUSTAINED_SIGNAL",
+      "status": "A1_SUSTAINED_PARTIAL_LEARNING_REOPENED",
       "pid": null,
       "last_pid": 963907,
       "tmux": null,
@@ -265,7 +265,7 @@
       "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86",
       "astra_artifact_root": "/home/yjq/rl/CoCap1/ac-a1-a2-cuda-root-cause-20260922/artifacts/2026-09-22_a1_a2_cuda_root_cause",
       "validation": "Astra: 14 regression tests, A1 entropy/action tests 7 passed, CPU/CUDA 1000-step production smokes finite; exact failing-row reproduction and post-fix zero-failure replay audit passed.",
-      "gpu_lease": "RELEASED_AFTER_A1_100K_COMPLETE; GPU0_IDLE",
+      "gpu_lease": "RELEASED_AFTER_A1_100K_COMPLETE; NO_NEW_LEASE_GRANTED",
       "branch": "experiment/ac-entropy-cov-20260921",
       "head": "78adf7889900affa7dd62aa261b36a7c8b55bb15",
       "latest_formal": "FRESH_0_TO_100K_COMPLETE",
@@ -277,7 +277,7 @@
       "next_action": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE"
     },
     "a2_formal": {
-      "status": "A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL",
+      "status": "A2_REEVALUATION_INCOMPLETE",
       "pid": null,
       "last_pid": 963912,
       "tmux": null,
@@ -311,6 +311,30 @@
       "checkpoint_steps": [0, 25000, 50000, 75000, 100000],
       "final_gate": "100K finite exact categorical AW9 SAC path passed; final deterministic evaluation strict CE 0/20 with collision 2/20; no registered positive signal",
       "next_action": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE"
+    },
+    "m_cov": {
+      "status": "COMPLETE_BUDGET",
+      "pid": null,
+      "tmux": null,
+      "physical_gpu": "released",
+      "current_step": 200000,
+      "run_dir": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cov-run",
+      "terminal_checkpoint": "latest.pt",
+      "final_artifact": "report.json",
+      "final_metrics": "argmax/sample CE 80%/100%; collision 5%/0%; boundary 5%/0%",
+      "source": "STATE-MAPPO child local formal artifacts; remote 59.3k snapshot rejected as stale"
+    },
+    "m_cap": {
+      "status": "COMPLETE_BUDGET",
+      "pid": null,
+      "tmux": null,
+      "physical_gpu": "released",
+      "current_step": 500000,
+      "run_dir": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cap-full",
+      "terminal_checkpoint": "latest.pt",
+      "final_artifact": "report.json",
+      "final_metrics": "argmax/sample capture 10%/10%; collision 90%/90%; censoring 90%/90%",
+      "source": "STATE-MAPPO child local formal artifacts; remote 90.3k snapshot rejected as stale"
     },
     "ac_mix": {
       "status": "STOPPED_AFTER_300K_FORMAL",
@@ -396,7 +420,7 @@
     {
       "task_id": "A1",
       "task_name": "ENTROPY-LOCALQ-COV",
-      "status": "A1_100K_FORMAL_COMPLETE_NO_SUSTAINED_SIGNAL",
+      "status": "A1_SUSTAINED_PARTIAL_LEARNING_REOPENED",
       "dependencies": [],
       "branch": "experiment/ac-entropy-cov-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921",
@@ -414,10 +438,27 @@
       "last_pid": 963907,
       "tmux": null,
       "latest_formal": "FRESH_0_TO_100K_COMPLETE",
-      "result_classification": "A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL",
-      "next_gate": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE",
+      "result_classification": "A1_SUSTAINED_PARTIAL_LEARNING",
+      "previous_classification": "A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL",
+      "next_gate": "REGISTER_A1_MATCHED_NO_ENTROPY_CONTROL_AND_A1_CONTINUATION_PROVENANCE_AUDIT",
       "formal_report": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923/prep_runtime_report.json",
       "eval_100k": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923/evaluations/eval_step_000100000.json",
+      "independent_eval_40rollout": {
+        "worktree": "/home/yjq/rl/CoCap1/a1-eval-20260923",
+        "handoff_worktree": "/home/yjq/rl/CoCap1/a1-conclusion-push-20260923",
+        "artifact": "/home/yjq/rl/CoCap1/a1-eval-20260923/artifacts/2026-09-23_a1_independent_eval_40rollout/a1_independent_eval_20260923.json",
+        "contract": "fixed_reset_seeds_2026097101_to_2026097120; 20_argmax_plus_20_sample_per_checkpoint; synchronized_swept_v1",
+        "results": {
+          "50000_sample": "12/20",
+          "75000_argmax": "9/20",
+          "75000_sample": "12/20",
+          "100000_argmax": "13/20; collision=5/20",
+          "100000_sample": "20/20; collision=0/20"
+        },
+        "evaluation_parameter_updates": 0,
+        "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86"
+      },
+      "classification_note": "Sustained partial learner; not deterministic/full success because 100k argmax retains 5/20 collisions and 2/20 censored episodes. No-update applies to inference evaluation only; training parameters did update.",
       "checkpoint_steps": [0, 25000, 50000, 75000, 100000],
       "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86",
       "astra_audit_head": "8fd2401d8d04bc3b12be17db901bd8cc3b2edcbc",
@@ -473,11 +514,11 @@
     {
       "task_id": "A2",
       "task_name": "DISCRETE-SAC-PREFLIGHT",
-      "status": "A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL",
+      "status": "A2_REEVALUATION_INCOMPLETE",
       "dependencies": ["A0_REPRO_PASS", "SHARED_A1_A2_ENGINEERING_FIX_VALIDATED"],
       "branch": "experiment/ac-discrete-sac-preflight-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921",
-      "child_agent": {"agent_id": null, "nickname": "MASTER", "role": "A2_ASTRA_FIX_VALIDATED_MASTER_CONTINUATION"},
+      "child_agent": {"agent_id": "01a0d756-a295-7ca0-bb3e-8e29cb1e8f1c", "nickname": "Faraday", "role": "A2_CHECKPOINT_REEVALUATION_AUDIT_HANDOFF"},
       "scientific_question": "Does exact categorical AW9 SAC provide a controlled twin-Q entropy target after A0 remains learnable and A1 is insufficient?",
       "allowed_changes": "Exact categorical AW9 SAC implementation/tests/smoke/config and one MASTER-controlled formal attempt; no new long run after unresolved CUDA forward non-finite.",
       "forbidden_changes": "Gumbel, continuous conversion, architecture/reward/curriculum changes, autonomous formal long run, central DAG/state.",
@@ -491,11 +532,35 @@
       "last_pid": 963912,
       "tmux": null,
       "latest_formal": "FRESH_0_TO_100K_COMPLETE",
-      "result_classification": "A2_FORMAL_100K_COMPLETE_NO_STRICT_CE_SIGNAL",
-      "next_gate": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE",
+      "result_classification": "A2_PENDING_FIXED_SEED_REEVALUATION",
+      "previous_classification": "A2_FORMAL_100K_COMPLETE_NO_STRICT_CE_SIGNAL",
+      "next_gate": "SHORT_EXISTING_CHECKPOINT_ARGMAX_AND_SAMPLE_REEVALUATION_ONLY",
       "formal_report": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/report.json",
       "progress_artifact": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/progress.json",
       "checkpoint_steps": [0, 25000, 50000, 75000, 100000],
+      "checkpoint_provenance": {
+        "seed": 2026092202,
+        "resumed": false,
+        "step0_present": true,
+        "checkpoint_paths": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/checkpoints/model_step_*.pt"
+      },
+      "reevaluation_audit": {
+        "status": "PARTIAL_AUDIT_COMPLETE_FULL_FIXED_SEED_EVAL_MISSING",
+        "existing_100k_argmax": {
+          "strict_ce": "0/20",
+          "collision": "2/20",
+          "ce_rms_mean": 0.216455,
+          "ce_max_mean": 0.291257,
+          "area_cv_mean": 0.467136,
+          "hold": "0/20",
+          "time_to_ce": null,
+          "policy_entropy": 2.196986,
+          "alpha": 0.978556,
+          "q1_q2_mean": [71.0558, 70.8929]
+        },
+        "missing": ["fixed_seed_list", "per_checkpoint_argmax", "per_checkpoint_sample", "collision", "hold", "time_to_ce", "policy_entropy", "q_scale"],
+        "classification_until_completion": "DO_NOT_FINALIZE_FROM_SINGLE_100K_EVAL"
+      },
       "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86",
       "astra_audit_head": "8fd2401d8d04bc3b12be17db901bd8cc3b2edcbc",
       "user_approval_required": false,
@@ -504,7 +569,7 @@
     {
       "task_id": "A3",
       "task_name": "CAPTURE-CURRICULUM-DESIGN",
-      "status": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL",
+      "status": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD",
       "dependencies": [],
       "branch": "design/ac-capture-curriculum-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921",
@@ -518,11 +583,58 @@
       "tmux": null,
       "pid": null,
       "current_step": 0,
-      "latest_formal": "DESIGN_ONLY_NO_FORMAL",
-      "result_classification": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL",
-      "next_gate": "USER_REVIEW_PROPOSAL_THEN_EXPLICIT_APPROVAL",
+      "latest_formal": "M-CAP_500K_COMPLETE_WEAK_CAPTURE",
+      "result_classification": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD",
+      "next_gate": "MAPPO_CAP_ROOTCAUSE_READONLY_THEN_USER_REVIEW_IF_VISITATION_LIMITED",
+      "conditional_gate": "M-CAP_COMPLETE_AND_WEAK; ROOTCAUSE_MUST_SUPPORT_STATE_VISITATION_OR_SPARSE_SUCCESSFUL_GEOMETRY; IMPLEMENTATION_AND_TRAINING_REQUIRE_EXPLICIT_USER_APPROVAL",
       "user_approval_required": true,
       "updated_at": "2026-09-21T22:15:00+08:00"
+    },
+    {
+      "task_id": "M-COV",
+      "task_name": "MAPPO-CONTEMPORANEOUS-PURE-COVERAGE-POSITIVE-CONTROL",
+      "status": "COMPLETE_BUDGET",
+      "dependencies": [],
+      "branch": "experiment/mappo-scratch-primitives-20260923",
+      "worktree": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923",
+      "child_agent": {"agent_id": "01a0d756-a338-7e21-9e3b-b7d492ba44bc", "nickname": "Dalton", "role": "STATE_MAPPO_READONLY_HANDOFF"},
+      "scientific_question": "Contemporaneous Pure Coverage positive control for the MAPPO primitive; separate from historical A0.",
+      "gpu_required": true,
+      "gpu_lease": "RELEASED_AFTER_200K",
+      "run_dir": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cov-run",
+      "current_step": 200000,
+      "latest_formal": "FORMAL_MILESTONES_0_TO_200K_COMPLETE",
+      "terminal_checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cov-run/latest.pt",
+      "terminal_checkpoint_sha256": "3adfdbe90970cfc1333a4a5cba82ca496393d170c56b789a842f0c4ba06fe68f",
+      "best_observed_milestone": "150000; argmax/sample CE 100%/100%; no separate best checkpoint retained under latest-only",
+      "final_metrics": {"argmax_ce": "80%", "sample_ce": "100%", "argmax_collision": "5%", "sample_collision": "0%", "argmax_boundary": "5%", "sample_boundary": "0%"},
+      "result_classification": "CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE",
+      "next_gate": "NO_A0_REWRITE; USE_AS_MATCHED_MAPPO_CONTROL_FOR_CAPTURE_ROOTCAUSE",
+      "user_approval_required": false,
+      "updated_at": "2026-09-25T15:05:59+08:00"
+    },
+    {
+      "task_id": "M-CAP",
+      "task_name": "MAPPO-CONTEMPORANEOUS-PURE-CAPTURE-NORMSENSE-V2",
+      "status": "COMPLETE_BUDGET",
+      "dependencies": [],
+      "branch": "experiment/mappo-scratch-primitives-20260923",
+      "worktree": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923",
+      "child_agent": {"agent_id": "01a0d756-a338-7e21-9e3b-b7d492ba44bc", "nickname": "Dalton", "role": "STATE_MAPPO_READONLY_HANDOFF"},
+      "scientific_question": "Contemporaneous NormSense V2 capability-first Pure Capture result; gate for A3, not A3 itself.",
+      "gpu_required": true,
+      "gpu_lease": "RELEASED_AFTER_500K",
+      "run_dir": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cap-full",
+      "current_step": 500000,
+      "latest_formal": "FORMAL_MILESTONES_0_TO_500K_COMPLETE",
+      "terminal_checkpoint": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cap-full/latest.pt",
+      "terminal_checkpoint_sha256": "01eeb67c689dd323c2e8e680549ed8e5bd871b7b0a75b8b989e19aa02e953197",
+      "best_observed_milestone": "argmax 25% at 150k/350k; sample 15% at 225k; no separate best checkpoint retained under latest-only",
+      "final_metrics": {"argmax_capture": "10%", "sample_capture": "10%", "argmax_collision": "90%", "sample_collision": "90%", "argmax_censoring": "90%", "sample_censoring": "90%"},
+      "result_classification": "WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED",
+      "next_gate": "MAPPO_CAP_ROOTCAUSE_READONLY; DO_NOT_START_A3_CURRICULUM",
+      "user_approval_required": true,
+      "updated_at": "2026-09-25T15:05:59+08:00"
     },
     {
       "task_id": "B3",
@@ -646,6 +758,24 @@
       "updated_at": "2026-09-22T22:00:49+08:00"
     },
     {
+      "task_id": "IQN-Z05-INDEPENDENT-EVIDENCE",
+      "task_name": "IQN-Z05-STAGE3-INDEPENDENT-EVALUATION-EVIDENCE",
+      "status": "EXTERNAL_EVIDENCE_ONLY",
+      "dependencies": [],
+      "branch": "evaluation/iqn-z05-independent-20260923",
+      "worktree": "/home/yjq/rl/CoCap1/iqn-z05-independent-20260923",
+      "child_agent": {"agent_id": "01a0d756-a2e6-7151-8a7d-cc2b437271d4", "nickname": "Euclid", "role": "STATE_IQN_READONLY_HANDOFF"},
+      "head": "2eeec7e6638640295a8469583500e5d3ad265682",
+      "selected_checkpoint_step": 600000,
+      "artifact_root": "/home/yjq/rl/CoCap1/iqn-z05-independent-20260923/artifacts/2026-09-23_iqn_z05_independent",
+      "metrics": {"native_12p3e": {"coverage": "100%", "capture": "100%", "mixed_safe": "85%"}, "4p": {"coverage": "65%", "capture": "100%", "mixed_safe": "50%"}, "8p": {"coverage": "95%", "capture": "95%", "mixed_safe": "85%"}, "16p4e": {"coverage": "100%", "capture": "100%", "mixed_safe": "75%"}, "20p5e": {"coverage": "100%", "capture": "100%", "mixed_safe": "60%"}, "24p6e": {"coverage": "95%", "capture": "100%", "mixed_safe": "65%"}},
+      "diagnostics": "friend-token truncation increases in fixed-map settings; Mixed collision rises from 10% native to 15%/25%/25% at 16p4e/20p5e/24p6e",
+      "result_classification": "PROJECT_EXTERNAL_CAPACITY_GENERALIZATION_EVIDENCE",
+      "next_gate": "NO_NEW_IQN_TRAINING; PRESERVE_AS_EXTERNAL_EVIDENCE",
+      "user_approval_required": false,
+      "updated_at": "2026-09-25T15:05:59+08:00"
+    },
+    {
       "task_id": "A4",
       "task_name": "REWARD-CURRICULUM",
       "status": "BLOCKED",
@@ -670,16 +800,18 @@
     }
   ],
   "current_snapshot": {
-    "observed_at": "2026-09-23T13:33:38+08:00",
+    "observed_at": "2026-09-25T15:05:59+08:00",
     "dag_lines": {
       "A0": {"status": "COMPLETE_REPRO_PASS", "step": 200000, "classification": "REPRO_PASS"},
-      "A1": {"status": "A1_100K_FORMAL_COMPLETE_NO_SUSTAINED_SIGNAL", "step": 100000, "classification": "A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL", "next": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE"},
-      "A2": {"status": "A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL", "step": 100000, "classification": "A2_FORMAL_100K_COMPLETE_NO_STRICT_CE_SIGNAL", "next": "HOLD_NO_300K_EXTENSION_PENDING_NEW_REGISTERED_GATE"},
+      "A1": {"status": "A1_SUSTAINED_PARTIAL_LEARNING_REOPENED", "step": 100000, "classification": "A1_SUSTAINED_PARTIAL_LEARNING", "next": "A1_MATCHED_NO_ENTROPY_CONTROL_PLUS_CONTINUATION_PROVENANCE_AUDIT"},
+      "A2": {"status": "A2_REEVALUATION_INCOMPLETE", "step": 100000, "classification": "A2_PENDING_FIXED_SEED_REEVALUATION", "next": "SHORT_EXISTING_CHECKPOINT_ARGMAX_AND_SAMPLE_REEVALUATION_ONLY"},
       "B1": {"status": "B1_COMPLETE", "classification": "SUPPORT_EXPANSION_WITH_PHASE_DEPENDENT_RANKING_NO_GLOBAL_STABILITY"},
       "B2": {"status": "B2_COMPLETE", "classification": "R0_FULL_COMPLETE_RANKING_SIGNAL_STATE_SUPPORT_LIMITED"},
       "B3": {"status": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC", "classification": "NO_RANKING_QUALIFIED_CRITIC"},
       "B4": {"status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC"},
-      "A3": {"status": "CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL"},
+      "A3": {"status": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD", "next": "MAPPO_CAP_ROOTCAUSE_READONLY_THEN_USER_REVIEW_IF_VISITATION_LIMITED"},
+      "M-COV": {"status": "COMPLETE_BUDGET", "step": 200000, "classification": "CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE"},
+      "M-CAP": {"status": "COMPLETE_BUDGET", "step": 500000, "classification": "WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED"},
       "A4": {"status": "BLOCKED"},
       "OLD_AC_COV": {"status": "CLOSED_OLD_LINE", "step": 500000, "classification": "NO_CLEAR_SUSTAINED_SIGNAL"},
       "OLD_AC_CAP": {"status": "STOPPED_AFTER_300K_FORMAL_WITH_NONFINITE_RECOVERY_FAILURE", "step": 300000},
@@ -687,9 +819,10 @@
     },
     "iqn_z_lines": {
       "Z05": {"status": "COMPLETE", "training_step": 700000, "selected_checkpoint_step": 600000, "alpha": 0.5, "completed_at": "2026-09-23T09:54:05+0800", "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"},
-      "Z07": {"status": "COMPLETE", "training_step": 700000, "selected_checkpoint_step": 300000, "alpha": 0.7, "completed_at": "2026-09-23T10:26:00+0800", "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"}
+      "Z07": {"status": "COMPLETE", "training_step": 700000, "selected_checkpoint_step": 300000, "alpha": 0.7, "completed_at": "2026-09-23T10:26:00+0800", "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"},
+      "Z05_INDEPENDENT_EVIDENCE": {"status": "RECOVERED_COMPLETE", "selected_checkpoint_step": 600000, "classification": "EXTERNAL_CAPACITY_GENERALIZATION_EVIDENCE"}
     },
-    "resources": {"gpu0_idle": true, "gpu1_idle": true, "free_mib_each": 48524, "root_free_gib_approx": 33, "root_use_percent": 97, "inode_use_percent": 7}
+    "resources": {"gpu0_idle": true, "gpu1_idle": true, "free_mib_each": 49123, "root_free_gib_approx": 26, "root_use_percent": 98, "inode_use_percent": 7, "long_run_storage_gate": "BLOCKED_UNTIL_MARGIN_AND_PLANNED_ROOT_CLEARED"}
   },
   "event_log": [
     {
@@ -961,6 +1094,11 @@
       "at": "2026-09-23T15:30:01+08:00",
       "event": "MASTER_PROXY_PUSH_SYNCED",
       "detail": "User-authorized command-level proxy push succeeded: origin/ops/ac-master-dag-20260921 advanced 4538aca to 4b54394af011515f40ca26ba316c6755579119e7. Local HEAD and origin now match and the branch is clean."
+    },
+    {
+      "at": "2026-09-25T15:05:59+08:00",
+      "event": "MASTER_RECOVER_RECONCILE_RECLASSIFY_20260925",
+      "detail": "OLD_CLASSIFICATION -> NEW_EVIDENCE -> NEW_CLASSIFICATION -> WHY_CHANGED: A1 old=A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_SIGNAL; new evidence=independent fixed-seed 40-rollout evaluation across 0/25k/50k/75k/100k with 50k sample 12/20, 75k argmax/sample 9/20 and 12/20, 100k argmax/sample 13/20 and 20/20, sample collision 0/20; new=A1_SUSTAINED_PARTIAL_LEARNING_REOPENED because the single 100k negative interpretation was contradicted by matched multi-checkpoint evidence, while deterministic/full success remains unclaimed. A2 old=A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL; new evidence=five checkpoints and one 100k argmax report exist but fixed-seed per-checkpoint argmax+sample evaluation is missing; new=A2_REEVALUATION_INCOMPLETE because the old single-checkpoint conclusion is insufficient for the registered gate. MAPPO old central snapshot=59.3k/90.3k incomplete; new local evidence=M-COV 200k COMPLETE_BUDGET and M-CAP 500k COMPLETE_BUDGET, with M-CAP capture 10% and collision/censoring 90%; new=M-CAP_WEAK_CAPTURE_CONDITIONAL_ROOTCAUSE_GATE, so A3 remains hold and no curriculum is launched. IQN new local evidence=Z05 Stage3 selected 600k with Native 100/100/85 and cross-population metrics; new=EXTERNAL_EVIDENCE_ONLY, no new IQN training. Runtime: all recovered formal jobs are not live; GPUs idle; root disk 26 GiB free/98% used, so new long-run storage gate is blocked. Removed obsolete static child_concurrency_limit=4; parallelism is now dependency/resource bounded with MASTER->child single layer."
     }
   ]
 }

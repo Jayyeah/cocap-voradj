@@ -44,18 +44,21 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
-| A1 | A1_100K_FORMAL_COMPLETE_NO_SUSTAINED_SIGNAL | `experiment/ac-entropy-cov-20260921` @ `78adf78` / `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921` | 100k complete；0/25k/50k/75k/100k checkpoints 齐全，telemetry finite；75k 单评估成功但 100k 失败并碰撞；不扩 300k |
+| A1 | A1_SUSTAINED_PARTIAL_LEARNING_REOPENED | `evaluation/a1-entropy-localq-conclusion-20260923` @ `ad8c6b5`；训练源 `experiment/ac-entropy-cov-20260921` @ `78adf78` | 独立 fixed-seed 40-rollout：50k sample 12/20；75k argmax/sample 9/20、12/20；100k argmax/sample 13/20、20/20，sample collision 0/20；注册 corrected matched no-entropy control 与 continuation provenance audit |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
-| A2 | A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 100k complete；replay 400k、24813 updates、telemetry finite；final strict CE 0/20、collision 2/20；不扩 300k |
-| A3 | CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | proposal commit `377a6afd`；必须用户审核批准后才能实现/训练 |
+| A2 | A2_REEVALUATION_INCOMPLETE | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 0/25k/50k/75k/100k checkpoints 齐全，但只有 100k 单次 argmax；必须先完成已有 checkpoint 的 fixed-seed argmax+sample 短评测；不启动长训 |
+| A3 | CAPTURE_CURRICULUM_CONDITIONAL_HOLD | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | M-CAP 500k 已完成但 capture 10%、collision/censoring 90%；先做 MAPPO Capture root-cause read-only；实现/训练仍需用户明确批准 |
+| M-COV | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | contemporaneous Pure Coverage positive control 200k；argmax/sample CE 80%/100%；不改写 A0 |
+| M-CAP | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | NormSense V2 Pure Capture 500k；terminal capture 10%/10%，collision/censoring 90%/90%；进入 root-cause gate |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
 | B4 | BLOCKED_BY_B3_NO_QUALIFIED_CRITIC | no launch | 不启动 B4；保留 ranking artifact |
 | OLD-MIX-CLOSEOUT | CLOSED_300K_FORMAL | existing live worktree | released; no 500k extension |
 | IQN-METRIC-AUGMENT | IMPLEMENTED_TESTED_PENDING_INTEGRATION | `evaluation/iqn-metric-augment-20260922` / `/home/yjq/rl/CoCap1/iqn-metric-augment-20260922` | HEAD `5c146f7`；CPU compile、指标回归与 IQN contract tests 通过；只在下一次 formal evaluation 接入，不改 live training |
+| IQN-Z05-INDEPENDENT-EVIDENCE | EXTERNAL_EVIDENCE_ONLY | `evaluation/iqn-z05-independent-20260923` @ `2eeec7e` / `/home/yjq/rl/CoCap1/iqn-z05-independent-20260923` | selected 600k；Native 12p3e Coverage/Capture/Mixed 100/100/85；记录 friend-token truncation 与 fixed-map Mixed collision 上升；不启动新 IQN training |
 | A4 | BLOCKED | none | no action until learner + user-approved initialization curriculum gates |
 
-第一波最多四个 child：A0、A1、B1、B2。A0/A1 formal 现在由 MASTER 直接持有已审计的 tmux/PID/GPU lease；B1/B2 已完成并释放 child slot，A2/A3 已完成 preflight/design。A3 已停在用户审核 gate，不得自动实现或训练。
+child 数量不再使用静态上限；MASTER 按 scientific dependency、GPU/VRAM、CPU/RAM、disk、worktree 冲突和平台实际限制动态并行。保持单层 `MASTER -> child`，child 不得 spawn nested child、不写中央 DAG/state、不停止他人进程。当前所有已恢复 formal job 均不 live；根盘约 26 GiB free、98% used，新的 long run 在 storage margin 清晰前保持 blocked。
 
 ## Child handoff contract
 
@@ -190,3 +193,64 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 - 用户授权的命令级 proxy push 已成功：`4538aca..4b54394` 推送到 `origin/ops/ac-master-dag-20260921`。
 - 推送后校验：本地 HEAD 与 origin 均为 `4b54394af011515f40ca26ba316c6755579119e7`，工作树干净；中央 JSON 与本文件的远端同步状态已更新为 `PUSHED_SYNCED`。
+
+## 2026-09-25 RECOVER → RECONCILE → RECLASSIFY
+
+本轮先恢复本地事实，再更新中央状态；没有启动新长训。`git fetch origin` 使用命令级 mihomo `127.0.0.1:17892` 完成，未使用 `17891`，未修改 `.bashrc`、global Git 或 system proxy。远端快照不是本轮事实优先级；本地 verified artifacts/runtime 优先。
+
+### CENTRAL
+
+- branch：`ops/ac-master-dag-20260921`；开始 reconciliation 时 HEAD/origin 均为 `7dbd6945`；本轮中央写入尚未提交，提交后再做 proxy push。
+- 中央事实源仍只有本文件和 `artifacts/2026-09-21_ac_master_dag/state.json`。
+- 已删除旧的 `child_concurrency_limit=4` 语义，改为按 scientific dependency、GPU/VRAM、CPU/RAM、disk 和 worktree 冲突动态并行；结构保持单层 `MASTER -> child`。
+- 根盘：约 26 GiB free、98% used、inode 7%；新的 long run 需要 latest-only、planned-root `du -sh` 和安全 margin 复核后才可申请 GPU lease。
+- 当前 GPU0/GPU1 均 idle，未发现本轮恢复的 live formal PID/tmux。
+
+### RECOVERED CHILD HANDOFFS
+
+#### A1：旧负结论撤销并正式 reopen
+
+`STATE-A1` 在 `/home/yjq/rl/CoCap1/a1-conclusion-push-20260923` @ `ad8c6b5` 核对了原始 0/25k/50k/75k/100k artifact 与 independent evaluator。固定 reset seeds 为 `2026097101..2026097120`，每个 checkpoint 20 argmax + 20 sample；评估期间 `parameter_updates=0`，这只表示 inference evaluation 不更新参数，训练本身确实更新过 actor/critic/target。
+
+| checkpoint | argmax strict CE | sample strict CE | sample collision |
+|---|---:|---:|---:|
+| 50k | 0/20 | 12/20 | 5/20 |
+| 75k | 9/20 | 12/20 | 8/20 |
+| 100k | 13/20 | 20/20 | 0/20 |
+
+旧分类：`A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL`。新证据：跨 checkpoint 的 40-rollout 双模式结果。新分类：`A1_SUSTAINED_PARTIAL_LEARNING_REOPENED`。改变原因：旧结论主要依赖 100k 单次评估；新结果显示持续改善，但 100k argmax 仍有 5/20 collision、2/20 censored，不能宣称 deterministic/full success。Astra fix provenance 统一为完整 commit `4e210c090ec696bda73ff36877f8e33270ef8a86`；训练 branch `78adf78` 含 patch-equivalent fix。
+
+下一步注册两个相互独立的 child：
+
+- `A1-CONTROL`：corrected matched Local-Q no-entropy，唯一科学变量 entropy coefficient=0，fresh 0→100k；不得用旧 pre-Astra run 替代。
+- `A1-EXTEND`：先审计 actor/critic/target/optimizer/replay/RNG/environment/counters 的 resume provenance；只有 exact/scientifically valid 才能称 `100k continuation`，否则另立 warm continuation。
+
+#### MAPPO：M-COV 与 M-CAP 不改写 A0
+
+`STATE-MAPPO` 在 `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` @ `61b1d17` 核对本地正式 artifact；旧 59.3k/90.3k remote/status snapshot 已判定 stale。
+
+- `M-COV`：`COMPLETE_BUDGET`，真实 step `200000`；milestones `0..200k` 每 25k；terminal latest-only checkpoint `m-cov-run/latest.pt`，SHA256 `3adfdbe90970cfc1333a4a5cba82ca496393d170c56b789a842f0c4ba06fe68f`；最终 argmax/sample CE `80%/100%`，collision `5%/0%`。最佳观测为 150k 的 100%/100%，但无独立 best checkpoint。
+- `M-CAP`：`COMPLETE_BUDGET`，真实 step `500000`；milestones `0..500k` 每 25k；terminal latest-only checkpoint `m-cap-full/latest.pt`，SHA256 `01eeb67c689dd323c2e8e680549ed8e5bd871b7b0a75b8b989e19aa02e953197`；最终 argmax/sample capture `10%/10%`，collision/censoring `90%/90%`。最佳观测也只是 argmax 25%（150k/350k）和 sample 15%（225k）。
+
+旧分类：中央尚未登记，远端仅显示中途进度。新证据：本地 formal progress/report 完成。新分类：M-COV `CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE`，M-CAP `WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED`。改变原因：本地正式 artifact 完整度高于 remote snapshot；A0 `REPRO_PASS` 保持不变，M-COV 不替代 A0。
+
+M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动实现/训练 A3。只有 root cause 支持 `STATE_VISITATION_LIMITED` 或 successful geometry 稀疏时，A3 才进入 `JUSTIFIED_CANDIDATE` 用户审核。
+
+#### A2：checkpoint 齐全，但重评尚未完成
+
+`A2-REEVAL` 找到 step `0/25k/50k/75k/100k` 五个 checkpoint，`seed=2026092202`、`resumed=false`、step0 实际存在；但现有正式结果只有 100k 单次 argmax，`record_seed=null`，没有 fixed-seed per-checkpoint argmax+sample 结果。已知 100k 结果为 strict CE `0/20`、collision `2/20`、CE RMS mean `0.216455`、CE max mean `0.291257`、area CV mean `0.467136`、alpha `0.978556`、policy entropy `2.196986`、Q1/Q2 mean `71.0558/70.8929`。
+
+旧分类：`A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL`。新证据：五个 checkpoint 可低成本读取，但完整固定 seed 双模式评测缺失。新状态：`A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`。改变原因：不再用单一 100k 评估作为最终学习状态判定。下一步仅允许已有 checkpoint 的短时 argmax+sample reevaluation；不启动新的长训，也不启动 semantic audit，直到所有 checkpoint 的结果完成。
+
+#### IQN：外部证据，不扩训练
+
+`STATE-IQN` 在 `/home/yjq/rl/CoCap1/iqn-z05-independent-20260923` @ `2eeec7e` 核对 selected checkpoint `600000` 与 60/60 complete artifacts：Native 12p3e `Coverage/Capture/Mixed=100/100/85`；4p `65/100/50`；8p `95/95/85`；fixed-map 16p4e `100/100/75`、20p5e `100/100/60`、24p6e `95/100/65`。friend-token truncation 在 fixed-map 增加，Mixed collision 从 Native 10% 增至 15%/25%/25%。
+
+新分类：`EXTERNAL_EVIDENCE_ONLY`。不改变 live training、不解锁新 IQN training；Z05/Z07 原已完成的训练状态保留。
+
+### BLOCKERS / NEXT AUTOMATIC GATES
+
+- Engineering：A2 fixed-seed evaluator 结果尚缺；A1 continuation resume provenance 尚未审计；A1 corrected no-entropy control 尚未启动。
+- Resource：根盘 98% used；任何新 long run 在 storage margin 未清除前 blocked。评测/CPU analysis 优先。
+- Scientific：A3 只在 Capture root-cause 支持 visitation/geometry 稀疏时进入用户审核；B1/B2/B3/B4 不推进；A4 保持 blocked。
+- Automatic next gates：`A2 existing-checkpoint fixed-seed argmax+sample complete -> classify A2`; `M-CAP weak complete -> MAPPO-CAP-ROOTCAUSE`; `A1 partial reopened + storage/GPU lease cleared -> A1-CONTROL and A1-EXTEND may run independently`; `root-cause supports visitation limitation -> A3_JUSTIFIED_CANDIDATE + explicit user approval`; no condition currently authorizes A3 implementation/training.
