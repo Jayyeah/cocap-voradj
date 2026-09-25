@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-09-25T21:59:46+08:00",
+  "updated_at": "2026-09-25T22:04:41+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -611,7 +611,7 @@
     {
       "task_id": "A3",
       "task_name": "CAPTURE-CURRICULUM-DESIGN",
-      "status": "A3_I0_FORMAL_RUNNING",
+      "status": "A3_I0_FORMAL_COMPLETE",
       "dependencies": [],
       "branch": "design/ac-capture-curriculum-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921",
@@ -620,18 +620,18 @@
       "allowed_changes": "Initialization-only curriculum implementation/preflight and gated training using the registered I0-I3 proposal; Final Capture reward, CR-MS, sensing, network, PPO, entropy, critic, action, and collision contracts remain unchanged.",
       "forbidden_changes": "Reward curriculum, spawn edits, sensing/network/PPO/entropy/critic/action/collision changes, autonomous training, central DAG/state edits, nested agents, self-approval.",
       "gpu_required": true,
-      "gpu_lease": "GRANTED_MASTER_10X1S_GPU_SAMPLE_AND_A3_I0_FORMAL",
+      "gpu_lease": "RELEASED_AFTER_A3_I0_100K_COMPLETE",
       "run_dir": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/runs/a3_final_capture_init_i0_ring_anchor_20260925",
-      "tmux": "a3_i0_formal_20260925",
-      "pid": 2211136,
+      "tmux": null,
+      "pid": null,
       "physical_gpu": 1,
-      "current_step": 52210,
-      "heartbeat": "2026-09-25T21:34:07+08:00; FORMAL_RUNNING; 25K_TELEMETRY_FINITE",
-      "latest_formal": "RUNNING_I0_0_TO_100K",
+      "current_step": 100000,
+      "heartbeat": "2026-09-25T22:04:41+08:00; FORMAL_100K_COMPLETE; GPU1_RELEASED",
+      "latest_formal": "FORMAL_I0_0_TO_100K_COMPLETE",
       "latest_preflight": "A3_INITIALIZATION_ONLY_CPU_PREFLIGHT_AND_128_STEP_FULL_RESUME_SMOKE_PASS",
-      "result_classification": "A3_I0_FORMAL_RUNNING",
+      "result_classification": "A3_I0_FORMAL_COMPLETE_PENDING_EVALUATION",
       "milestone_25k_telemetry": "PASS_FINITE; no intermediate checkpoint because effective iqn.checkpoint_freq=100000",
-      "next_gate": "A3_I0_POST_LAUNCH_HEALTH_AND_25K_GATE",
+      "next_gate": "A3_I0_FINAL_EVALUATION_GATE_AND_CONTINUATION_REVIEW",
       "conditional_gate": "M-CAP_COMPLETE_AND_WEAK; ROOTCAUSE_SUPPORTS_STATE_VISITATION_AND_SPARSE_SUCCESSFUL_GEOMETRY; USER_APPROVAL_RECEIVED_FOR_INITIALIZATION_ONLY_IMPLEMENTATION_AND_GATED_TRAINING",
       "rootcause_audit": {
         "status": "COMPLETE_BOUNDED_READ_ONLY",
@@ -874,7 +874,7 @@
     }
   ],
   "current_snapshot": {
-    "observed_at": "2026-09-25T21:59:46+08:00",
+    "observed_at": "2026-09-25T22:04:41+08:00",
     "dag_lines": {
       "A0": {"status": "COMPLETE_REPRO_PASS", "step": 200000, "classification": "REPRO_PASS"},
       "A1": {"status": "A1_CONTROL_FORMAL_COMPLETE", "step": 100000, "classification": "A1_CONTROL_FORMAL_COMPLETE_PENDING_EVALUATION", "milestone_25k": "TELEMETRY_FINITE_NO_INTERMEDIATE_CHECKPOINT_CONFIGURED", "pid": null, "tmux": null, "next": "A1_FINAL_EVALUATION_GATE_AND_CONTINUATION_PROVENANCE_AUDIT"},
@@ -883,7 +883,7 @@
       "B2": {"status": "B2_COMPLETE", "classification": "R0_FULL_COMPLETE_RANKING_SIGNAL_STATE_SUPPORT_LIMITED"},
       "B3": {"status": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC", "classification": "NO_RANKING_QUALIFIED_CRITIC"},
       "B4": {"status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC"},
-      "A3": {"status": "A3_I0_FORMAL_RUNNING", "step": 98000, "classification": "A3_I0_FORMAL_RUNNING", "milestone_25k": "TELEMETRY_FINITE_NO_INTERMEDIATE_CHECKPOINT_CONFIGURED", "pid": 2211136, "tmux": "a3_i0_formal_20260925", "next": "A3_I0_100K_FINAL_CHECKPOINT_AND_EVALUATION_GATE"},
+      "A3": {"status": "A3_I0_FORMAL_COMPLETE", "step": 100000, "classification": "A3_I0_FORMAL_COMPLETE_PENDING_EVALUATION", "milestone_25k": "TELEMETRY_FINITE_NO_INTERMEDIATE_CHECKPOINT_CONFIGURED", "pid": null, "tmux": null, "next": "A3_I0_FINAL_EVALUATION_GATE_AND_CONTINUATION_REVIEW"},
       "M-COV": {"status": "COMPLETE_BUDGET", "step": 200000, "classification": "CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE"},
       "M-CAP": {"status": "COMPLETE_BUDGET", "step": 500000, "classification": "GEOMETRY_LIMITED_PRIMARY_STATE_VISITATION_LIMITED_RING3"},
       "A4": {"status": "BLOCKED"},
@@ -896,7 +896,7 @@
       "Z07": {"status": "COMPLETE", "training_step": 700000, "selected_checkpoint_step": 300000, "alpha": 0.7, "completed_at": "2026-09-23T10:26:00+0800", "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"},
       "Z05_INDEPENDENT_EVIDENCE": {"status": "RECOVERED_COMPLETE", "selected_checkpoint_step": 600000, "classification": "EXTERNAL_CAPACITY_GENERALIZATION_EVIDENCE"}
     },
-    "resources": {"gpu0_idle": true, "gpu1_idle": false, "free_mib_each": 47799, "gpu_samples": {"prelaunch_window": "2026-09-25T21:03:40+08:00/21:03:50+08:00", "prelaunch_gpu0_util_mean_peak_percent": "0/0", "prelaunch_gpu1_util_mean_peak_percent": "0/0", "prelaunch_min_free_mib": {"gpu0": 48523, "gpu1": 48524}, "prelaunch_active_jobs": []}, "root_free_gib_approx": 50, "root_use_percent": 95, "inode_use_percent": 7, "tmux": ["mihomo", "a3_i0_formal_20260925"], "training_processes": [2211136], "remote_head": "refs/heads/main@a5814f49fa29d869cdc3fb8d8e0df4722aa11f00", "runtime_snapshot": "artifacts/2026-09-21_ac_master_dag/runtime_snapshot_20260925.json", "storage_audit": "artifacts/2026-09-21_ac_master_dag/storage_audit_20260925.json", "storage_audit_followup": "artifacts/2026-09-21_ac_master_dag/storage_audit_followup_20260925.json", "resume_cleanup_deleted_files": 10, "resume_cleanup_deleted_bytes": 26110547530, "resume_cleanup_followup_deleted_files": 10, "resume_cleanup_followup_deleted_bytes": 935331987, "planned_concurrent_peak_gib": 4.0, "required_peak_plus_15gib": 19.0, "a3_preflight_report": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/artifacts/2026-09-25_a3_initialization_preflight/report.json", "long_run_storage_gate": "PASS_FOR_REGISTERED_A1_CONTROL_AND_A3_I0; RECHECK_AFTER_LAUNCH"}
+    "resources": {"gpu0_idle": true, "gpu1_idle": true, "free_mib_each": 48523, "gpu_samples": {"prelaunch_window": "2026-09-25T21:03:40+08:00/21:03:50+08:00", "prelaunch_gpu0_util_mean_peak_percent": "0/0", "prelaunch_gpu1_util_mean_peak_percent": "0/0", "prelaunch_min_free_mib": {"gpu0": 48523, "gpu1": 48524}, "prelaunch_active_jobs": []}, "root_free_gib_approx": 49, "root_use_percent": 95, "inode_use_percent": 7, "tmux": ["mihomo"], "training_processes": [], "remote_head": "refs/heads/main@a5814f49fa29d869cdc3fb8d8e0df4722aa11f00", "runtime_snapshot": "artifacts/2026-09-21_ac_master_dag/runtime_snapshot_20260925.json", "storage_audit": "artifacts/2026-09-21_ac_master_dag/storage_audit_20260925.json", "storage_audit_followup": "artifacts/2026-09-21_ac_master_dag/storage_audit_followup_20260925.json", "resume_cleanup_deleted_files": 10, "resume_cleanup_deleted_bytes": 26110547530, "resume_cleanup_followup_deleted_files": 10, "resume_cleanup_followup_deleted_bytes": 935331987, "planned_concurrent_peak_gib": 4.0, "required_peak_plus_15gib": 19.0, "a3_preflight_report": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/artifacts/2026-09-25_a3_initialization_preflight/report.json", "a3_i0_terminal_resume": "runs/a3_final_capture_init_i0_ring_anchor_20260925/checkpoints/resume_latest.pt", "a3_i0_terminal_resume_bytes": 979885323, "a3_i0_terminal_resume_sha256": "4c00abbb4579a89a709a7ce2f62ba0caaf32da6eab9f2a34a5e4917540ad6182", "long_run_storage_gate": "COMPLETE_FOR_REGISTERED_A1_CONTROL_AND_A3_I0; RECHECK_BEFORE_ANY_NEW_RUN"}
   },
   "event_log": [
     {
@@ -1238,6 +1238,11 @@
       "at": "2026-09-25T21:59:46+08:00",
       "event": "A1_CONTROL_FORMAL_100K_COMPLETE",
       "detail": "A1 matched no-entropy control reached 100000/100000 with finite telemetry and wrote step_100000.pt and final_step_100000.pt; PID 2213786 and tmux a1_no_entropy_formal_20260925 exited cleanly, GPU0 is idle, and no resume payload was created. This records training completion only; final evaluation and continuation-provenance gates remain pending. A3 I0 remains live on PID 2211136 at approximately 98000 steps."
+    },
+    {
+      "at": "2026-09-25T22:04:41+08:00",
+      "event": "A3_I0_FORMAL_100K_COMPLETE",
+      "detail": "A3 I0 initialization-only formal reached 100000/100000 with finite telemetry and wrote step_100000.pt, final_step_100000.pt, and a 979885323-byte resume_latest.pt (sha256 4c00abbb4579a89a709a7ce2f62ba0caaf32da6eab9f2a34a5e4917540ad6182). PID 2211136 and tmux a3_i0_formal_20260925 exited, both GPUs are idle, and the terminal resume is retained for final evaluation/possible continuation; no deletion is performed."
     }
   ]
 }
