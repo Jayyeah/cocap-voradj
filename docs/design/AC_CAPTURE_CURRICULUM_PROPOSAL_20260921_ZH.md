@@ -1,7 +1,9 @@
 # A3：Final Capture 初始化课程设计提案（2026-09-21）
 
-状态：**仅设计，未实现，未启动训练，等待用户审查**。
+状态：**用户已批准 initialization-only；I0-I3 实现与 CPU preflight 已通过；未启动 GPU formal training**。
 TASK_ID：`A3-CAPTURE-CURRICULUM-DESIGN-20260921`
+
+2026-09-25 MASTER reconciliation：用户批准已覆盖本提案第 11 节的 review gate。实现只新增 reset 初始化 sampler 和四个注册配置；canonical Final reward、观测、动作、动力学、碰撞、3000-step horizon、post-capture lifecycle 均未改变。正式训练仍须逐 stage 经过 promotion/rollback、storage 和 GPU lease gates，不因本次 preflight 自动启动。
 
 ## 1. 目的与边界
 
@@ -197,15 +199,24 @@ GPU/PID/tmux 只在用户批准并产生正式 launch 后登记；当前设计�
 
 奖励课程只能作为未来独立实验候选：冻结 I3 Final initialization、Final observation/action/physics/collision/horizon，另立 reward-ablation config，单独比较 ring shaping/terminal reward 的固定系数或 schedule，并使用同一 paired seeds。它不属于本提案、没有实现数字、没有启动条件，也不能与 initialization curriculum 同时改变。当前结论不支持现在启动 reward curriculum。
 
-## 11. User review gate（必须由用户明确批准）
+## 11. User review gate（已满足；formal launch 仍需运行门控）
 
-在任何代码、配置或 formal run 之前，用户需要明确审查并选择：
+在本轮实现前需要明确审查的事项已经由用户批准；以下内容作为已登记的科学门控与 formal launch 检查清单保留：
 
 1. 是否批准 I0–I3 的 exact numeric table、`750k` continuation budget 和三点+terminal promotion/rollback gate；
 2. 是否确认 canonical Final，而不是当前 AC-CAP capability-only 变体：`synchronized_swept_v1`、horizon `3000`、capture 不提前 terminal、coverage/PBRS/post-capture reward 保持开启；
 3. 是否批准 I3 以 canonical `map_random`、无 ring/visibility quota 作为最终 transfer gate；
 4. 是否批准之后才创建实现配置/initializer、跑 CPU contract smoke，并在另一个用户授权下安排 formal run。
 
-建议用户回复固定短语：`APPROVE A3 CAPTURE CURRICULUM INITIALIZATION-ONLY`，或指出要修改的 stage/metric/budget。未收到明确批准前，本任务保持 design-only；本文件不代表批准、不代表 launch authorization，也不代表任何 formal result。
+用户批准记录：`APPROVE A3 CAPTURE CURRICULUM INITIALIZATION-ONLY`（已由当前 MASTER 任务指令确认）。该批准不等于 GPU formal launch authorization，也不代表任何 formal result。
 
-classification: CAPTURE_CURRICULUM_AWAITING_USER_APPROVAL
+## 12. Implementation handoff（2026-09-25）
+
+- reset sampler：`src/cocap_voradj/envs/initialization_curriculum.py`；仅在 `a3_initialization_curriculum.enabled=true` 且 capture scene 有 evader 时生效；mixed coverage scene 明确跳过。
+- reset hook：`src/cocap_voradj/envs/voronoi_adjacency.py`；I0/I1/I2 使用注册几何，I3 使用 canonical `map_random`。
+- registered configs：`configs/experiments/a3_capture_initialization_20260925/stage_i0.yaml` 至 `stage_i3.yaml`。
+- contract tests：`PYTHONPATH=src python3 -m pytest -q test/test_a3_initialization_curriculum_contract.py`，`4 passed`。
+- CPU preflight：`artifacts/2026-09-25_a3_initialization_preflight/report.json`，8 seeds/stage、0 formal steps、0 GPU jobs；128-step CPU trainer smoke PASS。
+- current classification：`A3_IMPLEMENTATION_PREFLIGHT_PASS_FORMAL_TRAINING_LOCKED`。
+
+classification: A3_IMPLEMENTATION_PREFLIGHT_PASS_FORMAL_TRAINING_LOCKED

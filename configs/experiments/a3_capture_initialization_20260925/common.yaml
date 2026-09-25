@@ -1,0 +1,51 @@
+extends: ../forward_final_mappo_20260908/stage1_4v1.yaml
+
+seed: 2026092503
+device: cuda:0
+output_root: runs
+train_mode: voradj_mixed_coverage
+
+# A3 changes reset initialization only.  Final reward, observation, action,
+# dynamics, collision, horizon, and post-capture contracts come from the parent.
+a3_initialization_curriculum:
+  enabled: true
+  schema: a3-initialization-only-v1
+  stage: I0
+  spawn_edge_margin: 12.0
+  pursuer_min_center_distance: 15.0
+  obstacle_clearance: 4.0
+  target_speed_range: [0.0, 0.0]
+  max_layout_attempts: 10000
+  stages:
+    I0:
+      mode: ring
+      distance_ranges: [[12.0, 13.0], [12.0, 13.0], [12.0, 13.0], [12.0, 13.0]]
+      angle_jitter_deg: 5.0
+      visibility_mode: all_direct
+      budget: 100000
+    I1:
+      mode: ring
+      distance_ranges: [[13.0, 16.0], [13.0, 16.0], [13.0, 16.0], [13.0, 16.0]]
+      angle_jitter_deg: 7.5
+      visibility_mode: all_direct
+      budget: 150000
+    I2:
+      mode: ring
+      distance_ranges: [[17.5, 19.0], [17.5, 19.0], [23.0, 26.0], [23.0, 26.0]]
+      angle_jitter_deg: 12.5
+      visibility_mode: two_direct_two_hidden
+      budget: 200000
+    I3:
+      mode: map_random
+      angle_jitter_deg: 0.0
+      visibility_mode: unconstrained
+      budget: 300000
+
+experiment_metadata:
+  task_id: A3-CAPTURE-CURRICULUM-INITIALIZATION-ONLY-20260925
+  line: Final Capture initialization curriculum I0-I3
+  contract: canonical-final-capture-reset-only
+  training_start: I0_scratch_then_promoted_full_resume_only
+  forbidden_changes: reward_observation_action_dynamics_collision_horizon_post_capture
+  promotion_protocol: three_consecutive_checkpoints_plus_terminal
+  no_formal_launch_in_preflight: true

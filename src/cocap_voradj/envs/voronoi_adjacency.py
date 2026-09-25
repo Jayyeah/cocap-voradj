@@ -11,6 +11,7 @@ from cocap_voradj.envs.coverage_ce import (
 )
 
 from cocap_voradj.envs.base import CoCapEnv, StepResult, TWO_PI
+from cocap_voradj.envs.initialization_curriculum import A3InitializationCurriculum
 
 
 SiteKey = Tuple[str, int]
@@ -96,6 +97,12 @@ class VorAdjEnv(CoCapEnv):
         self.zone_evader_targets: List[Optional[np.ndarray]] = []
         self.zone_evader_target_reached: List[bool] = []
         self.zone_pursuer_left_inner_event = False
+        self._a3_initialization_curriculum = A3InitializationCurriculum(self)
+        self.last_initialization_metadata: Dict[str, Any] = {
+            "enabled": False,
+            "stage": None,
+            "source": "environment_default",
+        }
         self._static_capture_scale = float(self.reward_cfg.get("static_capture_scale", 1.0))
         if not 0.25 <= self._static_capture_scale <= 1.0:
             raise ValueError("Static capture scale must be in [0.25, 1]")
@@ -144,6 +151,7 @@ class VorAdjEnv(CoCapEnv):
         self._invalidate_voronoi_cache()
         super().reset(*args, **kwargs)
         self._zone_place_evaders_after_reset()
+        self.last_initialization_metadata = self._a3_initialization_curriculum.apply()
         self._zone_reset_episode_state()
         self._zone_update_metrics()
         self._invalidate_voronoi_cache()
@@ -153,6 +161,11 @@ class VorAdjEnv(CoCapEnv):
         self.last_task_labels = self._task_labels_from_map(data, update_effective=True)
         self._advance_z_state(data)
         return self.get_observations()
+
+    def initialization_metadata(self) -> Dict[str, Any]:
+        """Return reset-only A3 metadata without changing runtime semantics."""
+
+        return dict(self.last_initialization_metadata)
 
     def get_policy_observations(
         self,

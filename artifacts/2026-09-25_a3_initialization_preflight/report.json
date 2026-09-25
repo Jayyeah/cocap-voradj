@@ -1,0 +1,55 @@
+{
+  "schema": "a3-initialization-only-preflight-v1",
+  "status": "PASS",
+  "run_at": "2026-09-25T20:54:15+08:00",
+  "command": "PYTHONPATH=src python3 tools/preflight_a3_initialization_curriculum_20260925.py",
+  "training_steps": 0,
+  "gpu_jobs": 0,
+  "cpu_contract_smoke": {
+    "status": "PASS",
+    "steps": 128,
+    "command": "PYTHONPATH=src python3 train.py --config configs/experiments/a3_capture_initialization_20260925/stage_i0.yaml --device cpu --total-timesteps 128 --run-name a3_initialization_i0_cpu_smoke_20260925",
+    "final_checkpoint": "runs/a3_initialization_i0_cpu_smoke_20260925/checkpoints/final_step_128.pt",
+    "final_checkpoint_sha256": "41f7470f34a415b3a15899201019329845d4216d34a10a4c3b6299869a63a83f"
+  },
+  "seeds_per_stage": 8,
+  "coverage_scene_isolated": true,
+  "canonical_final_contract_projection_match": {
+    "I0": true,
+    "I1": true,
+    "I2": true,
+    "I3": true
+  },
+  "stages": {
+    "I0": {
+      "budget": 100000,
+      "source": "a3_ring_sampler",
+      "distance_range": [12.0, 13.0],
+      "direct_visible_count": "4/4 for all 8 samples",
+      "initial_capture_or_collision": "0/8"
+    },
+    "I1": {
+      "budget": 150000,
+      "source": "a3_ring_sampler",
+      "distance_range": [13.0, 16.0],
+      "direct_visible_count": "4/4 for all 8 samples",
+      "initial_capture_or_collision": "0/8"
+    },
+    "I2": {
+      "budget": 200000,
+      "source": "a3_ring_sampler",
+      "direct_hidden_count": "2 direct + 2 hidden for all 8 samples",
+      "randomized_lane_assignments": true,
+      "initial_capture_or_collision": "0/8"
+    },
+    "I3": {
+      "budget": 300000,
+      "source": "canonical_map_random",
+      "min_pursuer_target_distance": ">=15.0m for all 8 samples",
+      "initial_capture_or_collision": "0/8"
+    }
+  },
+  "contract_scope": "Only reset initialization distribution is changed for I0-I2; I3 uses canonical map_random. Reward, observation, action, dynamics, synchronized swept collision, 3000-step horizon, and post-capture lifecycle remain inherited and unchanged.",
+  "formal_training_authorized": false,
+  "next_gate": "A3 promotion/rollback supervisor and GPU/storage lease review before any formal run"
+}
