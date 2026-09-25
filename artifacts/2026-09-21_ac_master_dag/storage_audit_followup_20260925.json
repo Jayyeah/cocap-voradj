@@ -1,0 +1,77 @@
+{
+  "schema": "resume-storage-audit-followup-v1",
+  "audited_at": "2026-09-25T21:43:18+08:00",
+  "scope": "follow-up to storage_audit_20260925.json; recent non-reusable binary resume files under /home/yjq/rl/CoCap1",
+  "authorization": "User explicitly authorized deletion of recent resume files that are not likely to be reused for continuation.",
+  "selection_rule": "Delete only closed old formal/recovery or smoke-only resume payloads whose ordinary checkpoints, evaluations, reports, or final smoke checkpoints remain; retain current formal/validation/latest-stage continuation payloads.",
+  "deleted_file_count": 10,
+  "deleted_bytes": 935331987,
+  "deleted_gib_approx": 0.87,
+  "deleted": [
+    {
+      "path": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/runs/a3_initialization_i0_cpu_full_resume_smoke_20260925/checkpoints/resume_latest.pt",
+      "bytes": 37591043,
+      "reason": "128-step CPU smoke only; init/latest/final_step_128.pt and preflight report remain; no continuation run."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-22_discrete_sac_cov/ac_discrete_sac_cov_formal_20260922/resume_latest/full_resume.pt",
+      "bytes": 79517333,
+      "reason": "Superseded pre-fix/old A2 formal payload; current 2026-09-23 formal and validation artifacts remain; no new A2 training authorized."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-14_scratch_mappo_preflight/cpu_smoke/scratch_resume_step36.pt",
+      "bytes": 87279839,
+      "reason": "CPU smoke-only scratch payload; corresponding smoke artifacts remain and it is not a continuation target."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-14_scratch_mappo_preflight/cpu_smoke_final/scratch_resume_step36.pt",
+      "bytes": 87279839,
+      "reason": "CPU smoke-only scratch payload; corresponding smoke artifacts remain and it is not a continuation target."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-14_scratch_mappo_preflight/cpu_smoke_v2/scratch_resume_step36.pt",
+      "bytes": 87279839,
+      "reason": "CPU smoke-only scratch payload; corresponding smoke artifacts remain and it is not a continuation target."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-14_scratch_mappo_preflight/cuda_smoke/scratch_resume_step36.pt",
+      "bytes": 87287595,
+      "reason": "CUDA smoke-only scratch payload; corresponding smoke artifacts remain and it is not a continuation target."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-small-step-ac/artifacts/2026-09-14_scratch_mappo_preflight/cuda_smoke_final/scratch_resume_step36.pt",
+      "bytes": 87287595,
+      "reason": "CUDA smoke-only scratch payload; corresponding smoke artifacts remain and it is not a continuation target."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/ac-capability-cov-stage1-20260920/runs/ac_capability_cov_stage1/resume_latest/full_resume.pt",
+      "bytes": 127268184,
+      "reason": "Central DAG classifies AC-COV as CLOSED_OLD_LINE/DO_NOT_RESTART_OR_EXTEND; model checkpoints, evaluations, report, and continuity findings remain."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/ac-capability-cap-stage1-20260920/runs/ac_capability_cap_stage1/resume_latest/full_resume.pt",
+      "bytes": 127270424,
+      "reason": "Central DAG classifies AC-CAP as STOPPED_AFTER_300K_FORMAL_WITH_NONFINITE_RECOVERY_FAILURE and CLOSEOUT_FORENSICS_ONLY; ordinary checkpoints/evaluations remain."
+    },
+    {
+      "path": "/home/yjq/rl/CoCap1/cocap-voradj-critic-audit/runs/ac_capability_mix_stage1/resume_latest/full_resume.pt",
+      "bytes": 127270296,
+      "reason": "Central DAG classifies AC-MIX as STOPPED_AFTER_300K_FORMAL with no 500k extension; ordinary checkpoints, evaluations, telemetry, and closeout artifact remain."
+    }
+  ],
+  "retained_after_followup": [
+    "A1/A2 formal resume payloads",
+    "A2 CPU/CUDA validation resume payloads",
+    "IQN Z05/Z07 stage3 latest resume payloads",
+    "all current A1/A3 live-run init.pt/latest.pt checkpoints",
+    "ordinary model checkpoints, evaluations, reports, and smoke provenance"
+  ],
+  "verification": {
+    "old_candidate_processes": "none",
+    "remaining_recent_binary_resume_count": 6,
+    "root_free_after_gib_approx": 50,
+    "root_use_percent_after": 95,
+    "inode_use_percent_after": 7,
+    "live_formal_pids_preserved": [2213786, 2211136]
+  }
+}
