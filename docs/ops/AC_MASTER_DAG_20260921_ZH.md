@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD 与 origin 均为 `4b54394`；已用命令级 proxy `127.0.0.1:17892` 完成用户授权的同步推送，分支干净。基于 `ops/training-performance-sync-20260921`；push 使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`，本地 HEAD 与 origin 均为 `e3d8174`；已用命令级 proxy `127.0.0.1:17892` 完成本轮中央 reconciliation 推送，分支干净。基于 `ops/training-performance-sync-20260921`；push 使用 mihomo `127.0.0.1:17892` 的 `http_proxy/https_proxy/all_proxy` 与 `git -c http.proxy/-c https.proxy`，禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
