@@ -1,0 +1,19 @@
+extends: ../ac_capability_20260920/ac_capability_cov_stage1.yaml
+
+# Matched A1 entropy-protected source contract. This file is committed so the
+# no-entropy control has a reviewable base config rather than inheriting from a
+# dirty worktree.
+seed: 2026092101
+run_name: ac_entropy_localq_cov_20260921
+output_root: artifacts/2026-09-21_entropy_localq_cov
+
+ac:
+  actor_entropy_alpha: 0.05
+
+experiment_metadata:
+  child_task: A1_ENTROPY-LOCALQ-COV
+  scientific_variable: actor_entropy_regularization_only
+  actor_entropy_alpha: 0.05
+  formal_gates: [0, 25000, 50000, 75000, 100000]
+  primary_causal_gate: 100000
+  forbidden_changes: twin_q_sac_target_curriculum_bc_reward_scaling
