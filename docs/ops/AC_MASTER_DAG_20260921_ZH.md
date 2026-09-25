@@ -254,3 +254,14 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 - Resource：根盘 98% used；任何新 long run 在 storage margin 未清除前 blocked。评测/CPU analysis 优先。
 - Scientific：A3 只在 Capture root-cause 支持 visitation/geometry 稀疏时进入用户审核；B1/B2/B3/B4 不推进；A4 保持 blocked。
 - Automatic next gates：`A2 existing-checkpoint fixed-seed argmax+sample complete -> classify A2`; `M-CAP weak complete -> MAPPO-CAP-ROOTCAUSE`; `A1 partial reopened + storage/GPU lease cleared -> A1-CONTROL and A1-EXTEND may run independently`; `root-cause supports visitation limitation -> A3_JUSTIFIED_CANDIDATE + explicit user approval`; no condition currently authorizes A3 implementation/training.
+
+### A1 continuation / control bounded handoffs
+
+- `A1-EXTEND-PROVENANCE` 已完成：`model_step_000100000.pt` 是 `MODEL_ONLY_WARMSTART`；`full_resume.pt` 是 `FUNCTIONAL_NONEXACT_RESUME`。虽然 actor/critic/target、optimizer、global RNG 和 counters 部分存在，但 replay/recovery pool、runner 私有 RNG、replay RNG、environment/scenario state、episode/scene/scheduler state、source/manifest hash 缺失；loader 会 `rewarm_without_replay` 并 reset environment。因此 A1 100k overall=`INSUFFICIENT_FOR_CONTINUATION`，不得命名为 100k→300k exact continuation。
+- `A1-CONTROL-PREFLIGHT` 已完成：matched contract PASS；唯一科学变量为 `actor_entropy_alpha=0.0`，复用 seed `2026092101`，fresh run root 为 `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925`，估算约 382 MB。当前 launch blocked：配置尚未提交、runner/trainer worktree dirty，且完整 Astra regression collection 缺 `cocap_voradj.training.discrete_sac`；不得以旧 pre-Astra run 替代。
+
+### MAPPO Capture root-cause bounded handoff
+
+`MAPPO-CAP-ROOTCAUSE` 已完成只读分析，未实现/训练 A3。M-CAP 的 enemy visible fraction 为 `98.76%/99.16%`，first detection 通常 latency=1，因此 `DETECTION_LIMITED` 排除；ring3 visitation 仅 `15%/30%`，ring3 max hold `0.85/1.65` steps，支持 `GEOMETRY_LIMITED` 主因及 `STATE_VISITATION_LIMITED` 的 ring2→ring3 transition 瓶颈。终点 collision `90%/90%`，其中 agent-agent collision 占主要部分，故 `COLLISION_LIMITED` 是强放大器；M-CAP explained variance `0.356` 对比 M-COV `0.792`，GAE/return 方差与 safety-dominated negative return 支持 `CRITIC_CREDIT_LIMITED`/`REWARD_SCALE_LIMITED` 次级放大。Entropy、KL、clip fraction 没有显示 PPO collapse/early-stop 饥饿。精确的 geometry vs collision vs critic/reward 因果排序仍为 `UNRESOLVED`。
+
+因此 A3 仍为 `CAPTURE_CURRICULUM_CONDITIONAL_HOLD`；只有在用户明确批准、且后续 gate 认为 initialization/visitation 是主要可修复瓶颈后，才可实现或训练 curriculum。

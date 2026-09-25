@@ -334,6 +334,7 @@
       "terminal_checkpoint": "latest.pt",
       "final_artifact": "report.json",
       "final_metrics": "argmax/sample capture 10%/10%; collision 90%/90%; censoring 90%/90%",
+      "rootcause": "GEOMETRY_LIMITED primary; STATE_VISITATION_LIMITED ring3 transition; COLLISION_LIMITED/CRITIC_CREDIT_LIMITED/REWARD_SCALE_LIMITED amplifiers; DETECTION_LIMITED ruled out",
       "source": "STATE-MAPPO child local formal artifacts; remote 90.3k snapshot rejected as stale"
     },
     "ac_mix": {
@@ -441,6 +442,15 @@
       "result_classification": "A1_SUSTAINED_PARTIAL_LEARNING",
       "previous_classification": "A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_ENTROPY_SIGNAL",
       "next_gate": "REGISTER_A1_MATCHED_NO_ENTROPY_CONTROL_AND_A1_CONTINUATION_PROVENANCE_AUDIT",
+      "control_preflight": {
+        "status": "CONTRACT_PASS_LAUNCH_BLOCKED",
+        "only_variable": "actor_entropy_alpha=0.0",
+        "seed": 2026092101,
+        "planned_run_root": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925",
+        "disk_estimate_bytes": 382085788,
+        "blockers": ["control config not yet committed", "runner/trainer worktree has uncommitted changes", "Astra regression collection missing cocap_voradj.training.discrete_sac"],
+        "launch_authorized": false
+      },
       "formal_report": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923/prep_runtime_report.json",
       "eval_100k": "/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923/evaluations/eval_step_000100000.json",
       "independent_eval_40rollout": {
@@ -459,6 +469,14 @@
         "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86"
       },
       "classification_note": "Sustained partial learner; not deterministic/full success because 100k argmax retains 5/20 collisions and 2/20 censored episodes. No-update applies to inference evaluation only; training parameters did update.",
+      "continuation_provenance": {
+        "status": "AUDITED_NOT_EXACT",
+        "model_step_100000": "MODEL_ONLY_WARMSTART",
+        "full_resume": "FUNCTIONAL_NONEXACT_RESUME",
+        "overall": "INSUFFICIENT_FOR_CONTINUATION",
+        "missing": ["replay_or_recovery_pool", "runner_private_rng", "replay_rng", "environment_scenario_state", "episode_scene_scheduler_state", "checkpoint_manifest_source_hash"],
+        "reason": "A1 100k was scratch; fresh evaluation is not continuation; resume loader rewarms without replay and resets environment. Do not call it 100k_to_300k exact continuation."
+      },
       "checkpoint_steps": [0, 25000, 50000, 75000, 100000],
       "astra_fix_commit": "4e210c090ec696bda73ff36877f8e33270ef8a86",
       "astra_audit_head": "8fd2401d8d04bc3b12be17db901bd8cc3b2edcbc",
@@ -587,6 +605,16 @@
       "result_classification": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD",
       "next_gate": "MAPPO_CAP_ROOTCAUSE_READONLY_THEN_USER_REVIEW_IF_VISITATION_LIMITED",
       "conditional_gate": "M-CAP_COMPLETE_AND_WEAK; ROOTCAUSE_MUST_SUPPORT_STATE_VISITATION_OR_SPARSE_SUCCESSFUL_GEOMETRY; IMPLEMENTATION_AND_TRAINING_REQUIRE_EXPLICIT_USER_APPROVAL",
+      "rootcause_audit": {
+        "status": "COMPLETE_BOUNDED_READ_ONLY",
+        "child_agent": "MAPPO-CAP-ROOTCAUSE",
+        "primary": "GEOMETRY_LIMITED at 3-of-4 within radius 8, with STATE_VISITATION_LIMITED at ring3 transition",
+        "amplifiers": ["COLLISION_LIMITED", "CRITIC_CREDIT_LIMITED", "REWARD_SCALE_LIMITED"],
+        "ruled_out": ["DETECTION_LIMITED", "PPO_ENTROPY_KL_COLLAPSE"],
+        "unresolved": "Exact geometry-vs-collision-vs-credit causal ranking remains unresolved",
+        "evidence": {"enemy_visible_fraction": "98.76%/99.16%", "ring3_visitation": "15%/30%", "ring3_mean_max_hold": "0.85/1.65 steps", "final_collision": "90%/90%", "explained_variance": "0.356 vs M-COV 0.792"},
+        "implementation_or_training_authorized": false
+      },
       "user_approval_required": true,
       "updated_at": "2026-09-21T22:15:00+08:00"
     },
@@ -1099,6 +1127,16 @@
       "at": "2026-09-25T15:05:59+08:00",
       "event": "MASTER_RECOVER_RECONCILE_RECLASSIFY_20260925",
       "detail": "OLD_CLASSIFICATION -> NEW_EVIDENCE -> NEW_CLASSIFICATION -> WHY_CHANGED: A1 old=A1_FORMAL_100K_COMPLETE_NO_SUSTAINED_SIGNAL; new evidence=independent fixed-seed 40-rollout evaluation across 0/25k/50k/75k/100k with 50k sample 12/20, 75k argmax/sample 9/20 and 12/20, 100k argmax/sample 13/20 and 20/20, sample collision 0/20; new=A1_SUSTAINED_PARTIAL_LEARNING_REOPENED because the single 100k negative interpretation was contradicted by matched multi-checkpoint evidence, while deterministic/full success remains unclaimed. A2 old=A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL; new evidence=five checkpoints and one 100k argmax report exist but fixed-seed per-checkpoint argmax+sample evaluation is missing; new=A2_REEVALUATION_INCOMPLETE because the old single-checkpoint conclusion is insufficient for the registered gate. MAPPO old central snapshot=59.3k/90.3k incomplete; new local evidence=M-COV 200k COMPLETE_BUDGET and M-CAP 500k COMPLETE_BUDGET, with M-CAP capture 10% and collision/censoring 90%; new=M-CAP_WEAK_CAPTURE_CONDITIONAL_ROOTCAUSE_GATE, so A3 remains hold and no curriculum is launched. IQN new local evidence=Z05 Stage3 selected 600k with Native 100/100/85 and cross-population metrics; new=EXTERNAL_EVIDENCE_ONLY, no new IQN training. Runtime: all recovered formal jobs are not live; GPUs idle; root disk 26 GiB free/98% used, so new long-run storage gate is blocked. Removed obsolete static child_concurrency_limit=4; parallelism is now dependency/resource bounded with MASTER->child single layer."
+    },
+    {
+      "at": "2026-09-25T15:32:54+08:00",
+      "event": "A1_CONTINUATION_AND_CONTROL_PREFLIGHT_COMPLETE",
+      "detail": "A1 continuation audit: old possible='100k continuation'; new evidence=model_step_100000 is MODEL_ONLY_WARMSTART, full_resume is FUNCTIONAL_NONEXACT_RESUME, replay/runner-private RNG/environment state/manifest are missing; new='INSUFFICIENT_FOR_CONTINUATION'; why changed=resume cannot be exact and 100k run was scratch. A1 corrected matched no-entropy preflight: contract pass, only variable actor_entropy_alpha=0.0, seed 2026092101, estimated 382 MB, but launch blocked because control config is not committed, runner/trainer worktree is dirty, and Astra regression collection lacks cocap_voradj.training.discrete_sac. No training launched."
+    },
+    {
+      "at": "2026-09-25T15:32:54+08:00",
+      "event": "MAPPO_CAP_ROOTCAUSE_BOUNDED_COMPLETE",
+      "detail": "M-CAP old='WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED'; new evidence=enemy visible 98.76%/99.16%, ring3 visitation 15%/30%, ring3 max hold 0.85/1.65 steps, final collision 90%/90%, explained variance 0.356 vs M-COV 0.792; new='GEOMETRY_LIMITED primary + STATE_VISITATION_LIMITED ring3 transition, amplified by COLLISION_LIMITED/CRITIC_CREDIT_LIMITED/REWARD_SCALE_LIMITED'; why changed=detection limitation and PPO entropy/KL collapse are ruled out, but exact geometry/collision/credit causal ranking remains unresolved. A3 implementation/training remains user-approval gated."
     }
   ]
 }
