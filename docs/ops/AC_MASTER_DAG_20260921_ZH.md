@@ -47,7 +47,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | A1 | A1_SUSTAINED_PARTIAL_LEARNING_REOPENED | `evaluation/a1-entropy-localq-conclusion-20260923` @ `ad8c6b5`；训练源 `experiment/ac-entropy-cov-20260921` @ `78adf78` | 独立 fixed-seed 40-rollout：50k sample 12/20；75k argmax/sample 9/20、12/20；100k argmax/sample 13/20、20/20，sample collision 0/20；注册 corrected matched no-entropy control 与 continuation provenance audit |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
-| A2 | A2_REEVALUATION_INCOMPLETE | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 0/25k/50k/75k/100k checkpoints 齐全，但只有 100k 单次 argmax；必须先完成已有 checkpoint 的 fixed-seed argmax+sample 短评测；不启动长训 |
+| A2 | A2_TRANSIENT_LEARNING_CLASSIFIED | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 五 checkpoint fixed-seed argmax+sample 已完成；sample 仅 25k=6/20、50k=5/20，argmax 全程 0/20，75k/100k 双模式均 0/20；下一步仅 bounded semantic audit，不扩 300k、不启动新训练 |
 | A3 | A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | root-cause 支持 geometry/state-visitation 瓶颈；仅进入用户审核候选，未经明确批准不得实现/训练 |
 | M-COV | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | contemporaneous Pure Coverage positive control 200k；argmax/sample CE 80%/100%；不改写 A0 |
 | M-CAP | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | NormSense V2 Pure Capture 500k；terminal capture 10%/10%，collision/censoring 90%/90%；进入 root-cause gate |
@@ -236,11 +236,21 @@ child 不得写中央 DAG/state，不得抢 GPU，不得启动额外长训，不
 
 M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动实现/训练 A3。只有 root cause 支持 `STATE_VISITATION_LIMITED` 或 successful geometry 稀疏时，A3 才进入 `JUSTIFIED_CANDIDATE` 用户审核。
 
-#### A2：checkpoint 齐全，但重评尚未完成
+#### A2：fixed-seed 双模式复评完成，分类为 transient learning
 
-`A2-REEVAL` 找到 step `0/25k/50k/75k/100k` 五个 checkpoint，`seed=2026092202`、`resumed=false`、step0 实际存在；但现有正式结果只有 100k 单次 argmax，`record_seed=null`，没有 fixed-seed per-checkpoint argmax+sample 结果。已知 100k 结果为 strict CE `0/20`、collision `2/20`、CE RMS mean `0.216455`、CE max mean `0.291257`、area CV mean `0.467136`、alpha `0.978556`、policy entropy `2.196986`、Q1/Q2 mean `71.0558/70.8929`。
+旧分类：`A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL`，随后因只有单一 100k argmax 而暂置 `A2_REEVALUATION_INCOMPLETE / A2_PENDING_FIXED_SEED_REEVALUATION`。新证据已补齐五个 checkpoint（`0/25k/50k/75k/100k`）的固定 env/policy seed、20 episode argmax+sample pair；四个 artifact root 位于 `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-25_a2_reeval_fixedseed_v3`、`..._v4_step50000`、`..._v4_step75000`、`..._v4_step100000`，四份 seed manifest SHA256 相同：`4d17ddbeb5c2355272cebae18f1bef7524d38f136139e4706c76d4468c8cdcf8`。
 
-旧分类：`A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL`。新证据：五个 checkpoint 可低成本读取，但完整固定 seed 双模式评测缺失。新状态：`A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`。改变原因：不再用单一 100k 评估作为最终学习状态判定。下一步仅允许已有 checkpoint 的短时 argmax+sample reevaluation；不启动新的长训，也不启动 semantic audit，直到所有 checkpoint 的结果完成。
+结果（每格均为 strict CE 成功数/20；括号为 collision 数/20）：
+
+| checkpoint | argmax | sample |
+|---|---:|---:|
+| 0 | `0/20 (20/20)` | `0/20 (20/20)` |
+| 25k | `0/20 (0/20)` | `6/20 (5/20)` |
+| 50k | `0/20 (0/20)` | `5/20 (3/20)` |
+| 75k | `0/20 (4/20)` | `0/20 (1/20)` |
+| 100k | `0/20 (1/20)` | `0/20 (2/20)` |
+
+所有 10 个 pair 均 `episodes=20`、`parameter_updates=0`、`trainer_update_calls=0`、evaluation tensors finite。旧分类 → 新证据 → 新分类 → 原因：单一 100k 结论不足；完整序列显示 strict CE 只在 sample 的 25k/50k 短暂出现，argmax 从未出现，75k/100k 双模式均回到 0/20，因此最终为 `A2_TRANSIENT_LEARNING`，不是 sustained partial/strong learning。下一步仅允许一次 bounded semantic audit；不扩 300k，不启动新 A2 training。
 
 #### IQN：外部证据，不扩训练
 
@@ -250,10 +260,10 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 
 ### BLOCKERS / NEXT AUTOMATIC GATES
 
-- Engineering：A2 fixed-seed evaluator 结果尚缺；A1 continuation resume provenance 尚未审计；A1 corrected no-entropy control 尚未启动。
+- Engineering：A2 fixed-seed evaluator 已完成，下一步为 bounded semantic audit；A1 continuation resume provenance 尚未审计；A1 corrected no-entropy control 尚未启动。
 - Resource：根盘 98% used；任何新 long run 在 storage margin 未清除前 blocked。评测/CPU analysis 优先。
 - Scientific：A3 只在 Capture root-cause 支持 visitation/geometry 稀疏时进入用户审核；B1/B2/B3/B4 不推进；A4 保持 blocked。
-- Automatic next gates：`A2 existing-checkpoint fixed-seed argmax+sample complete -> classify A2`; `M-CAP weak complete -> MAPPO-CAP-ROOTCAUSE`; `A1 partial reopened + storage/GPU lease cleared -> A1-CONTROL and A1-EXTEND may run independently`; `root-cause supports visitation limitation -> A3_JUSTIFIED_CANDIDATE + explicit user approval`; no condition currently authorizes A3 implementation/training.
+- Automatic next gates：`A2 fixed-seed argmax+sample complete -> A2_TRANSIENT_LEARNING -> one bounded semantic audit; no 300k extension`; `M-CAP weak complete -> MAPPO-CAP-ROOTCAUSE`; `A1 partial reopened + storage/GPU lease cleared -> A1-CONTROL and A1-EXTEND may run independently`; `root-cause supports visitation limitation -> A3_JUSTIFIED_CANDIDATE + explicit user approval`; no condition currently authorizes A3 implementation/training.
 
 ### A1 continuation / control bounded handoffs
 
@@ -266,8 +276,8 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 
 因此 A3 已升级为 `A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED`：root-cause 足以支持 geometry/state-visitation 方向，但这只是用户审核候选；未经明确批准不得实现或训练 curriculum。
 
-### A2 bounded evaluator blocker
+### A2 fixed-seed reevaluation closeout
 
-A2 的两个独立 bounded child 尝试均未在响应窗口内产生 fixed-seed per-checkpoint 双模式 artifact：第一 child 完成 checkpoint/provenance audit 但没有可复用的完整 evaluator 结果；第二 child 的短时 retry 也超时后被关闭。没有任何 partial 结果被冒充为完整评测，也没有启动长评测或训练。
+A2 的两个早期 bounded child 曾因响应窗口未产出完整结果而关闭；随后 MASTER 在不训练、不恢复 optimizer/replay 的 weight-only evaluator 中完成了全部五 checkpoint×两模式×20 episodes。evaluator 明确禁止 `trainer.update`，最终 10 个 pair 都报告 `parameter_updates=0`、`trainer_update_calls=0`，并保留 checkpoint SHA、loaded state hash、固定 seed manifest 与 finite tensor 审计。
 
-因此当前状态保持 `A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`，最终四分类为 `UNDETERMINED`；旧 100k 单次 argmax 仅保留为历史证据。下一步仍是找到/修复一个 bounded existing-checkpoint evaluator，完成固定 seeds 的 argmax+sample 后再分类；在此之前不做 A2 semantic audit、不扩 300k。
+这组结果已把 A2 从 `UNDETERMINED` 收敛为 `A2_TRANSIENT_LEARNING`：只有 sample 在 25k/50k 有短暂 strict-CE 成功，不能支持 sustained partial/strong learning。下一步是一次独立 bounded semantic audit；在 audit 完成前不启动 300k extension、不做新的 A2 training。A3 的实现/训练仍需用户明确批准。
