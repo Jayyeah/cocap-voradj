@@ -1,0 +1,99 @@
+{
+  "schema": "m-cap-failure-decomposition-v1",
+  "analyzed_at": "2026-09-25T20:30:00+08:00",
+  "status": "COMPLETE_BOUNDED_READ_ONLY",
+  "source": {
+    "run_root": "/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923/artifacts/2026-09-23_mappo_scratch_primitives/m-cap-full",
+    "terminal_eval": "eval_step_500000.json",
+    "training_episode_records": "episodes.jsonl",
+    "training_update_records": "learning.jsonl",
+    "policy": "NormSense V2 Pure Capture; Final Capture reward unchanged"
+  },
+  "terminal_eval_500k": {
+    "episodes": 40,
+    "modes": {"argmax": 20, "sample": 20},
+    "categories": {
+      "capture_success": 4,
+      "collision_after_detection_before_ring2": 12,
+      "collision_during_ring2": 19,
+      "collision_during_ring3": 5,
+      "collision_before_enemy_detection": 0,
+      "timeout_without_ring3": 0,
+      "ring3_reached_but_not_held": 0,
+      "near_capture_without_terminal_capture": 0
+    },
+    "collision_types": {"agent_agent": 21, "evader_contact": 9, "obstacle": 6},
+    "success_vs_failure": {
+      "success_n": 4,
+      "failure_n": 36,
+      "success": {
+        "first_detection_latency_mean_steps": 1.0,
+        "ring2_episode_rate": 1.0,
+        "ring3_episode_rate": 1.0,
+        "ring2_steps_mean": 22.25,
+        "ring3_steps_mean": 4.0,
+        "ring3_max_hold_mean_steps": 4.0,
+        "capture_step_mean": 239.25,
+        "trace_min_target_clearance_mean": 3.7563,
+        "trace_mean_radial_error_to_8m": 11.9230,
+        "trace_max_angular_gap_mean_rad": 5.5353,
+        "trace_min_pairwise_clearance_mean": 4.4468,
+        "total_return_mean": -110.4968,
+        "discounted_return_mean": -5.0057
+      },
+      "failure": {
+        "first_detection_latency_mean_steps": 3.2857,
+        "ring2_episode_rate": 0.6667,
+        "ring3_episode_rate": 0.1389,
+        "ring2_steps_mean": 34.0278,
+        "ring3_steps_mean": 1.0556,
+        "ring3_max_hold_mean_steps": 0.9444,
+        "episode_length_mean_steps": 423.1944,
+        "trace_min_target_clearance_mean": 7.2544,
+        "trace_mean_radial_error_to_8m": 22.4153,
+        "trace_max_angular_gap_mean_rad": 5.4661,
+        "trace_min_pairwise_clearance_mean": 5.6160,
+        "total_return_mean": -538.9791,
+        "discounted_return_mean": -28.9374
+      }
+    }
+  },
+  "all_training_episode_records": {
+    "episodes": 975,
+    "capture_success": 29,
+    "collision": 940,
+    "metadata_only_categories": {
+      "collision_after_detection_before_ring2": 526,
+      "collision_during_ring2": 362,
+      "collision_during_ring3": 52,
+      "timeout_without_ring3": 6,
+      "capture_success": 29
+    },
+    "ring2_episode_rate": 0.4554,
+    "ring3_episode_rate": 0.0831,
+    "ring3_max_hold_mean_steps": 0.5477,
+    "collision_types": {"agent_agent": 644, "boundary": 114, "obstacle": 89, "evader_contact": 95}
+  },
+  "critic_gae_advantage": {
+    "per_episode_fields_saved": false,
+    "latest_update_step": 500000,
+    "latest_explained_variance": 0.3560,
+    "latest_value_norm_mean": -36.3955,
+    "latest_raw_advantage": {"mean": -11.5674, "std": 19.6223, "min": -61.1973, "max": 5.5741},
+    "latest_gae_target": {"mean": -47.4582, "std": 23.5391, "min": -103.1608, "max": -25.9107},
+    "latest_raw_return": {"mean": -47.4582, "std": 23.5391, "min": -103.1608, "max": -25.9107},
+    "interpretation": "These are update-level PPO summaries, not success/failure-stratified values. The saved eval records do not contain per-episode critic V, GAE, or advantage, so no stronger causal claim is made."
+  },
+  "availability_limits": {
+    "relative_target_velocity": "not saved in terminal diagnostic trace; saved speeds are pursuer speeds and must not be mislabeled",
+    "collision_timing": "exactly available only when a collision event appears in the last-100-step diagnostic trace; aggregate episode categories use ring visitation metadata",
+    "detection": "all terminal collisions with a saved collision tick occurred after first detection; detection limitation is not supported",
+    "trace_geometry": "clearance, radial error, angular gap, and pairwise clearance are computed over the saved last-100-step trace"
+  },
+  "classification": {
+    "primary": "GEOMETRY_LIMITED_WITH_RING3_STATE_VISITATION_LIMITATION",
+    "amplifiers": ["COLLISION_LIMITED", "CRITIC_CREDIT_LIMITED", "REWARD_SCALE_LIMITED"],
+    "ruled_out_or_not_supported": ["DETECTION_LIMITED", "PPO_ENTROPY_KL_COLLAPSE"],
+    "a3_gate": "M-CAP decomposition handoff complete; A3 initialization-only proposal remains bounded by its registered I0-I3 gates and storage/GPU preflight."
+  }
+}
