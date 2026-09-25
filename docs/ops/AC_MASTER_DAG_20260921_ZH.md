@@ -37,18 +37,18 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 两卡满足 `<60% mean`、`<90% peak` 的利用率门槛，但这不是自动授权；新 GPU child 必须提交 `GPU_LEASE_REQUEST`，MASTER 先审 disk/heartbeat/VRAM，再返回 `GPU_LEASE_GRANTED` 或 `GPU_LEASE_WAIT`。启动后再次 10 秒采样；若 OOM、NaN/Inf、已有 heartbeat stall 或显著 saturation，只停止刚由 MASTER 新开的任务并标记 `GPU_LEASE_REVOKED_OVERLOAD`。
 
-根盘清理后约 49 GiB free、95% used、inode 7%。已删除 10 个完成历史阶段/关闭 bounded diagnostic 的 resume，共 26110547530 bytes（约 24.31 GiB）；保留最新 IQN stage3、正式 A1/A2 resume、普通 checkpoint 与报告。清理台账：`artifacts/2026-09-21_ac_master_dag/storage_audit_20260925.json`。任何后续长训前仍必须重新执行 `df -h /`、`df -i /`、planned run root `du -sh`，并估算 checkpoint/replay/resume/evaluation/telemetry；当前 storage gate 仍等待 A3 planned peak + 15 GiB margin 复核。runtime snapshot：`artifacts/2026-09-21_ac_master_dag/runtime_snapshot_20260925.json`。
+根盘清理后约 49 GiB free、95% used、inode 7%。已删除 10 个完成历史阶段/关闭 bounded diagnostic 的 resume，共 26110547530 bytes（约 24.31 GiB）；保留最新 IQN stage3、正式 A1/A2 resume、普通 checkpoint 与报告。清理台账：`artifacts/2026-09-21_ac_master_dag/storage_audit_20260925.json`。A3 replay 750k 投影约 1.45 GB，保守并发峰值 4 GiB，加 15 GiB margin 为 19 GiB，低于当前可用空间；A1 control + A3 I0 已通过 storage gate，启动后继续复核。runtime snapshot：`artifacts/2026-09-21_ac_master_dag/runtime_snapshot_20260925.json`。
 
 ## DAG gate
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
-| A1 | A1_SUSTAINED_PARTIAL_LEARNING_REOPENED | `control/a1-no-entropy-20260925` @ `411afed`；clean worktree `/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925` | matched no-entropy control 已提交；唯一科学变量 `actor_entropy_alpha=0.0`；7 focused tests、CPU/CUDA smoke 通过；正式 0→100k 仍等待 storage peak/GPU lease |
+| A1 | A1_CONTROL_FORMAL_RUNNING | `control/a1-no-entropy-20260925` @ `0c02324`；clean worktree `/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925` | PID 2213786 / tmux `a1_no_entropy_formal_20260925` / physical GPU0；fresh 0→100k；当前约 3869 步；等待 25k finite telemetry gate |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | A2_TRANSIENT_LEARNING_CLASSIFIED | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | fixed-seed 结果不变；bounded semantic audit 已完成（4 tests passed），未发现公式/符号/终止掩码错误；`0.98*log(9)` 使 alpha≈0.979，仍不扩 300k、不启动新训练 |
-| A3 | A3_USER_APPROVED_FOR_IMPLEMENTATION_PREFLIGHT_AND_GATED_TRAINING | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | 用户已批准；只允许 initialization-only 实现/preflight；M-CAP failure decomposition 已完成，下一步是 implementation contract、smoke、storage/GPU gates |
+| A3 | A3_I0_FORMAL_RUNNING | `design/ac-capture-curriculum-20260921` @ `88d8fa3` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | PID 2211136 / tmux `a3_i0_formal_20260925` / physical GPU1；I0 fresh 0→100k；当前约 11502 步；I1–I3 未启动 |
 | M-COV | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | contemporaneous Pure Coverage positive control 200k；argmax/sample CE 80%/100%；不改写 A0 |
 | M-CAP | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | NormSense V2 Pure Capture 500k；终点评估 4/40 capture、36/40 collision；12 次 collision before ring2、19 次 during ring2、5 次 during ring3、0 次 detection 前；分解工件已交接 |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
@@ -275,7 +275,7 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 ### A1 continuation / control bounded handoffs
 
 - `A1-EXTEND-PROVENANCE` 已完成：`model_step_000100000.pt` 是 `MODEL_ONLY_WARMSTART`；`full_resume.pt` 是 `FUNCTIONAL_NONEXACT_RESUME`。虽然 actor/critic/target、optimizer、global RNG 和 counters 部分存在，但 replay/recovery pool、runner 私有 RNG、replay RNG、environment/scenario state、episode/scene/scheduler state、source/manifest hash 缺失；loader 会 `rewarm_without_replay` 并 reset environment。因此 A1 100k overall=`INSUFFICIENT_FOR_CONTINUATION`，不得命名为 100k→300k exact continuation。
-- `A1-CONTROL-PREFLIGHT` 已完成：matched contract PASS；唯一科学变量为 `actor_entropy_alpha=0.0`，复用 seed `2026092101`，fresh run root 为 `/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925`，估算约 382 MB。当前 launch blocked：配置尚未提交、runner/trainer worktree dirty，且完整 Astra regression collection 缺 `cocap_voradj.training.discrete_sac`；不得以旧 pre-Astra run 替代。
+- `A1-CONTROL-PREFLIGHT` 已完成：matched contract PASS；唯一科学变量为 `actor_entropy_alpha=0.0`，复用 seed `2026092101`。首次启动发现历史 `voradj_coverage` 模式与当前 trainer 不兼容，已在 `0c02324` 增加等价 legacy runtime branch；A1 contract tests 2 passed、32-step CPU smoke passed 后已 fresh 重启正式 run。当前 PID/tmux/HEAD 见最新 reconciliation，尚无科学结果。
 
 ### MAPPO Capture root-cause bounded handoff
 
@@ -288,3 +288,11 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 A2 的两个早期 bounded child 曾因响应窗口未产出完整结果而关闭；随后 MASTER 在不训练、不恢复 optimizer/replay 的 weight-only evaluator 中完成了全部五 checkpoint×两模式×20 episodes。evaluator 明确禁止 `trainer.update`，最终 10 个 pair 都报告 `parameter_updates=0`、`trainer_update_calls=0`，并保留 checkpoint SHA、loaded state hash、固定 seed manifest 与 finite tensor 审计。
 
 这组结果已把 A2 从 `UNDETERMINED` 收敛为 `A2_TRANSIENT_LEARNING`：只有 sample 在 25k/50k 有短暂 strict-CE 成功，不能支持 sustained partial/strong learning。下一步是一次独立 bounded semantic audit；在 audit 完成前不启动 300k extension、不做新的 A2 training。A3 的实现/训练仍需用户明确批准。
+
+## 2026-09-25 21:12 正式运行 reconciliation
+
+- GPU prelaunch lease 通过：21:03:40–21:03:50 的 10×1 秒采样中，GPU0/GPU1 利用率均为 `0%/0%`，minimum free VRAM 分别为 `48523/48524 MiB`，无活动训练进程。当前根盘约 49 GiB free；A1 control + A3 I0 的保守峰值 4 GiB，加 15 GiB margin 后为 19 GiB，storage gate 通过。
+- A3 I0 已启动：branch `design/ac-capture-curriculum-20260921` @ `88d8fa3`，tmux `a3_i0_formal_20260925`，PID `2211136`，physical GPU1，fresh 0→100k，run root `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/runs/a3_final_capture_init_i0_ring_anchor_20260925`。21:12:07 观测约 `11502` 步；I1–I3 未启动。
+- A1 control 首次启动在 step 0 前因历史配置 `train_mode: voradj_coverage` 未被当前 trainer 接受而退出；没有产生正式步数或科学结果。已提交兼容修复 `0c02324`，其余科学配置不变；2 个 A1 control contract tests 与 32-step CPU smoke 通过后重新启动。
+- A1 control 当前运行：branch `control/a1-no-entropy-20260925` @ `0c02324`，tmux `a1_no_entropy_formal_20260925`，PID `2213786`，physical GPU0，fresh 0→100k，run root `/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925/artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925`。21:12:07 观测约 `3869` 步；唯一注册科学变量仍为 `actor_entropy_alpha=0.0`，尚无结果分类。
+- 下一检查点：两个任务均在 25k/50k/75k/100k 节点做 finite telemetry、checkpoint 和评估门控；A3 只有 I0 通过后才可讨论 I1 promotion，A1 不自动扩展 300k。
