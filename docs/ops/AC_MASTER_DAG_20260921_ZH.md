@@ -48,7 +48,7 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | A2_REEVALUATION_INCOMPLETE | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | 0/25k/50k/75k/100k checkpoints 齐全，但只有 100k 单次 argmax；必须先完成已有 checkpoint 的 fixed-seed argmax+sample 短评测；不启动长训 |
-| A3 | CAPTURE_CURRICULUM_CONDITIONAL_HOLD | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | M-CAP 500k 已完成但 capture 10%、collision/censoring 90%；先做 MAPPO Capture root-cause read-only；实现/训练仍需用户明确批准 |
+| A3 | A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED | `design/ac-capture-curriculum-20260921` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | root-cause 支持 geometry/state-visitation 瓶颈；仅进入用户审核候选，未经明确批准不得实现/训练 |
 | M-COV | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | contemporaneous Pure Coverage positive control 200k；argmax/sample CE 80%/100%；不改写 A0 |
 | M-CAP | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | NormSense V2 Pure Capture 500k；terminal capture 10%/10%，collision/censoring 90%/90%；进入 root-cause gate |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
@@ -264,10 +264,10 @@ M-CAP 失败触发 `MAPPO-CAP-ROOTCAUSE` read-only bounded gate；不得自动�
 
 `MAPPO-CAP-ROOTCAUSE` 已完成只读分析，未实现/训练 A3。M-CAP 的 enemy visible fraction 为 `98.76%/99.16%`，first detection 通常 latency=1，因此 `DETECTION_LIMITED` 排除；ring3 visitation 仅 `15%/30%`，ring3 max hold `0.85/1.65` steps，支持 `GEOMETRY_LIMITED` 主因及 `STATE_VISITATION_LIMITED` 的 ring2→ring3 transition 瓶颈。终点 collision `90%/90%`，其中 agent-agent collision 占主要部分，故 `COLLISION_LIMITED` 是强放大器；M-CAP explained variance `0.356` 对比 M-COV `0.792`，GAE/return 方差与 safety-dominated negative return 支持 `CRITIC_CREDIT_LIMITED`/`REWARD_SCALE_LIMITED` 次级放大。Entropy、KL、clip fraction 没有显示 PPO collapse/early-stop 饥饿。精确的 geometry vs collision vs critic/reward 因果排序仍为 `UNRESOLVED`。
 
-因此 A3 仍为 `CAPTURE_CURRICULUM_CONDITIONAL_HOLD`；只有在用户明确批准、且后续 gate 认为 initialization/visitation 是主要可修复瓶颈后，才可实现或训练 curriculum。
+因此 A3 已升级为 `A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED`：root-cause 足以支持 geometry/state-visitation 方向，但这只是用户审核候选；未经明确批准不得实现或训练 curriculum。
 
 ### A2 bounded evaluator blocker
 
 A2 的两个独立 bounded child 尝试均未在响应窗口内产生 fixed-seed per-checkpoint 双模式 artifact：第一 child 完成 checkpoint/provenance audit 但没有可复用的完整 evaluator 结果；第二 child 的短时 retry 也超时后被关闭。没有任何 partial 结果被冒充为完整评测，也没有启动长评测或训练。
 
-因此当前状态保持 `A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`，最终四分类为 `UNDETERMINED`；旧 100k 单次 argmax 仅保留为历史证据。下一步仍是找到/修复一个 bounded existing-checkpoint evaluator，完成固定 seeds 的 argmax+sample 后再分类；在此之前不做 A2 semantic audit、不扩 300k、不解锁其他依赖。
+因此当前状态保持 `A2_REEVALUATION_INCOMPLETE` / `A2_PENDING_FIXED_SEED_REEVALUATION`，最终四分类为 `UNDETERMINED`；旧 100k 单次 argmax 仅保留为历史证据。下一步仍是找到/修复一个 bounded existing-checkpoint evaluator，完成固定 seeds 的 argmax+sample 后再分类；在此之前不做 A2 semantic audit、不扩 300k。

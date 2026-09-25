@@ -592,7 +592,7 @@
     {
       "task_id": "A3",
       "task_name": "CAPTURE-CURRICULUM-DESIGN",
-      "status": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD",
+      "status": "A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED",
       "dependencies": [],
       "branch": "design/ac-capture-curriculum-20260921",
       "worktree": "/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921",
@@ -607,9 +607,9 @@
       "pid": null,
       "current_step": 0,
       "latest_formal": "M-CAP_500K_COMPLETE_WEAK_CAPTURE",
-      "result_classification": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD",
-      "next_gate": "MAPPO_CAP_ROOTCAUSE_READONLY_THEN_USER_REVIEW_IF_VISITATION_LIMITED",
-      "conditional_gate": "M-CAP_COMPLETE_AND_WEAK; ROOTCAUSE_MUST_SUPPORT_STATE_VISITATION_OR_SPARSE_SUCCESSFUL_GEOMETRY; IMPLEMENTATION_AND_TRAINING_REQUIRE_EXPLICIT_USER_APPROVAL",
+      "result_classification": "A3_JUSTIFIED_CANDIDATE",
+      "next_gate": "EXPLICIT_USER_APPROVAL_BEFORE_IMPLEMENTATION_OR_TRAINING",
+      "conditional_gate": "M-CAP_COMPLETE_AND_WEAK; ROOTCAUSE_SUPPORTS_STATE_VISITATION_AND_SPARSE_SUCCESSFUL_GEOMETRY; IMPLEMENTATION_AND_TRAINING_REQUIRE_EXPLICIT_USER_APPROVAL",
       "rootcause_audit": {
         "status": "COMPLETE_BOUNDED_READ_ONLY",
         "child_agent": "MAPPO-CAP-ROOTCAUSE",
@@ -842,7 +842,7 @@
       "B2": {"status": "B2_COMPLETE", "classification": "R0_FULL_COMPLETE_RANKING_SIGNAL_STATE_SUPPORT_LIMITED"},
       "B3": {"status": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC", "classification": "NO_RANKING_QUALIFIED_CRITIC"},
       "B4": {"status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC"},
-      "A3": {"status": "CAPTURE_CURRICULUM_CONDITIONAL_HOLD", "next": "MAPPO_CAP_ROOTCAUSE_READONLY_THEN_USER_REVIEW_IF_VISITATION_LIMITED"},
+      "A3": {"status": "A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED", "next": "EXPLICIT_USER_APPROVAL_BEFORE_IMPLEMENTATION_OR_TRAINING"},
       "M-COV": {"status": "COMPLETE_BUDGET", "step": 200000, "classification": "CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE"},
       "M-CAP": {"status": "COMPLETE_BUDGET", "step": 500000, "classification": "WEAK_CAPTURE_FAILED_OR_COLLISION_LIMITED"},
       "A4": {"status": "BLOCKED"},
@@ -1147,6 +1147,11 @@
       "at": "2026-09-25T15:41:20+08:00",
       "event": "A2_REEVALUATION_BOUNDED_RUNTIME_BLOCKED",
       "detail": "A2 old='A2_100K_FORMAL_COMPLETE_NO_STRICT_CE_SIGNAL'; new evidence=five checkpoints are present and the existing 100k single argmax artifact is available, but two independent bounded child attempts did not return a fixed-seed per-checkpoint argmax+sample artifact within their response windows; new='A2_REEVALUATION_INCOMPLETE / UNDETERMINED'; why changed=the requested re-evaluation cannot be scientifically finalized from one 100k point, and no long evaluation/training is authorized. Keep semantic audit and 300k extension locked."
+    },
+    {
+      "at": "2026-09-25T15:45:39+08:00",
+      "event": "A3_JUSTIFIED_CANDIDATE_AFTER_ROOTCAUSE",
+      "detail": "A3 old='CAPTURE_CURRICULUM_CONDITIONAL_HOLD'; new evidence=MAPPO-CAP root cause strongly supports GEOMETRY_LIMITED and STATE_VISITATION_LIMITED at the ring3 transition, while DETECTION_LIMITED is ruled out; new='A3_JUSTIFIED_CANDIDATE_USER_APPROVAL_REQUIRED'; why changed=the registered root-cause gate is satisfied, but implementation and training remain prohibited until explicit user approval."
     }
   ]
 }
