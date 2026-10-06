@@ -39,6 +39,34 @@ fresh scratch，预算 100,000 joint decision steps；固定评估 checkpoint：
 
 每个评估点报告：normal capture、stationary capture、2+ 与 3+ coalition visitation、collision/boundary、capture time（mean/median/p90 与 success n；删失与失败单列，不填造时间）。保留 argmax/sample 分列。完成后按 A learnable / B partial learning / C same failure as M-CAP 分类，并明确单 seed 与每模式20局的 screen 限制。
 
-## 5. 运行记录
+## 5. 运行结果
 
-训练、评估和结论待本次正式 run 写回。运行 artifact 路径：`artifacts/2026-10-06_mappo_capture_scratch/`。
+正式 run：`artifacts/2026-10-06_mappo_capture_scratch/run_seed2026091501/`；GPU0；fresh run，未 resume；100,000/100,000 joint decision steps；391 PPO updates；状态 `COMPLETE_BUDGET`。固定 seed、actor/value/ValueNorm 初始 hash 与 M-COV 正控一致。每个 checkpoint argmax/sample 各 20 episodes。0/25k/50k/75k/100k 均完成。PPO 数值 telemetry 保持 finite；没有因指标提前停止。
+
+| steps | mode | normal capture | stationary capture | 2+ visited | 3+ visited | collision | capture time |
+|---:|---|---:|---:|---:|---:|---:|---|
+| 0 | argmax | 0/20 | 0/20 | 0/20 | 0/20 | 20/20 | 无成功，20 删失 |
+| 0 | sample | 0/20 | 0/20 | 0/20 | 0/20 | 20/20 | 无成功，20 删失 |
+| 25k | argmax | 0/20 | 0/20 | 0/20 | 0/20 | 0/20 | 无成功；20 局到 3000-step horizon |
+| 25k | sample | 0/20 | 0/20 | 0/20 | 0/20 | 14/20 | 无成功，20 删失 |
+| 50k | argmax | 0/20 | 0/20 | 1/20 | 0/20 | 20/20 | 无成功，20 删失 |
+| 50k | sample | 1/20 | 0/20 | 1/20 | 1/20 | 19/20 | 唯一成功 924s；19 删失 |
+| 75k | argmax | 0/20 | 0/20 | 15/20 | 3/20 | 20/20 | 无成功，20 删失 |
+| 75k | sample | 0/20 | 0/20 | 3/20 | 0/20 | 20/20 | 无成功，20 删失 |
+| 100k | argmax | 0/20 | 0/20 | 14/20 | 4/20 | 20/20 | 无成功，20 删失 |
+| 100k | sample | 0/20 | 0/20 | 8/20 | 2/20 | 20/20 | 无成功，20 删失 |
+
+碰撞含边界/障碍/agent collision；其中 25k argmax 是唯一无碰撞的评估点，但 20 局均未进入 ring2 或完成 capture。100k 环形占位明显高于初始化，不过两种动作模式最终都 20/20 collision。时间只对成功 episode 计算；删失 episode 不填入虚构 capture time。评估报告逐 episode 保存在对应 `eval_step_*.json`。
+
+## 6. 结论
+
+**分类 B：partial learning。** Scratch MAPPO 在 capture 前驱几何上有变化：50k sample 出现 1 次 normal capture（924s），75k/100k 出现 ring2/3 coalition visitation。这个信号没有持续成稳定 capture：25k 与 75k 的 capture 均为 0/40，100k 为 0/40，而且 100k 两个模式 collision 都是 20/20。因此不能回答为“A：MAPPO capture learnable”。
+
+相对于 2026-09-23 的 M-CAP 500k 失败合同（终点 4/40 capture、36/40 collision），本次 100k endpoint 更接近同一种失败形态，尽管中途出现一个 sample capture 与后续 ring 访问。最合适的总结是“有 partial capture-geometry 信号，但没有学会可靠 capture”；不是成功复现，也没有证据支持超出 100k 继续扩预算。单 seed、每模式20局是 screen，不构成多种子统计结论。
+
+### 运行器/成本观察
+
+- 正式评估没有训练数据泄漏；argmax/sample 各用固定 evaluation seed base，隔离于训练 stream。
+- 25k 评估完成 40 episodes 用时约 49 分钟，是全程最慢的一点；其余点评估约 1–6 分钟。仿真 CPU wall time 是主要成本，GPU0 利用率大多低于 10%，显存余量充足。
+- `progress.json` 的 `steps_per_second` / `eta_seconds` 把 checkpoint 后的评估等待时间计入统计，因此 25k 后 ETA 会高估纯训练时间；训练 step 仍连续推进，所有 checkpoint 有效。
+- 本次没有发现需要改动环境、架构或 PPO 算法的代码问题。唯一 runner 改动是增加 `--budget` CLI 覆盖以准确执行 100k；actor、critic、reward 函数、PPO 更新和 observation 实现均保持原合同。
