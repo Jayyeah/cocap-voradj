@@ -4,7 +4,7 @@
 
 ## 当前事实源
 
-- MASTER branch：`ops/ac-master-dag-20260921`，当前 runtime reconciliation HEAD 为 `ab7cbd52`，已用命令级 proxy `127.0.0.1:17892` fetch，中央 worktree 干净。基于 `ops/training-performance-sync-20260921`；禁止 stale `17891`。
+- MASTER branch：`ops/ac-master-dag-20260921`。本次 2026-10-06 恢复起点及 fetch 时的中央 HEAD 为 `e1c5032614b1c42ecbf1ce3cb845ff7919c9acf1`；最新运行事实见本文件末尾 `2026-10-06 SERVER RECOVERY RECONCILIATION`。只使用命令级 proxy `127.0.0.1:17892`；禁止 stale `17891`。
 - remote：`https://github.com/Jayyeah/cocap-voradj.git`；同步使用命令级 proxy `127.0.0.1:17892`，未修改 global git、`.bashrc` 或 system proxy。
 - 训练同步事实：`docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md` 及其 `artifacts/2026-09-21_training_performance_sync/`。
 - IQN 恢复/存储事实：`docs/ops/Z05_Z07_RECOVERY_STATUS_20260921_ZH.md`、`docs/ops/Z05_Z07_LATEST_ONLY_FULL_RESUME_AUDIT_20260920_ZH.md`。
@@ -44,11 +44,11 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
-| A1 | A1_CONTROL_FORMAL_RUNNING | `control/a1-no-entropy-20260925` @ `0c02324`；clean worktree `/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925` | PID 2213786 / tmux `a1_no_entropy_formal_20260925` / physical GPU0；fresh 0→100k；当前约 36260 步；25k telemetry finite |
+| A1 | A1_CONTROL_FORMAL_COMPLETE_PENDING_EVALUATION | `control/a1-no-entropy-20260925` @ `4baeccb`；`/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925` | 100k 训练完成；checkpoint 与 resolved config 已登记；兼容评估器未找到，分类 `EVALUATION_INCOMPLETE`；无 live PID/tmux |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
 | B2 | B2_COMPLETE | `experiment/ac-bc-counterfactual-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-counterfactual-critic-20260921` | 128/128 anchors、1152/1152 branches；alternative top-1 0.7734；R1 draft eligible 但未自动解锁 |
 | A2 | A2_TRANSIENT_LEARNING_CLASSIFIED | `experiment/ac-discrete-sac-preflight-20260921` @ `59faae3` / `/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921` | fixed-seed 结果不变；bounded semantic audit 已完成（4 tests passed），未发现公式/符号/终止掩码错误；`0.98*log(9)` 使 alpha≈0.979，仍不扩 300k、不启动新训练 |
-| A3 | A3_I0_FORMAL_RUNNING | `design/ac-capture-curriculum-20260921` @ `88d8fa3` / `/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | PID 2211136 / tmux `a3_i0_formal_20260925` / physical GPU1；I0 fresh 0→100k；当前约 40783 步；I1–I3 未启动 |
+| A3 | A3_I0_FORMAL_COMPLETE_PENDING_EVALUATION | `design/ac-capture-curriculum-20260921` @ `b6cebad`；`/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921` | I0 fresh 0→100k；I0 eval 未执行；I1–I3 未运行且保持锁定 |
 | M-COV | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | contemporaneous Pure Coverage positive control 200k；argmax/sample CE 80%/100%；不改写 A0 |
 | M-CAP | COMPLETE_BUDGET | `experiment/mappo-scratch-primitives-20260923` / `/home/yjq/rl/CoCap1/cocap-voradj-mappo-scratch-20260923` | NormSense V2 Pure Capture 500k；终点评估 4/40 capture、36/40 collision；12 次 collision before ring2、19 次 during ring2、5 次 during ring3、0 次 detection 前；分解工件已交接 |
 | B3 | B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC | MASTER-only comparison / [summary.json](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/summary.json) | B1 exploratory candidates 未优于 historical naive；B2 raw Q 不是 learned checkpoint；[root-cause summary](/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-09-22_b3_critic_ranking_gate/root_cause_summary.json)；不注册 BEST_PRETRAINED_CRITIC |
@@ -296,3 +296,61 @@ A2 的两个早期 bounded child 曾因响应窗口未产出完整结果而关�
 - A1 control 首次启动在 step 0 前因历史配置 `train_mode: voradj_coverage` 未被当前 trainer 接受而退出；没有产生正式步数或科学结果。已提交兼容修复 `0c02324`，其余科学配置不变；2 个 A1 control contract tests 与 32-step CPU smoke 通过后重新启动。
 - A1 control 当前运行：branch `control/a1-no-entropy-20260925` @ `0c02324`，tmux `a1_no_entropy_formal_20260925`，PID `2213786`，physical GPU0，fresh 0→100k，run root `/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925/artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925`。21:28:02 观测约 `36260` 步；25k 附近 telemetry finite；实际生效 `iqn.checkpoint_freq=100000`，尚无中间 step checkpoint；唯一注册科学变量仍为 `actor_entropy_alpha=0.0`，尚无结果分类。
 - 下一检查点：两个任务在 100k final checkpoint/evaluation 处做正式门控；A3 只有 I0 完成并通过审查后才可讨论 I1 promotion，A1 不自动扩展 300k。
+
+## 2026-10-06 SERVER RECOVERY RECONCILIATION
+
+本节覆盖 2026-09-25 已同步的中央状态之后，服务器上可验证的最新事实；旧 event_log 与历史小节保留原样。中央 JSON 同步包含 38 个 worktree 条目的路径、分支、HEAD、upstream、ahead/behind、完整 porcelain status 与每个 worktree 最新 10 个 commit：`artifacts/2026-09-21_ac_master_dag/state.json` → `server_recovery.worktree_audit.worktrees`。
+
+### 云端与服务器恢复
+
+- 云端中央起点：`origin/ops/ac-master-dag-20260921` @ `e1c5032614b1c42ecbf1ce3cb845ff7919c9acf1`；中央分支最后一次已知 push 为 2026-09-25。命令级 mihomo `127.0.0.1:17892` 下 `git fetch --all --prune` 于 `2026-10-06 14:15:03 +08:00` 成功，fetch 前服务器中央 HEAD 与云端相同。GitHub 默认分支为 `main` @ `a5814f49fa29d869cdc3fb8d8e0df4722aa11f00`。
+- 主机 `super`、用户 `yjq`。截至 `2026-10-06 14:12:29 +08:00`，两张 RTX A6000 均为 0% util、约 18–19 MiB 显存占用；`tmux` 只有 `mihomo`。未发现 CoCap、IQN、MAPPO、SAC 或 Local-Q 训练/评估进程。
+- 根盘 `/dev/nvme0n1p2`：915 GiB 总量、808 GiB 已用、61 GiB 可用、94% 使用；inode 使用 7%。标记 `STORAGE_ATTENTION_REQUIRED`。`/home/yjq/rl/CoCap1` 约 182 GiB；较大的工作目录约 44 GiB（主 `cocap-voradj`、`cocap-voradj-small-step-ac` 各自）、16 GiB（`cocap-voradj-allagent-oldmix`、IQN runtime），11 GiB（TD3 stage1）。没有删除文件或清理目录。
+- 全部 worktree 列表有 38 条：36 个路径当前存在、2 个旧 `/tmp` 注册路径缺失；其中 17 个现存 worktree 有 4,243 条 status 记录。dirty 项均保留，未 reset、clean、stash 或 checkout 覆盖。主 worktree 有 1,967 条历史 dirty 项；A1 evaluator worktree 的 3 条 95-byte log 是本次加载失败留下的 import/debug 日志。所有路径和完整 status 明细见中央 JSON。
+- 对 `/home/yjq/rl/CoCap1/` 下 YAML/JSON/CSV/MD/log 做 2026-09-25 后时间扫描，未发现新训练、正式评估、选择报告或状态报告。唯一新文件是上述 3 个 A1 evaluator debug log；没有 rollout。`A1 fresh 300k`、`A2b`、`A3 I1/I2/I3`、新 MAPPO Capture、IQN 训练或 IQN 评测均未发生。
+
+### 任务状态
+
+| 任务 | 云端最后已知 | 服务器最新证据 | 当前分类 | 本地分支 / HEAD 与同步 | 下一门禁 |
+|---|---|---|---|---|---|
+| A0 | 200k reproduction PASS | 没有更新的训练或评估 | `COMPLETE / REPRO_PASS` | `experiment/ac-mappo-cov-repro-20260921` @ `668d5f7`，已同步 | 保留为 positive control；不重跑 |
+| A1 | matched no-entropy 0→100k，final eval pending | 100k checkpoint 存在；与已注册 Local-AC evaluator 架构不兼容，未产生有效 rollout | `COMPLETE_PENDING_EVALUATION / EVALUATION_INCOMPLETE`；本次 evaluator 加载属 `FAILED_ENGINEERING` | `control/a1-no-entropy-20260925` @ `4baeccb` 待本次 push；`.05` evaluator/results `evaluation/a1-entropy-localq-cov-20260923` @ `a41b61b` 已同步 | 提供兼容的冻结推理 evaluator，完成固定 seed 20+20 后再比较；不训练 |
+| A2 | `A2_TRANSIENT_LEARNING`；实现语义正确、温度目标强；不扩 300k | 9/25 后无新训练或报告 | `HOLD / A2_TRANSIENT_LEARNING` | `experiment/ac-discrete-sac-preflight-20260921` @ `00ee202` 已同步 | 不扩训、不启动 A2b |
+| A3 | I0 0→100k 完成，final eval pending | 仅 I0；没有 I1–I3；未发现可匹配注册合同的 20+20 evaluator | `COMPLETE_PENDING_EVALUATION` | `design/ac-capture-curriculum-20260921` @ `b6cebad` 待本次 push | 明确 IQN sample 语义、固定独立 seeds、capture/ring 指标和 critic EV 口径后做纯推理；I1–I3 锁定 |
+| A4 | BLOCKED | 无实现或 run | `BLOCKED` | 无分支 | 保持 blocked |
+| M-COV | 200k complete | 无更新；argmax/sample strict CE 80%/100%，collision 5%/0 | `COMPLETE` | `experiment/mappo-scratch-primitives-20260923` @ `5ae4ce4` 已 fast-forward 同步 | 保留为 contemporaneous control |
+| M-CAP | 500k complete | 无更新；4/40 capture、36/40 collision；已有 collision/geometry 分解 | `COMPLETE` | 同上，`5ae4ce4` decomposition 已同步 | 作为 A3 根因输入；不训练 |
+| B1 | COMPLETE | 无新数据；已有支持扩展但无全局 ranking stability | `COMPLETE` | `experiment/ac-bc-exploratory-critic-20260921` @ `4ad4cb7`，upstream 已同步 | 保留 handoff |
+| B2 | COMPLETE | 无新数据；128/128 anchors、1152/1152 branches；alternative top-1 0.7734 | `COMPLETE` | `experiment/ac-bc-counterfactual-critic-20260921` @ `4ad4cb7`，upstream 已同步 | 不自动解锁 R1 |
+| B3 | 无 qualified critic | 无新排名/比较 | `COMPLETE / NO_RANKING_QUALIFIED_CRITIC` | 中央分支本次以 `e1c5032` 为父提交 | 保持 no-qualified-critic |
+| B4 | 被 B3 阻断 | 无 run | `BLOCKED` | 无分支 | 不启动 |
+| Z05 | 700k complete；选 600k；独立评测 complete | 无新 IQN 训练/评估 | `COMPLETE` | runtime `experiment/iqn-z-unified-decay-dual-curriculum-20260919` @ `f0c0dfc`；独立证据 `evaluation/iqn-z05-independent-20260923` @ `2eeec7e` | 不启动新训练 |
+| Z07 | 700k complete；选 300k | 无新 IQN 训练/评估 | `COMPLETE` | 同 runtime branch @ `f0c0dfc` | 不启动新训练 |
+
+### A1 与 A3 评测门禁证据
+
+**A1 no-entropy control**：terminal checkpoint `artifacts/2026-09-25_a1_matched_no_entropy_control/a1_matched_no_entropy_localq_cov_20260925/checkpoints/final_step_100000.pt` 为 17,907,187 bytes，SHA256 `12ce59dfed9fe07e3a053a33253f8c919411acc90f95f6e6cd194bf5afa39f39`。resolved `effective_config.yaml` 为 18,203 bytes，SHA256 `673e401696f3a05eb1ba82d49d895aa676b39fc5f9876b4104835130f7260511`；正式和 CPU smoke 的 config/preflight 元数据已放入 A1 分支提交 `4baeccb`。已注册 `.05` evaluator 接收 `ps-local-discrete-ac-v1` / `SharedLocalActor` checkpoint；no-entropy 输出则是 `CoCapIQN` 样式的 `config` / `extra` / `state_dict`，网络 keys 和维度不兼容。不能把架构不同的 checkpoint 直接喂给该 evaluator，也没有可靠的严格 state-dict adapter。此前 3 次加载尝试未执行 episode，`parameter_updates=0`。
+
+`.05` 100k 的独立评测路径为 `/home/yjq/rl/CoCap1/a1-eval-20260923/artifacts/2026-09-23_a1_independent_eval_40rollout/a1_independent_eval_20260923.json`。合同为 20 argmax + 20 sample、固定 seeds、3000 horizon、synchronized swept collision semantics；argmax 为 strict CE 13/20、collision 5/20、censored 2/20，sample strict CE 20/20、collision 0/20。no-entropy 评测尚无结果，不能据此判断 entropy protection、causality 或弱化假设；结论是 **`EVALUATION_INCOMPLETE`**。
+
+**A3 I0**：terminal `final_step_100000.pt` 为 17,907,315 bytes，SHA256 `b30946f2b693ee205ba2d472c0c80cfd2f71ec9e02812d52d8dfa1927a203e8f`；完整 resume 为 979,885,323 bytes，SHA256 `4c00abbb4579a89a709a7ce2f62ba0caaf32da6eab9f2a34a5e4917540ad6182`。resolved config 与两个 721-byte runtime preflight 文件已在 A3 branch commit `b6cebad` 留档。proposal §6.1 明确每 checkpoint 20 argmax + 20 sample，使用固定且独立于训练 RNG 的 episodes，但没有定义此 CoCapIQN policy 的 sample action 方式和 evaluation seed base；现有脚本未满足该完整合同。proposal/注册配置也没有为 IQN distributional critic 定义 scalar `explained variance` 口径。因此没有执行不完整评测，也没有替代指标冒充 EV。训练 telemetry 最后窗口 `recent_capture_rate=0.0`、`recent_collision_rate=0.97`、`recent_success_rate=0.02` 仅是训练流指标，不是 final evaluation。I1/I2/I3 均未启动。
+
+### 大文件与旧 resume
+
+以下大 resume 均仍在服务器且无对应活动进程；不进入 Git，本次没有删除：
+
+- Z07 stage3：`/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z07/stages/stage3/training/checkpoints/resume_latest.pt`，6,739,603,219 bytes，mtime 9/23 08:30。
+- Z05 stage3：`/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/training/checkpoints/resume_latest.pt`，6,370,640,979 bytes，mtime 9/23 07:41。
+- A3 I0 terminal resume：`/home/yjq/rl/CoCap1/ac-capture-curriculum-20260921/runs/a3_final_capture_init_i0_ring_anchor_20260925/checkpoints/resume_latest.pt`，979,885,323 bytes；hash 见上。
+- A2 100k resume：`/home/yjq/rl/CoCap1/ac-discrete-sac-preflight-20260921/artifacts/2026-09-23_discrete_sac_cov/a2_discrete_sac_cov_formal_20260923/resume_latest/full_resume.pt`，174,946,669 bytes。
+- A1 `.05` 100k resume：`/home/yjq/rl/CoCap1/ac-entropy-cov-20260921/artifacts/2026-09-23_entropy_localq_cov/a1_entropy_localq_cov_formal_20260923/resume_latest/full_resume.pt`，127,268,297 bytes。
+
+另有较早的 2026-08/09 MAPPO 与验证 resume，完整 path/size/mtime 列在中央 JSON `server_recovery.storage.resume_files_metadata_only`。没有修改、删除、上传任何 `.pt`、resume、replay 或 episode dump。
+
+### Git 分支同步
+
+第一轮 push 使用命令级 proxy `127.0.0.1:17892` 成功推送 9 个已审分支（8 个新分支、1 个 fast-forward）：`audit/a1-a2-cuda-root-cause-20260922` @ `8fd2401`、`control/a1-no-entropy-20260925` @ `0c02324`、`design/ac-capture-curriculum-20260921` @ `88d8fa3`、`evaluation/a1-entropy-localq-cov-20260923` @ `a41b61b`、`experiment/ac-discrete-sac-preflight-20260921` @ `00ee202`、`experiment/ac-entropy-cov-20260921` @ `78adf78`、`experiment/mappo-scratch-primitives-20260923` @ `5ae4ce4`、`fix/ac-capability-cap-mix-finite-20260920` @ `f69b0ef`、`repro/maadpg-20260823` @ `38a4149`。commit audit 未发现新增 >20 MiB blob。
+
+A1 control 的 4 个 resolved config/preflight 文件单独提交为 `4baeccb`，A3 I0 的 resolved config 与 preflight 文件提交为 `b6cebad`；本次最终同步将对两个分支做 fast-forward，并一并推送中央 DAG/state commit。`iqn-role-token-scratch` 与 `iqn-z-token-scratch` 各本地 ahead 1/behind 1 且有 dirty 文件；两边本地报告 blob 与 GitHub 已有的 `f3ae7bb` 相同。为避免非 fast-forward 和覆盖远端历史，本轮不推它们，也不 force push。所有 debug/raw/binary/ignored files 均留在本机并已列入 inventory。
+
+中央文件只改本文件与 `artifacts/2026-09-21_ac_master_dag/state.json`。中央同步仅采用普通 fast-forward，command-level mihomo `127.0.0.1:17892`；不修改 `.bashrc`、global/system proxy 或 remote。中央 reconciliation commit 作为 `e1c5032` 子提交包含于最终 push；push 后的实际中央 HEAD 与 remote ref 以 Git 记录/用户交付报告中的验证值为准。
