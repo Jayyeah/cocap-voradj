@@ -370,3 +370,12 @@ A1 control 的 4 个 resolved config/preflight 文件单独提交为 `4baeccb`�
 ### 2026-10-06 19:43 EXP-EVIDENCE-01 live reconciliation
 
 实验分支已新增并推送 formal launch preflight 快照 `evidence/local-global-20261006` @ `56a8b0a`。实时读取确认 tmux `iqn_evidence_phasea_20261006`、supervisor PID `14306`、训练 PID `14447/14446` 均仍存活；最近 heartbeat 为 19:43:18，Local-Binary 为 9k/2M、Global-Oracle 为 10k/2M，training metrics 已出现 finite optimizer loss 与更新计数。候选评估从 100k 开始，因此当前没有 screening evaluator 属预期；GPU0/GPU1 分别保持绑定，当前利用率约 9%/16%。此处仅为运行健康状态，不构成性能结论。中央 `EXP-EVIDENCE-01` state 已同步至实验分支 HEAD `56a8b0a` 和上述当前步数。
+
+### 2026-10-06 19:51 EXP-EVIDENCE-01 evaluator 诊断审计
+
+Phase-A Stage1 仍运行中：19:51:33 heartbeat 显示 Local-Binary PID `14447` 为 24k/2M、Global-Oracle PID `14446` 为 25k/2M；无 100k screening checkpoint。为满足目标的 Global token occupancy 与 entity truncation 诊断，修正发现的两项 evaluator 口径问题：occupancy 原先重复乘了观测槽总数，且 truncation 仅看 target 数是否超过容量，漏掉容量以内 token shortfall。现用“可见 active target token 数 / 累积 token capacity slots”计算 occupancy，并逐 agent-observation 报告 shortfall、capacity overflow 和合计 truncation。
+
+- 证据：新增 synthetic regression `test_global_diagnostics_measure_token_occupancy_and_shortfall_per_observation`（1 passed）；固定 Z05 selected checkpoint `8ee5c162...d095` 的只读短 evaluator smoke complete，Mixed occupancy `0.375`，shortfall/overflow 均 0，optimizer/replay/training RNG/checkpoint 均未变化。紧凑报告为实验分支 `artifacts/2026-10-06_iqn_evidence_comparison/preflight/global_diagnostic_correction.json`。
+- 实验分支已推送至 `evidence/local-global-20261006` @ `7e7371b`。没有重启训练；屏幕筛选 evaluator 由独立子进程从更新后的脚本文件启动。启动中的 supervisor 已在内存载入旧 final evaluator，因此 curriculum 完成且选择报告齐全后，需启动 fresh corrected supervisor pass；其会复用已有 selections、不重训，使用同一正式 held-out seed manifest 输出到 `final_heldout_50_corrected`。旧输出保留作审计，不作为最终诊断报告。
+
+中央 `EXP-EVIDENCE-01` state 已同步至上述 branch HEAD 与实时训练进度；不据短 smoke 或 training loss 作性能结论。

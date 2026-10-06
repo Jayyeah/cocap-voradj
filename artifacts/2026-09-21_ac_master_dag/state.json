@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-06T19:43:20+08:00",
+  "updated_at": "2026-10-06T19:51:35+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -1475,7 +1475,7 @@
       ],
       "branch": "evidence/local-global-20261006",
       "worktree": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
-      "head": "56a8b0a4e33b3bf41d71c6f14fc2dec997a331f2",
+      "head": "7e7371b86850e3a82fb667879779081dbe148b2b",
       "child_agent": null,
       "scientific_question": "在相同 network、reward、curriculum、task、seed family 下，敌情 evidence representation/propagation 是否改善 Mixed capture-and-recovery coordination？",
       "allowed_changes": "仅运行用户目标文件明确授权的 Local-Binary 与 Global-Oracle Phase-A；Z05 不重训；保留新实验代码、紧凑报告与中央状态。",
@@ -1497,8 +1497,8 @@
       "tmux": "iqn_evidence_phasea_20261006",
       "pid": 14306,
       "current_step": {
-        "local_binary": 9000,
-        "global_oracle": 10000
+        "local_binary": 24000,
+        "global_oracle": 25000
       },
       "stage_plan": {
         "stage1": {
@@ -1527,13 +1527,14 @@
         "checkpoint_cpu_cuda_smoke": "PASS",
         "independent_evaluator_smoke": "PASS",
         "launch_preflight_at": "2026-10-06T19:37:46+08:00",
-        "formal_launch_snapshot_commit": "56a8b0a"
+        "formal_launch_snapshot_commit": "56a8b0a",
+        "global_diagnostic_correction": "PASS: occupancy denominator and per-observation token shortfall; test and immutable Z05 evaluator smoke passed."
       },
-      "latest_formal": "Stage1 training continues; both PIDs alive with current heartbeats; Local-Binary 9k/2M and Global-Oracle 10k/2M; optimizer updates finite; no screening checkpoint yet.",
+      "latest_formal": "Stage1 training PIDs alive; Local-Binary 24k/2M and Global-Oracle 25k/2M at 19:51:33; finite optimizer metrics; no 100k checkpoint screening yet. Global evaluator diagnostics corrected and smoke verified.",
       "result_classification": "IN_PROGRESS_NO_SCIENTIFIC_RESULT",
-      "next_gate": "Monitor training heartbeat and detached 20-episode/scene screening; complete stage selection before promotion; then repeat for Stage2/Stage3 and frozen paired 50-episode held-out final evaluation for Local/Z05/Global.",
+      "next_gate": "Continue Stage1 training and detached 20-episode/scene screening from 100k checkpoints. Stage promotion waits for balanced_floor selection. After both curricula finish, launch a fresh corrected supervisor pass that reuses existing selected checkpoints and writes paired 50-episode held-out reports under final_heldout_50_corrected; do not restart training.",
       "user_approval_required": false,
-      "updated_at": "2026-10-06T19:43:20+08:00"
+      "updated_at": "2026-10-06T19:51:35+08:00"
     }
   ],
   "current_snapshot": {
@@ -22333,7 +22334,7 @@
       "central_head_at_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
       "force_push_used": false
     },
-    "latest_reconciliation_at": "2026-10-06T19:43:20+08:00",
-    "latest_reconciliation_note": "EXP-EVIDENCE-01 live reconciliation: supervisor and both Stage1 training PIDs alive; Local-Binary 9k and Global-Oracle 10k; GPUs assigned as registered; screening not yet due."
+    "latest_reconciliation_at": "2026-10-06T19:51:35+08:00",
+    "latest_reconciliation_note": "EXP-EVIDENCE-01 live at Stage1 24k/25k; evaluator audit corrected Global token occupancy and shortfall diagnostics without restarting training; new evidence branch HEAD pushed."
   }
 }
