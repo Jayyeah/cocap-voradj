@@ -101,6 +101,50 @@ class VorAdjEnv(CoCapEnv):
             raise ValueError("Static capture scale must be in [0.25, 1]")
         self._validate_pure_capture_all_capture_contract()
 
+    def _policy_evidence_mode(self) -> str:
+        """Return the policy-only enemy evidence representation.
+
+        The historical Z path remains the default. Alternate modes only affect
+        observation construction; environment role/reward logic still uses the
+        existing local VCT-LS contract.
+        """
+
+        mode = str(self.per_cfg.get("policy_evidence_mode", "z_state" if self._z_state_enabled else "none"))
+        mode = mode.strip().lower()
+        if mode not in {"none", "z_state", "local_binary", "global_oracle"}:
+            raise ValueError("perception.policy_evidence_mode must be none, z_state, local_binary, or global_oracle")
+        if mode == "z_state" and not self._z_state_enabled:
+            raise ValueError("policy_evidence_mode=z_state requires z_state.enabled")
+        if mode != "z_state" and self._z_state_enabled:
+            raise ValueError("recursive Z updates are only valid for policy_evidence_mode=z_state")
+        return mode
+
+    def _policy_direct_enemy_ids(self, idx: int, data: Optional[Dict[str, Any]] = None) -> List[int]:
+        """Enemy target IDs directly visible under the active local sensor rule."""
+
+        if self._vct_ls_enabled():
+            return [int(j) for j in self._vct_ls_direct_enemy_ids_for_pursuer(idx)]
+        if data is None:
+            data = self._capture_voronoi_map()
+        key = ("pursuer", idx)
+        ids = {
+            int(nk[1])
+            for nk in data.get("adjacency", {}).get(key, set())
+            if nk[0] == "evader" and not self.evaders[int(nk[1])].deactivated
+        }
+        ids.update(self._zone_extra_evader_ids_for_pursuer(idx, data))
+        return sorted(j for j in ids if 0 <= j < len(self.evaders) and not self.evaders[j].deactivated)
+
+    def _policy_evidence_value(self, idx: int, data: Dict[str, Any]) -> float:
+        mode = self._policy_evidence_mode()
+        if mode == "z_state":
+            return float(self.z_state[idx]) if idx < len(self.z_state) else 0.0
+        if mode == "local_binary":
+            return float(bool(self._policy_direct_enemy_ids(idx, data)))
+        if mode == "global_oracle":
+            return float(any(not evader.deactivated for evader in self.evaders))
+        return 0.0
+
     def reset(self, *args, **kwargs):
         self.coverage_hold_reward_claim_steps = 0
         self.coverage_hold_reward_steps_by_phase = {
@@ -1279,6 +1323,7 @@ class VorAdjEnv(CoCapEnv):
         max_o = int(self.per_cfg.get("max_obstacle_num", 5))
         data = self._capture_voronoi_map()
         coverage_data = self._coverage_voronoi_map()
+        evidence_mode = self._policy_evidence_mode()
         world_frame = str(self.per_cfg.get("observation_frame", "robot")).strip().lower() in {"world", "world_frame"}
         key = ("pursuer", idx)
         adjacency = data.get("adjacency", {}).get(key, set())
@@ -1381,8 +1426,11 @@ class VorAdjEnv(CoCapEnv):
             ]
             if include_is_pursuing:
                 self_feat.append(float(is_pursuing))
-        if include_z_state:
-            self_feat.append(float(self.z_state[idx]) if idx < len(self.z_state) else 0.0)
+        has_evidence_slot = evidence_mode in {"local_binary", "global_oracle"} or (
+            evidence_mode == "z_state" and include_z_state
+        )
+        if has_evidence_slot:
+            self_feat.append(self._policy_evidence_value(idx, data))
 
         friend_ids = [nk[1] for nk in adjacency if nk[0] == "pursuer" and not self.pursuers[nk[1]].deactivated]
         def friend_sort(j: int) -> Tuple[int, int, float]:
@@ -1450,11 +1498,13 @@ class VorAdjEnv(CoCapEnv):
                 friend_feature.append(
                     float(self._effective_is_pursuing(j, self._has_enemy_neighbor(data, ("pursuer", j))))
                 )
-            if include_z_state:
-                friend_feature.append(float(self.z_state[j]) if j < len(self.z_state) else 0.0)
+            if has_evidence_slot:
+                friend_feature.append(self._policy_evidence_value(j, data))
             pursuer_feats.append(friend_feature)
 
-        if self._vct_ls_enabled():
+        if evidence_mode == "global_oracle":
+            enemy_ids = [j for j, evader in enumerate(self.evaders) if not evader.deactivated]
+        elif self._vct_ls_enabled():
             enemy_ids = sorted(
                 self._vct_ls_direct_enemy_ids_for_pursuer(idx),
                 key=lambda j: float(np.linalg.norm(self._position(self.evaders[j]) - self._position(pursuer))),
@@ -1540,7 +1590,11 @@ class VorAdjEnv(CoCapEnv):
         masks += [True] * min(len(evader_feats), max_e) + [False] * max(0, max_e - len(evader_feats))
         masks += [True] * min(len(obstacle_feats), max_o) + [False] * max(0, max_o - len(obstacle_feats))
         types = [0] + [1] * max_p + [2] * max_e + [3] * max_o
-        friend_dim = 6 + int(include_is_pursuing) + int(include_z_state)
+        friend_dim = 6 + int(
+            include_is_pursuing
+            or include_z_state
+            or has_evidence_slot
+        )
         return {
             "self": np.asarray(self_feat, dtype=np.float32),
             "pursuers": self._pad(pursuer_feats, max_p, len(pursuer_feats[0]) if pursuer_feats else friend_dim),
