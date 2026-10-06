@@ -10,14 +10,20 @@ kept alive across all waves.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import copy
 import hashlib
 import json
 import math
+import multiprocessing
+import os
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+for _thread_env in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ[_thread_env] = "1"
 
 import numpy as np
 import torch
@@ -39,7 +45,7 @@ from tools.rollout_voradj_visual import act_evaders, render_gif, snapshot_env
 from cocap_voradj.evaluation.mission_events import MissionEventTracker, snapshot
 
 
-SCHEMA = "z05-repeated-arrival-demo-v1"
+SCHEMA = "z05-repeated-arrival-eval-v2"
 REGIMES = ("PERSIST-A", "PERSIST-B", "PERSIST-C")
 DT_SECONDS = 0.5
 WAVES = 3
@@ -47,6 +53,44 @@ TARGETS_PER_WAVE = 3
 POST_CAPTURE_WINDOW = 700
 GLOBAL_HORIZON = 3000
 EXPECTED_CHECKPOINT_SHA256 = "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095"
+REPRESENTATIVE_GIFS_PER_REGIME = 5
+WORKER_THREAD_LIMIT = 1
+_WORKER_MODEL: CoCapIQN | None = None
+
+
+def _available_memory_gib() -> float:
+    try:
+        rows = Path("/proc/meminfo").read_text(encoding="ascii").splitlines()
+        available_kib = int(next(row.split()[1] for row in rows if row.startswith("MemAvailable:")))
+        return available_kib / (1024.0 * 1024.0)
+    except (OSError, StopIteration, ValueError):
+        return 0.0
+
+
+def choose_worker_count(requested: int | None = None) -> dict[str, Any]:
+    """Choose a small rollout pool while leaving most CPU for other jobs."""
+    cpu_count = max(1, int(os.cpu_count() or 1))
+    load_1m = float(os.getloadavg()[0]) if hasattr(os, "getloadavg") else 0.0
+    available_cpu_estimate = max(1, int(cpu_count - load_1m))
+    available_memory_gib = _available_memory_gib()
+    safe_cap = max(1, min(
+        4,
+        max(1, cpu_count // 32),
+        max(1, available_cpu_estimate // 16),
+        max(1, int(available_memory_gib // 8)) if available_memory_gib else 1,
+    ))
+    workers = min(safe_cap, int(requested)) if requested is not None else safe_cap
+    if requested is not None and int(requested) < 1:
+        raise ValueError("--workers must be >= 1 when specified")
+    return {
+        "cpu_count": cpu_count,
+        "load_average_1m": load_1m,
+        "available_cpu_estimate": available_cpu_estimate,
+        "available_memory_gib": available_memory_gib,
+        "safe_worker_cap": safe_cap,
+        "selected_workers": max(1, workers),
+        "thread_limit_per_worker": WORKER_THREAD_LIMIT,
+    }
 
 
 def atomic_json(path: Path, payload: Any) -> None:
@@ -73,6 +117,41 @@ def object_state_hash(model: CoCapIQN) -> str:
         digest.update(np.asarray(tensor.shape, dtype=np.int64).tobytes())
         digest.update(tensor.tobytes())
     return digest.hexdigest()
+
+
+def _worker_init(checkpoint_path: str, expected_sha256: str) -> None:
+    global _WORKER_MODEL
+    torch.set_num_threads(WORKER_THREAD_LIMIT)
+    try:
+        torch.set_num_interop_threads(WORKER_THREAD_LIMIT)
+    except RuntimeError:
+        pass
+    if sha256_file(Path(checkpoint_path)) != expected_sha256:
+        raise RuntimeError("checkpoint hash changed before rollout worker initialization")
+    _WORKER_MODEL = CoCapIQN.load(checkpoint_path, device="cpu").eval()
+    if _WORKER_MODEL.config.include_z_state is not True or _WORKER_MODEL.config.include_is_pursuing is not False:
+        raise RuntimeError("worker loaded a policy outside the registered Z-state contract")
+    if _WORKER_MODEL.config.pursuing_late_fusion:
+        raise RuntimeError("worker loaded the forbidden pursuing late-fusion architecture")
+
+
+def _run_episode_worker(job: tuple[Any, ...]) -> dict[str, Any]:
+    if _WORKER_MODEL is None:
+        raise RuntimeError("rollout worker model was not initialized")
+    (config_path, regime, episode_index, initial_seed, refresh_seed, delay_seed,
+     output_dir, representative_gif, max_gif_frames) = job
+    before_hash = object_state_hash(_WORKER_MODEL)
+    row = run_episode(
+        _WORKER_MODEL, Path(config_path), str(regime), int(episode_index),
+        int(initial_seed), int(refresh_seed), int(delay_seed), Path(output_dir),
+        bool(representative_gif), int(max_gif_frames),
+    )
+    after_hash = object_state_hash(_WORKER_MODEL)
+    if before_hash != after_hash:
+        raise RuntimeError("rollout worker policy state changed during evaluation")
+    row["worker_model_state_sha256_before"] = before_hash
+    row["worker_model_state_sha256_after"] = after_hash
+    return row
 
 
 def stable_hash(value: Any) -> str:
@@ -272,7 +351,7 @@ def _transition_summary(wave_rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 @torch.no_grad()
 def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: int,
-                initial_seed: int, refresh_seed: int, output_dir: Path,
+                initial_seed: int, refresh_seed: int, delay_seed: int, output_dir: Path,
                 representative_gif: bool, max_gif_frames: int) -> dict[str, Any]:
     cfg = formal.formal.resolved(config_path)
     cfg = formal.configure_large_case(cfg, pursuers=12, evaders=3, obstacles=3, post_window=POST_CAPTURE_WINDOW)
@@ -313,7 +392,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         target.wave_id = 1
         target.target_generation = 1
     refresh_rng = np.random.default_rng(int(refresh_seed))
-    delay_rng = np.random.default_rng(int(refresh_seed) ^ 0x5A05)
+    delay_rng = np.random.default_rng(int(delay_seed))
     apf_agents = [ApfAgent(e.a, e.w) for e in env.evaders]
     frames: list[dict[str, Any]] = []
     wave_rows: list[dict[str, Any]] = []
@@ -700,7 +779,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         "episode_index": int(episode_index),
         "initial_world_seed": int(initial_seed),
         "target_refresh_rng_seed": int(refresh_seed),
-        "delay_rng_seed": int(refresh_seed ^ 0x5A05),
+        "delay_rng_seed": int(delay_seed),
         "paired_seeds_claim": "paired initial-world seeds and paired target-refresh RNG streams; refreshed target coordinates can differ after validity rejection",
         "global_horizon_steps": GLOBAL_HORIZON,
         "decision_dt_seconds": DT_SECONDS,
@@ -754,7 +833,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
     episode = finite_json(episode)
     atomic_json(event_path, episode)
     if representative_gif and frames:
-        gif_path = output_dir / "gifs" / f"{regime.lower()}_representative.gif"
+        gif_path = output_dir / "gifs" / f"{regime.lower()}_e{episode_index:02d}_representative.gif"
         render_record = render_gif(frames, gif_path, max_gif_frames, 70, 100, "mixed", False, False, False, False)
         episode["gif_path"] = str(gif_path)
         episode["gif_frames"] = render_record
@@ -807,6 +886,8 @@ def main() -> int:
     parser.add_argument("--episodes-per-regime", type=int, default=3)
     parser.add_argument("--initial-seed-base", type=int, default=2026100601)
     parser.add_argument("--refresh-seed-base", type=int, default=2026800601)
+    parser.add_argument("--delay-seed-base", type=int, default=2026900601)
+    parser.add_argument("--workers", type=int, default=None, help="rollout process count; defaults to the resource-aware cap")
     parser.add_argument("--device", choices=("cpu",), default="cpu")
     parser.add_argument("--max-gif-frames", type=int, default=300)
     args = parser.parse_args()
@@ -822,33 +903,70 @@ def main() -> int:
     if actual_sha != EXPECTED_CHECKPOINT_SHA256:
         raise SystemExit(f"checkpoint hash conflicts with designated Z05 policy: {actual_sha}")
     config_path = args.config.resolve()
+    torch.set_num_threads(WORKER_THREAD_LIMIT)
+    try:
+        torch.set_num_interop_threads(WORKER_THREAD_LIMIT)
+    except RuntimeError:
+        pass
     model = CoCapIQN.load(str(checkpoint), device="cpu").eval()
     if model.config.include_z_state is not True or model.config.include_is_pursuing is not False:
         raise SystemExit("selected policy is not the registered Z-state contract")
     if model.config.pursuing_late_fusion:
         raise SystemExit("selected policy uses a forbidden pursuing late-fusion architecture")
     model_hash_before = object_state_hash(model)
+    resources = choose_worker_count(args.workers)
+    worker_count = int(resources["selected_workers"])
     records: list[dict[str, Any]] = []
     started = time.monotonic()
+    jobs = []
     for regime in REGIMES:
         for episode_index in range(args.episodes_per_regime):
-            initial_seed = int(args.initial_seed_base + episode_index)
-            refresh_seed = int(args.refresh_seed_base + episode_index)
-            row = run_episode(
-                model, config_path, regime, episode_index, initial_seed, refresh_seed,
-                output, representative_gif=(episode_index == 0), max_gif_frames=args.max_gif_frames,
-            )
+            jobs.append((
+                str(config_path), regime, episode_index,
+                int(args.initial_seed_base + episode_index),
+                int(args.refresh_seed_base + episode_index),
+                int(args.delay_seed_base + episode_index),
+                str(output), episode_index < REPRESENTATIVE_GIFS_PER_REGIME,
+                args.max_gif_frames,
+            ))
+    total_episodes = len(jobs)
+    atomic_json(output / "run_progress.json", {
+        "status": "running", "completed_episodes": 0, "total_episodes": total_episodes,
+        "workers": worker_count, "resource_snapshot": resources,
+        "initial_seed_base": int(args.initial_seed_base),
+        "refresh_seed_base": int(args.refresh_seed_base),
+        "delay_seed_base": int(args.delay_seed_base),
+    })
+    completed = 0
+    with concurrent.futures.ProcessPoolExecutor(
+        max_workers=worker_count,
+        mp_context=multiprocessing.get_context("spawn"),
+        initializer=_worker_init,
+        initargs=(str(checkpoint), EXPECTED_CHECKPOINT_SHA256),
+    ) as pool:
+        future_jobs = {pool.submit(_run_episode_worker, job): job for job in jobs}
+        for future in concurrent.futures.as_completed(future_jobs):
+            row = future.result()
             records.append(row)
+            completed += 1
             atomic_json(output / "run_progress.json", {
-                "status": "running", "completed_episodes": len(records),
-                "total_episodes": len(REGIMES) * args.episodes_per_regime,
-                "last_regime": regime, "last_episode_index": episode_index,
+                "status": "running", "completed_episodes": completed,
+                "total_episodes": total_episodes, "workers": worker_count,
+                "last_regime": row["regime"], "last_episode_index": row["episode_index"],
                 "elapsed_seconds": time.monotonic() - started,
             })
+    records.sort(key=lambda row: (REGIMES.index(row["regime"]), int(row["episode_index"])))
     model_hash_after = object_state_hash(model)
     final_sha = sha256_file(checkpoint)
     if model_hash_before != model_hash_after or final_sha != actual_sha:
         raise SystemExit("policy state or checkpoint bytes changed during evaluation")
+    worker_hashes = {
+        value for row in records for value in (
+            row["worker_model_state_sha256_before"], row["worker_model_state_sha256_after"]
+        )
+    }
+    if worker_hashes != {model_hash_before}:
+        raise SystemExit("one or more rollout workers changed or loaded a different policy state")
     for row in records:
         for wave_row in row["waves"]:
             wave_row["contract_diagnostics"]=row["contract_diagnostics"]
@@ -856,6 +974,37 @@ def main() -> int:
     for regime in REGIMES:
         group = [row for row in records if row["regime"] == regime]
         waves = [wave for row in group for wave in row["waves"]]
+        by_wave = {}
+        for wave_id in range(1, WAVES + 1):
+            wave_group = [wave for wave in waves if int(wave["wave_id"]) == wave_id]
+            wave_capture_times = [float(w["capture_time_seconds"]) for w in wave_group if w["capture_time_seconds"] is not None]
+            wave_recovery_times = [float(w["recovery_time_seconds"]) for w in wave_group if w["recovery_time_seconds"] is not None]
+            by_wave[str(wave_id)] = {
+                "episodes_observed": len(wave_group),
+                "capture_success": sum(w["capture_step"] is not None for w in wave_group),
+                "capture_censored_or_failed": sum(w["capture_step"] is None for w in wave_group),
+                "capture_time_seconds": summarize(wave_capture_times),
+                "ce_recovery_success": sum(bool(w["ce_recovery_success"]) for w in wave_group),
+                "recovery_censored_or_interrupted": sum(not bool(w["ce_recovery_success"]) for w in wave_group),
+                "recovery_time_seconds": summarize(wave_recovery_times),
+                "collision_count": sum(int(w["collision_count"]) for w in wave_group),
+                "safe_complete": sum(bool(w["safe_complete"]) for w in wave_group),
+                "active_pursuer_count": summarize([float(w["active_pursuer_count_at_end"]) for w in wave_group if w["active_pursuer_count_at_end"] is not None]),
+                "coverage_debt_seconds": summarize([float(w["coverage_debt_seconds"]) for w in wave_group]),
+                "interrupted_by_next_arrival": sum(bool(w["interrupted_by_next_arrival"]) for w in wave_group),
+            }
+        stop_reasons: dict[str, int] = {}
+        for row in group:
+            stop_reasons[str(row["stop_reason"])] = stop_reasons.get(str(row["stop_reason"]), 0) + 1
+        failure_taxonomy = {
+            "stop_reason_counts": stop_reasons,
+            "episodes_missing_wave1_capture": sum(not row["waves"] or row["waves"][0]["capture_step"] is None for row in group),
+            "episodes_missing_all_three_captures": sum(not bool(row["all_3_captured"]) for row in group),
+            "episodes_final_recovery_failure_after_wave3_capture": sum(bool(row["all_3_captured"] and not row["final_recovery_success"]) for row in group),
+            "episodes_with_collision": sum(bool(row["cumulative_collision"]) for row in group),
+            "episodes_insufficient_active_pursuers": sum("insufficient_active_pursuers" in stop for stop in stop_reasons),
+            "episodes_terminal_failure": sum("terminal_failure" in stop for stop in stop_reasons),
+        }
         by_regime[regime] = {
             "episodes": len(group),
             "waves_captured": {"n": sum(row["waves_captured"] for row in group), "mean": float(np.mean([row["waves_captured"] for row in group]))},
@@ -865,8 +1014,12 @@ def main() -> int:
             "all_3_safe_complete_diagnostic": sum(bool(row["all_3_safe_complete"]) for row in group),
             "final_recovery_success": sum(bool(row["final_recovery_success"]) for row in group),
             "final_recovery_time": summarize([float(row["final_recovery_time"]) for row in group if row["final_recovery_time"] is not None]),
+            "final_recovery_time_censored_or_unobserved": sum(row["final_recovery_time"] is None for row in group),
             "final_safe_complete": sum(bool(row["final_safe_complete"]) for row in group),
             "persistent_service_complete": sum(bool(row["persistent_service_complete"]) for row in group),
+            "persistent_service_complete_censored_or_failed": sum(not bool(row["persistent_service_complete"]) for row in group),
+            "failure_taxonomy": failure_taxonomy,
+            "per_wave_degradation": by_wave,
             "total_mission_seconds": summarize([float(row["total_mission_seconds"]) for row in group]),
             "cumulative_collision_count": summarize([float(row["cumulative_collision_count"]) for row in group]),
             "per_wave": {
@@ -889,10 +1042,10 @@ def main() -> int:
     summary = {
         "schema": SCHEMA,
         "status": "complete",
-        "classification": "DEMO_CONTRACT_PASS" if all(
+        "classification": ("FORMAL_CONTRACT_PASS" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_PASS") if all(
             all(bool(v) for k, v in row["contract_diagnostics"].items() if isinstance(v, bool))
             for row in records
-        ) else "DEMO_CONTRACT_BLOCKED",
+        ) else ("FORMAL_CONTRACT_BLOCKED" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_BLOCKED"),
         "selected_policy": {
             "step": int(selected["step"]),
             "checkpoint": str(checkpoint),
@@ -915,8 +1068,21 @@ def main() -> int:
         "paired_seed_contract": {
             "initial_world_seed_base": int(args.initial_seed_base),
             "target_refresh_rng_seed_base": int(args.refresh_seed_base),
+            "persist_c_delay_rng_seed_base": int(args.delay_seed_base),
+            "delay_rng_independent_from_target_refresh": True,
             "episodes_per_regime": int(args.episodes_per_regime),
             "target_coordinates_identical_claimed": False,
+        },
+        "primary_metric_order": [
+            "persistent_service_complete", "all_3_captured", "final_recovery_success",
+            "final_recovery_time", "collision_count", "per_wave_capture_success_and_time",
+            "agent_reuse_and_behavior_transition",
+        ],
+        "parallel_execution": {
+            **resources,
+            "representative_gifs_per_regime": min(REPRESENTATIVE_GIFS_PER_REGIME, args.episodes_per_regime),
+            "workers_use_separate_processes": True,
+            "policy_state_sha256_all_workers": model_hash_before,
         },
         "metrics": METRIC_DEFINITIONS,
         "regimes": by_regime,
@@ -925,7 +1091,7 @@ def main() -> int:
         "completed_elapsed_seconds": time.monotonic() - started,
     }
     atomic_json(output / "summary.json", finite_json(summary))
-    atomic_json(output / "run_progress.json", {"status": "complete", "completed_episodes": len(records), "total_episodes": len(records)})
+    atomic_json(output / "run_progress.json", {"status": "complete", "completed_episodes": len(records), "total_episodes": len(records), "workers": worker_count, "classification": summary["classification"]})
     print(json.dumps({"status": "complete", "classification": summary["classification"], "output": str(output)}, ensure_ascii=False))
     return 0
 

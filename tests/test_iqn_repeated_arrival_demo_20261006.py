@@ -12,7 +12,10 @@ sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.training.trainer import set_global_config
 from tools import evaluate_iqn_z05_independent_20260923 as formal
-from tools.run_iqn_repeated_arrival_demo_20261006 import spawn_target_generation, stable_hash, next_spawn_boundary, planned_spawn_boundary
+from tools.run_iqn_repeated_arrival_demo_20261006 import (
+    choose_worker_count, spawn_target_generation, stable_hash,
+    next_spawn_boundary, planned_spawn_boundary,
+)
 
 
 CONFIG = ROOT / "configs/experiments/iqn_z_unified_decay_curriculum_20260919/z05_stage3_12p3e3obs_700k.yaml"
@@ -45,6 +48,13 @@ def test_random_delay_uses_one_paired_stream_per_episode():
     reset_each_time = [int(np.random.default_rng(seed).integers(0, 11)) for _ in range(3)]
     assert all(0 <= value <= 10 for value in delays)
     assert delays != reset_each_time
+
+
+def test_resource_aware_worker_count_is_bounded_and_single_threaded():
+    automatic = choose_worker_count()
+    assert 1 <= automatic["selected_workers"] <= automatic["safe_worker_cap"] <= 4
+    assert automatic["thread_limit_per_worker"] == 1
+    assert choose_worker_count(2)["selected_workers"] <= 2
 
 
 def test_target_generation_reuses_slots_and_preserves_persistent_state():
