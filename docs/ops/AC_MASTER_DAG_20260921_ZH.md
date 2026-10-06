@@ -354,3 +354,15 @@ A2 的两个早期 bounded child 曾因响应窗口未产出完整结果而关�
 A1 control 的 4 个 resolved config/preflight 文件单独提交为 `4baeccb`，A3 I0 的 resolved config 与 preflight 文件提交为 `b6cebad`；最终同步已对两个分支做 fast-forward，并一并推送中央 DAG/state commit。`iqn-role-token-scratch` 与 `iqn-z-token-scratch` 各本地 ahead 1/behind 1 且有 dirty 文件；两边本地报告 blob 与 GitHub 已有的 `f3ae7bb` 相同。为避免非 fast-forward 和覆盖远端历史，本轮不推它们，也不 force push。所有 debug/raw/binary/ignored files 均留在本机并已列入 inventory。
 
 中央文件只改本文件与 `artifacts/2026-09-21_ac_master_dag/state.json`。中央同步仅采用普通 fast-forward，command-level mihomo `127.0.0.1:17892`；不修改 `.bashrc`、global/system proxy 或 remote。中央 reconciliation commit `974185ddc345c61910d0cd04d82ae9a8c30a3c3b` 与其 parent `e1c5032` 已推送；`2026-10-06 14:20:26 +08:00` 经 `ls-remote` 验证中央、A1、A3 与其余已推送 refs 均匹配。当前 closure commit 会再次以普通 fast-forward 同步中央文件；验证时的完整 remote ref 清单保存在 state JSON `server_recovery.remote_verification`。
+
+## 2026-10-06 19:39 EXP-EVIDENCE-01 Phase-A 启动登记
+
+用户目标文件 `/home/yjq/.codex/attachments/7c111529-bf18-4523-bebd-68ff2d3b0adb/goal-objective.md` 明确授权启动 CoCap `EXP-EVIDENCE-01`。此实验是新增的 matched evidence comparison；该授权仅覆盖 Local-Binary 与 Global-Oracle 两条新训练，不改变 Z05 的既有“不重训”合同。
+
+- 实验分支 `evidence/local-global-20261006` @ `183407a`，worktree `/home/yjq/rl/CoCap1/evidence-local-global-20261006`；分支已推送。完整 Phase-A runtime 位于 `/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime`，未进入 Git。
+- 启动前 static contract diff、Local/Global runtime smoke、CPU/CUDA checkpoint-resume training smoke、independent evaluator smoke、正式资源 preflight 全部 `PASS`。19:37:46 资源复核：磁盘可用 58.17 GiB；physical GPU0/GPU1 各约 48 GiB free、无其他 compute PID；分别租给 Local-Binary 与 Global-Oracle。
+- tmux `iqn_evidence_phasea_20261006`，supervisor PID `14306`；Stage1 两个训练 PID `14447`（Local-Binary/GPU0）与 `14446`（Global-Oracle/GPU1）。19:39 heartbeat 均 alive，step 2,000 / 2,000,000；尚无 screening checkpoint 或科学结论，optimizer warm-up 进行中。
+- 训练计划每条 representation 独立 scratch→selected→warm-start：Stage1 2M seed `2026091901`，Stage2 700k seed `2026091902`，Stage3 700k seed `2026091903`；balanced_floor selection。训练中 screening 由独立 evaluator 进程并行，stage 内不等待 rollout，stage promotion 等待 selection。Z05 selected stage3 step 600k 与 checkpoint SHA `8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095` 冻结，用于最终配对 held-out 评估。
+- 该任务仍为 `RUNNING_PHASE_A_STAGE1 / IN_PROGRESS_NO_SCIENTIFIC_RESULT`。后续门禁为持续检查 heartbeat、完成候选 screening/selection，再逐 stage 晋级，最后使用三表示配对 held-out seeds 完成各场景 50 episodes。`GLOBAL_ORACLE` 按目标定义报告为 global target-state information upper bound。
+
+中央 state 的 `tasks` 已新增 `EXP-EVIDENCE-01` 详细登记；本次中央变更只涉及本 DAG 文档与 state JSON。

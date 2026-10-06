@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-06T14:21:02+08:00",
+  "updated_at": "2026-10-06T19:39:30+08:00",
   "master": {
     "model": "Luna",
     "role": "AC MASTER ORCHESTRATOR",
@@ -1464,6 +1464,75 @@
         "whether_pushed": "N/A — no branch.",
         "next_gate": "NO_ACTION。"
       }
+    },
+    {
+      "task_id": "EXP-EVIDENCE-01",
+      "task_name": "LOCAL-BINARY-VS-Z05-VS-GLOBAL-ORACLE-PHASE-A",
+      "status": "RUNNING_PHASE_A_STAGE1",
+      "dependencies": [
+        "Z05_FORMAL_CONTRACT_FROZEN",
+        "STATIC_RUNTIME_CHECKPOINT_TRAINING_PREFLIGHT_PASS"
+      ],
+      "branch": "evidence/local-global-20261006",
+      "worktree": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
+      "head": "183407a",
+      "child_agent": null,
+      "scientific_question": "在相同 network、reward、curriculum、task、seed family 下，敌情 evidence representation/propagation 是否改善 Mixed capture-and-recovery coordination？",
+      "allowed_changes": "仅运行用户目标文件明确授权的 Local-Binary 与 Global-Oracle Phase-A；Z05 不重训；保留新实验代码、紧凑报告与中央状态。",
+      "forbidden_changes": "不得修改 Z05 正式表示合同；不得 cross-representation warm-start；不得用 held-out final 选择 checkpoint；不得把 GLOBAL_ORACLE 包装成公平 decentralized baseline。",
+      "gpu_required": true,
+      "gpu_lease": {
+        "status": "GRANTED_AFTER_PREFLIGHT",
+        "physical_gpu_local_binary": 0,
+        "physical_gpu_global_oracle": 1,
+        "observed_at": "2026-10-06T19:39:30+08:00",
+        "training_pids": [
+          14447,
+          14446
+        ],
+        "preflight": "PASS",
+        "free_disk_gib": 58.17
+      },
+      "run_dir": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime",
+      "tmux": "iqn_evidence_phasea_20261006",
+      "pid": 14306,
+      "current_step": {
+        "local_binary": 2000,
+        "global_oracle": 2000
+      },
+      "stage_plan": {
+        "stage1": {
+          "budget": 2000000,
+          "seed": 2026091901
+        },
+        "stage2": {
+          "budget": 700000,
+          "seed": 2026091902
+        },
+        "stage3": {
+          "budget": 700000,
+          "seed": 2026091903
+        }
+      },
+      "checkpoint_selection": "balanced_floor; stage promotion waits for all screening reports; detached screening does not block within-stage training.",
+      "z05_reference": {
+        "retrain": false,
+        "selected_stage3_step": 600000,
+        "checkpoint_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095"
+      },
+      "preflight": {
+        "status": "PASS",
+        "static_contract_diff": "PASS",
+        "runtime_smoke": "PASS",
+        "checkpoint_cpu_cuda_smoke": "PASS",
+        "independent_evaluator_smoke": "PASS",
+        "launch_preflight_at": "2026-10-06T19:37:46+08:00"
+      },
+      "latest_formal": "Stage1 training processes launched; both alive at step 2,000; optimizer warm-up in progress; no screening checkpoint yet.",
+      "result_classification": "IN_PROGRESS_NO_SCIENTIFIC_RESULT",
+      "next_gate": "Monitor training heartbeat and detached 20-episode/scene screening; complete stage selection before promotion; then repeat for Stage2/Stage3 and frozen paired 50-episode held-out final evaluation for Local/Z05/Global.",
+      "user_approval_required": false,
+      "updated_at": "2026-10-06T19:39:30+08:00"
     }
   ],
   "current_snapshot": {
@@ -22262,6 +22331,8 @@
       },
       "central_head_at_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
       "force_push_used": false
-    }
+    },
+    "latest_reconciliation_at": "2026-10-06T19:39:30+08:00",
+    "latest_reconciliation_note": "EXP-EVIDENCE-01 formally launched after all static/runtime/checkpoint/training/evaluator preflights passed; Local-Binary and Global-Oracle are running stage1 on physical GPU0/GPU1. Z05 remains frozen."
   }
 }
