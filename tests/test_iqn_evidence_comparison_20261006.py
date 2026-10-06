@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -10,6 +11,7 @@ from cocap_voradj.envs.voronoi_adjacency import VorAdjEnv
 from cocap_voradj.models.iqn import CoCapIQN
 from cocap_voradj.training.trainer import deep_update, load_config, set_global_config
 from tools import iqn_token_matched_20260919 as matched
+from tools.evaluate_iqn_evidence_checkpoint_20261006 import EvidenceDiagnostics
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,6 +97,45 @@ def test_global_oracle_shows_all_active_target_tokens_and_scalar_flags() -> None
         for row in np.asarray(obs["pursuers"]):
             if not np.allclose(row, 0.0):
                 assert float(row[-1]) == float(active_targets > 0)
+
+
+def test_global_diagnostics_measure_token_occupancy_and_shortfall_per_observation() -> None:
+    class DiagnosticEnv:
+        per_cfg = {"max_evader_num": 8}
+        evaders = [SimpleNamespace(deactivated=False, collision=False) for _ in range(3)]
+
+        @staticmethod
+        def _policy_direct_enemy_ids(_index: int) -> list[int]:
+            return []
+
+    def observation(enemy_tokens: int) -> dict:
+        return {
+            "self": np.zeros(9, dtype=np.float32),
+            "pursuers": np.zeros((0, 7), dtype=np.float32),
+            "types": np.asarray([2] * enemy_tokens + [0] * (8 - enemy_tokens), dtype=int),
+            "masks": np.asarray([True] * enemy_tokens + [False] * (8 - enemy_tokens), dtype=bool),
+        }
+
+    diagnostics = EvidenceDiagnostics("global_oracle", "mixed")
+    diagnostics.transition(
+        DiagnosticEnv(),
+        [observation(2), observation(3)],
+        None,
+        None,
+        None,
+        [0, 1],
+        None,
+        None,
+        1,
+        SimpleNamespace(infos=[]),
+    )
+    result = diagnostics.finish(DiagnosticEnv())
+    assert result["enemy_tokens_visible_sum"] == 5
+    assert result["enemy_token_capacity_slots"] == 16
+    assert result["enemy_token_occupancy"] == 5 / 16
+    assert result["target_token_shortfall_events"] == 1
+    assert result["active_target_capacity_overflow_events"] == 0
+    assert result["entity_truncation_events"] == 1
 
 
 def test_local_and_global_do_not_change_reward_or_lifecycle_contract() -> None:

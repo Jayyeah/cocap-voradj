@@ -1,0 +1,42 @@
+{
+  "schema": "iqn-evidence-global-diagnostic-correction-v1",
+  "finding": "Previous evaluator multiplied accumulated token-capacity slots by observation slots a second time, understating occupancy; truncation only checked global target count above capacity and missed per-observation shortfalls.",
+  "corrections": {
+    "enemy_token_occupancy": "visible active target tokens / accumulated target-token capacity slots",
+    "entity_truncation_events": "counts per-agent observations with a target-token shortfall or target count above capacity",
+    "additional_fields": [
+      "target_token_shortfall_events",
+      "active_target_capacity_overflow_events",
+      "enemy_token_capacity_slots"
+    ]
+  },
+  "synthetic_regression": {
+    "status": "PASS",
+    "visible_tokens": 5,
+    "capacity_slots": 16,
+    "expected_occupancy": 0.3125,
+    "shortfall_events": 1,
+    "overflow_events": 0,
+    "entity_truncation_events": 1
+  },
+  "immutable_checkpoint_smoke": {
+    "status": "complete",
+    "variant": "global_oracle",
+    "checkpoint_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095",
+    "episodes_per_scene": 1,
+    "max_steps": 2,
+    "workers": 1,
+    "mixed_enemy_token_occupancy": 0.375,
+    "mixed_target_token_shortfall_events": 0.0,
+    "mixed_capacity_overflow_events": 0.0,
+    "optimizer_updates": 0,
+    "replay_updates": 0,
+    "training_rng_mutation": false,
+    "checkpoint_mutation": false
+  },
+  "unit_test": "tests/test_iqn_evidence_comparison_20261006.py::test_global_diagnostics_measure_token_occupancy_and_shortfall_per_observation",
+  "unit_test_result": "1 passed",
+  "python_compile": "PASS",
+  "formal_training_processes_restarted": false,
+  "formal_final_evaluation": "Will use a fresh corrected supervisor process and separate final_heldout_50_corrected output after curriculum selection completes."
+}

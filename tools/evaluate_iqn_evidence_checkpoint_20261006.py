@@ -143,6 +143,8 @@ class EvidenceDiagnostics:
         self.enemy_tokens = 0
         self.enemy_token_capacity = 0
         self.truncation_events = 0
+        self.target_token_shortfall_events = 0
+        self.active_target_capacity_overflow_events = 0
         self.capture_step: int | None = None
         self.all_zero_after_capture_step: int | None = None
 
@@ -174,14 +176,20 @@ class EvidenceDiagnostics:
                 self.lineage_hops.append(int(meta.get("z_lineage_hops", -1)))
                 self.ages.append(int(meta.get("z_source_age_steps", -1)))
         if self.variant == "global_oracle":
+            target_capacity = int(env.per_cfg["max_evader_num"])
+            expected_visible_targets = min(active_targets, target_capacity)
             for observation in local:
                 mask = np.asarray(observation["masks"], dtype=bool)
                 types = np.asarray(observation["types"], dtype=int)
                 slots = (types == 2) & mask
                 occupied = int(slots.sum())
                 self.enemy_tokens += occupied
-                self.enemy_token_capacity += int(env.per_cfg["max_evader_num"])
-                self.truncation_events += int(active_targets > int(env.per_cfg["max_evader_num"]))
+                self.enemy_token_capacity += target_capacity
+                shortfall = occupied < expected_visible_targets
+                overflow = active_targets > target_capacity
+                self.target_token_shortfall_events += int(shortfall)
+                self.active_target_capacity_overflow_events += int(overflow)
+                self.truncation_events += int(shortfall or overflow)
         captured_now = bool(env.evaders and all(evader.deactivated and not evader.collision for evader in env.evaders))
         if captured_now and self.capture_step is None:
             self.capture_step = int(step)
@@ -217,9 +225,12 @@ class EvidenceDiagnostics:
         else:
             base.update({
                 "active_target_global_availability_rate": self.global_available_steps / max(self.global_availability_steps, 1),
-                "enemy_token_occupancy": self.enemy_tokens / max(self.enemy_token_capacity * self.evidence_slots, 1),
+                "enemy_token_occupancy": self.enemy_tokens / max(self.enemy_token_capacity, 1),
                 "enemy_tokens_visible_sum": self.enemy_tokens,
+                "enemy_token_capacity_slots": self.enemy_token_capacity,
                 "entity_truncation_events": self.truncation_events,
+                "target_token_shortfall_events": self.target_token_shortfall_events,
+                "active_target_capacity_overflow_events": self.active_target_capacity_overflow_events,
             })
         return base
 
