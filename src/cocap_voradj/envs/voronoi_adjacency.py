@@ -16,6 +16,15 @@ from cocap_voradj.envs.base import CoCapEnv, StepResult, TWO_PI
 SiteKey = Tuple[str, int]
 
 
+def survival_termination_requested(active_count: int, configured_minimum: int,
+                                   zero_only: bool = False) -> bool:
+    """Return the active-team terminal for the configured or diagnostic mode."""
+    count = int(active_count)
+    if zero_only:
+        return count == 0
+    return count < int(configured_minimum)
+
+
 class VorAdjEnv(CoCapEnv):
     """Voronoi-adjacency mixed coverage/capture environment.
 
@@ -28,6 +37,11 @@ class VorAdjEnv(CoCapEnv):
 
     def __init__(self, config: Dict[str, Any], seed: int = 0):
         super().__init__(config, task="voradj", seed=seed)
+        # Evaluation-only opt-ins used by the repeated-arrival casualty
+        # robustness diagnostic. Training and ordinary evaluation retain the
+        # configured minimum-survivor terminal and post-capture timeout.
+        self.evaluation_survival_zero_only = False
+        self.evaluation_defer_post_capture_timeout = False
         self.coverage_hold_reward_claim_steps = 0
         self.coverage_hold_reward_steps_by_phase = {
             "pre_capture": 0,
@@ -2983,22 +2997,31 @@ class VorAdjEnv(CoCapEnv):
                 (pure_coverage_scene and self.post_capture_coverage_success and self.post_capture_grace_remaining <= 0)
                 or (post_capture_phase and self.post_capture_coverage_success and self.post_capture_grace_remaining <= 0)
             )
+        post_capture_window_expired = bool(
+            post_capture_phase and self.post_capture_started
+            and not self.post_capture_coverage_success and self.post_capture_step >= post_window
+        )
         voradj_done = bool(
             coverage_phase_done
             or capture_terminal_done
             or zone_breach_done
-            or (post_capture_phase and self.post_capture_started and not self.post_capture_coverage_success and self.post_capture_step >= post_window)
+            or (post_capture_window_expired and not self.evaluation_defer_post_capture_timeout)
         )
         # Replay phase describes the state in which the stored action was
         # selected. A transition that captures the final evader therefore
         # remains pre_capture/pursuing rather than being mislabeled as recovery.
         phase_label = hold_phase
         dones: List[bool] = []
-        too_few = sum(not q.deactivated for q in self.pursuers) < int(self.reward_cfg.get("min_active_pursuers", 2))
+        active_pursuer_count = sum(not q.deactivated for q in self.pursuers)
+        terminate_for_survival = survival_termination_requested(
+            active_pursuer_count,
+            int(self.reward_cfg.get("min_active_pursuers", 2)),
+            zero_only=bool(self.evaluation_survival_zero_only),
+        )
         for i, p in enumerate(self.pursuers):
             # A mission/death terminal wins over a simultaneous sampling limit.
             # Pure time limits retain the physical next state's potential/value.
-            terminated = bool(p.deactivated or voradj_done or evader_lost or too_few)
+            terminated = bool(p.deactivated or voradj_done or evader_lost or terminate_for_survival)
             truncated = bool((timeout or pre_capture_timeout) and not terminated)
             done = terminated or truncated
             infos[i]["terminated"] = terminated
@@ -3017,8 +3040,8 @@ class VorAdjEnv(CoCapEnv):
                 infos[i]["state"] = "voradj completed"
             elif evader_lost and infos[i]["state"] == "normal":
                 infos[i]["state"] = "evader collision"
-            elif too_few and infos[i]["state"] == "normal":
-                infos[i]["state"] = "too few active pursuers"
+            elif terminate_for_survival and infos[i]["state"] == "normal":
+                infos[i]["state"] = "no active pursuers" if active_pursuer_count == 0 else "too few active pursuers"
             infos[i]["replay_metadata"] = {
                 "terminated": terminated,
                 "truncated": truncated,

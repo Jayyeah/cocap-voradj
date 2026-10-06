@@ -94,6 +94,12 @@ Cross-wave behavior reuse（capture/support participants）：
 - `episode_*.trajectory.jsonl` 与 `episode_*.events.json`：9/9 完整轨迹与逐波事件/Z/target generation。
 - GIF：`gifs/persist-a_representative.gif`、`gifs/persist-b_representative.gif`、`gifs/persist-c_representative.gif`。
 
+## Casualty-tolerance continuation diagnostic（2026-10-06）
+
+在原 A/B/C full-team formal 结果之外，新增独立的 A′ timeout-continue、B relaxed-survival-stop、C relaxed-survival-stop 配对诊断，各20局。它保留原12机 strict coverage criterion，只把 episode survival stop 明确改为 `active_count == 0`；因此用于观察 casualty 后是否还能继续捕获任务，不替代原 full-team service contract，也不覆盖原 formal 数据。
+
+结果、逐波 active-count telemetry、14个原 insufficient-active case 的配对轨迹、failure taxonomy 和 scientific interpretation 见[casualty-tolerance robustness 报告](Z05_CASUALTY_TOLERANCE_ROBUSTNESS_20261006_ZH.md)。三组均完成20/20三波 capture；14个 casualty episode 全部继续完成 all-3 capture，但 strict final recovery 均未成功。该结果显示 degraded-team capture 与12机 coverage service 是分离的能力结论。
+
 ## Formal handoff
 
 建议正式命令（本轮未执行）：

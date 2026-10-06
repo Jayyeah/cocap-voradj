@@ -47,6 +47,8 @@ from cocap_voradj.evaluation.mission_events import MissionEventTracker, snapshot
 
 SCHEMA = "z05-repeated-arrival-eval-v2"
 REGIMES = ("PERSIST-A", "PERSIST-B", "PERSIST-C")
+TIMEOUT_CONTINUE_REGIME = "PERSIST-A-TIMEOUT-CONTINUE"
+REGIME_CHOICES = (TIMEOUT_CONTINUE_REGIME, "PERSIST-B", "PERSIST-C", *REGIMES)
 DT_SECONDS = 0.5
 WAVES = 3
 TARGETS_PER_WAVE = 3
@@ -139,12 +141,12 @@ def _run_episode_worker(job: tuple[Any, ...]) -> dict[str, Any]:
     if _WORKER_MODEL is None:
         raise RuntimeError("rollout worker model was not initialized")
     (config_path, regime, episode_index, initial_seed, refresh_seed, delay_seed,
-     output_dir, representative_gif, max_gif_frames) = job
+     output_dir, representative_gif, max_gif_frames, degraded_team_survival) = job
     before_hash = object_state_hash(_WORKER_MODEL)
     row = run_episode(
         _WORKER_MODEL, Path(config_path), str(regime), int(episode_index),
         int(initial_seed), int(refresh_seed), int(delay_seed), Path(output_dir),
-        bool(representative_gif), int(max_gif_frames),
+        bool(representative_gif), int(max_gif_frames), bool(degraded_team_survival),
     )
     after_hash = object_state_hash(_WORKER_MODEL)
     if before_hash != after_hash:
@@ -352,13 +354,20 @@ def _transition_summary(wave_rows: list[dict[str, Any]]) -> dict[str, Any]:
 @torch.no_grad()
 def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: int,
                 initial_seed: int, refresh_seed: int, delay_seed: int, output_dir: Path,
-                representative_gif: bool, max_gif_frames: int) -> dict[str, Any]:
+                representative_gif: bool, max_gif_frames: int,
+                degraded_team_survival: bool = False) -> dict[str, Any]:
     cfg = formal.formal.resolved(config_path)
     cfg = formal.configure_large_case(cfg, pursuers=12, evaders=3, obstacles=3, post_window=POST_CAPTURE_WINDOW)
     cfg = formal.scene_config(cfg, "mixed")
     set_global_config(cfg)
     holder: dict[str, Any] = {}
     env = VorAdjEnv(copy.deepcopy(cfg), seed=int(initial_seed))
+    if degraded_team_survival:
+        # Evaluation-only runtime flags. The Stage3 reward/coverage threshold
+        # remains 12; only survival termination and (for A') timeout handling
+        # are delegated to this evaluator.
+        env.evaluation_survival_zero_only = True
+        env.evaluation_defer_post_capture_timeout = regime == TIMEOUT_CONTINUE_REGIME
     observations = list(env.reset())
     metadata = runtime_metadata(env)
     if metadata["policy"] != NORMSENSE_POLICY:
@@ -372,6 +381,8 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         raise AssertionError("policy friend-token cap does not match Stage3 environment")
     if (len(env.pursuers), len(env.evaders), len(env.obstacles), float(env.width), float(env.height), int(env.episode_max_length)) != (12, 3, 3, 120.0, 120.0, GLOBAL_HORIZON):
         raise AssertionError("resolved environment dimensions differ from the fixed demo contract")
+    if int(env.reward_cfg.get("min_active_pursuers", -1)) != 12 or int(env.reward_cfg.get("coverage_ce_min_active_pursuers", -1)) != 12:
+        raise AssertionError("degraded-team diagnostic must preserve both Stage3 12-pursuer thresholds")
     if not np.isclose(float(env.pursuers[0].dt * env.pursuers[0].N), DT_SECONDS):
         raise AssertionError("decision_dt differs from the fixed demo contract")
     obstacles_initial = [[float(o.x), float(o.y), float(o.r)] for o in env.obstacles]
@@ -429,6 +440,9 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                     stale.append({"pursuer_id": pursuer_id, "token": [float(v) for v in token[:2]]})
         return {"visible_target_tokens": visible, "stale_target_tokens": stale, "no_stale_observation": not stale}
 
+    def active_pursuer_count() -> int:
+        return int(sum(not p.deactivated for p in env.pursuers))
+
     def start_wave(generation: dict[str, Any], wave_start_step: int) -> dict[str, Any]:
         return {
             "wave_id": int(generation["wave_id"]),
@@ -454,6 +468,17 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             "safe_complete": False,
             "active_pursuer_count_at_capture": None,
             "active_pursuer_count_at_end": None,
+            "active_pursuer_count_at_start": active_pursuer_count(),
+            "minimum_active_pursuer_count": active_pursuer_count(),
+            "active_pursuer_count_at_arrival_trigger": None,
+            "active_pursuer_count_at_z_clear": None,
+            "active_pursuer_count_before_next_wave_spawn": None,
+            "active_pursuer_count_at_recovery_success": None,
+            "active_pursuer_count_at_recovery_timeout": None,
+            "cumulative_lost_pursuers_at_end": None,
+            "deactivation_events": [],
+            "target_capture_event_steps": [],
+            "continued_after_recovery_timeout": False,
             "coverage_debt_steps": 0,
             "coverage_debt_seconds": 0.0,
             "interrupted_by_next_arrival": False,
@@ -481,7 +506,14 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
     global_step = int(env.episode_step)
     episode_collision_count = 0
     all_collision_events: list[dict[str, Any]] = []
-    spawn_events: list[dict[str, Any]] = [{"step": 0, **initial_generation}]
+    episode_deactivation_events: list[dict[str, Any]] = []
+    first_casualty: dict[str, Any] | None = None
+    active_counts_reached: set[int] = {active_pursuer_count()}
+    spawn_events: list[dict[str, Any]] = [{
+        "step": 0, **initial_generation,
+        "active_pursuer_count_after_spawn": active_pursuer_count(),
+        "cumulative_lost_pursuers": sum(bool(p.deactivated) for p in env.pursuers),
+    }]
     required_spawn_wave_ids: set[int] = set()
     dead_at_start: set[int] = {int(p.id) for p in env.pursuers if p.deactivated}
     initial_observation_audit = current_observation_audit()
@@ -514,6 +546,10 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             wave["stop_reason"] = stop
         wave["active_pursuer_count_at_end"] = int(sum(not p.deactivated for p in env.pursuers))
         wave["deactivated_pursuer_ids"] = [int(p.id) for p in env.pursuers if p.deactivated]
+        wave["minimum_active_pursuer_count"] = min(
+            int(wave["minimum_active_pursuer_count"]), int(wave["active_pursuer_count_at_end"])
+        )
+        wave["cumulative_lost_pursuers_at_end"] = len(wave["deactivated_pursuer_ids"])
         wave["mission_events"] = wave["mission_tracker"].finish(global_step)
         wave["agent_behavior"] = {
             agent_id: {
@@ -526,8 +562,9 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
     while global_step < GLOBAL_HORIZON:
         active = [i for i, obs in enumerate(observations) if obs is not None]
         if not active:
-            stop_reason = "no_active_pursuer_observations"
+            stop_reason = "zero_active_pursuers" if degraded_team_survival else "no_active_pursuer_observations"
             break
+        active_ids_before = {int(p.id) for p in env.pursuers if not p.deactivated}
         local = [observations[i] for i in active]
         before_state = snapshot(env, observations)
         q_values, greedy_actions = fixed_midpoint_q(model, local, "cpu")
@@ -543,9 +580,41 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         episode_collision_count += len(collision_events)
         wave["collision_count"] += len(collision_events)
         wave["collision"] = bool(wave["collision"] or collision_events)
+        active_ids_after = {int(p.id) for p in env.pursuers if not p.deactivated}
+        newly_deactivated = sorted(active_ids_before - active_ids_after)
+        for pursuer_id in newly_deactivated:
+            matching = next((event for event in collision_events if pursuer_id in event.get("pursuer_ids", [])), {})
+            event_row = {
+                "pursuer_id": int(pursuer_id),
+                "wave_id": int(wave["wave_id"]),
+                "global_step": int(global_step),
+                "collision_step": matching.get("step"),
+                "collision_type": matching.get("type", "unknown"),
+                "collision_event": matching or None,
+                "active_pursuer_count_after": int(len(active_ids_after)),
+            }
+            wave["deactivation_events"].append(event_row)
+            episode_deactivation_events.append(event_row)
+            if first_casualty is None:
+                first_casualty = {
+                    "wave_id": int(wave["wave_id"]),
+                    "global_step": int(global_step),
+                    "collision_step": matching.get("step"),
+                    "pursuer_id": int(pursuer_id),
+                    "collision_type": matching.get("type", "unknown"),
+                }
+        wave["minimum_active_pursuer_count"] = min(
+            int(wave["minimum_active_pursuer_count"]), int(len(active_ids_after))
+        )
+        active_counts_reached.add(int(len(active_ids_after)))
         if capture_events:
             wave["capture_events"].extend(capture_events)
             for event in capture_events:
+                wave["target_capture_event_steps"].append({
+                    "global_step": int(global_step),
+                    "target_id": int(event.get("evader_id", -1)),
+                    "participants": [int(i) for i in event.get("participants", [])],
+                })
                 wave["agent_flags"].setdefault(str(-1), set())
                 for participant in event.get("participants", []):
                     wave["agent_flags"][str(int(participant))].add("capture")
@@ -585,10 +654,12 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                 wave["ce_recovery_success"] = bool(elapsed_recovery <= POST_CAPTURE_WINDOW)
                 if wave["ce_recovery_success"]:
                     wave["safe_complete"] = bool(not wave["collision"] and all(not p.deactivated for p in env.pursuers))
+                    wave["active_pursuer_count_at_recovery_success"] = active_pursuer_count()
                     if wave["safe_complete"]:
                         wave["safe_complete_step"] = global_step
             if elapsed_recovery >= POST_CAPTURE_WINDOW and not wave["ce_recovery_success"]:
                 wave["recovery_window_expired"] = True
+                wave["active_pursuer_count_at_recovery_timeout"] = active_pursuer_count()
 
         active_z = np.asarray([float(env.z_state[i]) for i, p in enumerate(env.pursuers) if not p.deactivated], dtype=float)
         all_z_zero = bool(len(active_z) and np.max(active_z) == 0.0)
@@ -598,6 +669,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                 wave["first_all_z_zero_after_capture_steps"] = global_step - int(wave["capture_step"])
                 wave["first_all_z_zero_seconds"] = wave["first_all_z_zero_after_capture_steps"] * DT_SECONDS
                 wave["z_release_step"] = global_step
+                wave["active_pursuer_count_at_z_clear"] = active_pursuer_count()
                 if regime == "PERSIST-C":
                     pending_delay_steps = int(delay_rng.integers(0, 11))
                     wave["delay_steps"] = int(pending_delay_steps)
@@ -659,8 +731,12 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             frames.append(frame)
 
         active_count = int(sum(not p.deactivated for p in env.pursuers))
-        if len(active_z) < 2 or active_count < int(env.reward_cfg.get("min_active_pursuers", 2)):
-            wave["stop_reason"] = "insufficient_active_pursuers"
+        if degraded_team_survival:
+            survival_termination = active_count == 0
+        else:
+            survival_termination = len(active_z) < 2 or active_count < int(env.reward_cfg.get("min_active_pursuers", 2))
+        if survival_termination:
+            wave["stop_reason"] = "zero_active_pursuers" if degraded_team_survival else "insufficient_active_pursuers"
             stop_reason = wave["stop_reason"]
             break
         if wave.get("stop_reason") == "target_lost_to_collision":
@@ -668,13 +744,15 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             break
 
         final_wave = int(wave["wave_id"]) == WAVES
-        if final_wave and collision_events:
+        if final_wave and collision_events and not degraded_team_survival:
             wave["stop_reason"] = "final_wave_collision"
             stop_reason = wave["stop_reason"]
             break
         terminal_failure = any(
-            bool(info.get("terminated")) and str(info.get("state", "")) not in {"voradj completed", "capture completed"}
-            for info in outcome.infos
+            bool(info.get("terminated"))
+            and (degraded_team_survival is False or not env.pursuers[i].deactivated)
+            and str(info.get("state", "")) not in {"voradj completed", "capture completed"}
+            for i, info in enumerate(outcome.infos)
         )
         if final_wave and terminal_failure:
             wave["stop_reason"] = "final_wave_terminal_failure"
@@ -693,19 +771,32 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             stop_reason = wave["stop_reason"]
             break
 
-        if regime == "PERSIST-A":
+        if regime in {"PERSIST-A", TIMEOUT_CONTINUE_REGIME}:
             if wave["safe_complete_step"] is not None:
-                pending_spawn_step = planned_spawn_boundary(regime, int(wave["safe_complete_step"]), wave["first_all_z_zero_step"])
+                wave["arrival_trigger_step"] = int(wave["safe_complete_step"])
+                wave["active_pursuer_count_at_arrival_trigger"] = wave["active_pursuer_count_at_recovery_success"]
+                pending_spawn_step = planned_spawn_boundary("PERSIST-A", int(wave["safe_complete_step"]), wave["first_all_z_zero_step"])
                 if int(wave["wave_id"]) < WAVES and pending_spawn_step is not None and pending_spawn_step <= GLOBAL_HORIZON:
                     required_spawn_wave_ids.add(int(wave["wave_id"]) + 1)
-            elif wave["ce_recovery_step"] is not None and not wave["safe_complete"]:
+            elif regime == "PERSIST-A" and wave["ce_recovery_step"] is not None and not wave["safe_complete"]:
                 wave["stop_reason"] = "recovery_completed_without_safe_complete"
                 stop_reason = wave["stop_reason"]
                 break
             elif wave["recovery_window_expired"]:
-                wave["stop_reason"] = "recovery_window_expired_without_safe_complete"
-                stop_reason = wave["stop_reason"]
-                break
+                if regime == TIMEOUT_CONTINUE_REGIME and int(wave["wave_id"]) < WAVES:
+                    wave["safe_complete"] = False
+                    wave["arrival_trigger_step"] = int(global_step)
+                    wave["active_pursuer_count_at_arrival_trigger"] = active_count
+                    wave["continued_after_recovery_timeout"] = True
+                    # Expiry is observed at the end of this transition. Spawn
+                    # now at that boundary so the next policy decision sees
+                    # Wave 2/3, with no extra old-wave action.
+                    pending_spawn_step = int(global_step)
+                    required_spawn_wave_ids.add(int(wave["wave_id"]) + 1)
+                else:
+                    wave["stop_reason"] = "recovery_window_expired_without_safe_complete"
+                    stop_reason = wave["stop_reason"]
+                    break
         elif (wave["first_all_z_zero_step"] is not None and pending_spawn_step is None
               and not wave["arrival_trigger_observed_without_next_wave"]):
             pending_spawn_step = planned_spawn_boundary(regime, wave["safe_complete_step"], int(wave["first_all_z_zero_step"]), int(wave["delay_steps"] or 0))
@@ -713,6 +804,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         if pending_spawn_step is not None and global_step >= pending_spawn_step:
             if int(wave["wave_id"]) >= WAVES:
                 wave["arrival_trigger_step"] = int(global_step)
+                wave["active_pursuer_count_at_arrival_trigger"] = active_count
                 wave["arrival_trigger_observed_without_next_wave"] = True
                 pending_spawn_step = None
             else:
@@ -720,6 +812,9 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                     stop_reason = "next_arrival_trigger_without_capture"
                     break
                 wave["interrupted_by_next_arrival"] = bool(not wave["safe_complete"])
+                wave["arrival_trigger_step"] = int(global_step)
+                wave["active_pursuer_count_at_arrival_trigger"] = active_pursuer_count()
+                wave["active_pursuer_count_before_next_wave_spawn"] = active_pursuer_count()
                 finish_wave("next_arrival")
                 physical_before = pursuer_physical_state()
                 dead_before = {int(p.id) for p in env.pursuers if p.deactivated}
@@ -742,7 +837,12 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                 contract["wave_id_correct"] &= generation["wave_id"] == int(wave["wave_id"]) + 1
                 contract["target_generation_correct"] &= generation["target_generation"] == int(wave["target_generation"]) + 1
                 contract["wave2_wave3_spawned"] &= generation["wave_id"] <= 3
-                spawn_events.append({"step": global_step, **generation, "observation_audit": diagnostics})
+                spawn_events.append({
+                    "step": global_step, **generation,
+                    "active_pursuer_count_after_spawn": active_pursuer_count(),
+                    "cumulative_lost_pursuers": sum(bool(p.deactivated) for p in env.pursuers),
+                    "observation_audit": diagnostics,
+                })
                 wave = start_wave(generation, global_step)
                 wave_rows.append(wave)
                 wave["mission_tracker"].observe(snapshot(env, observations), global_step)
@@ -771,6 +871,10 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
     contract["finite_values"] = bool(np.isfinite(np.asarray(env.z_state, dtype=float)).all())
     contract["checkpoint_sha256_after"] = EXPECTED_CHECKPOINT_SHA256
     contract["evaluator_parameter_updates"] = 0
+    contract["degraded_team_survival_mode"] = bool(degraded_team_survival)
+    contract["survival_termination_is_zero_only"] = bool(
+        not degraded_team_survival or env.evaluation_survival_zero_only
+    )
     behavior = _transition_summary(wave_rows)
     for row in wave_rows:
         row["agent_behavior"] = finite_json(row["agent_behavior"])
@@ -815,6 +919,39 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         ),
         "cumulative_collision_count": int(episode_collision_count),
         "cumulative_collision": bool(episode_collision_count),
+        "final_active_pursuer_count": active_pursuer_count(),
+        "minimum_active_pursuer_count": min(
+            [int(row["minimum_active_pursuer_count"]) for row in wave_rows] or [active_pursuer_count()]
+        ),
+        "active_counts_reached": sorted(active_counts_reached, reverse=True),
+        "pursuers_lost": int(sum(bool(p.deactivated) for p in env.pursuers)),
+        "deactivated_pursuer_ids_at_episode_end": [int(p.id) for p in env.pursuers if p.deactivated],
+        "episodes_with_any_casualty": bool(episode_deactivation_events),
+        "deactivation_events": episode_deactivation_events,
+        "first_casualty": first_casualty,
+        "continued_after_first_casualty": bool(
+            first_casualty is not None and global_step > int(first_casualty["global_step"])
+        ),
+        "target_captures_after_first_casualty": sum(
+            int(capture["global_step"]) > int(first_casualty["global_step"])
+            for row in wave_rows for capture in row["target_capture_event_steps"]
+        ) if first_casualty is not None else 0,
+        "waves_captured_after_first_casualty": sum(
+            row["capture_step"] is not None and int(row["capture_step"]) > int(first_casualty["global_step"])
+            for row in wave_rows
+        ) if first_casualty is not None else 0,
+        "wave2_capture_with_lt12_active": bool(
+            len(wave_rows) >= 2 and wave_rows[1]["capture_step"] is not None
+            and int(wave_rows[1]["active_pursuer_count_at_capture"]) < 12
+        ),
+        "wave3_capture_with_lt12_active": bool(
+            len(wave_rows) >= 3 and wave_rows[2]["capture_step"] is not None
+            and int(wave_rows[2]["active_pursuer_count_at_capture"]) < 12
+        ),
+        "all_3_captured_despite_casualty": bool(
+            first_casualty is not None and len(wave_rows) == WAVES
+            and all(row["capture_step"] is not None for row in wave_rows)
+        ),
         "surviving_pursuers_after_each_wave": [row["active_pursuer_count_at_end"] for row in wave_rows],
         "waves": wave_rows,
         "target_generations": spawn_events,
@@ -887,10 +1024,18 @@ def main() -> int:
     parser.add_argument("--initial-seed-base", type=int, default=2026100601)
     parser.add_argument("--refresh-seed-base", type=int, default=2026800601)
     parser.add_argument("--delay-seed-base", type=int, default=2026900601)
+    parser.add_argument("--regime", choices=REGIME_CHOICES, help="run one regime into its own isolated output directory")
+    parser.add_argument("--degraded-team-survival", action="store_true",
+                        help="evaluation-only survival termination when active pursuers reach zero")
     parser.add_argument("--workers", type=int, default=None, help="rollout process count; defaults to the resource-aware cap")
     parser.add_argument("--device", choices=("cpu",), default="cpu")
     parser.add_argument("--max-gif-frames", type=int, default=300)
     args = parser.parse_args()
+    if args.regime == TIMEOUT_CONTINUE_REGIME and not args.degraded_team_survival:
+        raise SystemExit("PERSIST-A-TIMEOUT-CONTINUE is available only with --degraded-team-survival")
+    selected_regimes = [args.regime] if args.regime else list(REGIMES)
+    if args.degraded_team_survival and not args.regime:
+        raise SystemExit("--degraded-team-survival requires one explicit --regime and an independent output directory")
     output = args.output.resolve()
     if output.exists() and any(output.iterdir()):
         raise SystemExit(f"output directory must be empty: {output}")
@@ -919,7 +1064,7 @@ def main() -> int:
     records: list[dict[str, Any]] = []
     started = time.monotonic()
     jobs = []
-    for regime in REGIMES:
+    for regime in selected_regimes:
         for episode_index in range(args.episodes_per_regime):
             jobs.append((
                 str(config_path), regime, episode_index,
@@ -927,7 +1072,7 @@ def main() -> int:
                 int(args.refresh_seed_base + episode_index),
                 int(args.delay_seed_base + episode_index),
                 str(output), episode_index < REPRESENTATIVE_GIFS_PER_REGIME,
-                args.max_gif_frames,
+                args.max_gif_frames, bool(args.degraded_team_survival),
             ))
     total_episodes = len(jobs)
     atomic_json(output / "run_progress.json", {
@@ -955,7 +1100,7 @@ def main() -> int:
                 "last_regime": row["regime"], "last_episode_index": row["episode_index"],
                 "elapsed_seconds": time.monotonic() - started,
             })
-    records.sort(key=lambda row: (REGIMES.index(row["regime"]), int(row["episode_index"])))
+    records.sort(key=lambda row: (selected_regimes.index(row["regime"]), int(row["episode_index"])))
     model_hash_after = object_state_hash(model)
     final_sha = sha256_file(checkpoint)
     if model_hash_before != model_hash_after or final_sha != actual_sha:
@@ -971,7 +1116,7 @@ def main() -> int:
         for wave_row in row["waves"]:
             wave_row["contract_diagnostics"]=row["contract_diagnostics"]
     by_regime = {}
-    for regime in REGIMES:
+    for regime in selected_regimes:
         group = [row for row in records if row["regime"] == regime]
         waves = [wave for row in group for wave in row["waves"]]
         by_wave = {}
@@ -1002,7 +1147,24 @@ def main() -> int:
             "episodes_missing_all_three_captures": sum(not bool(row["all_3_captured"]) for row in group),
             "episodes_final_recovery_failure_after_wave3_capture": sum(bool(row["all_3_captured"] and not row["final_recovery_success"]) for row in group),
             "episodes_with_collision": sum(bool(row["cumulative_collision"]) for row in group),
-            "episodes_insufficient_active_pursuers": sum("insufficient_active_pursuers" in str(row["stop_reason"]) for row in group),
+            "episodes_collision_but_policy_continued": sum(
+                bool(row["cumulative_collision"] and row["continued_after_first_casualty"]) for row in group
+            ),
+            "episodes_zero_active_pursuers": sum(str(row["stop_reason"]) == "zero_active_pursuers" for row in group),
+            "episodes_global_horizon": sum(str(row["stop_reason"]) == "global_horizon" for row in group),
+            "episodes_wave3_recovery_timeout": sum(
+                len(row["waves"]) == WAVES and bool(row["waves"][-1]["recovery_window_expired"])
+                for row in group
+            ),
+            "episodes_casualty_then_later_capture": sum(
+                int(row["target_captures_after_first_casualty"]) > 0 for row in group
+            ),
+            "episodes_casualty_then_all_three_captured": sum(bool(row["all_3_captured_despite_casualty"]) for row in group),
+            "episodes_casualty_all_three_captured_but_strict_final_recovery_failed": sum(
+                bool(row["all_3_captured_despite_casualty"] and not row["final_recovery_success"])
+                for row in group
+            ),
+            "episodes_full_persistent_service_complete": sum(bool(row["persistent_service_complete"]) for row in group),
             "episodes_terminal_failure": sum("terminal_failure" in str(row["stop_reason"]) for row in group),
         }
         by_regime[regime] = {
@@ -1019,6 +1181,22 @@ def main() -> int:
             "persistent_service_complete": sum(bool(row["persistent_service_complete"]) for row in group),
             "persistent_service_complete_censored_or_failed": sum(not bool(row["persistent_service_complete"]) for row in group),
             "failure_taxonomy": failure_taxonomy,
+            "survival": {
+                "final_active_pursuer_count": summarize([float(row["final_active_pursuer_count"]) for row in group]),
+                "minimum_active_pursuer_count": summarize([float(row["minimum_active_pursuer_count"]) for row in group]),
+                "pursuers_lost": summarize([float(row["pursuers_lost"]) for row in group]),
+                "episodes_with_any_casualty": sum(bool(row["episodes_with_any_casualty"]) for row in group),
+                "episodes_reaching_exact_active_count": {
+                    str(count): sum(count in row["active_counts_reached"] for row in group)
+                    for count in range(11, -1, -1)
+                },
+                "continued_after_first_casualty": sum(bool(row["continued_after_first_casualty"]) for row in group),
+                "target_captures_after_first_casualty": sum(int(row["target_captures_after_first_casualty"]) for row in group),
+                "waves_captured_after_first_casualty": sum(int(row["waves_captured_after_first_casualty"]) for row in group),
+                "wave2_capture_with_lt12_active": sum(bool(row["wave2_capture_with_lt12_active"]) for row in group),
+                "wave3_capture_with_lt12_active": sum(bool(row["wave3_capture_with_lt12_active"]) for row in group),
+                "all_3_captured_despite_casualty": sum(bool(row["all_3_captured_despite_casualty"]) for row in group),
+            },
             "per_wave_degradation": by_wave,
             "total_mission_seconds": summarize([float(row["total_mission_seconds"]) for row in group]),
             "cumulative_collision_count": summarize([float(row["cumulative_collision_count"]) for row in group]),
@@ -1042,10 +1220,10 @@ def main() -> int:
     summary = {
         "schema": SCHEMA,
         "status": "complete",
-        "classification": ("FORMAL_CONTRACT_PASS" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_PASS") if all(
+        "classification": ("DEGRADED_TEAM_ROBUSTNESS_COMPLETE" if args.degraded_team_survival else ("FORMAL_CONTRACT_PASS" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_PASS")) if all(
             all(bool(v) for k, v in row["contract_diagnostics"].items() if isinstance(v, bool))
             for row in records
-        ) else ("FORMAL_CONTRACT_BLOCKED" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_BLOCKED"),
+        ) else ("DEGRADED_TEAM_ROBUSTNESS_BLOCKED" if args.degraded_team_survival else ("FORMAL_CONTRACT_BLOCKED" if args.episodes_per_regime == 20 else "DEMO_CONTRACT_BLOCKED")),
         "selected_policy": {
             "step": int(selected["step"]),
             "checkpoint": str(checkpoint),
@@ -1064,6 +1242,9 @@ def main() -> int:
             "sensing": NORMSENSE_POLICY, "collision": "synchronized_swept_v1",
             "action_contract": "AW9 fixed midpoint-32 greedy", "decision_dt_seconds": DT_SECONDS,
             "global_horizon_steps": GLOBAL_HORIZON, "post_capture_window_steps": POST_CAPTURE_WINDOW,
+            "evaluation_only_degraded_team_survival": bool(args.degraded_team_survival),
+            "survival_termination": "active_count == 0" if args.degraded_team_survival else "configured active minimum",
+            "coverage_ce_min_active_pursuers_unchanged": 12,
         },
         "paired_seed_contract": {
             "initial_world_seed_base": int(args.initial_seed_base),
@@ -1078,6 +1259,7 @@ def main() -> int:
             "final_recovery_time", "collision_count", "per_wave_capture_success_and_time",
             "agent_reuse_and_behavior_transition",
         ],
+        "selected_regimes": selected_regimes,
         "parallel_execution": {
             **resources,
             "representative_gifs_per_regime": min(REPRESENTATIVE_GIFS_PER_REGIME, args.episodes_per_regime),
