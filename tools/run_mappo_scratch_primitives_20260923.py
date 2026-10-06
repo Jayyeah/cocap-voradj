@@ -227,7 +227,14 @@ def load_latest(path: Path, task: str, device: str):
     return trainer, stream, payload
 
 
-def run(task: str, out: Path, device: str, resume: Path | None = None, smoke: bool = False) -> None:
+def run(
+    task: str,
+    out: Path,
+    device: str,
+    resume: Path | None = None,
+    smoke: bool = False,
+    budget_override: int | None = None,
+) -> None:
     spec = TASKS[task]
     if resume is None:
         if out.exists():
@@ -243,8 +250,8 @@ def run(task: str, out: Path, device: str, resume: Path | None = None, smoke: bo
             "task": task,
             "scientific_name": "CAPABILITY_FIRST_CAPTURE_BASELINE" if task == "capture" else "PURE_COVERAGE_POSITIVE_CONTROL",
             "seed": SEED,
-            "budget": 256 if smoke else spec["budget"],
-            "formal_checkpoints": [0] if smoke else list(range(0, spec["budget"] + 1, 25_000)),
+            "budget": 256 if smoke else (budget_override or spec["budget"]),
+            "formal_checkpoints": [0] if smoke else list(range(0, (budget_override or spec["budget"]) + 1, 25_000)),
             "eval_episodes_per_mode": 1 if smoke else 20,
             "eval_modes": ["argmax", "sample"],
             "initialization": "random-init",
@@ -279,7 +286,16 @@ def run(task: str, out: Path, device: str, resume: Path | None = None, smoke: bo
         rollout = payload["rollout"]
         metrics = payload["metrics"]
         step = int(payload["step"])
+        if budget_override is not None:
+            if budget_override < step:
+                raise ValueError(f"budget override {budget_override} is below resumed step {step}")
+            launch["budget"] = int(budget_override)
+            launch["formal_checkpoints"] = list(range(0, int(budget_override) + 1, 25_000))
+            payload["launch"] = launch
         out.mkdir(parents=True, exist_ok=True)
+        if budget_override is not None:
+            write_json(out / "launch.json", launch)
+            save_latest(out, task, step, trainer, stream, launch, rollout, metrics)
         write_json(out / "resume.json", {
             "status": "PASS_LATEST_RESUME_LOAD",
             "task": task,
@@ -365,6 +381,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--budget", type=int, help="Override the task budget; checkpoints remain every 25k steps.")
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
     if args.smoke and args.resume:
@@ -374,7 +391,9 @@ def main() -> None:
     try:
         # Fail closed on IQN/BC/old artifact reads for both primitives.
         scratch.forbid_teacher_dependencies(output)
-        run(args.task, output, args.device, args.resume, args.smoke)
+        if args.budget is not None and args.budget <= 0:
+            parser.error("--budget must be positive")
+        run(args.task, output, args.device, args.resume, args.smoke, args.budget)
     except BaseException:
         output.mkdir(parents=True, exist_ok=True)
         write_json(output / "failure.json", {
