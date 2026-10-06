@@ -1002,8 +1002,8 @@ def main() -> int:
             "episodes_missing_all_three_captures": sum(not bool(row["all_3_captured"]) for row in group),
             "episodes_final_recovery_failure_after_wave3_capture": sum(bool(row["all_3_captured"] and not row["final_recovery_success"]) for row in group),
             "episodes_with_collision": sum(bool(row["cumulative_collision"]) for row in group),
-            "episodes_insufficient_active_pursuers": sum("insufficient_active_pursuers" in stop for stop in stop_reasons),
-            "episodes_terminal_failure": sum("terminal_failure" in stop for stop in stop_reasons),
+            "episodes_insufficient_active_pursuers": sum("insufficient_active_pursuers" in str(row["stop_reason"]) for row in group),
+            "episodes_terminal_failure": sum("terminal_failure" in str(row["stop_reason"]) for row in group),
         }
         by_regime[regime] = {
             "episodes": len(group),
