@@ -388,6 +388,8 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             "mission_tracker": MissionEventTracker(DT_SECONDS),
             "mission_events": [],
             "safe_complete_step": None,
+            "arrival_trigger_step": None,
+            "arrival_trigger_observed_without_next_wave": False,
             "recovery_window_expired": False,
             "stop_reason": None,
         }
@@ -417,6 +419,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         "capture_recovery_timer_reset": True,
         "wave_id_correct": True,
         "target_generation_correct": True,
+        "no_wave4_generated": True,
         "finite_values": True,
         "evaluator_parameter_updates": 0,
         "checkpoint_sha256_before": EXPECTED_CHECKPOINT_SHA256,
@@ -576,12 +579,39 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
             frame["wave_id"] = int(wave["wave_id"])
             frames.append(frame)
 
-        if len(active_z) < 2:
+        active_count = int(sum(not p.deactivated for p in env.pursuers))
+        if len(active_z) < 2 or active_count < int(env.reward_cfg.get("min_active_pursuers", 2)):
             wave["stop_reason"] = "insufficient_active_pursuers"
             stop_reason = wave["stop_reason"]
             break
         if wave.get("stop_reason") == "target_lost_to_collision":
             stop_reason = "target_lost_to_collision"
+            break
+
+        final_wave = int(wave["wave_id"]) == WAVES
+        if final_wave and collision_events:
+            wave["stop_reason"] = "final_wave_collision"
+            stop_reason = wave["stop_reason"]
+            break
+        terminal_failure = any(
+            bool(info.get("terminated")) and str(info.get("state", "")) not in {"voradj completed", "capture completed"}
+            for info in outcome.infos
+        )
+        if final_wave and terminal_failure:
+            wave["stop_reason"] = "final_wave_terminal_failure"
+            stop_reason = wave["stop_reason"]
+            break
+
+        # Wave 3 has no successor. Its B/C Z-clear + delay boundary remains a
+        # recorded arrival trigger, while physical and policy stepping continue
+        # through final-wave recovery. Wave 1/2 scheduling is unchanged.
+        if final_wave and wave["ce_recovery_success"]:
+            wave["stop_reason"] = "final_wave_recovery_success"
+            stop_reason = wave["stop_reason"]
+            break
+        if final_wave and wave["recovery_window_expired"]:
+            wave["stop_reason"] = "final_wave_recovery_window_expired"
+            stop_reason = wave["stop_reason"]
             break
 
         if regime == "PERSIST-A":
@@ -597,47 +627,49 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
                 wave["stop_reason"] = "recovery_window_expired_without_safe_complete"
                 stop_reason = wave["stop_reason"]
                 break
-        elif wave["first_all_z_zero_step"] is not None and pending_spawn_step is None:
+        elif (wave["first_all_z_zero_step"] is not None and pending_spawn_step is None
+              and not wave["arrival_trigger_observed_without_next_wave"]):
             pending_spawn_step = planned_spawn_boundary(regime, wave["safe_complete_step"], int(wave["first_all_z_zero_step"]), int(wave["delay_steps"] or 0))
 
         if pending_spawn_step is not None and global_step >= pending_spawn_step:
             if int(wave["wave_id"]) >= WAVES:
-                finish_wave("final_wave_complete_or_horizon")
-                stop_reason = "three_waves_complete"
-                break
-            if wave["capture_step"] is None:
-                stop_reason = "next_arrival_trigger_without_capture"
-                break
-            wave["interrupted_by_next_arrival"] = bool(not wave["safe_complete"])
-            finish_wave("next_arrival")
-            physical_before = pursuer_physical_state()
-            dead_before = {int(p.id) for p in env.pursuers if p.deactivated}
-            current_obstacle_hash = stable_hash([[float(o.x), float(o.y), float(o.r)] for o in env.obstacles])
-            generation = spawn_target_generation(env, refresh_rng, int(wave["wave_id"]) + 1, int(wave["target_generation"]) + 1)
-            observations = list(env.get_observations())
-            physical_after = pursuer_physical_state()
-            diagnostics = current_observation_audit()
-            contract["pursuer_physical_state_continuous"] &= physical_before == physical_after
-            contract["obstacles_unchanged"] &= current_obstacle_hash == obstacle_hash == generation["obstacle_hash"]
-            contract["dead_agents_not_revived"] &= dead_before.issubset({int(p.id) for p in env.pursuers if p.deactivated})
-            contract["target_slot_reuse"] &= generation["target_slots"] == initial_generation["target_slots"]
-            contract["ghost_targets_absent"] &= sum(not e.deactivated for e in env.evaders) == TARGETS_PER_WAVE
-            contract["stale_observations_absent"] &= bool(diagnostics["no_stale_observation"])
-            contract["capture_recovery_timer_reset"] &= (
-                env.post_capture_step == 0 and not env.post_capture_started
-                and not env.post_capture_coverage_success and env.post_capture_coverage_step is None
-                and env._stationary_capture_counters == {}
-            )
-            contract["wave_id_correct"] &= generation["wave_id"] == int(wave["wave_id"]) + 1
-            contract["target_generation_correct"] &= generation["target_generation"] == int(wave["target_generation"]) + 1
-            contract["wave2_wave3_spawned"] &= generation["wave_id"] <= 3
-            spawn_events.append({"step": global_step, **generation, "observation_audit": diagnostics})
-            wave = start_wave(generation, global_step)
-            wave_rows.append(wave)
-            wave["mission_tracker"].observe(snapshot(env, observations), global_step)
-            pending_spawn_step = None
-            pending_delay_steps = None
-            dead_at_start |= dead_before
+                wave["arrival_trigger_step"] = int(global_step)
+                wave["arrival_trigger_observed_without_next_wave"] = True
+                pending_spawn_step = None
+            else:
+                if wave["capture_step"] is None:
+                    stop_reason = "next_arrival_trigger_without_capture"
+                    break
+                wave["interrupted_by_next_arrival"] = bool(not wave["safe_complete"])
+                finish_wave("next_arrival")
+                physical_before = pursuer_physical_state()
+                dead_before = {int(p.id) for p in env.pursuers if p.deactivated}
+                current_obstacle_hash = stable_hash([[float(o.x), float(o.y), float(o.r)] for o in env.obstacles])
+                generation = spawn_target_generation(env, refresh_rng, int(wave["wave_id"]) + 1, int(wave["target_generation"]) + 1)
+                observations = list(env.get_observations())
+                physical_after = pursuer_physical_state()
+                diagnostics = current_observation_audit()
+                contract["pursuer_physical_state_continuous"] &= physical_before == physical_after
+                contract["obstacles_unchanged"] &= current_obstacle_hash == obstacle_hash == generation["obstacle_hash"]
+                contract["dead_agents_not_revived"] &= dead_before.issubset({int(p.id) for p in env.pursuers if p.deactivated})
+                contract["target_slot_reuse"] &= generation["target_slots"] == initial_generation["target_slots"]
+                contract["ghost_targets_absent"] &= sum(not e.deactivated for e in env.evaders) == TARGETS_PER_WAVE
+                contract["stale_observations_absent"] &= bool(diagnostics["no_stale_observation"])
+                contract["capture_recovery_timer_reset"] &= (
+                    env.post_capture_step == 0 and not env.post_capture_started
+                    and not env.post_capture_coverage_success and env.post_capture_coverage_step is None
+                    and env._stationary_capture_counters == {}
+                )
+                contract["wave_id_correct"] &= generation["wave_id"] == int(wave["wave_id"]) + 1
+                contract["target_generation_correct"] &= generation["target_generation"] == int(wave["target_generation"]) + 1
+                contract["wave2_wave3_spawned"] &= generation["wave_id"] <= 3
+                spawn_events.append({"step": global_step, **generation, "observation_audit": diagnostics})
+                wave = start_wave(generation, global_step)
+                wave_rows.append(wave)
+                wave["mission_tracker"].observe(snapshot(env, observations), global_step)
+                pending_spawn_step = None
+                pending_delay_steps = None
+                dead_at_start |= dead_before
 
         if global_step % 100 == 0:
             atomic_json(output_dir / f"episode_{regime.lower()}_{episode_index:02d}.progress.json", {
@@ -654,6 +686,7 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
     contract["wave2_wave3_spawned"] = bool(
         contract["wave2_wave3_spawned"] and required_spawn_wave_ids.issubset(spawned_wave_ids)
     )
+    contract["no_wave4_generated"] = bool(all(int(event["wave_id"]) <= WAVES for event in spawn_events))
     contract["z_update_count_correct"] = bool(diag.update_count_violations == 0 and env._z_update_count == global_step + 1)
     contract["z_reactivated_after_new_wave"] = bool(all(row["z_reactivated_after_spawn"] for row in wave_rows[1:]))
     contract["finite_values"] = bool(np.isfinite(np.asarray(env.z_state, dtype=float)).all())
@@ -677,6 +710,30 @@ def run_episode(model: CoCapIQN, config_path: Path, regime: str, episode_index: 
         "waves_safe_completed": int(sum(bool(row["safe_complete"]) for row in wave_rows)),
         "all_3_captured": bool(len(wave_rows) == 3 and all(row["capture_step"] is not None for row in wave_rows)),
         "all_3_safe_complete": bool(len(wave_rows) == 3 and all(bool(row["safe_complete"]) for row in wave_rows)),
+        "final_recovery_success": bool(len(wave_rows) == WAVES and wave_rows[-1]["ce_recovery_success"]),
+        "final_recovery_time_steps": wave_rows[-1]["recovery_time_steps"] if len(wave_rows) == WAVES else None,
+        "final_recovery_time": wave_rows[-1]["recovery_time_seconds"] if len(wave_rows) == WAVES else None,
+        "final_safe_complete": bool(len(wave_rows) == WAVES and wave_rows[-1]["safe_complete"]),
+        "final_wave_arrival_trigger_step": wave_rows[-1]["arrival_trigger_step"] if len(wave_rows) == WAVES else None,
+        "final_wave_recovery_steps_after_arrival_trigger": (
+            max(0, int(wave_rows[-1]["recovery_time_steps"]) -
+                (int(wave_rows[-1]["arrival_trigger_step"]) - int(wave_rows[-1]["capture_step"])))
+            if len(wave_rows) == WAVES and wave_rows[-1]["arrival_trigger_step"] is not None and wave_rows[-1]["recovery_time_steps"] is not None
+            else None
+        ),
+        "no_disqualifying_failure": bool(
+            episode_collision_count == 0
+            and stop_reason not in {"target_lost_to_collision", "final_wave_collision", "final_wave_terminal_failure", "insufficient_active_pursuers"}
+            and (not wave_rows or wave_rows[-1]["active_pursuer_count_at_end"] == len(env.pursuers))
+        ),
+        "persistent_service_complete": bool(
+            len(wave_rows) == WAVES
+            and all(row["capture_step"] is not None for row in wave_rows)
+            and wave_rows[-1]["ce_recovery_success"]
+            and episode_collision_count == 0
+            and stop_reason not in {"target_lost_to_collision", "final_wave_collision", "final_wave_terminal_failure", "insufficient_active_pursuers"}
+            and wave_rows[-1]["active_pursuer_count_at_end"] == len(env.pursuers)
+        ),
         "cumulative_collision_count": int(episode_collision_count),
         "cumulative_collision": bool(episode_collision_count),
         "surviving_pursuers_after_each_wave": [row["active_pursuer_count_at_end"] for row in wave_rows],
@@ -726,6 +783,11 @@ METRIC_DEFINITIONS = {
     "ce_recovery_success": {"meaning": "canonical strict CE recovery occurs within 700 steps after capture", "better_direction": "↑"},
     "recovery_time_seconds": {"meaning": "seconds from final capture to canonical strict CE recovery", "better_direction": "↓"},
     "safe_complete": {"meaning": "canonical CE recovery within 700 steps with no wave collision and all pursuers active", "better_direction": "↑"},
+    "final_recovery_success": {"meaning": "Wave 3 canonical strict-CE recovery succeeds within 700 steps after capture", "better_direction": "↑"},
+    "final_recovery_time": {"meaning": "seconds from Wave 3 final capture to canonical strict-CE recovery; null if unsuccessful", "better_direction": "↓"},
+    "final_safe_complete": {"meaning": "Wave 3 recovery succeeds within 700 steps with no Wave 3 collision and all pursuers active", "better_direction": "↑"},
+    "persistent_service_complete": {"meaning": "all three waves captured AND Wave 3 recovery succeeds AND no cumulative collision, terminal failure, or active-pursuer loss", "better_direction": "↑"},
+    "all_3_safe_complete": {"meaning": "all three waves individually safe-complete; directly interpretable for PERSIST-A only because B/C may interrupt Wave 1/2 recovery", "better_direction": "↑ for PERSIST-A; diagnostic for PERSIST-B/C"},
     "active_pursuer_count": {"meaning": "number of pursuers still active at wave end", "better_direction": "↑"},
     "coverage_debt_seconds": {"meaning": "time outside strict CE during the wave", "better_direction": "diagnostic"},
     "waves_captured": {"meaning": "number of the three waves captured", "better_direction": "↑"},
@@ -799,7 +861,12 @@ def main() -> int:
             "waves_captured": {"n": sum(row["waves_captured"] for row in group), "mean": float(np.mean([row["waves_captured"] for row in group]))},
             "waves_safe_completed": {"n": sum(row["waves_safe_completed"] for row in group), "mean": float(np.mean([row["waves_safe_completed"] for row in group]))},
             "all_3_captured": sum(bool(row["all_3_captured"]) for row in group),
-            "all_3_safe_complete": sum(bool(row["all_3_safe_complete"]) for row in group),
+            "all_3_safe_complete": sum(bool(row["all_3_safe_complete"]) for row in group) if regime == "PERSIST-A" else None,
+            "all_3_safe_complete_diagnostic": sum(bool(row["all_3_safe_complete"]) for row in group),
+            "final_recovery_success": sum(bool(row["final_recovery_success"]) for row in group),
+            "final_recovery_time": summarize([float(row["final_recovery_time"]) for row in group if row["final_recovery_time"] is not None]),
+            "final_safe_complete": sum(bool(row["final_safe_complete"]) for row in group),
+            "persistent_service_complete": sum(bool(row["persistent_service_complete"]) for row in group),
             "total_mission_seconds": summarize([float(row["total_mission_seconds"]) for row in group]),
             "cumulative_collision_count": summarize([float(row["cumulative_collision_count"]) for row in group]),
             "per_wave": {
