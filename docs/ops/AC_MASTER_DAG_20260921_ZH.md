@@ -366,3 +366,7 @@ A1 control 的 4 个 resolved config/preflight 文件单独提交为 `4baeccb`�
 - 该任务仍为 `RUNNING_PHASE_A_STAGE1 / IN_PROGRESS_NO_SCIENTIFIC_RESULT`。后续门禁为持续检查 heartbeat、完成候选 screening/selection，再逐 stage 晋级，最后使用三表示配对 held-out seeds 完成各场景 50 episodes。`GLOBAL_ORACLE` 按目标定义报告为 global target-state information upper bound。
 
 中央 state 的 `tasks` 已新增 `EXP-EVIDENCE-01` 详细登记；本次中央变更只涉及本 DAG 文档与 state JSON。
+
+### 2026-10-06 19:43 EXP-EVIDENCE-01 live reconciliation
+
+实验分支已新增并推送 formal launch preflight 快照 `evidence/local-global-20261006` @ `56a8b0a`。实时读取确认 tmux `iqn_evidence_phasea_20261006`、supervisor PID `14306`、训练 PID `14447/14446` 均仍存活；最近 heartbeat 为 19:43:18，Local-Binary 为 9k/2M、Global-Oracle 为 10k/2M，training metrics 已出现 finite optimizer loss 与更新计数。候选评估从 100k 开始，因此当前没有 screening evaluator 属预期；GPU0/GPU1 分别保持绑定，当前利用率约 9%/16%。此处仅为运行健康状态，不构成性能结论。中央 `EXP-EVIDENCE-01` state 已同步至实验分支 HEAD `56a8b0a` 和上述当前步数。
