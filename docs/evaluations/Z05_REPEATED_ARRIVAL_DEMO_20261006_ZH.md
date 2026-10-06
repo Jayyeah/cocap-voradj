@@ -1,143 +1,102 @@
 # EXP-PERSIST-01：Z05 Zero-shot Repeated Arrival Demo handoff
 
-## 结果
+## 分类与结论
 
-`DEMO_CONTRACT_PASS`
+分类：`DEMO_CONTRACT_PASS`
 
-只完成 3 regimes × 3 paired episodes 的 evaluation-only Demo。未训练、未做 optimizer/replay update，未改 checkpoint、reward、network、sensing 或 curriculum。成功率仅作为 Demo 逐局结果，不据此排序 policy。
+就绪状态：`READY_FOR_FORMAL_REPEATED_ARRIVAL_EVAL`
 
-## Branch / source / policy
+本轮只修正 evaluator 的 Wave3 endpoint 与统一 persistent endpoint 指标，并使用原始配对 seeds 重跑 3 regimes × 3 episodes。没有启动 20×3 formal run。
 
-| 项 | 事实 |
+Wave1/Wave2 的 PERSIST-A/B/C arrival scheduling、checkpoint、spawn、reward、Z、NormSense、horizon 和 recovery window 均保持原合同。B/C 的 Wave3 arrival trigger 现在只记事件；环境继续正常推进到 recovery success 或终止条件。9 局未生成 Wave4。
+
+## Branch、policy 与固定合同
+
+| 项 | 值 |
 |---|---|
-| evaluation branch | `evaluation/z05-repeated-arrival-demo-20261006` |
-| implementation commit | `0472847` (`Add Z05 repeated-arrival demo evaluator`) |
-| base branch / HEAD | `evaluation/iqn-z05-independent-20260923` @ `1a9da054ecb5652726005d00d08ab05a2188dd8e` |
-| checkpoint | `/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/training/checkpoints/step_600000.pt` |
+| Branch / evaluator fix commit | `evaluation/z05-repeated-arrival-demo-20261006` / `35a9aa44f1899cd2cc7e094517de65f8ba29e6ed` |
+| 原始基线 HEAD | `b0bbad78b8b13dfb183bb5b464f132800d287d31` |
+| Stage3 selected checkpoint | `/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/training/checkpoints/step_600000.pt` |
 | selected step / SHA256 | `600000` / `8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095` |
-| formal selection report | `/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/selection_report.json` |
-| selection report SHA256 | `83a056abcdaf65e95529c927e55c5db361f19682ce29d29321fbc526fdcea134` |
+| 正式 selection report | `/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/selection_report.json` |
 | Stage3 config | `configs/experiments/iqn_z_unified_decay_curriculum_20260919/z05_stage3_12p3e3obs_700k.yaml` |
-| Stage3 config SHA256 | `e7c180a5bdc61ae10a29c4b9ea571b80130cb0f49eb79a202ace8cc1403c0477` |
-| fixed contract | 12 pursuers, 3 target slots/wave, 3 obstacles, 120×120, friend token cap 8, NormSense V2, synchronized_swept_v1, AW9, decision_dt 0.5 s, 3000 global steps, 700-step post-capture window |
-| paired seeds | initial-world base `2026100601`; target-refresh RNG base `2026800601`; same episode indices across regimes |
+| 固定合同 | 12 pursuers、3 target slots/wave、3 obstacles、120×120、friend-token cap 8、NormSense V2、synchronized_swept_v1、AW9、dt 0.5 s、global horizon 3000、post-capture window 700 |
+| 配对 seeds | initial-world base `2026100601`；target-refresh RNG base `2026800601`；每 regime 3 局 |
 
-Target refresh streams are paired. Delay sampling uses a separate per-episode stream. Validity rejection can consume different numbers of target-refresh draws, so Wave2/3 coordinates are not claimed to match across regimes.
+正式 selection report 仍选 step 600000；文件 checkpoint SHA256 与期望值完全相同。模型 state SHA256 前后同为 `baf15ba48d7286f5fa298a6295e9ae941566f48991236bb3aec5f0e8aa705cc1`。运行仅使用 CPU；9/9 evaluator parameter updates = 0。
 
-## 实现
+## 本轮 evaluator 修正
 
-- 新增 `tools/run_iqn_repeated_arrival_demo_20261006.py`：沿用注册的 IQN midpoint-32 greedy action、NormSense V2 runtime、Stage3 map_random 目标采样规则和 canonical strict-CE recovery；只在 evaluator 中加入 repeated-arrival 调度与固定 target slot 刷新。
-- Pursuer 的位置、速度、朝向和 active/deactivated 状态连续；obstacle layout、global step、Z 状态与更新计数连续。target slot 0–2 按 generation 复用。每波只清理捕获、coverage/recovery 与 capture timer 元数据。
-- 新增 `tests/test_iqn_repeated_arrival_demo_20261006.py`，覆盖 A/B/C 决策边界、独立 delay stream、target slot 复用、初始间距、pursuer/obstacle/Z 连续性和 lifecycle timer 清理。
-- 首次运行发现并修正两项 evaluator 问题：PERSIST-A 不得由 Z-clear 触发；轨迹文件必须在逐步追加前创建。另将 PERSIST-C delay stream 改为每局一次初始化、每波顺序抽样。
+- Wave1/Wave2 的 arrival scheduling 不变。
+- Wave3 不再因 B/C 的 Z-clear + delay arrival boundary 结束 episode；该 boundary 记录为 `arrival_trigger_step`，之后继续正常 policy/environment stepping。
+- Wave3 在 canonical strict-CE recovery success、capture 后 700-step window 到期、global horizon、collision/terminal failure 或 active-pursuer 不足时终止；不生成 Wave4。
+- 新增 `final_recovery_success`、`final_recovery_time`（秒，capture 至 Wave3 strict CE）、`final_safe_complete`、`no_disqualifying_failure` 和 `persistent_service_complete`。
+- `persistent_service_complete = all_3_captured AND final_recovery_success AND no_disqualifying_failure`。本次 no-disqualifying-failure 排除累计 collision、终端失败及 active-pursuer loss。
+- `all_3_safe_complete` 保留为逐局诊断；summary 对 PERSIST-B/C 不将其作为主性能数字，因为 Wave1/2 recovery 可能被下一 arrival 中断。Coverage debt 保留为 secondary diagnostic。
 
-测试：`3 passed`（新合同测试）；`1 passed`（IQN deterministic evaluator）；`22 passed`（IQN Z curriculum 与 Z-v2 contracts）。`git diff --check` 通过。
+## 3×3 Demo endpoint 结果
 
-## A/B/C Demo
+时间单位为秒。final recovery time 对 Wave3 从 capture 到 canonical strict-CE recovery；失败时为 null。Collision 为 episode 累计事件数。
 
-时间统计为 mean / median / p90。每项均按名称、含义和方向报告。只有 3 episodes/regime，结果用于逐局说明，不作强统计结论。
+| Regime | all_3_captured ↑ | final_recovery_success ↑ | final_recovery_time ↓（逐局） | final_safe_complete ↑ | persistent_service_complete ↑ | collision ↓ | all_3_safe_complete |
+|---|---:|---:|---|---:|---:|---:|---|
+| PERSIST-A | 2/3 | 1/3 | null, 179.5, null | 1/3 | 1/3 | 0 | 1/3（A 可直接解释） |
+| PERSIST-B | 3/3 | 3/3 | 40.0, 152.5, 90.5 | 3/3 | 3/3 | 0 | 0/3（诊断；W1/2 被中断） |
+| PERSIST-C | 3/3 | 3/3 | 74.5, 81.5, 111.5 | 3/3 | 3/3 | 0 | 0/3（诊断；W1/2 被中断） |
 
-| 指标 | PERSIST-A | PERSIST-B | PERSIST-C |
-|---|---:|---:|---:|
-| waves_captured `[0,3]` ↑，总数 / 平均 | 7/9 / 2.33 | 9/9 / 3.00 | 9/9 / 3.00 |
-| waves_safe_completed `[0,3]` ↑，总数 / 平均 | 5/9 / 1.67 | 0/9 / 0.00 | 0/9 / 0.00 |
-| all_3_captured ↑ | 2/3 | 3/3 | 3/3 |
-| all_3_safe_complete ↑ | 1/3 | 0/3 | 0/3 |
-| total mission time ↓，秒 | 581.83 / 639.50 / 714.30 | 112.83 / 113.50 / 116.70 | 135.17 / 136.00 / 144.80 |
-| cumulative collision ↓，事件数 mean / median / p90 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
-| normal capture success ↑，逐波 | 7/7 | 9/9 | 9/9 |
-| capture success ↑，逐波 | 7/7 | 9/9 | 9/9 |
-| capture time ↓，秒 mean / median / p90 | 29.07 / 26.50 / 38.40 | 35.61 / 34.00 / 48.50 | 39.11 / 42.00 / 49.20 |
-| first all-Z-zero time diagnostic，capture 后秒 mean / median / p90 | 1.50 / 1.50 / 1.50 | 1.50 / 1.50 / 1.50 | 1.50 / 1.50 / 1.50 |
-| Z release time diagnostic，capture 后秒 mean / median / p90 | 1.50 / 1.50 / 1.50 | 1.50 / 1.50 / 1.50 | 1.50 / 1.50 / 1.50 |
-| CE recovery success ↑，逐波 | 5/7 | 0/9 | 0/9 |
-| recovery time ↓，秒 mean / median / p90 | 167.90 / 179.50 / 232.70（n=5） | 未完成（n=0） | 未完成（n=0） |
-| safe-complete ↑，逐波 | 5/7 | 0/9 | 0/9 |
-| active pursuer count ↑，波末 mean / median / p90 | 12 / 12 / 12 | 12 / 12 / 12 | 12 / 12 / 12 |
-| coverage debt diagnostic，秒 mean / median / p90 | 248.64 / 231.00 / 374.40 | 37.61 / 36.00 / 50.50 | 45.06 / 48.50 / 54.50 |
-| cumulative coverage debt diagnostic，episode 秒 mean / median / p90 | 580.17 / 637.50 / 711.50 | 112.83 / 113.50 / 116.70 | 135.17 / 136.00 / 144.80 |
+PERSIST-A 的两个未完成 episode 分别在 Wave1 与 Wave3 的 700-step recovery window 到期；因此依合同没有继续刷新下一 wave。B/C Wave1/2 的 `interrupted_by_next_arrival=true`，这些 wave 不记为 safe-complete。所有 regime 的 active pursuer 数均保持 12。
 
-PERSIST-A 的 E0 在 700-step window 到期且未 safe-complete，因此按合同不刷新 Wave2。PERSIST-B/C 的 Wave2/3 在 recovery 完成前到达，`interrupted_by_next_arrival=true`；没有将未完成恢复记成 safe-complete。
+## Wave3 trigger 后 recovery 轨迹
 
-## Per-wave trace
+| Regime / episode | Wave3 capture step | first all-Z-zero | delay steps | arrival trigger step | final recovery step | trigger 后继续 steps | recovery time |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A / E1 | 1106 | 1109 | — | — | 1465 | — | 359 steps / 179.5 s |
+| B / E0 | 223 | 226 | 0 | 227 | 303 | 76 | 80 steps / 40.0 s |
+| B / E1 | 231 | 234 | 0 | 235 | 536 | 301 | 305 steps / 152.5 s |
+| B / E2 | 211 | 214 | 0 | 215 | 392 | 177 | 181 steps / 90.5 s |
+| C / E0 | 259 | 262 | 9 | 272 | 408 | 136 | 149 steps / 74.5 s |
+| C / E1 | 281 | 284 | 9 | 294 | 444 | 150 | 163 steps / 81.5 s |
+| C / E2 | 231 | 234 | 10 | 245 | 454 | 209 | 223 steps / 111.5 s |
 
-`cap` 是 wave 开始至末目标捕获的 steps；`Z0` 是 capture 后至 `max_i z_i == 0` 的 steps；`D` 是 PERSIST-C 抽样 delay（PERSIST-B 为 0）；`rec` 是 capture 后 strict CE recovery steps；`I` 表示被下一 arrival 中断；`alive` 是波末 active pursuer 数。
+A/E0 没有 Wave3；A/E2 Wave3 capture 后 700 steps 内未 recovery。B/C 六局全部在 Wave3 arrival trigger 后持续运行，并以 canonical recovery success 结束。9 局的 target generation wave IDs 均为 `[1,2,3]`。
 
-25 个已执行 wave 的 collision count 均为 0；逐波计数也记录在每个 episode 的 events JSON 中。
+Wave1/2 简要 traces（capture steps；Z-clear 后 arrival delay；recovery 是否被新 arrival 中断）：
 
-| Regime / episode / wave | cap | Z0 | D | rec | CE / safe | I | alive |
-|---|---:|---:|---:|---:|---|---:|---:|
-| A / E0 / W1 | 46 | 3 | — | — | 否 / 否 | 否 | 12 |
-| A / E1 / W1 | 84 | 3 | — | 379 | 是 / 是 | 否 | 12 |
-| A / E1 / W2 | 72 | 3 | — | 523 | 是 / 是 | 否 | 12 |
-| A / E1 / W3 | 46 | 3 | — | 359 | 是 / 是 | 否 | 12 |
-| A / E2 / W1 | 42 | 3 | — | 163 | 是 / 是 | 否 | 12 |
-| A / E2 / W2 | 64 | 3 | — | 255 | 是 / 是 | 否 | 12 |
-| A / E2 / W3 | 53 | 3 | — | — | 否 / 否 | 否 | 12 |
-| B / E0 / W1 | 46 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E0 / W2 | 101 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E0 / W3 | 68 | 3 | 0 | — | 否 / 否 | 否 | 12 |
-| B / E1 / W1 | 84 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E1 / W2 | 85 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E1 / W3 | 54 | 3 | 0 | — | 否 / 否 | 否 | 12 |
-| B / E2 / W1 | 42 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E2 / W2 | 96 | 3 | 0 | — | 否 / 否 | 是 | 12 |
-| B / E2 / W3 | 65 | 3 | 0 | — | 否 / 否 | 否 | 12 |
-| C / E0 / W1 | 46 | 3 | 6 | — | 否 / 否 | 是 | 12 |
-| C / E0 / W2 | 86 | 3 | 9 | — | 否 / 否 | 是 | 12 |
-| C / E0 / W3 | 104 | 3 | 9 | — | 否 / 否 | 否 | 12 |
-| C / E1 / W1 | 84 | 3 | 5 | — | 否 / 否 | 是 | 12 |
-| C / E1 / W2 | 83 | 3 | 10 | — | 否 / 否 | 是 | 12 |
-| C / E1 / W3 | 91 | 3 | 9 | — | 否 / 否 | 否 | 12 |
-| C / E2 / W1 | 42 | 3 | 7 | — | 否 / 否 | 是 | 12 |
-| C / E2 / W2 | 97 | 3 | 6 | — | 否 / 否 | 是 | 12 |
-| C / E2 / W3 | 71 | 3 | 10 | — | 否 / 否 | 否 | 12 |
+| Regime | E0 W1 / W2 | E1 W1 / W2 | E2 W1 / W2 |
+|---|---|---|---|
+| A | 46 / 未生成 | 84 / 72；均 recovery | 42 / 64；均 recovery |
+| B | 46 / 101；D=0，均中断 | 84 / 85；D=0，均中断 | 42 / 96；D=0，均中断 |
+| C | 46 / 86；D=6/9，均中断 | 84 / 83；D=5/10，均中断 | 42 / 97；D=7/6，均中断 |
 
-## Agent behavior reuse / transition
+## Per-wave diagnostics 与 agent reuse
 
-仅称 behavior reuse / behavior transition。每个 source-wave 的 capture/support participant 在后续波次再次成为 capture/support participant 的总计如下：
+逐波 capture、recovery 和 coverage-debt mean/median/p90 均记录在 `summary.json`。逐波 capture 成功数分别为 A 7/7、B 9/9、C 9/9；per-wave collision 总数均为 0。严格 recovery success 数为 A 5/7、B 3/9、C 3/9；B/C 的前六个波次因下一 arrival 中断，Wave3 recovery 均成功。Coverage debt 仅作 secondary diagnostic：episode cumulative mean 为 A 580.17 s、B 204.67 s、C 217.17 s。
 
-| Regime | Wave1 → Wave2 reuse | Wave1 → Wave3 reuse | Wave2 → Wave3 reuse |
-|---|---:|---:|---:|
-| PERSIST-A | 23/36 | 24/36 | 23/23 |
-| PERSIST-B | 36/36 | 35/36 | 35/36 |
-| PERSIST-C | 36/36 | 36/36 | 36/36 |
+Cross-wave behavior reuse（capture/support participants）：
 
-| Transition（跨相邻波、按 primary behavior） | A | B | C |
-|---|---:|---:|---:|
-| coverage → support | 1 | 0 | 0 |
-| support → capture | 8 | 16 | 20 |
-| capture → coverage | 0 | 0 | 0 |
-| coverage → capture | 0 | 0 | 0 |
+| Regime | W1→W2 | W1/W2→W3 |
+|---|---:|---:|
+| PERSIST-A | 23/36 | 47/59 |
+| PERSIST-B | 36/36 | 70/72 |
+| PERSIST-C | 36/36 | 72/72 |
 
-各 regime 的 agent-wave 行为标签汇总（允许同一 agent 同一 wave 有多个 flags）：
+行为转换计数（仅称 behavior transition）：coverage→support 为 A/B/C = 1/0/0；support→capture = 8/16/20；capture→coverage 与 coverage→capture 均为 0。各逐局 agent flags 和 target participant 信息保存在 per-episode event JSON 中。
 
-| Flag | A | B | C |
-|---|---:|---:|---:|
-| direct detector | 79 | 101 | 98 |
-| evidence-informed / support | 50 | 80 | 87 |
-| capture participant | 61 | 73 | 76 |
-| coverage-only | 84 | 108 | 108 |
-| collision/deactivated | 0 | 0 | 0 |
+## Contract diagnostics / tests
 
-## Artifacts / contract diagnostics
+9/9 contract diagnostics 全部通过：Wave2/3 conditional spawn、target-slot reuse、无 ghost target/stale observation、Z update count、Wave2/3 后 Z 可重新激活、pursuer physical state 连续、obstacle 不变、dead agent 不复活、capture/recovery timer 清理、wave_id/generation 正确、finite values、无 Wave4、evaluator parameter updates = 0。Checkpoint SHA256 与 model state SHA256 前后不变。
 
-结果目录：`/home/yjq/rl/CoCap1/z05-repeated-arrival-demo-20261006-final`
+新增 focused tests：`tests/test_iqn_repeated_arrival_demo_20261006.py` 3 passed。连同 IQN deterministic、Z curriculum、Z-v2 regression tests，共 26 passed。最终逐局 endpoint 审计确认：global step ≤3000；Wave3 recovery success 均在 700 steps 内；所有 recovery-window-expired episode 均已达到 capture+700；B/C trigger 后 episode 至少继续 76 steps；persistent service 布尔公式逐局一致。
 
-- `summary.json`：9 episode 汇总、指标定义与方向、逐波事件、行为复用、contract diagnostics。
-- `episode_{regime}_{index}.trajectory.jsonl`：9/9 完整逐决策轨迹，包含全 pursuer/target 状态、Z、wave/generation、capture/collision、strict CE。
-- `episode_{regime}_{index}.events.json`：9/9 per-wave event、target generation、Z diagnostics、agent behavior flags。
-- `gifs/persist-a_representative.gif`、`gifs/persist-b_representative.gif`、`gifs/persist-c_representative.gif`。
+结果目录：`/home/yjq/rl/CoCap1/z05-repeated-arrival-demo-20261006-final-recovery`
 
-9/9 episode 的条件式 Wave2/3 arrival、slot reuse、无 ghost/stale observation、Z update count、Z reactivation、pursuer physical continuity、obstacle continuity、dead-agent persistence、timer reset、wave_id/generation、finite values 均通过。Evaluator parameter updates = 0。Checkpoint SHA256 前后相同；加载后模型 state SHA256 前后相同。全部 9 局 collision count 为 0。
+- `summary.json`：9 局汇总、每项指标定义和方向、checkpoint/runtime hash、contract diagnostics。
+- `episode_*.trajectory.jsonl` 与 `episode_*.events.json`：9/9 完整轨迹与逐波事件/Z/target generation。
+- GIF：`gifs/persist-a_representative.gif`、`gifs/persist-b_representative.gif`、`gifs/persist-c_representative.gif`。
 
-发现的运行语义：PERSIST-A 未在 recovery window 内 safe-complete 时应停止刷新；PERSIST-B/C 可以在 safe-complete 前刷新，并记录 recovery interrupted。此行为已由最终轨迹覆盖。未发现阻止 evaluator 正式运行的 contract blocker。
+## Formal handoff
 
-## Formal evaluation handoff
-
-分类：`READY_FOR_FORMAL_REPEATED_ARRIVAL_EVAL`。本任务未启动 20×3 formal run。
-
-建议命令（正式运行前由调度方复核资源与输出目录）：
+建议正式命令（本轮未执行）：
 
 ```bash
 python tools/run_iqn_repeated_arrival_demo_20261006.py \
@@ -148,3 +107,5 @@ python tools/run_iqn_repeated_arrival_demo_20261006.py \
   --output <FORMAL_OUTPUT_DIR> \
   --device cpu
 ```
+
+按本轮 gate，Demo 已达到 `READY_FOR_FORMAL_REPEATED_ARRIVAL_EVAL`。formal 20×3 evaluation 未启动。
