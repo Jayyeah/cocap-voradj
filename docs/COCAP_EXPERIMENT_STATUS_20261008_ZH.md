@@ -194,7 +194,7 @@ relaxed最终20个recovery failure：A′4 casualty+3满编、B5+2、C5+1，总�
 - Central：`ops/ac-master-dag-20260921`；快照基点`3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0`，最终交付HEAD由git与handoff给出，避免自引用hash。
 - 所有checkpoint路径、训练配置SHA、selected SHA、summary/event/trajectory/GIF SHA、remote refs及42条worktree登记见 [integration verification](../artifacts/2026-10-08_experiment_integration/verification.json)。
 - 根盘可用140.47GiB。Evidence训练进程已结束；当前supervisor14306与Local700k CPU筛选1001961/1001974/1001975仍在运行。snapshot progress=12/60，只作为进度，不能据ETA宣称完成。
-- 另有TERL-MAPPO训练PID992932 / supervisor992900及其独立25k evaluator仍运行；两卡还被其它用户任务占用。没有停止/修改这些任务，Evidence lease已结束但GPU并非空闲。
+- 另有TERL-MAPPO训练PID992932 / supervisor992900及其独立evaluator仍运行；两卡还被其它用户任务占用。没有停止/修改这些任务，Evidence lease已结束但GPU并非空闲。
 - Validation：Evidence31 passed、Persistent27 passed；120局artifact核验PASS，6份final checkpoint payload/hash/finite审计PASS，compile与diff-check PASS。
 - 本文和中央DAG/state经commit/push后再次fetch与ls-remote验证；同步回执见integration目录的remote verification，实际最终HEAD另由handoff给出。live coordinator_state.json仍是未提交动态runtime文件，既有Z05 raw artifact目录也未提交；本轮只同步审核后的代码/文档/状态/snapshot，不把未完成动态runtime包装为完成证据。
 
@@ -203,3 +203,5 @@ relaxed最终20个recovery failure：A′4 casualty+3满编、B5+2、C5+1，总�
 - [Persistent strict report](https://github.com/Jayyeah/cocap-voradj/blob/751ee2fdf8e0134504e9b4f033904cc610dd6891/docs/evaluations/Z05_REPEATED_ARRIVAL_DEMO_20261006_ZH.md)
 - [Casualty / hold / collision report](https://github.com/Jayyeah/cocap-voradj/blob/751ee2fdf8e0134504e9b4f033904cc610dd6891/docs/evaluations/Z05_CASUALTY_TOLERANCE_ROBUSTNESS_20261006_ZH.md)
 - [Z05最新独立结果](https://github.com/Jayyeah/cocap-voradj/blob/1a9da054ecb5652726005d00d08ab05a2188dd8e/docs/evaluations/report.md)
+
+同步核验：`2026-10-08T23:26:49.226380+08:00`，Evidence `6b7aab2`、Persistent `751ee2f`、Z05 reference `1a9da05`、central integration `132960a`均通过local==origin==GitHub ls-remote。该回执记录其自身提交前的核验点；回执提交还会另行push/fetch/ls-remote核验，最终HEAD见handoff。

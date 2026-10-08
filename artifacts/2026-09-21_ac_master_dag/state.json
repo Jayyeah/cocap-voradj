@@ -1,13 +1,13 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-08T23:18:42.735153+08:00",
+  "updated_at": "2026-10-08T23:26:49.226380+08:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
     "branch": "ops/ac-master-dag-20260921",
     "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
-    "head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
-    "remote_head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
+    "head": "132960a34eae0a47d97385f3982204131943def7",
+    "remote_head": "132960a34eae0a47d97385f3982204131943def7",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
     "child_parallelism_policy": "DYNAMIC_BY_SCIENTIFIC_DEPENDENCY_AND_REAL_RESOURCE_CAPACITY; NO_STATIC_CHILD_COUNT_LIMIT; MASTER_TO_CHILD_ONLY",
@@ -16,13 +16,13 @@
     "normal_pushes_allowed": true,
     "last_reconciled_commit": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
     "last_remote_fetch_at": "2026-10-08T23:18:42.735153+08:00",
-    "last_push_at": "2026-09-25T18:59:12+08:00",
-    "remote_sync_status": "LOCAL_UPDATE_PENDING_PUSH",
-    "remote_sync_reason": "2026-10-08 integration snapshot; delivery commit HEAD and later remote verification receipt are recorded separately to avoid self-reference.",
+    "last_push_at": "2026-10-08T23:26:49.226380+08:00",
+    "remote_sync_status": "PUSHED_SYNCED_VERIFIED",
+    "remote_sync_reason": "Four reviewed refs verified equal via post-push fetch and direct GitHub ls-remote. This state records the pre-receipt commit point; receipt commit is independently verified again in the final handoff.",
     "reconciliation_base_head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
-    "last_push_verified_at": "2026-10-06T14:20:26+08:00",
-    "head_at_push_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
-    "remote_head_at_push_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
+    "last_push_verified_at": "2026-10-08T23:26:49.226380+08:00",
+    "head_at_push_verification": "132960a34eae0a47d97385f3982204131943def7",
+    "remote_head_at_push_verification": "132960a34eae0a47d97385f3982204131943def7",
     "head_semantics": "HEAD at integration snapshot before the current delivery commit; current repository HEAD is authoritative."
   },
   "repo": {
@@ -2115,7 +2115,8 @@
       "gate": "NO_EXTRA_TRAINING_YET",
       "reason": "Corrected paired Evidence final held-out absent; preserve Persistent T0 until contract closeout."
     },
-    "artifact": "artifacts/2026-10-08_experiment_integration/verification.json"
+    "artifact": "artifacts/2026-10-08_experiment_integration/verification.json",
+    "remote_sync_receipt": "artifacts/2026-10-08_experiment_integration/remote_verification.json"
   },
   "event_log": [
     {
@@ -2502,6 +2503,31 @@
         "persistent": "751ee2fdf8e0134504e9b4f033904cc610dd6891",
         "z05_independent": "1a9da054ecb5652726005d00d08ab05a2188dd8e"
       }
+    },
+    {
+      "observed_at": "2026-10-08T23:26:49.226380+08:00",
+      "event": "EXPERIMENT_CENTRAL_REMOTE_SYNC_VERIFIED_20261008",
+      "verified_central_commit_point": "132960a34eae0a47d97385f3982204131943def7",
+      "reviewed_refs": [
+        {
+          "branch": "ops/ac-master-dag-20260921",
+          "head": "132960a34eae0a47d97385f3982204131943def7"
+        },
+        {
+          "branch": "evidence/local-global-20261006",
+          "head": "6b7aab28546e1a30c60f84d12de3bde70930f670"
+        },
+        {
+          "branch": "evaluation/z05-repeated-arrival-demo-20261006",
+          "head": "751ee2fdf8e0134504e9b4f033904cc610dd6891"
+        },
+        {
+          "branch": "evaluation/iqn-z05-independent-20260923",
+          "head": "1a9da054ecb5652726005d00d08ab05a2188dd8e"
+        }
+      ],
+      "method": "post_push_fetch_plus_ls_remote",
+      "receipt": "artifacts/2026-10-08_experiment_integration/remote_verification.json"
     }
   ],
   "server_recovery": {

@@ -393,3 +393,7 @@ Phase-A Stage1 仍运行中：19:51:33 heartbeat 显示 Local-Binary PID `14447`
 - 实验分支已推送至 `evidence/local-global-20261006` @ `7e7371b`。没有重启训练；屏幕筛选 evaluator 由独立子进程从更新后的脚本文件启动。启动中的 supervisor 已在内存载入旧 final evaluator，因此 curriculum 完成且选择报告齐全后，需启动 fresh corrected supervisor pass；其会复用已有 selections、不重训，使用同一正式 held-out seed manifest 输出到 `final_heldout_50_corrected`。旧输出保留作审计，不作为最终诊断报告。
 
 中央 `EXP-EVIDENCE-01` state 已同步至上述 branch HEAD 与实时训练进度；不据短 smoke 或 training loss 作性能结论。
+
+### 2026-10-08 remote sync receipt
+
+Evidence `6b7aab2`、Persistent `751ee2f`（含casualty `906e2bc`）、Z05独立reference `1a9da05`、central integration `132960a`均已在push后重新fetch并通过ls-remote逐字核验。回执：`artifacts/2026-10-08_experiment_integration/remote_verification.json`。回执自身提交之后仍执行一次push/fetch/ls-remote，最终delivery HEAD见handoff；本登记是已验证提交点，不宣称self-referential SHA。
