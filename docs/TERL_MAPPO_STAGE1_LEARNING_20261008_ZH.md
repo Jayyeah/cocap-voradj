@@ -44,3 +44,5 @@
 中央DAG/state只读；handoff在本分支。模型文件留在服务器，不提交大checkpoint。
 
 补充诊断与后续决定：见 `TERL_MAPPO_FOLLOWUP_DECISION_20261008_ZH.md`；完整训练窗口统计和checkpoint证据审计已归档。
+
+当前训练预算以最新用户授权的累计1m自动线为准；本文件仅是100k早期gate报告，其结果不限制续训。见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md` 与 `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。

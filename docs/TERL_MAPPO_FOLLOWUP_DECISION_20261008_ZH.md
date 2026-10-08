@@ -48,3 +48,5 @@ best：`/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_
 未解决：单训练seed与有限预算；公开APF/current/padding的设计意图；没有backbone/pooling消融；高entropy和critic EV无法单独归因围捕瓶颈。上述公开行为已保留，不静默修正任务难度。
 
 原始合同、迁移及43项测试见Migration/Implementation报告；中央DAG只读，handoff由中央owner接收。
+
+当前训练预算以最新用户授权的累计1m自动线为准；本文件仅是100k早期gate报告，其结果不限制续训。见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md` 与 `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。
