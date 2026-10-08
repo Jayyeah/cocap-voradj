@@ -46,3 +46,11 @@
 无成功，capture mean/median/p90为null。初始global reward均值约-14037.92/-6945.17（per-episode per-agent sum）；Stage1合作项只可能非负，故该负值主要来自原生反复boundary penalty。**boundary越界不属于本环境collision terminal**；未将边界强行算作碰撞，也不以低collision宣称初始策略安全/有效。该0-step结果仅是随机初始化基线，不是学习失败证据。
 
 当前不修改训练超参、reward、actor pooling、难度或科学source。后续checkpoint需检查capture/ring变化、entropy、boundary/global分量和critic/KL/ratio，再作bounded gate结论。即使100k无信号，也不能直接写“MAPPO不能围捕”；是否延长Stage1必须据此作独立后续决定。
+
+## 每个checkpoint的证据关联
+
+`tools/audit_terl_mappo_results_20261008.py` 是独立只读审计入口，不属于已冻结的训练源码，也不修改checkpoint、evaluation或selection。它验证不可变checkpoint的SHA256、两种动作模式的配对初态、episode计数及screen/selection/final seed隔离，并将完整evaluation与**相同environment decision step**的PPO telemetry关联；初始化0-step的optimizer指标明确为不适用。输出保存在 `artifacts/2026-10-08_terl_mappo/checkpoint_evidence_audit.json`。
+
+为避免误读删失，它同时报告collision failure与纯time-limit censor数量，保留原evaluator“所有未capture均censored”的汇总口径。训练metrics要求步数严格递增；若未来resume导致重复/乱序，工具会要求明确核对run lineage，不能静默拼接。该工具已对完整0-step 40局、真实metrics与checkpoint hash运行通过；25k及以后结果尚在执行时不纳入完成结果。
+
+复核命令：`python tools/audit_terl_mappo_results_20261008.py --run runs/terl_mappo_stage1_seed9_100k --output artifacts/2026-10-08_terl_mappo/checkpoint_evidence_audit.json`。`scope_complete=false` 表示仍缺后续screen或隔离final测试，不能据启动成功作科学结论。

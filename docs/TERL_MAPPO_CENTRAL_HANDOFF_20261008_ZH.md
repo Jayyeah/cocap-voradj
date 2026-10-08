@@ -26,3 +26,5 @@ PYTHONPATH=.runtime-deps:src CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 MKL_NUM_TH
 正式launch：2026-10-08 22:27:50+08:00，supervisor PID992900，training PID992932，initial evaluator PID993509；首次核验512/100000、2 PPO updates、12 paired minibatches、finite，后续快照见summary。NEXT WAKE-UP：25k checkpoint（按约20 decisions/s约22:49），或任何failure.json/supervisor_failure.json出现时；训练完成预计约23:50，evaluation可能更晚。所有时间是启动早期吞吐估计，不是完成承诺。
 
 退出交互前运行快照：2026-10-08T22:32:37.005104+08:00，5120/100000、20 PPO updates、finite。latest resumable step/hash：`4096` / `38f6d7da0f6ea5aeee8839bbe6ef4688d22430ce6d2cb4781bfa6b7332588a13`；完整runtime/RNG/source hash校验通过。
+
+2026-10-08 22:53更新：25k checkpoint已生成并由独立CPU evaluator PID1007667筛选；0-step完整40局已归档，capture/ring2/ring3均0，argmax/sample collision分别1/20、2/20，仅作为随机初始化基线。训练与评估进程仍存活，无failure文件，最新进度请读summary/live progress。每个完成checkpoint的evaluation与同一步PPO指标由 `tools/audit_terl_mappo_results_20261008.py` 只读关联，输出 `artifacts/2026-10-08_terl_mappo/checkpoint_evidence_audit.json`；尚未完成的评估保持pending。轻量metrics.jsonl和episodes.jsonl有本实验专用Git忽略例外，后台最终sync也会归档推送。
