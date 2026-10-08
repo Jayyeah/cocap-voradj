@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 EVAL_KEYS = ('episodes','capture_count','normal_capture_count','capture_rate','normal_capture_rate',
@@ -41,11 +42,19 @@ def read_metrics(path):
 def audit(out):
     out=Path(out).resolve()
     manifest=json.loads((out/'manifest.json').read_text())
+    root=Path(__file__).resolve().parents[1]
+    for name,expected in manifest['sources'].items():
+        if digest(root/name)!=expected: raise ValueError(f'frozen scientific source changed: {name}')
     cfg=manifest['config']; metrics,trailing=read_metrics(out/'metrics.jsonl')
     results=[]; domains={}
     for p in sorted((out/'evaluations').glob('*.json')):
         if p.name.endswith('.partial.json'): continue
         data=json.loads(p.read_text()); step=data['steps']; domain=data['seed_domain']
+        expected_base={'screen':cfg['screen_seed_base'],'selection':cfg['heldout_seed_base'],'final':2046100800}
+        if domain not in expected_base or data['seed_base']!=expected_base[domain]:
+            raise ValueError('evaluation seed domain differs from declared experiment')
+        expected_n=50 if domain=='final' else (10 if domain=='screen' and step==75000 else 20)
+        if data['episodes_per_mode']!=expected_n: raise ValueError('evaluation budget differs from declared experiment')
         if not set(data['modes'])=={'argmax','sample'}: raise ValueError('both action modes required')
         checkpoint=Path(data['checkpoint'])
         if not checkpoint.exists() or digest(checkpoint)!=data['checkpoint_sha256']:
@@ -65,6 +74,17 @@ def audit(out):
             if sum(r['normal_capture'] for r in rows)!=m['normal_capture_count']: raise ValueError('normal capture count mismatch')
             if sum(r['collision'] for r in rows)!=round(m['collision_rate']*m['episodes']): raise ValueError('collision count mismatch')
             if sum(not r['capture'] for r in rows)!=m['censored_n']: raise ValueError('censored count mismatch')
+            for field in ('capture','normal_capture','collision','ring2','ring3','strict_geometry','censored'):
+                count=sum(bool(r[field]) for r in rows)
+                if count!=m[field+'_count'] or not math.isclose(count/len(rows),m[field+'_rate'],abs_tol=1e-12):
+                    raise ValueError(f'{field} count/rate mismatch')
+            if m['success_n']!=m['capture_count']: raise ValueError('capture-time sample count mismatch')
+            if len(rows)!=data['episodes_per_mode']: raise ValueError('declared episode budget mismatch')
+            if {r['seed'] for r in rows}!={data['seed_base']+i for i in range(data['episodes_per_mode'])}:
+                raise ValueError('declared evaluation seed range mismatch')
+            for row in rows:
+                if not math.isclose(sum(row['reward_components'].values()),row['episode_reward'],abs_tol=1e-6):
+                    raise ValueError('episode reward/component sum mismatch')
             if m['success_n']==0 and any(m[k] is not None for k in ('capture_time_mean','capture_time_median','capture_time_p90')):
                 raise ValueError('capture times reported with no successful episode')
             # Expose collision-failure vs pure time censoring as separate counts;
@@ -90,7 +110,7 @@ def audit(out):
     progress=json.loads((out/'progress.json').read_text())
     return {'run':str(out),'terl_sha':manifest['terl_sha'],'scientific_config':cfg,
             'progress':progress,'metrics_last_step':max(metrics) if metrics else 0,
-            'incomplete_trailing_metrics_line':trailing,'checkpoint_evidence':results,
+            'incomplete_trailing_metrics_line':trailing,'scientific_sources_match_launch':True,'checkpoint_evidence':results,
             'pending_screen_steps':pending,'domains_disjoint':True,
             'scope_complete':not pending and 'final' in domains,
             'decision':'PENDING' if pending or 'final' not in domains else 'read supervisor selection.json; no reclassification by this auditor'}

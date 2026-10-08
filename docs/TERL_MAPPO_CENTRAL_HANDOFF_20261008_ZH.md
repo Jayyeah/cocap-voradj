@@ -28,3 +28,5 @@ PYTHONPATH=.runtime-deps:src CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 MKL_NUM_TH
 退出交互前运行快照：2026-10-08T22:32:37.005104+08:00，5120/100000、20 PPO updates、finite。latest resumable step/hash：`4096` / `38f6d7da0f6ea5aeee8839bbe6ef4688d22430ce6d2cb4781bfa6b7332588a13`；完整runtime/RNG/source hash校验通过。
 
 2026-10-08 22:53更新：25k checkpoint已生成并由独立CPU evaluator PID1007667筛选；0-step完整40局已归档，capture/ring2/ring3均0，argmax/sample collision分别1/20、2/20，仅作为随机初始化基线。训练与评估进程仍存活，无failure文件，最新进度请读summary/live progress。每个完成checkpoint的evaluation与同一步PPO指标由 `tools/audit_terl_mappo_results_20261008.py` 只读关联，输出 `artifacts/2026-10-08_terl_mappo/checkpoint_evidence_audit.json`；尚未完成的评估保持pending。轻量metrics.jsonl和episodes.jsonl有本实验专用Git忽略例外，后台最终sync也会归档推送。
+
+自动证据收尾已启动：tmux `terl_mappo_finalize_20261008`，PID1020175，等待现有supervisor PID992900正常结束后生成Follow-up诊断、验证完整评估并push/核验remote HEAD。实际状态见run内 `evidence_finalizer_status.json`，日志 `evidence_finalizer.log`。该报告程序不重启训练、不加载或更新模型，科学source hash仍与launch一致。25k双模式各20局完整：capture/ring均0，collision1/20与3/20；50/75/100k及selection/final继续后台执行。

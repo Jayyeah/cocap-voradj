@@ -18,9 +18,9 @@
 | §6 actor测试 | shape、正常特征parity、padding反事实、target/no-target/全mask、argmax/sample、likelihood/entropy、共享参数/梯度 | 完成 |
 | §6 critic/PPO测试 | state shape/排列、GAE真实terminal与truncation、active loss、独立clipping计算、ValueNorm、CPU exact resume、CUDA RNG replay及finite | 完成；42-test suite+1独立pre-reset V测试 |
 | §6 实际网络CPU/CUDA smoke | 256/8/4 CPU/CUDA512，各2 PPO updates；1024 CUDA4 updates、24 paired minibatches、finite、allocated≈590MiB | 完成 |
-| §7 Stage1实质学习验证、强/部分/无可信信号分类 | 正式100k PID992932运行；完成初始0-step argmax20/sample20；后续25/50/75/100k尚待生成 | **未完成，需已启动run/checkpoint评估结果** |
+| §7 Stage1实质学习验证、强/部分/无可信信号分类 | 正式100k PID992932运行；0-step和25k各完成argmax20/sample20；后续50/75/100k及隔离final待完成 | **未完成，需已启动run/checkpoint评估结果** |
 | §8 独立并行screen、selection-heldout、final隔离 | evaluate.py两workers；screen2026100800、selection2036100800、final2046100800；预声明排序及四类规则 | 实现完成，后续evaluation执行待完成 |
-| §8 每checkpoint完整指标 | eval JSON逐episode capture/normal/time/ring2/3/strict/collision/type/censored/reward/entropy；相同步数PPO指标在metrics.jsonl；0-step optimizer指标不适用 | 初始评价完整；后续pending |
+| §8 每checkpoint完整指标 | eval JSON逐episode capture/normal/time/ring2/3/strict/collision/type/censored/reward/entropy；相同步数PPO指标由只读audit工具关联；0-step optimizer指标不适用 | 0-step/25k完整；后续pending |
 | §9 独立资源与retention，不干扰Evidence | 共享GPU0，user授权忽略util门槛；1训练+2CPU评估线程；少量milestone/latest/best hardlink；不写旧run，磁盘>140GiB free | 完成；运行期持续遵循 |
 | §10 后续三组扩展与跨任务差异 | 原IQN源码保留；本轮TERL actor/critic/runner分离；未实现CoCap-backbone组；三方表明确CR-MS/Z/NormSense/sensing差异 | 完成 |
 | §11 四类报告、central handoff、commit/push与remote HEAD | 本分支Migration/Implementation/Stage1/Handoff；启动c6ce039与健康快照62a3be7均push验证；中央不写 | 当前阶段完成；最终学习报告/分类待结果 |
@@ -54,3 +54,11 @@
 为避免误读删失，它同时报告collision failure与纯time-limit censor数量，保留原evaluator“所有未capture均censored”的汇总口径。训练metrics要求步数严格递增；若未来resume导致重复/乱序，工具会要求明确核对run lineage，不能静默拼接。该工具已对完整0-step 40局、真实metrics与checkpoint hash运行通过；25k及以后结果尚在执行时不纳入完成结果。
 
 复核命令：`python tools/audit_terl_mappo_results_20261008.py --run runs/terl_mappo_stage1_seed9_100k --output artifacts/2026-10-08_terl_mappo/checkpoint_evidence_audit.json`。`scope_complete=false` 表示仍缺后续screen或隔离final测试，不能据启动成功作科学结论。
+
+## 25k完整筛选与自动收尾
+
+25k checkpoint SHA256：`8afb878a99e3ef99e7ad1b4f6a8dcad24c37287101eef0770213dbfe02e7cbe3`。argmax/sample各20局均0 capture、0 ring2/3/strict；collision分别1/20、3/20，sample类型包括1局P-E与2局P-P。此早期点尚无积极学习证据，不能据此否定MAPPO。公开Stage1 global reward的非负合作项与-5越界项给出越界agent时间占比下界：argmax约98.38%、sample约57.12%；低collision不能掩盖该boundary行为。
+
+`tools/finalize_terl_mappo_results_20261008.py` 在冻结源码之外生成训练窗口数值统计、图和独立Follow-up report。真实0-step/25k与当前训练数据的snapshot审计已通过；未完成run被final closeout guard明确拒绝，不能写完成结论。自动模式等待**既有且已验证身份的supervisor PID退出**，再要求100k budget完成、全部screen、selection、隔离final双模式各50局、best alias/hash与科学source一致，最后只提交指定报告文件并push/核验remote HEAD。不启动或恢复训练，不修改原selection/classification。
+
+详见 `TERL_MAPPO_FOLLOWUP_DECISION_20261008_ZH.md` 与artifact `training_diagnostics.{json,png}`。训练episode中的ring字段是terminal-step snapshot，不能当作累计visitation；PPO actor loss含entropy项，梯度norm是裁剪前值的rollout均值。正式学习判断仍使用独立evaluation。
