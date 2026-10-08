@@ -115,3 +115,37 @@ Support→capture transition counts：A′ 93、B 120、C 118；coverage→suppo
 60/60 episodes 的 contract booleans 全部通过：3 waves、slot reuse、无 ghost/stale target、Z 更新与 reactivation、pursuer/obstacle continuity、dead agent不复活、timer reset、有限数值、无Wave4、参数更新0。全部 worker 的 policy-state hash 一致，checkpoint SHA 前后均为预期值。B/C `all_3_safe_complete` 仍只作诊断。
 
 完整 summary、逐局 event、trajectory 与每组5个 representative GIF 均保存在上述独立输出目录。原 formal 目录未覆盖。
+
+## 2026-10-08 artifact 核验与 recovery / collision 分解
+
+原 strict 60 局与 relaxed 60 局的 summary、原始 events 字段及 trajectory endpoint 均一致；summary 中后加的 contract diagnostics / worker hash 保留。没有模型推理、env.step、重新 rollout 或训练。脚本：[audit_persistent_artifacts_20261008.py](../../tools/audit_persistent_artifacts_20261008.py)；完整 provenance / GIF SHA / 逐局源文件 hash：[verification.json](../../artifacts/2026-10-08_persistent_audit/verification.json)。
+
+relaxed 的20个 Wave3 recovery timeout 分为14个 casualty 后 strict coverage 不可满足、6个满编 hold miss。按 regime-episode 计数，A′为4+3，B为5+2，C为5+1；不同 regime 使用配对 seed，不是20个独立世界。
+
+6个满编 case 从既有700步 post-capture snapshot 重新计算 canonical Voronoi CE，阈值 RMS≤0.05、max≤0.10、连续 hold≥30。下表 best RMS/max 来自同一个联合阈值最优 snapshot；连续 geometry hold 忽略其它资格门槛，是实际有效 hold 的上界。六局均曾同时达到数值阈值，但没有连续30步，不能解释为从未到达 CE 几何区域。
+
+| regime / episode | seed | best joint CE RMS / max ↓ | qualifying snapshots / 700 ↑ | maximum geometry hold / 30 ↑ |
+|---|---:|---|---:|---:|
+| PERSIST-A-TIMEOUT-CONTINUE / 01 | 2026100702 | 0.045000 / 0.088343 | 92 | 26 / 30 |
+| PERSIST-A-TIMEOUT-CONTINUE / 02 | 2026100703 | 0.045444 / 0.087912 | 57 | 25 / 30 |
+| PERSIST-A-TIMEOUT-CONTINUE / 06 | 2026100707 | 0.043303 / 0.077941 | 152 | 25 / 30 |
+| PERSIST-B / 01 | 2026100702 | 0.042353 / 0.084964 | 96 | 19 / 30 |
+| PERSIST-B / 07 | 2026100708 | 0.042015 / 0.085915 | 116 | 25 / 30 |
+| PERSIST-C / 08 | 2026100709 | 0.047007 / 0.082338 | 81 | 26 / 30 |
+
+Collision 按 trajectory event 去重计数；pre/post capture 互斥，capture-region 与 early-refresh 可重叠。capture-region 定义为事件涉及 pursuer 在前一 snapshot 距 active target≤8；early-refresh 为W2/W3 spawn 后首20 decision steps（10秒）。它们是本次明确口径的离线诊断，不改变 formal endpoint。
+
+| arm | obstacle | boundary | agent-agent | evader_contact | capture-region | early refresh | post-capture recovery |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| strict PERSIST-A | 1 | 1 | 1 | 1 | 2 | 0 | 2 |
+| strict PERSIST-B | 1 | 1 | 2 | 1 | 2 | 2 | 1 |
+| strict PERSIST-C | 1 | 2 | 1 | 1 | 3 | 0 | 2 |
+| relaxed PERSIST-A-TIMEOUT-CONTINUE | 1 | 2 | 1 | 1 | 2 | 0 | 3 |
+| relaxed PERSIST-B | 1 | 1 | 2 | 1 | 2 | 2 | 1 |
+| relaxed PERSIST-C | 1 | 2 | 1 | 2 | 4 | 0 | 2 |
+
+Strict 共14 events；relaxed 共16 events。relaxed 的14个 casualty episodes 全部继续并完成 all-3 capture；11/10/9 active 的精确到达统计与后续 capture 数均与原报告一致。最低9 active 仅是C的一局观察，不构成稳定性保证。
+
+6个 representative e00 GIF（strict A/B/C、relaxed A′/B/C）存在、非零、逐帧完整解码；gif/event 的 seed与trajectory清单一致，采样帧确实覆盖W1/W2/W3并完成三波capture。GIF采用稀疏采样，末帧可比trajectory终点早若干步；核验JSON同时保留两者step，避免把动画末帧当作严格endpoint。
+
+Repeated capture capability 已较强；full-team persistent service 仍受 safety/collision 和 recovery hold stability 限制。casualty-induced recovery failure 是12-active合同不可满足，不能单独归因于恢复策略能力。本轮仍保持T0 / NO_EXTRA_TRAINING_YET，等待 Evidence 完整正式比较后再联合决策。
