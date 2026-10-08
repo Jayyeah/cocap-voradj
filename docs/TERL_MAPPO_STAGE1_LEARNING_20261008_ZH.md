@@ -42,3 +42,5 @@
 保留本次单seed、有限预算证据；先复核最佳checkpoint与final独立测试，再决定Stage1扩展或同任务backbone对照。
 
 中央DAG/state只读；handoff在本分支。模型文件留在服务器，不提交大checkpoint。
+
+补充诊断与后续决定：见 `TERL_MAPPO_FOLLOWUP_DECISION_20261008_ZH.md`；完整训练窗口统计和checkpoint证据审计已归档。
