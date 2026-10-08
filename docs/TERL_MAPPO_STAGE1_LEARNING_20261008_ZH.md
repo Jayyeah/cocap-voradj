@@ -32,3 +32,5 @@
 当前只等待已启动的bounded训练/独立评估；不启动CoCap-backbone对照或7M课程。
 
 中央DAG/state只读；handoff在本分支。模型文件留在服务器，不提交大checkpoint。
+
+当前训练预算以最新用户授权的累计1m自动线为准；本文件仅是100k早期gate报告，其结果不限制续训。见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md` 与 `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。

@@ -1,5 +1,7 @@
 # EXP-TERL-MAPPO-01：完整交付审查
 
+最新用户授权更新（2026-10-08）：已增加100k结束即精确续训至累计1m的自动线，忽略performance gate。此后Stage1科学终态以1m及隔离final为准；下表的100k进度是早期gate证据，不能据此结束完整学习结论。见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md`、`TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。
+
 本审查保留附件全文的原始目标：TERL原生合同上的random-init MAPPO迁移、正确性测试、有限Stage1学习验证及报告。**启动成功不是完成学习验证；当前goal不标记complete。** 用户明确允许训练健康、只剩等待时结束交互，训练与独立评估继续在tmux中执行。
 
 ## 要求与证据

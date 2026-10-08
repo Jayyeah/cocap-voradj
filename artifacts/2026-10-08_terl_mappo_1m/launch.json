@@ -1,0 +1,42 @@
+{
+  "status": "ARMED_WAITING_PARENT_100K",
+  "controller_pid": 1040959,
+  "target_total_steps": 1000000,
+  "resume_at_steps": 100000,
+  "gate_ignored": true,
+  "mode": "EXACT_CONTINUATION",
+  "updated_at": "2026-10-08T23:42:10.205617+08:00",
+  "parent_run": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k",
+  "parent_training_pid": 992932,
+  "parent_start_ticks": "150306336",
+  "exact_resume_validation": {
+    "passed": true,
+    "reference_checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/checkpoints/step_000050000.pt",
+    "sha256": "d618a7c4fe5016138deded570a89b24a0c96d0a259b07feb48bc147763665e48",
+    "reference_steps": 50000,
+    "device": "cuda:0",
+    "torch_version": "2.9.1+cu128",
+    "config_only_difference": {
+      "budget": [
+        100000,
+        1000000
+      ]
+    },
+    "rollout_decisions_compared": 32,
+    "paired_minibatch_updates": 6.0,
+    "bit_exact": [
+      "loaded actor/critic/Adam/ValueNorm/counters",
+      "all rollout fields and episodes",
+      "updated actor/critic/Adam/ValueNorm/counters",
+      "PPO telemetry",
+      "full serialized environment",
+      "Python/NumPy/CPU/CUDA RNG"
+    ],
+    "sources_strictly_verified": true,
+    "duration_seconds": 9.676589968148619
+  },
+  "session": "terl_mappo_1m_continue_20261008",
+  "command": "env PYTHONPATH=.runtime-deps:src CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 /usr/local/anaconda3/bin/python -u tools/continue_terl_mappo_1m_20261008.py --parent runs/terl_mappo_stage1_seed9_100k --parent-pid 992932 --output runs/terl_mappo_stage1_seed9_1m_continuation --config configs/experiments/terl_mappo_20261008/stage1_1m.json --validation artifacts/2026-10-08_terl_mappo_1m/exact_resume_validation.json --gpu 0 > runs/terl_mappo_stage1_seed9_1m_continuation/controller.log 2>&1",
+  "replaces_waiting_controller_pid": 1035795,
+  "user_authorization": "100k completes -> unconditional cumulative 1m; ignore gate"
+}

@@ -1,5 +1,7 @@
 # CENTRAL HANDOFF：EXP-TERL-MAPPO-01
 
+**最新预算授权：累计1m，100k gate不控制续训。** 自动线已ARMED，当前controller PID1040959/tmux `terl_mappo_1m_continue_20261008`；在parent trainer PID992932的100k完整checkpoint落盘并退出后立即续训，不等待旧gate evaluator/selection/final。新output `runs/terl_mappo_stage1_seed9_1m_continuation`，唯一config变化budget100k→1m；完整CUDA32步+PPO逐位resume验证通过。当前结果和操作依据见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md` / `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。以下旧“不自动扩步/100k后审查”记录作为原计划历史保留，当前用户授权优先；1m科学分类仍PENDING。
+
 该独立agent不写中央 `docs/ops/AC_MASTER_DAG_20260921_ZH.md` / `artifacts/2026-09-21_ac_master_dag/state.json`。本轮用户明确授权TERL-native scratch训练及直接push，并覆盖GPU高占用等待条件；历史CoCap路线限制不适用于此独立原生任务。
 
 - branch：`experiment/terl-backbone-mappo-20261008`。
