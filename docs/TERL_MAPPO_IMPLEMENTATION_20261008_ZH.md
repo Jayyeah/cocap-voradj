@@ -25,13 +25,13 @@
 
 ## 验证
 
-第一批：35 passed；覆盖byte identity、随机seed动作转移/reward/done、3/4/5/6合作分支、capture/碰撞/timeout/越界、actor特征原始parity、padding反事实、no-target/all-mask、argmax/sample/logprob/entropy/共享参数/梯度、critic等变与隔离、GAE、ValueNorm、CPU exact checkpoint resume、CUDA有限update和RNG resume，及既有corrected learner/terminal-row回归。补充测试包括独立PPO clipping计算、inactive-reward不可影响loss、事件原生parity、checkpoint选择/分类与并行完整episode evaluator；补充后 **42 passed**（35基础+5扩展+2追加），4个warning（有限性检查通过）；compileall/diff-check通过。最终结果见轻量artifacts和学习报告。
+第一批：35 passed；覆盖byte identity、随机seed动作转移/reward/done、3/4/5/6合作分支、capture/碰撞/timeout/越界、actor特征原始parity、padding反事实、no-target/all-mask、argmax/sample/logprob/entropy/共享参数/梯度、critic等变与隔离、GAE、ValueNorm、CPU exact checkpoint resume、CUDA有限update和RNG resume，及既有corrected learner/terminal-row回归。补充测试包括独立PPO clipping计算、inactive-reward不可影响loss、事件原生parity、checkpoint选择/分类与并行完整episode evaluator；补充后 **43项通过**（42项suite全部通过，另1项pre-reset bootstrap测试通过），4个warning（有限性检查通过）；compileall与非vendor改动的diff-check通过；vendored原始`utils/save_project.py`保留上游EOF空行，完整diff-check只报告这一原生格式问题。最终结果见轻量artifacts和学习报告。
 
 实际网络（不是缩小网络测试）512-step CPU与CUDA smoke均完成2个PPO update / 12 paired minibatches，finite；CUDA峰值分配589.99 MiB。最终1024-step CUDA preflight完成4个PPO updates/24 paired minibatches，18.74 decisions/s、peak589.99MiB；reward重构与post-update ratio telemetry有限。对应progress/manifest和checkpoint hash已落盘。
 
 ## 资源、运行与复现
 
-共享GPU0上其它用户job util≈97%，仍按本轮用户授权正常启动，显存约24GiB余量；不操作任何其它进程。GPU1也繁忙；本实验仅用physicalGPU0（process-local cuda:0）。磁盘初始143GiB free；本实验100k仅0/25/50/75/100k、latest、best hardlink，峰值保守<1GiB。不积累replay，不上传大模型，不清理其它实验。
+共享GPU0上其它用户job util≈97%，仍按本轮用户授权正常启动，显存约24GiB余量；不操作任何其它进程。正式训练nvidia-smi进程占用1146MiB（含CUDA上下文/缓存），PyTorch峰值allocated589.99MiB，二者计量口径不同。GPU1也繁忙；本实验仅用physicalGPU0（process-local cuda:0）。磁盘初始143GiB free；本实验100k仅0/25/50/75/100k、latest、best hardlink，峰值保守<1GiB。不积累replay，不上传大模型，不清理其它实验。
 
 Python3.12/PyTorch2.9.1+cu128；原缺gym，通过实验内`.runtime-deps/`安装gym0.26.2/gym_notices0.0.8，复用现有NumPy/SciPy/wandb（关闭网络日志）。复现：
 

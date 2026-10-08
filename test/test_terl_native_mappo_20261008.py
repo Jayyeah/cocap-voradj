@@ -282,3 +282,15 @@ def test_emergency_friend_distance_is_post_step_not_cached():
     _,_,_,_,_,info=a.step([4]*3)
     assert a.env.get_distance_to_other_pursuers()[0]<4
     assert info['components']['emergency'][0]==-5
+
+def test_rollout_truncation_bootstraps_before_joint_reset():
+    c=small_config(); t=build(c,'cpu'); a=NativeStage1(9)
+    class TimeValue(torch.nn.Module):
+        def forward(self, state): return state['self'][...,8]
+    t.value=TimeValue()
+    a.env.episode_time_steps=3000
+    batch,episodes=collect(t,a,1)
+    assert batch['truncated'].all() and not batch['terminated'].any()
+    np.testing.assert_allclose(batch['values'],1.,atol=1e-6)
+    np.testing.assert_allclose(batch['next_values'],3001/3000,atol=1e-6)
+    assert a.env.episode_time_steps==0 and len(episodes)==1
