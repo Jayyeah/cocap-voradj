@@ -147,11 +147,14 @@ class EvidenceDiagnostics:
         self.active_target_capacity_overflow_events = 0
         self.capture_step: int | None = None
         self.all_zero_after_capture_step: int | None = None
+        self.first_strict_ce_step: int | None = None
 
     def transition(self, env, local, global_state, q, greedy, active, state, phase, step, outcome):
         del global_state, q, greedy, state, phase
         active_targets = sum(not evader.deactivated for evader in env.evaders)
         self.steps += 1
+        if getattr(env, "post_capture_coverage_success", False) and self.first_strict_ce_step is None:
+            self.first_strict_ce_step = int(step)
         self.global_availability_steps += 1
         self.global_available_steps += int(active_targets > 0)
         for row, index in zip(local, active):
@@ -253,8 +256,9 @@ def one_episode(task: tuple[str, int, int | None]) -> dict[str, Any]:
     record = env.episode_record(task="coverage" if scene == "coverage" else "mix")
     row["ce_max"] = float(record["coverage_ce_center_max"])
     row["area_cv"] = float(record["coverage_strict_area_cv"])
-    ce_step = int(record.get("post_capture_coverage_step", -1))
-    row["ce_seconds"] = None if ce_step < 0 else ce_step * float(env.pursuers[0].dt * env.pursuers[0].N)
+    ce_step = diag.first_strict_ce_step
+    row["time_to_strict_ce_steps"] = ce_step if row["ce_success"] else None
+    row["ce_seconds"] = None if not row["ce_success"] or ce_step is None else ce_step * float(env.pursuers[0].dt * env.pursuers[0].N)
     mission_summary = row["mission_events"]["summary"]
     ring2 = mission_summary.get("capture_region_2_to_3", {})
     ring3 = mission_summary.get("capture_region_2_to_geometry", {})
@@ -292,7 +296,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
                 "ce_max": _timing([row["ce_max"] for row in rows]),
                 "area_cv": _timing([row["area_cv"] for row in rows]),
                 "collision_rate": _rate(rows, "collision"),
-                "time_to_ce_seconds": _timing([row["ce_seconds"] for row in rows if row["ce_seconds"] is not None]),
+                "time_to_ce_seconds": _timing([row["ce_seconds"] for row in rows if row["ce_success"]]),
                 "censored_episodes": censored,
                 "censored_fraction": censored / max(len(rows), 1),
             }
@@ -317,7 +321,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
                 "normal_capture_rate": _rate(rows, "normal_capture"),
                 "post_capture_ce_rate": _rate(rows, "ce_success"),
                 "collision_rate": _rate(rows, "collision"),
-                "recovery_time_seconds": _timing([row["recovery_seconds"] for row in rows if row["recovery_seconds"] is not None]),
+                "recovery_time_seconds": _timing([row["recovery_seconds"] for row in rows if row["ce_success"]]),
                 "mission_time_seconds": _timing([row["mission_seconds"] for row in rows if row["safe_complete"]]),
                 "censored_episodes": censored,
                 "censored_fraction": censored / max(len(rows), 1),
@@ -384,6 +388,8 @@ def evaluate(
         "seed_manifest": [row["seed"] for row in records],
         "scenes": list(SCENES),
         "paired_seed_rule": "seed_base + scene_index*100000 + episode_index",
+        "diagnostic_implementation": "corrected_global_target_token_occupancy_and_shortfall_v2",
+        "coverage_timing_implementation": "first_strict_ce_success_transition_v1",
         "summary": summarize(records),
         "evidence_diagnostics": {
             scene: {

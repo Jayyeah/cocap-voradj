@@ -202,6 +202,10 @@ def screening_eval_command(variant: str, stage: str, checkpoint: Path, out: Path
     ]
 
 
+def screening_candidate_pending(step: int, reports: dict, ready: list, running_step: int | None) -> bool:
+    return step not in reports and step not in ready and step != running_step
+
+
 def run_stage(variant: str, stage: str, warm_start: Path | None) -> dict[str, Any]:
     variant_root = RUNTIME / variant
     stage_dir = variant_root / "stages" / stage
@@ -287,7 +291,7 @@ def run_stage(variant: str, stage: str, warm_start: Path | None) -> dict[str, An
                     reports[step] = report
                     continue
             checkpoint = checkpoint_dir / f"step_{step}.pt"
-            if step not in reports and step not in ready and checkpoint.is_file() and stable_checkpoint(checkpoint, stability):
+            if screening_candidate_pending(step, reports, ready, running_eval[0] if running_eval else None) and checkpoint.is_file() and stable_checkpoint(checkpoint, stability):
                 ready.append(step)
 
         if running_eval is None and ready:
@@ -393,6 +397,42 @@ def run_variant(variant: str) -> dict[str, Any]:
 
 def final_eval(variant: str, checkpoint: Path, output: Path, config_stage: str = "stage3") -> dict[str, Any]:
     return evaluate(variant, config_stage, checkpoint, output, FINAL_EPISODES, FINAL_SEED_BASE, workers=None)
+
+
+def load_completed_curricula() -> dict[str, Any]:
+    """Read frozen selections for evaluation only; never enter the trainer path."""
+    curricula = {}
+    for variant in VARIANTS_TO_TRAIN:
+        stages = []
+        for stage in STAGES:
+            stage_dir = RUNTIME / variant / "stages" / stage
+            selection = read_json(stage_dir / "selection_report.json", {})
+            selected = selection.get("selected", {})
+            if not selected:
+                raise RuntimeError(f"selection pending: {variant}/{stage}; no training launched")
+            checkpoint = Path(selected["checkpoint"])
+            if not checkpoint.is_file() or sha256(checkpoint) != selected["checkpoint_sha256"]:
+                raise RuntimeError(f"selected checkpoint hash mismatch: {variant}/{stage}")
+            for step in MILESTONES[stage]:
+                report = read_json(stage_dir / "evaluations" / f"step_{step:09d}" / "report.json", {})
+                if report.get("status") != "complete" or report.get("episodes_per_scene") != SCREENING_EPISODES:
+                    raise RuntimeError(f"screening pending: {variant}/{stage}/{step}; no training launched")
+            final_checkpoint = stage_dir / "training/checkpoints" / f"final_step_{max(MILESTONES[stage])}.pt"
+            if not final_checkpoint.is_file() or training_step(stage_dir) != max(MILESTONES[stage]):
+                raise RuntimeError(f"training completion unverified: {variant}/{stage}; no training launched")
+            stages.append({
+                "variant": variant, "stage": stage, "status": "selected",
+                "selected_step": int(selected["step"]),
+                "selected_checkpoint": str(checkpoint),
+                "selected_checkpoint_sha256": selected["checkpoint_sha256"],
+                "selection_report": str(stage_dir / "selection_report.json"),
+                "selection_rule": "balanced_floor",
+                "candidate_count": len(MILESTONES[stage]),
+                "screening_episodes_per_scene": SCREENING_EPISODES,
+                "training_pid": None, "physical_gpu": GPU_BY_VARIANT[variant],
+            })
+        curricula[variant] = {"variant": variant, "stages": stages, "selected_stage3": stages[-1]}
+    return curricula
 
 
 def final_comparison(curricula: dict[str, Any]) -> dict[str, Any]:
@@ -648,10 +688,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--preflight-only", action="store_true")
     parser.add_argument("--launch", action="store_true")
+    parser.add_argument("--final-only", action="store_true", help="evaluate completed selections without launching any training")
+    parser.add_argument("--check-final-readiness", action="store_true", help="read-only check of training and selection completion")
     args = parser.parse_args()
-    if args.launch == args.preflight_only:
-        parser.error("choose exactly one of --preflight-only or --launch")
-    if args.preflight_only:
+    if sum((args.launch, args.preflight_only, args.final_only, args.check_final_readiness)) != 1:
+        parser.error("choose exactly one operation")
+    if args.final_only or args.check_final_readiness:
+        curricula = load_completed_curricula()
+        if args.check_final_readiness:
+            print(json.dumps({"status": "FINAL_EVAL_READY", "curricula": curricula, "training_launched": False}))
+        else:
+            report = final_comparison(curricula)
+            print(json.dumps({"status": "complete", "report": str(ARTIFACTS / "final_comparison.json"), "training_launched": False}))
+    elif args.preflight_only:
         gate = preflight_gate()
         atomic_json(ARTIFACTS / "preflight/launch_preflight.json", gate)
         print(json.dumps(gate, ensure_ascii=False, indent=2))

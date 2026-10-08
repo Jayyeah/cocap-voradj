@@ -23,6 +23,60 @@ VARIANTS = {
 }
 
 
+def test_running_screening_candidate_does_not_reenter_ready_queue() -> None:
+    from tools.supervise_iqn_evidence_comparison_20261006 import screening_candidate_pending
+
+    # A checkpoint becomes stable again while its evaluator is still running.
+    # The old scheduler queued it a second time and then deleted its report.
+    reports, ready = {}, []
+    assert not screening_candidate_pending(700000, reports, ready, 700000)
+    assert screening_candidate_pending(600000, reports, ready, 700000)
+    ready.append(600000)
+    assert not screening_candidate_pending(600000, reports, ready, 700000)
+    reports[700000] = {"status": "complete"}
+    assert not screening_candidate_pending(700000, reports, ready, None)
+
+
+def test_ce_time_records_first_success_transition_and_excludes_failure(monkeypatch) -> None:
+    import tools.evaluate_iqn_evidence_checkpoint_20261006 as evaluator
+
+    env = SimpleNamespace(evaders=[], post_capture_coverage_success=False,
+                          pursuers=[SimpleNamespace(dt=0.1, N=5)])
+    monkeypatch.setattr(evaluator.matched, "make_env", lambda *_: (env, []))
+    env.episode_record = lambda **_: {"coverage_ce_center_max": 0.07, "coverage_strict_area_cv": 0.1}
+    evaluator._WORKER.update(variant="local_binary", cfg={}, model=None)
+
+    def fake_episode(_model, scene, seed, _device, **kwargs):
+        kwargs["env_factory"](scene, seed)
+        for step in (20, 21):
+            env.post_capture_coverage_success = step >= 20
+            kwargs["on_transition"](env, [], None, None, None, [], None, None, step, None)
+        return {"scene": scene, "seed": seed, "ce_success": True, "safe_complete": True,
+                "captured": False, "mission_events": {"summary": {}}}
+
+    monkeypatch.setattr(evaluator, "run_episode", fake_episode)
+    row = evaluator.one_episode(("coverage", 1, None))
+    assert row["time_to_strict_ce_steps"] == 20
+    assert row["ce_seconds"] == 10.0
+    success = {**row, "ce_rms": 0.03, "ce_max": 0.07, "area_cv": 0.1, "collision": False}
+    failure = {**success, "ce_success": False, "censored": True, "ce_seconds": 1500.0}
+    timing = evaluator.summarize([success, failure])["coverage"]["time_to_ce_seconds"]
+    assert timing == {"n": 1, "mean": 10.0, "median": 10.0, "p90": 10.0}
+
+
+def test_final_only_missing_selection_never_launches_trainer(tmp_path, monkeypatch) -> None:
+    import pytest
+    import tools.supervise_iqn_evidence_comparison_20261006 as supervisor
+
+    monkeypatch.setattr(supervisor, "RUNTIME", tmp_path)
+    def forbidden(*args, **kwargs):
+        raise AssertionError("trainer must never be called by final-only readiness")
+    monkeypatch.setattr(supervisor.subprocess, "Popen", forbidden)
+    monkeypatch.setattr(supervisor, "run_stage", forbidden)
+    with pytest.raises(RuntimeError, match="selection pending: local_binary/stage1"):
+        supervisor.load_completed_curricula()
+
+
 def _env(mode: str, seed: int = 2026100601) -> tuple[VorAdjEnv, list[dict | None]]:
     cfg = matched.resolved(VARIANTS[mode])
     cfg = deep_update(copy.deepcopy(cfg), cfg["tasks"]["voradj"])
