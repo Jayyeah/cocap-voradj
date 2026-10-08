@@ -1,28 +1,29 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-06T19:51:35+08:00",
+  "updated_at": "2026-10-08T23:18:42.735153+08:00",
   "master": {
-    "model": "Luna",
-    "role": "AC MASTER ORCHESTRATOR",
+    "model": "Codex",
+    "role": "MASTER / CENTRAL INTEGRATION",
     "branch": "ops/ac-master-dag-20260921",
     "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
-    "head": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
-    "remote_head": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
+    "head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
+    "remote_head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
     "child_parallelism_policy": "DYNAMIC_BY_SCIENTIFIC_DEPENDENCY_AND_REAL_RESOURCE_CAPACITY; NO_STATIC_CHILD_COUNT_LIMIT; MASTER_TO_CHILD_ONLY",
     "git_proxy": "127.0.0.1:17892",
     "max_push_attempts_per_blocked_upload": 2,
     "normal_pushes_allowed": true,
-    "last_reconciled_commit": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
-    "last_remote_fetch_at": "2026-10-06T14:15:03+08:00",
+    "last_reconciled_commit": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
+    "last_remote_fetch_at": "2026-10-08T23:18:42.735153+08:00",
     "last_push_at": "2026-09-25T18:59:12+08:00",
-    "remote_sync_status": "PUSHED_SYNCED_VERIFIED",
-    "remote_sync_reason": "GitHub refs verified equal to server refs via command-level proxy 127.0.0.1:17892 at 2026-10-06T14:20:26+08:00; central 974185ddc345c61910d0cd04d82ae9a8c30a3c3b and all reviewed refs matched. This state records that verified point.",
-    "reconciliation_base_head": "e1c5032614b1c42ecbf1ce3cb845ff7919c9acf1",
+    "remote_sync_status": "LOCAL_UPDATE_PENDING_PUSH",
+    "remote_sync_reason": "2026-10-08 integration snapshot; delivery commit HEAD and later remote verification receipt are recorded separately to avoid self-reference.",
+    "reconciliation_base_head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
     "last_push_verified_at": "2026-10-06T14:20:26+08:00",
     "head_at_push_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
-    "remote_head_at_push_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b"
+    "remote_head_at_push_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
+    "head_semantics": "HEAD at integration snapshot before the current delivery commit; current repository HEAD is authoritative."
   },
   "repo": {
     "remote": "https://github.com/Jayyeah/cocap-voradj.git",
@@ -32,11 +33,12 @@
     "live_ac_head": "9e9a43281b204b31e6b80bd3228b2126bb6f7c60",
     "live_iqn_worktree": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919",
     "root_disk": {
-      "filesystem": "/dev/nvme0n1p2",
-      "free_gib_approx": 61,
-      "use_percent": 94,
-      "inode_use_percent": 7,
-      "warning": "STORAGE_ATTENTION_REQUIRED: root is 94% used; no deletion was performed."
+      "observed_at": "2026-10-08T23:18:42.735153+08:00",
+      "total_bytes": 982240026624,
+      "used_bytes": 781438484480,
+      "free_bytes": 150831026176,
+      "free_gib": 140.47233963012695,
+      "used_percent": 79.55677464762219
     }
   },
   "central_files": {
@@ -60,7 +62,9 @@
       "docs/audits/AC5B1_MC_VS_ITERATIVE_BELLMAN_LQ_20260920_ZH.md",
       "docs/audits/AC5B2_ACTION_SUPPORT_ABLATION_20260920_ZH.md"
     ],
-    "resume_continuity": "artifacts/2026-09-21_training_performance_sync/resume_continuity_summary.json"
+    "resume_continuity": "artifacts/2026-09-21_training_performance_sync/resume_continuity_summary.json",
+    "current_experiment_integration": "artifacts/2026-10-08_experiment_integration/verification.json",
+    "current_stage_summary": "docs/COCAP_EXPERIMENT_STATUS_20261008_ZH.md"
   },
   "gpu_leases": {
     "sampling_contract": "10 samples at 1 second interval before each new GPU job and again after launch",
@@ -353,35 +357,15 @@
       }
     },
     "latest_reconciliation": {
-      "observed_at": "2026-10-06T14:12:29+08:00",
-      "gpu0": {
-        "util_percent": 0,
-        "memory_used_mib": 19,
-        "memory_free_mib": 49121,
-        "temperature_c": 41,
-        "active_pids": [],
-        "active_jobs": [],
-        "decision": "IDLE"
-      },
-      "gpu1": {
-        "util_percent": 0,
-        "memory_used_mib": 18,
-        "memory_free_mib": 49122,
-        "temperature_c": 43,
-        "active_pids": [],
-        "active_jobs": [],
-        "decision": "IDLE"
-      },
-      "root_disk": {
-        "free_gib_approx": 61,
-        "use_percent": 94,
-        "inode_use_percent": 7
-      },
-      "lease": "NO_NEW_GPU_WORK"
+      "observed_at": "2026-10-08T23:18:42.735153+08:00",
+      "evidence_training_lease": "RELEASED",
+      "new_lease_requested": false,
+      "gpus_busy_with_other_tasks": true,
+      "source": "artifacts/2026-10-08_experiment_integration/verification.json"
     }
   },
   "runtime_reconciliation": {
-    "observed_at": "2026-09-25T15:05:59+08:00",
+    "observed_at": "2026-10-08T23:18:42.735153+08:00",
     "iqn_z05": {
       "status": "COMPLETE",
       "pid": null,
@@ -664,6 +648,140 @@
         "Codex desktop processes"
       ],
       "result": "NO_COCAP_IQN_MAPPO_SAC_LOCALQ_TRAINING_OR_EVALUATION_PROCESS"
+    },
+    "current_experiment_integration": {
+      "processes": [
+        {
+          "pid": 14306,
+          "ppid": 14305,
+          "stat": "Sl+",
+          "elapsed_seconds": 186043,
+          "cpu_percent": 1.3,
+          "cwd": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
+          "command": "python tools/supervise_iqn_evidence_comparison_20261006.py --launch"
+        },
+        {
+          "pid": 992900,
+          "ppid": 992899,
+          "stat": "S+",
+          "elapsed_seconds": 3051,
+          "cpu_percent": 0.0,
+          "cwd": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008",
+          "command": "/usr/local/anaconda3/bin/python -u -m terl_mappo.supervise --gpu 0 --output runs/terl_mappo_stage1_seed9_100k"
+        },
+        {
+          "pid": 992932,
+          "ppid": 992900,
+          "stat": "Rl+",
+          "elapsed_seconds": 3049,
+          "cpu_percent": 100.0,
+          "cwd": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008",
+          "command": "/usr/local/anaconda3/bin/python -u -m terl_mappo.run --config /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/configs/experiments/terl_mappo_20261008/stage1.json --output /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k --device cuda:0"
+        },
+        {
+          "pid": 1001961,
+          "ppid": 14306,
+          "stat": "Ssl",
+          "elapsed_seconds": 2437,
+          "cpu_percent": 0.1,
+          "cwd": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
+          "command": "/usr/local/anaconda3/bin/python /home/yjq/rl/CoCap1/evidence-local-global-20261006/tools/evaluate_iqn_evidence_checkpoint_20261006.py --variant local_binary --stage stage3 --checkpoint /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/training/checkpoints/step_700000.pt --output /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/evaluations/step_000700000 --episodes 20 --seed-base 2026091900"
+        },
+        {
+          "pid": 1001974,
+          "ppid": 1001961,
+          "stat": "RN",
+          "elapsed_seconds": 2434,
+          "cpu_percent": 99.9,
+          "cwd": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
+          "command": "/usr/local/anaconda3/bin/python /home/yjq/rl/CoCap1/evidence-local-global-20261006/tools/evaluate_iqn_evidence_checkpoint_20261006.py --variant local_binary --stage stage3 --checkpoint /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/training/checkpoints/step_700000.pt --output /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/evaluations/step_000700000 --episodes 20 --seed-base 2026091900"
+        },
+        {
+          "pid": 1001975,
+          "ppid": 1001961,
+          "stat": "RN",
+          "elapsed_seconds": 2434,
+          "cpu_percent": 99.9,
+          "cwd": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
+          "command": "/usr/local/anaconda3/bin/python /home/yjq/rl/CoCap1/evidence-local-global-20261006/tools/evaluate_iqn_evidence_checkpoint_20261006.py --variant local_binary --stage stage3 --checkpoint /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/training/checkpoints/step_700000.pt --output /home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/evaluations/step_000700000 --episodes 20 --seed-base 2026091900"
+        },
+        {
+          "pid": 1020710,
+          "ppid": 992900,
+          "stat": "Sl+",
+          "elapsed_seconds": 479,
+          "cpu_percent": 0.5,
+          "cwd": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008",
+          "command": "/usr/local/anaconda3/bin/python -u -m terl_mappo.evaluate --checkpoint /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/checkpoints/step_000050000.pt --output /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/evaluations/screen_000050000.json --episodes 20 --seed-base 2026100800 --workers 2"
+        },
+        {
+          "pid": 1020734,
+          "ppid": 1020710,
+          "stat": "R+",
+          "elapsed_seconds": 476,
+          "cpu_percent": 99.9,
+          "cwd": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008",
+          "command": "/usr/local/anaconda3/bin/python -u -m terl_mappo.evaluate --checkpoint /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/checkpoints/step_000050000.pt --output /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/evaluations/screen_000050000.json --episodes 20 --seed-base 2026100800 --workers 2"
+        },
+        {
+          "pid": 1020735,
+          "ppid": 1020710,
+          "stat": "R+",
+          "elapsed_seconds": 476,
+          "cpu_percent": 100.0,
+          "cwd": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008",
+          "command": "/usr/local/anaconda3/bin/python -u -m terl_mappo.evaluate --checkpoint /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/checkpoints/step_000050000.pt --output /home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/evaluations/screen_000050000.json --episodes 20 --seed-base 2026100800 --workers 2"
+        }
+      ],
+      "gpu_query": [
+        "0, NVIDIA RTX A6000, 100, 26031, 22509, 83",
+        "1, NVIDIA RTX A6000, 100, 24375, 24165, 92"
+      ],
+      "gpu_compute_apps": [
+        "835033, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 21834",
+        "992551, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 2963",
+        "992932, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 1146",
+        "835037, GPU-71b66566-de04-56b5-4331-8c12d4967672, 21834",
+        "992551, GPU-71b66566-de04-56b5-4331-8c12d4967672, 2473"
+      ],
+      "disk": {
+        "total_bytes": 982240026624,
+        "used_bytes": 781438484480,
+        "free_bytes": 150831026176
+      },
+      "evidence_training_pids_alive": false,
+      "evidence_supervisor_pid": 14306,
+      "local_last_screening_progress": {
+        "status": "running",
+        "completed": 12,
+        "total": 60,
+        "elapsed_seconds": 2319.2002951540053,
+        "eta_seconds": 9276.801180616021,
+        "workers": {
+          "workers": 2,
+          "requested_workers": null,
+          "cpu_count": 128,
+          "load_1m": 19.6181640625,
+          "reserved_cpu_cores": 26,
+          "free_ram_gib": 78.61335754394531,
+          "training_gpu_active": true,
+          "gpu_snapshot": [
+            {
+              "index": 0,
+              "util_percent": 100,
+              "free_mib": 22522
+            },
+            {
+              "index": 1,
+              "util_percent": 73,
+              "free_mib": 24165
+            }
+          ],
+          "policy": "CPU inference; reserve CPU headroom; cap at 2 workers during GPU training and 4 while idle"
+        }
+      },
+      "persistent_processes_alive": false,
+      "other_cocap_training": "Existing TERL-MAPPO PID992932 and its supervisor/evaluator remain untouched."
     }
   },
   "tasks": [
@@ -1387,7 +1505,7 @@
         "nickname": "Euclid",
         "role": "STATE_IQN_READONLY_HANDOFF"
       },
-      "head": "2eeec7e6638640295a8469583500e5d3ad265682",
+      "head": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
       "selected_checkpoint_step": 600000,
       "artifact_root": "/home/yjq/rl/CoCap1/iqn-z05-independent-20260923/artifacts/2026-09-23_iqn_z05_independent",
       "metrics": {
@@ -1426,7 +1544,11 @@
       "result_classification": "PROJECT_EXTERNAL_CAPACITY_GENERALIZATION_EVIDENCE",
       "next_gate": "NO_NEW_IQN_TRAINING; PRESERVE_AS_EXTERNAL_EVIDENCE",
       "user_approval_required": false,
-      "updated_at": "2026-09-25T15:05:59+08:00"
+      "updated_at": "2026-09-25T15:05:59+08:00",
+      "current_independent_reference": {
+        "native_20_per_scene": "Coverage20/20,Capture20/20,Mixed safe15/20; separate from historical registry17/20 and from pending Evidence50/scene.",
+        "source_commit": "1a9da054ecb5652726005d00d08ab05a2188dd8e"
+      }
     },
     {
       "task_id": "A4",
@@ -1468,37 +1590,37 @@
     {
       "task_id": "EXP-EVIDENCE-01",
       "task_name": "LOCAL-BINARY-VS-Z05-VS-GLOBAL-ORACLE-PHASE-A",
-      "status": "RUNNING_PHASE_A_STAGE1",
+      "status": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING",
       "dependencies": [
         "Z05_FORMAL_CONTRACT_FROZEN",
         "STATIC_RUNTIME_CHECKPOINT_TRAINING_PREFLIGHT_PASS"
       ],
       "branch": "evidence/local-global-20261006",
       "worktree": "/home/yjq/rl/CoCap1/evidence-local-global-20261006",
-      "head": "7e7371b86850e3a82fb667879779081dbe148b2b",
+      "head": "6b7aab28546e1a30c60f84d12de3bde70930f670",
       "child_agent": null,
       "scientific_question": "在相同 network、reward、curriculum、task、seed family 下，敌情 evidence representation/propagation 是否改善 Mixed capture-and-recovery coordination？",
       "allowed_changes": "仅运行用户目标文件明确授权的 Local-Binary 与 Global-Oracle Phase-A；Z05 不重训；保留新实验代码、紧凑报告与中央状态。",
       "forbidden_changes": "不得修改 Z05 正式表示合同；不得 cross-representation warm-start；不得用 held-out final 选择 checkpoint；不得把 GLOBAL_ORACLE 包装成公平 decentralized baseline。",
-      "gpu_required": true,
+      "gpu_required": false,
       "gpu_lease": {
-        "status": "GRANTED_AFTER_PREFLIGHT",
-        "physical_gpu_local_binary": 0,
-        "physical_gpu_global_oracle": 1,
-        "observed_at": "2026-10-06T19:43:20+08:00",
-        "training_pids": [
-          14447,
-          14446
-        ],
-        "preflight": "PASS",
-        "free_disk_gib": 58.17
+        "status": "RELEASED_AFTER_TRAINING_COMPLETE",
+        "current_gpu_use": "Other existing tasks remain active; no new lease requested"
       },
       "run_dir": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime",
       "tmux": "iqn_evidence_phasea_20261006",
       "pid": 14306,
       "current_step": {
-        "local_binary": 24000,
-        "global_oracle": 25000
+        "local_binary": {
+          "stage1": 2000000,
+          "stage2": 700000,
+          "stage3": 700000
+        },
+        "global_oracle": {
+          "stage1": 2000000,
+          "stage2": 700000,
+          "stage3": 700000
+        }
       },
       "stage_plan": {
         "stage1": {
@@ -1517,8 +1639,62 @@
       "checkpoint_selection": "balanced_floor; stage promotion waits for all screening reports; detached screening does not block within-stage training.",
       "z05_reference": {
         "retrain": false,
-        "selected_stage3_step": 600000,
-        "checkpoint_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095"
+        "stages": [
+          {
+            "stage": "stage1",
+            "step": 1300000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage1/training/checkpoints/step_1300000.pt",
+            "checkpoint_sha256": "d35b7984d8ca03fa7b536811794578ff402e9b8ad48589e3318f2cb1077d702b",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 0.9,
+            "mixed_post_capture_ce": 0.9,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.0,
+            "ce_rms": 0.04147631233671331,
+            "area_cv": 0.07339358989259362,
+            "capture_seconds": 35.55
+          },
+          {
+            "stage": "stage2",
+            "step": 100000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage2/training/checkpoints/step_100000.pt",
+            "checkpoint_sha256": "f137f4fcd302c5ff8b7282609344a02e4c1702c84d15cefff9deda7c23d56f8c",
+            "pure_capture": 1.0,
+            "mixed_capture": 0.95,
+            "capture_score": 0.95,
+            "coverage_score": 0.9,
+            "balanced_floor": 0.9,
+            "mixed_safe_complete": 0.2,
+            "mixed_post_capture_ce": 0.2,
+            "harmonic_capture_coverage": 0.9243243243243242,
+            "worst_collision_rate": 0.25,
+            "ce_rms": 0.04893833327161738,
+            "area_cv": 0.16493362509211318,
+            "capture_seconds": 40.075
+          },
+          {
+            "stage": "stage3",
+            "step": 600000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/training/checkpoints/step_600000.pt",
+            "checkpoint_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 0.85,
+            "mixed_post_capture_ce": 0.85,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.1,
+            "ce_rms": 0.04433295009739798,
+            "area_cv": 0.1940247824584697,
+            "capture_seconds": 37.8
+          }
+        ]
       },
       "preflight": {
         "status": "PASS",
@@ -1530,132 +1706,416 @@
         "formal_launch_snapshot_commit": "56a8b0a",
         "global_diagnostic_correction": "PASS: occupancy denominator and per-observation token shortfall; test and immutable Z05 evaluator smoke passed."
       },
-      "latest_formal": "Stage1 training PIDs alive; Local-Binary 24k/2M and Global-Oracle 25k/2M at 19:51:33; finite optimizer metrics; no 100k checkpoint screening yet. Global evaluator diagnostics corrected and smoke verified.",
-      "result_classification": "IN_PROGRESS_NO_SCIENTIFIC_RESULT",
-      "next_gate": "Continue Stage1 training and detached 20-episode/scene screening from 100k checkpoints. Stage promotion waits for balanced_floor selection. After both curricula finish, launch a fresh corrected supervisor pass that reuses existing selected checkpoints and writes paired 50-episode held-out reports under final_heldout_50_corrected; do not restart training.",
+      "latest_formal": "Six training stages verified at 2M/700k/700k per representation. Local last 700k screening remains live; missing selection. Corrected paired 50-episode/scene final reports absent for all three arms.",
+      "result_classification": "INCOMPLETE_FINAL_EVIDENCE_NO_SCIENTIFIC_ORDERING",
+      "next_gate": "Existing Local Stage3 screening -> balanced_floor selection + hash -> fresh current --final-only corrected paired 50/scene evaluation -> verify actual manifests, fingerprints, success timing and diagnostics. Do not invoke training --launch; no extra training/ablation. Old supervisor final output is not evidence of corrected diagnostics.",
       "user_approval_required": false,
-      "updated_at": "2026-10-06T19:51:35+08:00"
+      "updated_at": "2026-10-08T23:18:42.735153+08:00",
+      "training_status": "TRAINING_COMPLETE",
+      "selection_status": "LOCAL_S1_S2_COMPLETE / LOCAL_S3_PENDING / GLOBAL_S1_S2_S3_COMPLETE",
+      "final_heldout_status": "FINAL_EVAL_PENDING",
+      "selected_checkpoints": [
+        {
+          "variant": "local_binary",
+          "stage": "stage1",
+          "selection": {
+            "step": 1500000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage1/training/checkpoints/step_1500000.pt",
+            "checkpoint_sha256": "18de0e289efc0fb07bd4b890c505c21da92f4092f6d2be155faa4265ffa938c6",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 0.95,
+            "mixed_post_capture_ce": 0.95,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.0,
+            "ce_rms": 0.03432206112465507,
+            "area_cv": 0.06352217504847356,
+            "capture_seconds": 35.05
+          },
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000,
+            700000,
+            800000,
+            900000,
+            1000000,
+            1100000,
+            1200000,
+            1300000,
+            1400000,
+            1500000,
+            1600000,
+            1700000,
+            1800000,
+            1900000,
+            2000000
+          ],
+          "screening_missing_steps": []
+        },
+        {
+          "variant": "local_binary",
+          "stage": "stage2",
+          "selection": {
+            "step": 300000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage2/training/checkpoints/step_300000.pt",
+            "checkpoint_sha256": "f6e0cf2172fc66e43a18bd1a77d6559a6c3ce6797c296f533703c3717e1ead5c",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 1.0,
+            "mixed_post_capture_ce": 1.0,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.0,
+            "ce_rms": 0.03974429238917995,
+            "area_cv": 0.1938630883364383,
+            "capture_seconds": 38.65
+          },
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000,
+            700000
+          ],
+          "screening_missing_steps": []
+        },
+        {
+          "variant": "local_binary",
+          "stage": "stage3",
+          "selection": null,
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000
+          ],
+          "screening_missing_steps": [
+            700000
+          ]
+        },
+        {
+          "variant": "global_oracle",
+          "stage": "stage1",
+          "selection": {
+            "step": 1700000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage1/training/checkpoints/step_1700000.pt",
+            "checkpoint_sha256": "f16b90fedd377e496f6a02e43e7eb6068d48446f6dc84af67845184107d74640",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 0.95,
+            "mixed_post_capture_ce": 0.95,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.0,
+            "ce_rms": 0.03413239008697517,
+            "area_cv": 0.04310317897610137,
+            "capture_seconds": 32.1
+          },
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000,
+            700000,
+            800000,
+            900000,
+            1000000,
+            1100000,
+            1200000,
+            1300000,
+            1400000,
+            1500000,
+            1600000,
+            1700000,
+            1800000,
+            1900000,
+            2000000
+          ],
+          "screening_missing_steps": []
+        },
+        {
+          "variant": "global_oracle",
+          "stage": "stage2",
+          "selection": {
+            "step": 700000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage2/training/checkpoints/step_700000.pt",
+            "checkpoint_sha256": "97e5561b0938b71c4698be3d7dff701fd332a3f2caa5e5da5cfd030e71309ca4",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 0.9,
+            "mixed_post_capture_ce": 0.9,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.1,
+            "ce_rms": 0.044527664138395394,
+            "area_cv": 0.18243571107356785,
+            "capture_seconds": 32.5
+          },
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000,
+            700000
+          ],
+          "screening_missing_steps": []
+        },
+        {
+          "variant": "global_oracle",
+          "stage": "stage3",
+          "selection": {
+            "step": 300000,
+            "checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage3/training/checkpoints/step_300000.pt",
+            "checkpoint_sha256": "b4e6566c4ac7860cdd802320f28c103b36b083e2651e1e335527c2782e16fbe0",
+            "pure_capture": 1.0,
+            "mixed_capture": 1.0,
+            "capture_score": 1.0,
+            "coverage_score": 1.0,
+            "balanced_floor": 1.0,
+            "mixed_safe_complete": 1.0,
+            "mixed_post_capture_ce": 1.0,
+            "harmonic_capture_coverage": 1.0,
+            "worst_collision_rate": 0.0,
+            "ce_rms": 0.03518063248773732,
+            "area_cv": 0.17653969111403084,
+            "capture_seconds": 33.625
+          },
+          "screening_complete_steps": [
+            100000,
+            200000,
+            300000,
+            400000,
+            500000,
+            600000,
+            700000
+          ],
+          "screening_missing_steps": []
+        }
+      ],
+      "completion_audit": "artifacts/2026-10-08_experiment_integration/verification.json:evidence",
+      "bounded_closeout_fixes": [
+        "Do not queue a screening candidate while it is already running; current old process not hot-reloaded.",
+        "Capture first strict CE success transition instead of absent episode_record field; exclude failed times.",
+        "Add final-only/readiness entry points that do not call run_stage, trainer or training resource gate."
+      ]
+    },
+    {
+      "task_id": "EXP-PERSIST-01",
+      "task_name": "Z05-REPEATED-ARRIVAL-AND-CASUALTY-CONTINUATION",
+      "status": "STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE",
+      "branch": "evaluation/z05-repeated-arrival-demo-20261006",
+      "head": "751ee2fdf8e0134504e9b4f033904cc610dd6891",
+      "worktree": "/home/yjq/rl/CoCap1/z05-repeated-arrival-demo-20261006",
+      "dependencies": [
+        "Z05_STAGE3_SELECTED_600K_FROZEN"
+      ],
+      "gpu_required": false,
+      "pid": null,
+      "tmux": null,
+      "run_dir": "/home/yjq/rl/CoCap1/z05-repeated-arrival-formal-20261007-heldout20x3",
+      "relaxed_run_dir": "/home/yjq/rl/CoCap1/z05-repeated-arrival-casualty-robustness-20261006",
+      "latest_formal": "Strict service A/B/C=9/20,13/20,14/20; relaxed all-3 capture A-prime/B/C=20/20 each, service13/20,13/20,14/20. 120 episode artifacts and 6 representative GIFs verified without rollout.",
+      "results": [
+        {
+          "kind": "strict",
+          "regime": "PERSIST-A",
+          "all_3_captured": 12,
+          "persistent_service_complete": 9,
+          "final_recovery_success": 9,
+          "final_recovery_time_seconds": {
+            "n": 9,
+            "mean": 166.0,
+            "median": 153.5,
+            "p90": 280.8
+          },
+          "casualty_episodes": 4,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 1,
+            "agent_agent": 1,
+            "evader_contact": 1
+          },
+          "failure_taxonomy": {}
+        },
+        {
+          "kind": "strict",
+          "regime": "PERSIST-B",
+          "all_3_captured": 16,
+          "persistent_service_complete": 13,
+          "final_recovery_success": 13,
+          "final_recovery_time_seconds": {
+            "n": 13,
+            "mean": 117.38461538461539,
+            "median": 106.0,
+            "p90": 198.3
+          },
+          "casualty_episodes": 5,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 1,
+            "agent_agent": 2,
+            "evader_contact": 1
+          },
+          "failure_taxonomy": {}
+        },
+        {
+          "kind": "strict",
+          "regime": "PERSIST-C",
+          "all_3_captured": 16,
+          "persistent_service_complete": 14,
+          "final_recovery_success": 14,
+          "final_recovery_time_seconds": {
+            "n": 14,
+            "mean": 141.10714285714286,
+            "median": 104.25,
+            "p90": 253.20000000000005
+          },
+          "casualty_episodes": 5,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 2,
+            "agent_agent": 1,
+            "evader_contact": 1
+          },
+          "failure_taxonomy": {}
+        },
+        {
+          "kind": "relaxed",
+          "regime": "PERSIST-A-TIMEOUT-CONTINUE",
+          "all_3_captured": 20,
+          "persistent_service_complete": 13,
+          "final_recovery_success": 13,
+          "final_recovery_time_seconds": {
+            "n": 13,
+            "mean": 144.26923076923077,
+            "median": 96.0,
+            "p90": 269.2
+          },
+          "casualty_episodes": 4,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 2,
+            "agent_agent": 1,
+            "evader_contact": 1
+          },
+          "failure_taxonomy": {
+            "full_team_recovery_timeout": 3,
+            "casualty_strict_coverage_infeasible": 4
+          }
+        },
+        {
+          "kind": "relaxed",
+          "regime": "PERSIST-B",
+          "all_3_captured": 20,
+          "persistent_service_complete": 13,
+          "final_recovery_success": 13,
+          "final_recovery_time_seconds": {
+            "n": 13,
+            "mean": 117.38461538461539,
+            "median": 106.0,
+            "p90": 198.3
+          },
+          "casualty_episodes": 5,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 1,
+            "agent_agent": 2,
+            "evader_contact": 1
+          },
+          "failure_taxonomy": {
+            "full_team_recovery_timeout": 2,
+            "casualty_strict_coverage_infeasible": 5
+          }
+        },
+        {
+          "kind": "relaxed",
+          "regime": "PERSIST-C",
+          "all_3_captured": 20,
+          "persistent_service_complete": 14,
+          "final_recovery_success": 14,
+          "final_recovery_time_seconds": {
+            "n": 14,
+            "mean": 141.10714285714286,
+            "median": 104.25,
+            "p90": 253.20000000000005
+          },
+          "casualty_episodes": 5,
+          "collision_types": {
+            "obstacle": 1,
+            "boundary": 2,
+            "agent_agent": 1,
+            "evader_contact": 2
+          },
+          "failure_taxonomy": {
+            "casualty_strict_coverage_infeasible": 5,
+            "full_team_recovery_timeout": 1
+          }
+        }
+      ],
+      "failure_decomposition": {
+        "relaxed_casualty_induced_strict_coverage_infeasible": 14,
+        "relaxed_full_team_hold_misses": 6,
+        "required_hold": 30,
+        "maximum_geometry_hold_upper_bounds": [
+          26,
+          25,
+          25,
+          19,
+          25,
+          26
+        ],
+        "static_snapshot_geometry_only": true
+      },
+      "contract": "evaluation-only zero-active survival termination; coverage min_active=12 unchanged; A-prime additionally timeout-continue; strict formal remains original endpoint.",
+      "selected_policy_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095",
+      "result_classification": "REPEATED_CAPTURE_STRONGLY_SUPPORTED_FULL_TEAM_SERVICE_NOT_RELIABLE_YET",
+      "next_gate": "N0 / NO_EXTRA_TRAINING_YET; preserve T0 until corrected Evidence closeout and joint reassessment.",
+      "user_approval_required": false,
+      "updated_at": "2026-10-08T23:18:42.735153+08:00",
+      "artifact_verification": "artifacts/2026-10-08_experiment_integration/verification.json:persistent"
     }
   ],
   "current_snapshot": {
-    "observed_at": "2026-10-06T14:21:02+08:00",
+    "observed_at": "2026-10-08T23:18:42.735153+08:00",
     "dag_lines": {
-      "A0": {
-        "status": "COMPLETE_REPRO_PASS",
-        "step": 200000,
-        "classification": "REPRO_PASS"
-      },
-      "A1": {
-        "status": "A1_CONTROL_FORMAL_COMPLETE_PENDING_EVALUATION",
-        "step": 100000,
-        "classification": "EVALUATION_INCOMPLETE",
-        "milestone_25k": "TELEMETRY_FINITE_NO_INTERMEDIATE_CHECKPOINT_CONFIGURED",
-        "pid": null,
-        "tmux": null,
-        "next": "A1_COMPATIBLE_FROZEN_EVALUATOR_20_ARGMAX_20_SAMPLE; NO_TRAINING"
-      },
-      "A2": {
-        "status": "A2_TRANSIENT_LEARNING_CLASSIFIED",
-        "step": 100000,
-        "classification": "A2_TRANSIENT_LEARNING",
-        "next": "A2_SEMANTIC_AUDIT_COMPLETE; NO_300K_EXTENSION; NO_NEW_TRAINING"
-      },
-      "B1": {
-        "status": "B1_COMPLETE",
-        "classification": "SUPPORT_EXPANSION_WITH_PHASE_DEPENDENT_RANKING_NO_GLOBAL_STABILITY"
-      },
-      "B2": {
-        "status": "B2_COMPLETE",
-        "classification": "R0_FULL_COMPLETE_RANKING_SIGNAL_STATE_SUPPORT_LIMITED"
-      },
-      "B3": {
-        "status": "B3_COMPLETE_NO_RANKING_QUALIFIED_CRITIC",
-        "classification": "NO_RANKING_QUALIFIED_CRITIC"
-      },
-      "B4": {
-        "status": "BLOCKED_BY_B3_NO_QUALIFIED_CRITIC"
-      },
-      "A3": {
-        "status": "A3_I0_FORMAL_COMPLETE_PENDING_EVALUATION",
-        "step": 100000,
-        "classification": "COMPLETE_PENDING_EVALUATION",
-        "milestone_25k": "TELEMETRY_FINITE_NO_INTERMEDIATE_CHECKPOINT_CONFIGURED",
-        "pid": null,
-        "tmux": null,
-        "next": "DEFINE_IQN_SAMPLE_SEMANTICS_AND_FIXED_SEEDS; RUN_REGISTERED_I0_20_PLUS_20; KEEP_I1_I3_LOCKED"
-      },
-      "M-COV": {
-        "status": "COMPLETE_BUDGET",
-        "step": 200000,
-        "classification": "CONTEMPORANEOUS_POSITIVE_CONTROL_COMPLETE"
-      },
-      "M-CAP": {
-        "status": "COMPLETE_BUDGET",
-        "step": 500000,
-        "classification": "GEOMETRY_LIMITED_PRIMARY_STATE_VISITATION_LIMITED_RING3"
-      },
-      "A4": {
-        "status": "BLOCKED"
-      },
-      "OLD_AC_COV": {
-        "status": "CLOSED_OLD_LINE",
-        "step": 500000,
-        "classification": "NO_CLEAR_SUSTAINED_SIGNAL"
-      },
-      "OLD_AC_CAP": {
-        "status": "STOPPED_AFTER_300K_FORMAL_WITH_NONFINITE_RECOVERY_FAILURE",
-        "step": 300000
-      },
-      "OLD_AC_MIX": {
-        "status": "STOPPED_AFTER_300K_FORMAL",
-        "step": 300000
-      }
+      "EXP-EVIDENCE-01": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING",
+      "EXP-PERSIST-01": "STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE"
     },
-    "iqn_z_lines": {
-      "Z05": {
-        "status": "COMPLETE",
-        "training_step": 700000,
-        "selected_checkpoint_step": 600000,
-        "alpha": 0.5,
-        "completed_at": "2026-09-23T09:54:05+0800",
-        "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"
-      },
-      "Z07": {
-        "status": "COMPLETE",
-        "training_step": 700000,
-        "selected_checkpoint_step": 300000,
-        "alpha": 0.7,
-        "completed_at": "2026-09-23T10:26:00+0800",
-        "classification": "CURRICULUM_COMPLETE_FINAL_REPORT"
-      },
-      "Z05_INDEPENDENT_EVIDENCE": {
-        "status": "RECOVERED_COMPLETE",
-        "selected_checkpoint_step": 600000,
-        "classification": "EXTERNAL_CAPACITY_GENERALIZATION_EVIDENCE"
-      }
-    },
+    "iqn_z_lines": "Z05 frozen selected600k hash verified; no retraining.",
     "resources": {
-      "gpu0_idle": true,
-      "gpu1_idle": true,
-      "gpu_memory_used_mib": [
-        19,
-        18
-      ],
-      "gpu_util_percent": [
-        0,
-        0
-      ],
-      "root_free_gib_approx": 61,
-      "root_use_percent": 94,
-      "inode_use_percent": 7,
-      "tmux": [
-        "mihomo"
-      ],
-      "training_processes": [],
-      "remote_default_head": "refs/heads/main@a5814f49fa29d869cdc3fb8d8e0df4722aa11f00",
-      "remote_central_before_reconciliation": "refs/heads/ops/ac-master-dag-20260921@e1c5032614b1c42ecbf1ce3cb845ff7919c9acf1",
-      "remote_central_after_push": "refs/heads/ops/ac-master-dag-20260921@974185ddc345c61910d0cd04d82ae9a8c30a3c3b"
-    }
+      "disk_free_gib": 140.47233963012695,
+      "evidence_training": "none",
+      "evidence_screening": "running",
+      "other_training": "TERL-MAPPO running",
+      "new_training_launched": false
+    },
+    "decision_gate": {
+      "category": "N0",
+      "gate": "NO_EXTRA_TRAINING_YET",
+      "reason": "Corrected paired Evidence final held-out absent; preserve Persistent T0 until contract closeout."
+    },
+    "artifact": "artifacts/2026-10-08_experiment_integration/verification.json"
   },
   "event_log": [
     {
@@ -2027,6 +2487,21 @@
       "at": "2026-10-06T14:20:26+08:00",
       "event": "GITHUB_PUSH_VERIFIED_20261006",
       "detail": "GitHub refs for the central DAG, A1 control/evaluator, A3 design, and all seven other reviewed branch refs were read via proxy 127.0.0.1:17892 and matched the intended server refs. Central 974185ddc345c61910d0cd04d82ae9a8c30a3c3b, control 4baeccb5717418e80a6b8e3ee895d7e6c1f791b4, design b6cebad956dff1f0c285091272646740a45557c6; no force push."
+    },
+    {
+      "observed_at": "2026-10-08T23:18:42.735153+08:00",
+      "event": "EXP_EVIDENCE_PERSIST_CENTRAL_INTEGRATION_20261008",
+      "evidence_status": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING",
+      "persistent_status": "STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE",
+      "decision": "N0 / NO_EXTRA_TRAINING_YET",
+      "summary": "docs/COCAP_EXPERIMENT_STATUS_20261008_ZH.md",
+      "new_training_launched": false,
+      "new_formal_experiment_launched": false,
+      "experiment_heads": {
+        "evidence": "6b7aab28546e1a30c60f84d12de3bde70930f670",
+        "persistent": "751ee2fdf8e0134504e9b4f033904cc610dd6891",
+        "z05_independent": "1a9da054ecb5652726005d00d08ab05a2188dd8e"
+      }
     }
   ],
   "server_recovery": {

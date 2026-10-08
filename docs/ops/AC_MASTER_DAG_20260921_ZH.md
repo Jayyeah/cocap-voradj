@@ -2,6 +2,18 @@
 
 本文件与 `artifacts/2026-09-21_ac_master_dag/state.json` 是跨 session 的唯一中央状态。只有 MASTER 可以写这两个文件；child 只能在各自 branch/worktree/rundir 工作，并以结构化 handoff 返回结果。禁止 nested subagents。
 
+## 2026-10-08 当前集成状态（覆盖下方历史运行快照）
+
+- 当前中文阶段总结：[COCAP_EXPERIMENT_STATUS_20261008_ZH.md](../COCAP_EXPERIMENT_STATUS_20261008_ZH.md)。完整 checkpoint、120局Persistent artifact、GIF、branch/worktree/GPU/process/disk 核验：[verification.json](../../artifacts/2026-10-08_experiment_integration/verification.json)。
+- 中央本轮起点/最新fetch HEAD：`3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0`；最终交付HEAD由git与同步回执给出，下方旧session HEAD保留为历史。
+- **EXP-EVIDENCE-01：TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING。** Local/Global各完成2M/700k/700k；Local selected S1/S2=1.5M/300k、S3未登记；Global selected=1.7M/700k/300k；Z05 reference=1.3M/100k/600k、hash符合`8ee5c162...476d095`。
+- Local S3 700k screening PID1001961与workers1001974/1001975仍运行，supervisor14306仍live；其重复队列导致已完成report被再评估覆盖，磁盘目前仅6/7完整。已修复新进程的队列与Coverage成功时间字段；当前旧进程没有热替换。三表示corrected50局/scene报告缺失，不能按旧supervisor的future complete登记实验完成。收尾使用fresh `--final-only`，不调用training `--launch`。
+- **EXP-PERSIST-01：STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE。** strict A/B/C service=9/20、13/20、14/20；relaxed A′/B/C all-3 capture均20/20、service13/20、13/20、14/20。120局artifact核验通过，14个casualty相关strict coverage不可满足+6个满编hold miss；后者最长连续geometry hold19–26<30；6个代表GIF完整解码并覆盖三波。
+- 当前联合decision gate **N0 / NO_EXTRA_TRAINING_YET**，保持Persistent T0。Evidence正式比较未完成，不据screening解锁recovery/safety/representation新训练；本轮不启动新实验。
+- Evidence训练全部结束，Persistent无运行进程；既有TERL-MAPPO PID992932训练与其独立评估仍运行，GPU也有其它用户任务。磁盘约140.47GiB free；没有停止/重启任何既有任务，没有新GPU lease或训练launch。
+- Evidence交付branch `evidence/local-global-20261006` @ `6b7aab28546e1a30c60f84d12de3bde70930f670`；Persistent `evaluation/z05-repeated-arrival-demo-20261006` @ `751ee2fdf8e0134504e9b4f033904cc610dd6891`（含原未推送casualty commit906e2bc）；Z05独立reference @ `1a9da054ecb5652726005d00d08ab05a2188dd8e`。统一按正常push、fetch、ls-remote核验，不force push。
+- Validation：Evidence31 passed，Persistent27 passed；artifact/checkpoint核验、compile和diff-check通过。live coordinator_state与历史Z05 raw目录保持未提交，已审snapshot随交付同步。
+
 ## 当前事实源
 
 - MASTER branch：`ops/ac-master-dag-20260921`。本次 2026-10-06 恢复起点及 fetch 时的中央 HEAD 为 `e1c5032614b1c42ecbf1ce3cb845ff7919c9acf1`；最新运行事实见本文件末尾 `2026-10-06 SERVER RECOVERY RECONCILIATION`。只使用命令级 proxy `127.0.0.1:17892`；禁止 stale `17891`。
@@ -43,6 +55,8 @@ Z05 当前 PID `17097`、tmux `iqn_z05_recovery_20260921`、物理 GPU0；Z07 �
 
 | task | 当前状态 | branch / worktree | 下一 gate |
 |---|---|---|---|
+| EXP-EVIDENCE-01 | TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING | `evidence/local-global-20261006` @ `6b7aab2` | Local S3 selection -> fresh corrected paired 50/scene final-only；不训练 |
+| EXP-PERSIST-01 | STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE | `evaluation/z05-repeated-arrival-demo-20261006` @ `751ee2f` | N0 / NO_EXTRA_TRAINING_YET；hold/safety为候选，等待Evidence正式closeout |
 | A0 | REPRO_PASS | `experiment/ac-mappo-cov-repro-20260921` / `/home/yjq/rl/CoCap1/ac-mappo-cov-repro-20260921` | 200k complete；最终 argmax/sample strict CE 均 20/20、collision 0；GPU0 released；当前 MAPPO Coverage 可学 |
 | A1 | A1_CONTROL_FORMAL_COMPLETE_PENDING_EVALUATION | `control/a1-no-entropy-20260925` @ `4baeccb`；`/home/yjq/rl/CoCap1/a1-no-entropy-control-20260925` | 100k 训练完成；checkpoint 与 resolved config 已登记；兼容评估器未找到，分类 `EVALUATION_INCOMPLETE`；无 live PID/tmux；分支已同步 |
 | B1 | B1_COMPLETE | `experiment/ac-bc-exploratory-critic-20260921` / `/home/yjq/rl/CoCap1/ac-bc-exploratory-critic-20260921` | handoff 完成；support 扩大但无 global ranking stability；等待 B2-R0-FULL 后进入 B3 |
