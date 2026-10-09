@@ -152,8 +152,8 @@ def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
 
 def test_config_scope_before_values_and_no_silent_unknown_keys():
     lock = committed_lock(); d = delta(lock, 'P1')
-    d['config_changes'] = [{'path': 'ppo.actor_lr', 'before': 3e-5, 'after': 1e-5, 'reason': 'controlled PPO fork'}]
-    assert resolve_config(lock, d)['ppo']['actor_lr'] == 1e-5
+    d['config_changes'] = [{'path': 'ppo.target_kl', 'before': 0.02, 'after': 0.01, 'reason': 'controlled PPO fork'}]
+    assert resolve_config(lock, d)['ppo']['target_kl'] == 0.01
     d['line'] = 'T0'
     with pytest.raises(ValueError, match='outside'): resolve_config(lock, d)
     d['line'] = 'P1'; d['config_changes'][0]['before'] = 999

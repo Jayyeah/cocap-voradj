@@ -23,6 +23,7 @@ REGRESSION_SOURCES = (
     'test/test_mappo_terminal_rows_20260923.py',
     'test/test_terl_mappo_batch01_base_20261009.py',
     'test/test_terl_mappo_batch01_qa_repairs_20261009.py',
+    'test/test_terl_mappo_batch01_v3_20261009.py',
 )
 COMMON_DEPENDENCIES = (
     'src/cocap_voradj/training/small_step_ac.py',
@@ -35,8 +36,8 @@ COMMON_DEPENDENCIES = (
 )
 OPERATIONAL_KEYS = {'experiment', 'seed', 'actor_seed', 'budget', 'stage1_ceiling'}
 LINE_KEYS = {
-    'T0': set(), 'T1': set(), 'N1': {'hidden_dim', 'num_heads', 'num_layers', 'masked_pool'},
-    'R1': set(), 'P1': {'ppo'}, 'C0': set(),
+    'T0': set(), 'T1': set(), 'N1': set(),
+    'R1': set(), 'P1': {'ppo.target_kl'}, 'C0': set(),
 }
 
 
@@ -70,6 +71,9 @@ def source_inventory(root=ROOT):
     files.update({ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json',
                   PROTOCOL_PATH, 'tools/batch01_base_20261009.py'})
     files.update(REGRESSION_SOURCES)
+    files.add('src/sitecustomize.py')
+    files.add('pyproject.toml')
+    files.add('configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json')
     # Package __init__ files import historical trainer/dynamics/logging modules
     # even when only the MAPPO learner is requested. Freeze their import closure
     # without rewriting those packages or accepting unverified live dependencies.
@@ -107,7 +111,7 @@ def source_inventory(root=ROOT):
 
 def create_lock():
     """Offline engineering command; never a launch-time refresh of BASE."""
-    if git('branch', '--show-current') != 'experiment/terl-mappo-batch01-base-20261009':
+    if git('branch', '--show-current') not in {'experiment/terl-mappo-batch01-base-20261009', 'experiment/terl-mappo-batch01-v3-20261009'}:
         raise ValueError('create BASE only on the authorized Core branch')
     config = json.loads((ROOT / ANCHOR_CONFIG).read_text())
     # Compare the entire historical source list to the actual immutable Git objects.
@@ -119,11 +123,12 @@ def create_lock():
         raw = subprocess.check_output(['git', '-C', str(ROOT), 'show', f'{PARENT_SHA}:{path}'])
         if hashlib.sha256(raw).hexdigest() != digest:
             raise ValueError('T0 anchor source changed: ' + path)
-    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V2',
+    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V3',
             'parent_sha': PARENT_SHA, 'terl_sha': TERL_SHA, 'anchor_config': config,
             'common_sources': source_inventory(),
             'generated_runtime_sources': torch_generated_sources(),
             'evaluation_protocol': json.loads((ROOT / PROTOCOL_PATH).read_text()),
+            'arm_evaluation_protocol': json.loads((ROOT / 'configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json').read_text()),
             'scientific_delta_from_t0': [], 'independent_qa': 'PENDING_MASTER_QA'}
 
 
@@ -154,7 +159,7 @@ def resolve_config(lock, delta):
         if set(entry) != {'path', 'before', 'after', 'reason'} or not entry['reason']:
             raise ValueError('config delta requires path/before/after/reason')
         keys = entry['path'].split('.')
-        if entry['path'] in seen or keys[0] not in OPERATIONAL_KEYS | LINE_KEYS[delta['line']]:
+        if entry['path'] in seen or (keys[0] not in OPERATIONAL_KEYS and entry['path'] not in LINE_KEYS[delta['line']]):
             raise ValueError('config delta outside experiment scope: ' + entry['path'])
         seen.add(entry['path'])
         node = config

@@ -167,7 +167,12 @@ class Runtime:
             state = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
             actions, logp, latent, value = self.trainer.act(local, {k: v[None] for k, v in state.items()})
             self.hooks.backend.validate(actions, len(local['self']))
+            snapshot = getattr(self.hooks.reward_transform, 'snapshot', None)
+            before = self.source_guard.call(snapshot, self.adapter.env) if callable(snapshot) else None
             _, raw, term, trunc, end, info = self.source_guard.call(self.adapter.step, actions)
+            if before is not None:
+                info['bridge_pre'] = before
+                info['bridge_post'] = self.source_guard.call(snapshot, self.adapter.env)
             reward = np.asarray(raw).copy()
             if self.hooks.reward_transform is not None:
                 reward = np.asarray(self.source_guard.call(self.hooks.reward_transform, reward.copy(), copy.deepcopy(info)))
@@ -180,8 +185,13 @@ class Runtime:
                          'log_prob': logp, 'values': value[0], 'next_values': nv, 'rewards': reward,
                          'terminated': term, 'truncated': trunc,
                          'episode_end': np.full(len(raw), end), 'active_mask': info['active']})
+            components = getattr(self.hooks.reward_transform, 'last_components', None)
+            if components is not None:
+                rows[-1]['reward_components'] = {k: np.asarray(v).copy() for k, v in components.items()}
+                rows[-1]['raw_rewards'] = np.asarray(raw).copy()
+                rows[-1]['shaping_rewards'] = np.asarray(components['shaping']).copy()
             if end:
-                episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos')})
+                episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos', 'bridge_pre', 'bridge_post')})
                 self.source_guard.call(self.adapter.reset)
         return {k: {j: np.stack([r[k][j] for r in rows]) for j in rows[0][k]}
                 if isinstance(rows[0][k], dict) else np.stack([r[k] for r in rows])

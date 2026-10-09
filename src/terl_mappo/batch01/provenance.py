@@ -9,7 +9,7 @@ import torch
 
 from .contracts import ROOT, environment_versions, fingerprint, declared_sources, git
 from .source_guard import SourceGuard
-from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label
+from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label, protocol_for_line
 from ..native import NativeStage1
 from ..model import TERLActor
 
@@ -82,8 +82,8 @@ def runtime_manifest(lock, delta, resolved, runtime, resources):
             'base': delta['base'], 'line': delta['line'], 'resolved_config': resolved,
             'delta_manifest': delta, 'common_source_hashes': sources,
             'generated_runtime_source_hashes': dict(runtime.source_guard.generated_sources),
-            'seed_manifest': seed_manifest(resolved, lock['evaluation_protocol']),
-            'evaluation_protocol': lock['evaluation_protocol'], 'metric_definitions': METRIC_DEFINITIONS,
+            'seed_manifest': seed_manifest(resolved, protocol_for_line(lock, delta['line'])),
+            'evaluation_protocol': protocol_for_line(lock, delta['line']), 'metric_definitions': METRIC_DEFINITIONS,
             'active_runtime_values': active, 'environment_fingerprint': fingerprint(raw_env),
             'action_fingerprint': fingerprint(action),
             'reward_fingerprint': fingerprint({'native': reward, 'extension': delta.get('extensions', {}),

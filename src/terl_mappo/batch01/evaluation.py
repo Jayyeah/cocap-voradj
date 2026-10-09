@@ -27,19 +27,44 @@ METRIC_DEFINITIONS = {
 }
 
 
+def protocol_for_line(lock, line):
+    if line == 'T0': return copy.deepcopy(lock['evaluation_protocol'])
+    protocol = lock.get('arm_evaluation_protocol')
+    if not protocol or protocol.get('protocol_id') != 'batch01-new-paired-20261009':
+        raise ValueError('future ARM requires centrally locked new evaluation protocol')
+    return copy.deepcopy(protocol)
+
+
 def seed_manifest(config, protocol):
     result = {'train_environment': [config['seed']], 'train_actor': [config['actor_seed']],
               'sample_torch_offset': protocol['sample_torch_offset']}
-    for name in ('screen', 'selection', 'final'):
-        domain = protocol[name]
-        result[name] = list(range(domain['seed_base'], domain['seed_base'] + domain['max_episodes_per_mode']))
+    scenes = protocol.get('scene_offsets', {'3P1E0O4C': 0})
+    if len(set(scenes.values())) != len(scenes): raise ValueError('scene offsets overlap')
     seen = set(result['train_environment'] + result['train_actor'])
-    for name in ('screen', 'selection', 'final'):
-        seeds = set(result[name])
-        action_seeds = {s + protocol['sample_torch_offset'] for s in seeds}
-        if seeds & seen or action_seeds & seen or seeds & action_seeds:
-            raise ValueError('seed domains overlap (including sample action streams)')
-        seen |= seeds | action_seeds
+    historical = protocol.get('reserved_historical_protocol')
+    reserved = set()
+    if historical:
+        for domain in ('screen', 'selection', 'final'):
+            setting = historical[domain]
+            seeds = set(range(setting['seed_base'], setting['seed_base'] + setting['max_episodes_per_mode']))
+            reserved |= seeds | {s + historical['sample_torch_offset'] for s in seeds}
+        if seen & reserved: raise ValueError('training seeds overlap observed historical evaluation')
+    scene_seeds = {}
+    for scene, offset in scenes.items():
+        scene_seeds[scene] = {}
+        for name in ('screen', 'selection', 'final'):
+            domain = protocol[name]
+            seeds = set(range(domain['seed_base'] + offset,
+                              domain['seed_base'] + offset + domain['max_episodes_per_mode']))
+            action_seeds = {s + protocol['sample_torch_offset'] for s in seeds}
+            if seeds & seen or action_seeds & seen or seeds & action_seeds or (seeds | action_seeds) & reserved:
+                raise ValueError('seed domains overlap (including scenes, historical and sample action streams)')
+            seen |= seeds | action_seeds
+            scene_seeds[scene][name] = {'physical': sorted(seeds), 'sample_action': sorted(action_seeds)}
+            if offset == 0: result[name] = sorted(seeds)
+    result['scene_seeds'] = scene_seeds
+    result['paired_physical_seeds_across_future_arms'] = bool(historical)
+    result['historical_reserved_seed_count'] = len(reserved)
     return result
 
 

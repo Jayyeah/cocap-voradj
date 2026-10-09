@@ -9,6 +9,8 @@ undeclared importlib execution before the module body runs.
 from __future__ import annotations
 
 import ast
+import hashlib
+from types import CodeType
 from contextlib import contextmanager
 from contextvars import ContextVar
 import importlib
@@ -28,6 +30,7 @@ from ..run import file_hash, atomic_json
 
 _ACTIVE = ContextVar('batch01_source_guard', default=None)
 _EXECUTED = {}
+_CODE_RECORDS = getattr(sys, "_batch01_exec_records", {})
 _IMPORT_EPOCH = 0
 _NAMESPACES = {'terl_mappo', 'cocap_voradj', 'config_manager', 'environment',
                'policy', 'robots', 'thirdparty', 'utils'}
@@ -40,6 +43,24 @@ _EXTERNAL_SOURCE_ROOTS.add(Path(site.getusersitepackages()).resolve())
 for _package in ('gym', 'gym_notices'):
     _filename = getattr(sys.modules.get(_package), '__file__', None)
     if _filename: _EXTERNAL_SOURCE_ROOTS.add(Path(_filename).resolve().parent)
+
+
+def code_signature(code):
+    """Actual executable content including nested constants and exception tables.
+
+    Filename alone never grants permission. Normalize immutable constants rather
+    than marshal reference/interning layout; compare same Python optimization.
+    """
+    def constant(value):
+        if isinstance(value, CodeType): return ('code', code_signature(value))
+        if isinstance(value, tuple): return ('tuple', tuple(constant(x) for x in value))
+        if isinstance(value, frozenset): return ('frozenset', tuple(sorted(map(repr, map(constant, value)))))
+        return (type(value).__name__, repr(value))
+    return (code.co_argcount, code.co_posonlyargcount, code.co_kwonlyargcount,
+            code.co_nlocals, code.co_stacksize, code.co_flags, code.co_code,
+            tuple(constant(x) for x in code.co_consts), code.co_names, code.co_varnames,
+            code.co_freevars, code.co_cellvars, code.co_firstlineno,
+            code.co_linetable, code.co_exceptiontable)
 
 
 class SourceViolation(ValueError):
@@ -55,12 +76,14 @@ def _audit(event, args):
     p = Path(filename).absolute()
     guard = _ACTIVE.get()
     if guard is not None:
-        guard.check_path(p, force=True)
+        guard.check_code(args[0])
     # Capture executed content separately from permissions, including unguarded
     # imports between boundaries. This does not add anything to the allow-list.
     real = p.resolve()
     if real.is_relative_to(ROOT) and real.suffix == '.py' and real.is_file():
         _EXECUTED[str(p)] = file_hash(real)
+        rows = _CODE_RECORDS.setdefault(str(p), [])
+        if not any(code is args[0] for code in rows): rows.append(args[0])
     _IMPORT_EPOCH += 1
 
 
@@ -82,6 +105,10 @@ class SourceGuard:
         self._hash_cache = {}
         self._modules_key = None
         self._module_paths = set()
+        self._local_modules = []
+        self._compiled = {}
+        self._verified_codes = {}
+        self._path_cache = {}
 
     @classmethod
     def from_base(cls, lock, delta, pin, **kwargs):
@@ -122,7 +149,9 @@ class SourceGuard:
     def check_path(self, path, *, force=False, required=False):
         self.alive()
         lexical = Path(path).absolute()
-        real = lexical.resolve()
+        cached_path = self._path_cache.get(str(lexical))
+        real = lexical if cached_path else lexical.resolve()
+        if cached_path and lexical.is_symlink(): self.fail("source became symlink: " + str(lexical))
         if self.framework_generated(lexical): return
         local = lexical.is_relative_to(self.root) or real.is_relative_to(self.root)
         if not local:
@@ -142,15 +171,64 @@ class SourceGuard:
             digest = file_hash(real)
             if digest != expected: self.fail('declared source hash mismatch: ' + relative)
             self._hash_cache[relative] = (stamp, digest)
+            self._path_cache[str(lexical)] = True
         executed = _EXECUTED.get(str(lexical))
         if executed is not None and executed != expected:
             self.fail('executed module content differs from lock/delta: ' + relative)
 
+    def compiled_codes(self, path):
+        path = Path(path).absolute()
+        self.check_path(path, required=True)
+        key = str(path)
+        relative = path.relative_to(self.root).as_posix()
+        digest = self.expected[relative]
+        if key not in self._compiled:
+            source = path.read_bytes()
+            if hashlib.sha256(source).hexdigest() != digest:
+                self.fail('source changed during compilation: ' + relative)
+            code = compile(source, key, 'exec', dont_inherit=True, optimize=sys.flags.optimize)
+            allowed = set()
+            def visit(item):
+                allowed.add(code_signature(item))
+                for constant in item.co_consts:
+                    if isinstance(constant, CodeType): visit(constant)
+            visit(code)
+            self._compiled[key] = allowed
+        return self._compiled[key]
+
+    def check_code(self, code, *, required=False):
+        self.alive()
+        path = Path(code.co_filename).absolute()
+        self.check_path(path, force=True, required=required)
+        if self.framework_generated(path):
+            reference = compile(path.read_bytes(), str(path), 'exec', dont_inherit=True,
+                                optimize=sys.flags.optimize)
+            if code_signature(code) != code_signature(reference):
+                self.fail('generated template executed code differs from pinned source')
+            return
+        if not path.is_relative_to(self.root): return
+        cache = self._verified_codes.setdefault(str(path), {})
+        if cache.get(id(code)) is code: return
+        if code_signature(code) not in self.compiled_codes(path):
+            self.fail('executed code object differs from locked source: ' + str(path))
+        cache[id(code)] = code
+
+    def check_execution(self, filename):
+        path = Path(filename).absolute()
+        if not path.is_relative_to(self.root): return
+        records = _CODE_RECORDS.get(str(path))
+        if not records:
+            self.fail('no startup execution witness; include pinned src in PYTHONPATH: ' + str(path))
+        for code in records:
+            cache = self._verified_codes.get(str(path), {})
+            if cache.get(id(code)) is not code: self.check_code(code)
+
     def check_loaded(self, *, force=False):
         self.alive()
         key = (len(sys.modules), _IMPORT_EPOCH)
-        if force or key != self._modules_key:
+        if key != self._modules_key:
             paths = set()
+            local_modules = []
             for name, module in list(sys.modules.items()):
                 filename = getattr(module, '__file__', None)
                 required = name.split('.')[0] in _NAMESPACES
@@ -184,8 +262,15 @@ class SourceGuard:
                             self.fail('module name/source origin mismatch: ' + name)
                     self.check_path(lexical, force=force, required=required)
                     paths.add(lexical)
+                    local_modules.append((name, module, str(lexical), origin))
             self._module_paths = paths
+            self._local_modules = local_modules
             self._modules_key = key
+        for name, module, filename, origin in self._local_modules:
+            if (sys.modules.get(name) is not module or getattr(module, "__file__", None) != filename or
+                    getattr(getattr(module, "__spec__", None), "origin", None) != origin):
+                self.fail("module __file__/spec origin mismatch or replacement: " + name)
+            self.check_execution(filename)
         # With no import event, hook calls check their own code file only.
         # Full content checks remain mandatory before accepting a rollout,
         # every optimizer step, and checkpoint save/load.
@@ -210,7 +295,8 @@ class SourceGuard:
 
     def call(self, function, *args, **kwargs):
         code = getattr(getattr(function, '__func__', function), '__code__', None)
-        if code is not None: self.check_path(code.co_filename, required=True)
+        if code is None: code = getattr(getattr(function, '__call__', None), '__code__', None)
+        if code is not None: self.check_code(code, required=True)
         with self.scope(force=False): return function(*args, **kwargs)
 
     def preflight(self, functions):
@@ -221,6 +307,8 @@ class SourceGuard:
             except TypeError: path = None
             if not path: continue
             self.check_path(path, force=True, required=True)
+            code = getattr(getattr(function, "__func__", function), "__code__", None)
+            if code is not None: self.check_code(code, required=True)
             tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
             for node in ast.walk(tree):
                 if not isinstance(node, ast.Call) or not node.args: continue

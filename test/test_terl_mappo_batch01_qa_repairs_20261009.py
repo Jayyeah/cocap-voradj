@@ -32,7 +32,7 @@ def test_q1_production_lock_generator_stays_core_only(monkeypatch):
     monkeypatch.setattr(contracts, 'git', lambda *args: 'audit/terl-mappo-batch01-base-qa-20261009')
     with pytest.raises(ValueError, match='authorized Core branch'): contracts.create_lock()
     lock = committed_lock()
-    assert lock['status'] == 'BATCH01_BASE_CANDIDATE_V2'
+    assert lock['status'] == 'BATCH01_BASE_CANDIDATE_V3'
 
 
 @pytest.fixture
