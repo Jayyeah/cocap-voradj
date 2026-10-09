@@ -1,0 +1,963 @@
+diff --git a/configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json b/configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json
+new file mode 100644
+index 0000000..082c5ad
+--- /dev/null
++++ b/configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json
+@@ -0,0 +1,93 @@
++{
++  "schema": "terl.batch01.arm_evaluation.v1",
++  "checkpoint_interval": 25000,
++  "sample_torch_offset": 100000,
++  "screen": {
++    "seed_base": 2056100900,
++    "max_episodes_per_mode": 20,
++    "regular_episodes_per_mode": 10
++  },
++  "screen_milestones": [
++    0,
++    25000,
++    50000,
++    100000,
++    250000,
++    500000,
++    750000,
++    1000000
++  ],
++  "selection": {
++    "seed_base": 2066100900,
++    "max_episodes_per_mode": 20,
++    "top_screen_candidates": 3
++  },
++  "final": {
++    "seed_base": 2076100900,
++    "max_episodes_per_mode": 50
++  },
++  "modes": [
++    "argmax",
++    "sample"
++  ],
++  "selection_order": [
++    "mean_normal_capture_rate",
++    "negative_mean_collision_rate",
++    "mean_strict_geometry_rate",
++    "mean_ring3_rate",
++    "negative_step"
++  ],
++  "late_stage_window_checkpoints": 5,
++  "entropy_comparison": "within declared probability measure only",
++  "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
++  "protocol_id": "batch01-new-paired-20261009",
++  "scene_offsets": {
++    "3P1E0O4C": 0,
++    "4P1E1O6C": 1000,
++    "7P2E2O8C": 2000
++  },
++  "reserved_historical_protocol": {
++    "schema": "terl.batch01.evaluation.v1",
++    "checkpoint_interval": 25000,
++    "sample_torch_offset": 100000,
++    "screen": {
++      "seed_base": 2026100800,
++      "max_episodes_per_mode": 20,
++      "regular_episodes_per_mode": 10
++    },
++    "screen_milestones": [
++      0,
++      25000,
++      50000,
++      100000,
++      250000,
++      500000,
++      750000,
++      1000000
++    ],
++    "selection": {
++      "seed_base": 2036100800,
++      "max_episodes_per_mode": 20,
++      "top_screen_candidates": 3
++    },
++    "final": {
++      "seed_base": 2046101800,
++      "max_episodes_per_mode": 50
++    },
++    "modes": [
++      "argmax",
++      "sample"
++    ],
++    "selection_order": [
++      "mean_normal_capture_rate",
++      "negative_mean_collision_rate",
++      "mean_strict_geometry_rate",
++      "mean_ring3_rate",
++      "negative_step"
++    ],
++    "late_stage_window_checkpoints": 5,
++    "entropy_comparison": "within declared probability measure only",
++    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++  },
++  "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
++}
+diff --git a/configs/experiments/terl_mappo_batch01_20261009/base_lock.json b/configs/experiments/terl_mappo_batch01_20261009/base_lock.json
+index 9903341..0fcc4bc 100644
+--- a/configs/experiments/terl_mappo_batch01_20261009/base_lock.json
++++ b/configs/experiments/terl_mappo_batch01_20261009/base_lock.json
+@@ -1,6 +1,6 @@
+ {
+   "schema": "terl.batch01.base.v1",
+-  "status": "BATCH01_BASE_CANDIDATE_V2",
++  "status": "BATCH01_BASE_CANDIDATE_V3",
+   "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+   "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
+   "anchor_config": {
+@@ -39,7 +39,9 @@
+   "common_sources": {
+     "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
+     "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
++    "configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json": "65def8826d2eb5aa9a66187b210324cece80cddf5e403d05e288ee33509392ea",
+     "configs/experiments/terl_mappo_batch01_20261009/evaluation.json": "75d7382cea852e13ce0aa6345f14f3f33ecc1081810c02140f395d89b1f774b4",
++    "pyproject.toml": "2a03b6f6a9a1b8eb2d2912716000e0f8b55c5d648c076c491f7a7bec41441e57",
+     "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
+     "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
+     "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
+@@ -79,14 +81,15 @@
+     "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
+     "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
+     "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89",
++    "src/sitecustomize.py": "bf31591c96648e07c47502593cb6268a247cc024a6efafbf09555cec8d884b16",
+     "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
+     "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
+     "src/terl_mappo/batch01/checkpoints.py": "8fe00074d56fe9a29f89a2a8b8bb3274c76e4e0b5803369cde48dbaf3e96bb5b",
+-    "src/terl_mappo/batch01/contracts.py": "3ae1c3c39645319ca5b301b2eade61d4a9ef02a59429027b95d7ab2451540e28",
+-    "src/terl_mappo/batch01/evaluation.py": "919327bc1dd761e57af6aaff893db015cf7d12eeba3c90a34fc6beace77ed763",
+-    "src/terl_mappo/batch01/interfaces.py": "4562561e9b798b1575f7431acfd6d72ede8e2694cfbf9782be89641ec8be4d01",
+-    "src/terl_mappo/batch01/provenance.py": "28d391c7a17a30f898bc3347d62c7dd5a2fcfef070ac0cec203a681ef905de9e",
+-    "src/terl_mappo/batch01/source_guard.py": "1fa5b101451f373f3e42b5da5d1ef4f4a141c450127b81a66aee867219b45bc4",
++    "src/terl_mappo/batch01/contracts.py": "b31dce0f41da84d81acbad209fdaa0ea5761dd465098f46e3d84d8be5fa0ec6b",
++    "src/terl_mappo/batch01/evaluation.py": "d82f6cc355f20e0c92d6521358b69d6f3e88c420783588ca808f85297fb58fda",
++    "src/terl_mappo/batch01/interfaces.py": "9078120f08b49eedf3a19bfc1214c5dbb0793299eef004cab533024e9b1f84c6",
++    "src/terl_mappo/batch01/provenance.py": "27d4861175693da243a0c46036ec1b84c29cdd481f3cbf038a2626536682ab5c",
++    "src/terl_mappo/batch01/source_guard.py": "483492d893e34756a763f2ac70587e215033156fa5fe2dfb3ee59f9b369f82a7",
+     "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
+     "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
+     "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
+@@ -94,11 +97,14 @@
+     "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
+     "test/test_mappo_terminal_rows_20260923.py": "a4bc304dac2f01048aa55732c19f70c158afa150fbb08d99b90efca9e93aeb6f",
+     "test/test_small_step_ac_migration_contract.py": "cc3068c6e5119ed6216cd3799a84d10de1646d89be5995dcfeabf1a2532104a0",
+-    "test/test_terl_mappo_batch01_base_20261009.py": "f6691605bec00f9757f649423ed78185ae3895091ac9cd6ee3ed1096b7504da9",
+-    "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "be86c538075f6e588b6ea2c623b9efe1ae87a7b438f88087c8fa35ede32e8e36",
++    "test/test_terl_mappo_batch01_base_20261009.py": "7b500f0c67ae30c0389c0834da5b7c77862d926c96c6a1f89829a8424a176bff",
++    "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "fb815b37117dbb12b456eb3ca84ffce0923ebd12e05e72d172e341d10493f789",
++    "test/test_terl_mappo_batch01_source_bootstrap_20261009.py": "3335619f25fa3d76ba9132b9c86c14993ab3ab679ce94df35a5e1cbe80fb2ca4",
++    "test/test_terl_mappo_batch01_v3_20261009.py": "3f71244dcf44957245f4b8fbf2d3020f840606fabcac84fb03045c860940806e",
+     "test/test_terl_native_mappo_20261008.py": "292d70892cdedd7f7e3586651fe356bab61d7d787d837b99cd72ef31566f2704",
+     "tools/__init__.py": "5ccd26c24a82f19d58ae60476714d66b273227529d96e57b688fef2a68e29612",
+     "tools/batch01_base_20261009.py": "3933d6fa1a3790f574b316f1a77fe03fe8c4ec418e7e63feca4fe180ceb517fd",
++    "tools/batch01_python.py": "ccae7e7ea98040e93d6b2cec485e2db695dae537b26bcf9ff4767621f8270ea6",
+     "tools/run_continuous_ctde_training.py": "cf433e31fd8fd4a2f73bf26bebde611134f144c58cafe6fdae907b81b265f964",
+     "tools/run_small_step_ac_migration.py": "c33131e247ea70cc3cc687c775c786f5e552781d4642ce70268df3f3494109e0",
+     "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
+@@ -180,6 +186,104 @@
+     "entropy_comparison": "within declared probability measure only",
+     "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
+   },
++  "arm_evaluation_protocol": {
++    "schema": "terl.batch01.arm_evaluation.v1",
++    "checkpoint_interval": 25000,
++    "sample_torch_offset": 100000,
++    "screen": {
++      "seed_base": 2056100900,
++      "max_episodes_per_mode": 20,
++      "regular_episodes_per_mode": 10
++    },
++    "screen_milestones": [
++      0,
++      25000,
++      50000,
++      100000,
++      250000,
++      500000,
++      750000,
++      1000000
++    ],
++    "selection": {
++      "seed_base": 2066100900,
++      "max_episodes_per_mode": 20,
++      "top_screen_candidates": 3
++    },
++    "final": {
++      "seed_base": 2076100900,
++      "max_episodes_per_mode": 50
++    },
++    "modes": [
++      "argmax",
++      "sample"
++    ],
++    "selection_order": [
++      "mean_normal_capture_rate",
++      "negative_mean_collision_rate",
++      "mean_strict_geometry_rate",
++      "mean_ring3_rate",
++      "negative_step"
++    ],
++    "late_stage_window_checkpoints": 5,
++    "entropy_comparison": "within declared probability measure only",
++    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
++    "protocol_id": "batch01-new-paired-20261009",
++    "scene_offsets": {
++      "3P1E0O4C": 0,
++      "4P1E1O6C": 1000,
++      "7P2E2O8C": 2000
++    },
++    "reserved_historical_protocol": {
++      "schema": "terl.batch01.evaluation.v1",
++      "checkpoint_interval": 25000,
++      "sample_torch_offset": 100000,
++      "screen": {
++        "seed_base": 2026100800,
++        "max_episodes_per_mode": 20,
++        "regular_episodes_per_mode": 10
++      },
++      "screen_milestones": [
++        0,
++        25000,
++        50000,
++        100000,
++        250000,
++        500000,
++        750000,
++        1000000
++      ],
++      "selection": {
++        "seed_base": 2036100800,
++        "max_episodes_per_mode": 20,
++        "top_screen_candidates": 3
++      },
++      "final": {
++        "seed_base": 2046101800,
++        "max_episodes_per_mode": 50
++      },
++      "modes": [
++        "argmax",
++        "sample"
++      ],
++      "selection_order": [
++        "mean_normal_capture_rate",
++        "negative_mean_collision_rate",
++        "mean_strict_geometry_rate",
++        "mean_ring3_rate",
++        "negative_step"
++      ],
++      "late_stage_window_checkpoints": 5,
++      "entropy_comparison": "within declared probability measure only",
++      "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++    },
++    "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
++  },
++  "execution_policy": {
++    "entrypoint": "python -S tools/batch01_python.py --lock-sha PIN --python-args ...",
++    "local_loader": "hash exact source bytes, compile those bytes, never read pyc",
++    "child_interpreter": "canonical-pinned source launcher"
++  },
+   "scientific_delta_from_t0": [],
+   "independent_qa": "PENDING_MASTER_QA"
+ }
+diff --git a/pyproject.toml b/pyproject.toml
+index 296070f..6d6c31e 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -12,4 +12,5 @@ requires-python = ">=3.10"
+ where = ["src"]
+ 
+ [tool.pytest.ini_options]
++addopts = "--assert=plain"
+ pythonpath = ["src", "."]
+diff --git a/src/sitecustomize.py b/src/sitecustomize.py
+new file mode 100644
+index 0000000..7fb7b27
+--- /dev/null
++++ b/src/sitecustomize.py
+@@ -0,0 +1,26 @@
++"""Capture actual local exec objects before project imports (no permissions).
++
++Batch01 refuses modules imported without this startup witness. This records
++code objects, not source hashes or pyc headers; SourceGuard verifies them against
++locked source bytes before accepting a hook, rollout, optimizer or checkpoint.
++"""
++import os
++import sys
++
++_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++_RECORDS = {}
++sys._batch01_exec_records = _RECORDS
++sys._batch01_exec_root = _ROOT
++
++def _capture(event, args):
++    if event != 'exec':
++        return
++    code = args[0]
++    filename = getattr(code, 'co_filename', '')
++    if filename.startswith(_ROOT + os.sep) and filename.endswith('.py'):
++        rows = _RECORDS.setdefault(os.path.abspath(filename), [])
++        if not any(item is code for item in rows):
++            rows.append(code)
++
++sys.addaudithook(_capture)
++_RECORDS[os.path.abspath(__file__)] = [sys._getframe().f_code]
+diff --git a/src/terl_mappo/batch01/contracts.py b/src/terl_mappo/batch01/contracts.py
+index 304ad9c..41764ab 100644
+--- a/src/terl_mappo/batch01/contracts.py
++++ b/src/terl_mappo/batch01/contracts.py
+@@ -18,13 +18,16 @@ ANCHOR_CONFIG = 'configs/experiments/terl_mappo_20261008/stage1_1m.json'
+ LOCK_PATH = 'configs/experiments/terl_mappo_batch01_20261009/base_lock.json'
+ PROTOCOL_PATH = 'configs/experiments/terl_mappo_batch01_20261009/evaluation.json'
+ REGRESSION_SOURCES = (
++    'test/test_terl_mappo_batch01_source_bootstrap_20261009.py',
+     'test/test_terl_native_mappo_20261008.py',
+     'test/test_small_step_ac_migration_contract.py',
+     'test/test_mappo_terminal_rows_20260923.py',
+     'test/test_terl_mappo_batch01_base_20261009.py',
+     'test/test_terl_mappo_batch01_qa_repairs_20261009.py',
++    'test/test_terl_mappo_batch01_v3_20261009.py',
+ )
+ COMMON_DEPENDENCIES = (
++    'tools/batch01_python.py',
+     'src/cocap_voradj/training/small_step_ac.py',
+     'src/cocap_voradj/models/small_step_ac.py',
+     'src/cocap_voradj/models/iqn.py',
+@@ -35,8 +38,8 @@ COMMON_DEPENDENCIES = (
+ )
+ OPERATIONAL_KEYS = {'experiment', 'seed', 'actor_seed', 'budget', 'stage1_ceiling'}
+ LINE_KEYS = {
+-    'T0': set(), 'T1': set(), 'N1': {'hidden_dim', 'num_heads', 'num_layers', 'masked_pool'},
+-    'R1': set(), 'P1': {'ppo'}, 'C0': set(),
++    'T0': set(), 'T1': set(), 'N1': set(),
++    'R1': set(), 'P1': {'ppo.target_kl'}, 'C0': set(),
+ }
+ 
+ 
+@@ -70,6 +73,9 @@ def source_inventory(root=ROOT):
+     files.update({ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json',
+                   PROTOCOL_PATH, 'tools/batch01_base_20261009.py'})
+     files.update(REGRESSION_SOURCES)
++    files.add('src/sitecustomize.py')
++    files.add('pyproject.toml')
++    files.add('configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json')
+     # Package __init__ files import historical trainer/dynamics/logging modules
+     # even when only the MAPPO learner is requested. Freeze their import closure
+     # without rewriting those packages or accepting unverified live dependencies.
+@@ -107,7 +113,7 @@ def source_inventory(root=ROOT):
+ 
+ def create_lock():
+     """Offline engineering command; never a launch-time refresh of BASE."""
+-    if git('branch', '--show-current') != 'experiment/terl-mappo-batch01-base-20261009':
++    if git('branch', '--show-current') not in {'experiment/terl-mappo-batch01-base-20261009', 'experiment/terl-mappo-batch01-v3-20261009', 'experiment/terl-mappo-batch01-v3r2-20261009'}:
+         raise ValueError('create BASE only on the authorized Core branch')
+     config = json.loads((ROOT / ANCHOR_CONFIG).read_text())
+     # Compare the entire historical source list to the actual immutable Git objects.
+@@ -119,11 +125,13 @@ def create_lock():
+         raw = subprocess.check_output(['git', '-C', str(ROOT), 'show', f'{PARENT_SHA}:{path}'])
+         if hashlib.sha256(raw).hexdigest() != digest:
+             raise ValueError('T0 anchor source changed: ' + path)
+-    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V2',
++    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V3',
+             'parent_sha': PARENT_SHA, 'terl_sha': TERL_SHA, 'anchor_config': config,
+             'common_sources': source_inventory(),
+             'generated_runtime_sources': torch_generated_sources(),
+             'evaluation_protocol': json.loads((ROOT / PROTOCOL_PATH).read_text()),
++            'arm_evaluation_protocol': json.loads((ROOT / 'configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json').read_text()),
++            'execution_policy': {'entrypoint':'python -S tools/batch01_python.py --lock-sha PIN --python-args ...','local_loader':'hash exact source bytes, compile those bytes, never read pyc','child_interpreter':'canonical-pinned source launcher'},
+             'scientific_delta_from_t0': [], 'independent_qa': 'PENDING_MASTER_QA'}
+ 
+ 
+@@ -154,7 +162,7 @@ def resolve_config(lock, delta):
+         if set(entry) != {'path', 'before', 'after', 'reason'} or not entry['reason']:
+             raise ValueError('config delta requires path/before/after/reason')
+         keys = entry['path'].split('.')
+-        if entry['path'] in seen or keys[0] not in OPERATIONAL_KEYS | LINE_KEYS[delta['line']]:
++        if entry['path'] in seen or (keys[0] not in OPERATIONAL_KEYS and entry['path'] not in LINE_KEYS[delta['line']]):
+             raise ValueError('config delta outside experiment scope: ' + entry['path'])
+         seen.add(entry['path'])
+         node = config
+diff --git a/src/terl_mappo/batch01/evaluation.py b/src/terl_mappo/batch01/evaluation.py
+index 98a55a2..e4201cc 100644
+--- a/src/terl_mappo/batch01/evaluation.py
++++ b/src/terl_mappo/batch01/evaluation.py
+@@ -27,19 +27,44 @@ METRIC_DEFINITIONS = {
+ }
+ 
+ 
++def protocol_for_line(lock, line):
++    if line == 'T0': return copy.deepcopy(lock['evaluation_protocol'])
++    protocol = lock.get('arm_evaluation_protocol')
++    if not protocol or protocol.get('protocol_id') != 'batch01-new-paired-20261009':
++        raise ValueError('future ARM requires centrally locked new evaluation protocol')
++    return copy.deepcopy(protocol)
++
++
+ def seed_manifest(config, protocol):
+     result = {'train_environment': [config['seed']], 'train_actor': [config['actor_seed']],
+               'sample_torch_offset': protocol['sample_torch_offset']}
+-    for name in ('screen', 'selection', 'final'):
+-        domain = protocol[name]
+-        result[name] = list(range(domain['seed_base'], domain['seed_base'] + domain['max_episodes_per_mode']))
++    scenes = protocol.get('scene_offsets', {'3P1E0O4C': 0})
++    if len(set(scenes.values())) != len(scenes): raise ValueError('scene offsets overlap')
+     seen = set(result['train_environment'] + result['train_actor'])
+-    for name in ('screen', 'selection', 'final'):
+-        seeds = set(result[name])
+-        action_seeds = {s + protocol['sample_torch_offset'] for s in seeds}
+-        if seeds & seen or action_seeds & seen or seeds & action_seeds:
+-            raise ValueError('seed domains overlap (including sample action streams)')
+-        seen |= seeds | action_seeds
++    historical = protocol.get('reserved_historical_protocol')
++    reserved = set()
++    if historical:
++        for domain in ('screen', 'selection', 'final'):
++            setting = historical[domain]
++            seeds = set(range(setting['seed_base'], setting['seed_base'] + setting['max_episodes_per_mode']))
++            reserved |= seeds | {s + historical['sample_torch_offset'] for s in seeds}
++        if seen & reserved: raise ValueError('training seeds overlap observed historical evaluation')
++    scene_seeds = {}
++    for scene, offset in scenes.items():
++        scene_seeds[scene] = {}
++        for name in ('screen', 'selection', 'final'):
++            domain = protocol[name]
++            seeds = set(range(domain['seed_base'] + offset,
++                              domain['seed_base'] + offset + domain['max_episodes_per_mode']))
++            action_seeds = {s + protocol['sample_torch_offset'] for s in seeds}
++            if seeds & seen or action_seeds & seen or seeds & action_seeds or (seeds | action_seeds) & reserved:
++                raise ValueError('seed domains overlap (including scenes, historical and sample action streams)')
++            seen |= seeds | action_seeds
++            scene_seeds[scene][name] = {'physical': sorted(seeds), 'sample_action': sorted(action_seeds)}
++            if offset == 0: result[name] = sorted(seeds)
++    result['scene_seeds'] = scene_seeds
++    result['paired_physical_seeds_across_future_arms'] = bool(historical)
++    result['historical_reserved_seed_count'] = len(reserved)
+     return result
+ 
+ 
+diff --git a/src/terl_mappo/batch01/interfaces.py b/src/terl_mappo/batch01/interfaces.py
+index 5f6124a..9ad9d73 100644
+--- a/src/terl_mappo/batch01/interfaces.py
++++ b/src/terl_mappo/batch01/interfaces.py
+@@ -167,7 +167,12 @@ class Runtime:
+             state = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
+             actions, logp, latent, value = self.trainer.act(local, {k: v[None] for k, v in state.items()})
+             self.hooks.backend.validate(actions, len(local['self']))
++            snapshot = getattr(self.hooks.reward_transform, 'snapshot', None)
++            before = self.source_guard.call(snapshot, self.adapter.env) if callable(snapshot) else None
+             _, raw, term, trunc, end, info = self.source_guard.call(self.adapter.step, actions)
++            if before is not None:
++                info['bridge_pre'] = before
++                info['bridge_post'] = self.source_guard.call(snapshot, self.adapter.env)
+             reward = np.asarray(raw).copy()
+             if self.hooks.reward_transform is not None:
+                 reward = np.asarray(self.source_guard.call(self.hooks.reward_transform, reward.copy(), copy.deepcopy(info)))
+@@ -180,8 +185,13 @@ class Runtime:
+                          'log_prob': logp, 'values': value[0], 'next_values': nv, 'rewards': reward,
+                          'terminated': term, 'truncated': trunc,
+                          'episode_end': np.full(len(raw), end), 'active_mask': info['active']})
++            components = getattr(self.hooks.reward_transform, 'last_components', None)
++            if components is not None:
++                rows[-1]['reward_components'] = {k: np.asarray(v).copy() for k, v in components.items()}
++                rows[-1]['raw_rewards'] = np.asarray(raw).copy()
++                rows[-1]['shaping_rewards'] = np.asarray(components['shaping']).copy()
+             if end:
+-                episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos')})
++                episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos', 'bridge_pre', 'bridge_post')})
+                 self.source_guard.call(self.adapter.reset)
+         return {k: {j: np.stack([r[k][j] for r in rows]) for j in rows[0][k]}
+                 if isinstance(rows[0][k], dict) else np.stack([r[k] for r in rows])
+diff --git a/src/terl_mappo/batch01/provenance.py b/src/terl_mappo/batch01/provenance.py
+index 4da5850..97815a6 100644
+--- a/src/terl_mappo/batch01/provenance.py
++++ b/src/terl_mappo/batch01/provenance.py
+@@ -9,7 +9,7 @@ import torch
+ 
+ from .contracts import ROOT, environment_versions, fingerprint, declared_sources, git
+ from .source_guard import SourceGuard
+-from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label
++from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label, protocol_for_line
+ from ..native import NativeStage1
+ from ..model import TERLActor
+ 
+@@ -82,8 +82,8 @@ def runtime_manifest(lock, delta, resolved, runtime, resources):
+             'base': delta['base'], 'line': delta['line'], 'resolved_config': resolved,
+             'delta_manifest': delta, 'common_source_hashes': sources,
+             'generated_runtime_source_hashes': dict(runtime.source_guard.generated_sources),
+-            'seed_manifest': seed_manifest(resolved, lock['evaluation_protocol']),
+-            'evaluation_protocol': lock['evaluation_protocol'], 'metric_definitions': METRIC_DEFINITIONS,
++            'seed_manifest': seed_manifest(resolved, protocol_for_line(lock, delta['line'])),
++            'evaluation_protocol': protocol_for_line(lock, delta['line']), 'metric_definitions': METRIC_DEFINITIONS,
+             'active_runtime_values': active, 'environment_fingerprint': fingerprint(raw_env),
+             'action_fingerprint': fingerprint(action),
+             'reward_fingerprint': fingerprint({'native': reward, 'extension': delta.get('extensions', {}),
+diff --git a/src/terl_mappo/batch01/source_guard.py b/src/terl_mappo/batch01/source_guard.py
+index aecb2cd..255ebac 100644
+--- a/src/terl_mappo/batch01/source_guard.py
++++ b/src/terl_mappo/batch01/source_guard.py
+@@ -9,6 +9,8 @@ undeclared importlib execution before the module body runs.
+ from __future__ import annotations
+ 
+ import ast
++import hashlib
++from types import CodeType
+ from contextlib import contextmanager
+ from contextvars import ContextVar
+ import importlib
+@@ -28,6 +30,7 @@ from ..run import file_hash, atomic_json
+ 
+ _ACTIVE = ContextVar('batch01_source_guard', default=None)
+ _EXECUTED = {}
++_CODE_RECORDS = getattr(sys, "_batch01_exec_records", {})
+ _IMPORT_EPOCH = 0
+ _NAMESPACES = {'terl_mappo', 'cocap_voradj', 'config_manager', 'environment',
+                'policy', 'robots', 'thirdparty', 'utils'}
+@@ -42,6 +45,24 @@ for _package in ('gym', 'gym_notices'):
+     if _filename: _EXTERNAL_SOURCE_ROOTS.add(Path(_filename).resolve().parent)
+ 
+ 
++def code_signature(code):
++    """Actual executable content including nested constants and exception tables.
++
++    Filename alone never grants permission. Normalize immutable constants rather
++    than marshal reference/interning layout; compare same Python optimization.
++    """
++    def constant(value):
++        if isinstance(value, CodeType): return ('code', code_signature(value))
++        if isinstance(value, tuple): return ('tuple', tuple(constant(x) for x in value))
++        if isinstance(value, frozenset): return ('frozenset', tuple(sorted(map(repr, map(constant, value)))))
++        return (type(value).__name__, repr(value))
++    return (code.co_argcount, code.co_posonlyargcount, code.co_kwonlyargcount,
++            code.co_nlocals, code.co_stacksize, code.co_flags, code.co_code,
++            tuple(constant(x) for x in code.co_consts), code.co_names, code.co_varnames,
++            code.co_freevars, code.co_cellvars, code.co_firstlineno,
++            code.co_linetable, code.co_exceptiontable)
++
++
+ class SourceViolation(ValueError):
+     pass
+ 
+@@ -55,12 +76,14 @@ def _audit(event, args):
+     p = Path(filename).absolute()
+     guard = _ACTIVE.get()
+     if guard is not None:
+-        guard.check_path(p, force=True)
++        guard.check_code(args[0])
+     # Capture executed content separately from permissions, including unguarded
+     # imports between boundaries. This does not add anything to the allow-list.
+     real = p.resolve()
+     if real.is_relative_to(ROOT) and real.suffix == '.py' and real.is_file():
+         _EXECUTED[str(p)] = file_hash(real)
++        rows = _CODE_RECORDS.setdefault(str(p), [])
++        if not any(code is args[0] for code in rows): rows.append(args[0])
+     _IMPORT_EPOCH += 1
+ 
+ 
+@@ -82,9 +105,18 @@ class SourceGuard:
+         self._hash_cache = {}
+         self._modules_key = None
+         self._module_paths = set()
++        self._local_modules = []
++        self._compiled = {}
++        self._verified_codes = {}
++        self._path_cache = {}
++        policy=getattr(sys,'_batch01_verified_source_bootstrap',None)
++        if not policy or policy.get('root')!=str(ROOT) or policy.get('bootstrap_sha256')!=json.loads((ROOT/LOCK_PATH).read_text())['common_sources'].get('tools/batch01_python.py'):
++            self.fail('trusted source-first bootstrap required; invoke python -S tools/batch01_python.py')
+ 
+     @classmethod
+     def from_base(cls, lock, delta, pin, **kwargs):
++        if getattr(sys,'_batch01_verified_source_bootstrap',{}).get('lock_sha256')!=pin:
++            raise SourceViolation('bootstrap canonical lock differs from runtime BASE pin')
+         verify_base(lock, delta, pin)
+         verify_committed_pin(lock, delta)
+         return cls(declared_sources(lock, delta), generated_sources=lock.get('generated_runtime_sources', {}), **kwargs)
+@@ -106,6 +138,8 @@ class SourceGuard:
+         raise SourceViolation('latched source contract failure: ' + self.failure)
+ 
+     def alive(self):
++        bootstrap_failure=getattr(sys,'_batch01_source_bootstrap_failure',None)
++        if bootstrap_failure and self.failure is None:self.fail(bootstrap_failure)
+         if self.failure is not None: self.fail(self.failure)
+ 
+     def framework_generated(self, path):
+@@ -122,7 +156,9 @@ class SourceGuard:
+     def check_path(self, path, *, force=False, required=False):
+         self.alive()
+         lexical = Path(path).absolute()
+-        real = lexical.resolve()
++        cached_path = self._path_cache.get(str(lexical))
++        real = lexical if cached_path else lexical.resolve()
++        if cached_path and lexical.is_symlink(): self.fail("source became symlink: " + str(lexical))
+         if self.framework_generated(lexical): return
+         local = lexical.is_relative_to(self.root) or real.is_relative_to(self.root)
+         if not local:
+@@ -142,15 +178,64 @@ class SourceGuard:
+             digest = file_hash(real)
+             if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+             self._hash_cache[relative] = (stamp, digest)
++            self._path_cache[str(lexical)] = True
+         executed = _EXECUTED.get(str(lexical))
+         if executed is not None and executed != expected:
+             self.fail('executed module content differs from lock/delta: ' + relative)
+ 
++    def compiled_codes(self, path):
++        path = Path(path).absolute()
++        self.check_path(path, required=True)
++        key = str(path)
++        relative = path.relative_to(self.root).as_posix()
++        digest = self.expected[relative]
++        if key not in self._compiled:
++            source = path.read_bytes()
++            if hashlib.sha256(source).hexdigest() != digest:
++                self.fail('source changed during compilation: ' + relative)
++            code = compile(source, key, 'exec', dont_inherit=True, optimize=sys.flags.optimize)
++            allowed = set()
++            def visit(item):
++                allowed.add(code_signature(item))
++                for constant in item.co_consts:
++                    if isinstance(constant, CodeType): visit(constant)
++            visit(code)
++            self._compiled[key] = allowed
++        return self._compiled[key]
++
++    def check_code(self, code, *, required=False):
++        self.alive()
++        path = Path(code.co_filename).absolute()
++        self.check_path(path, force=True, required=required)
++        if self.framework_generated(path):
++            reference = compile(path.read_bytes(), str(path), 'exec', dont_inherit=True,
++                                optimize=sys.flags.optimize)
++            if code_signature(code) != code_signature(reference):
++                self.fail('generated template executed code differs from pinned source')
++            return
++        if not path.is_relative_to(self.root): return
++        cache = self._verified_codes.setdefault(str(path), {})
++        if cache.get(id(code)) is code: return
++        if code_signature(code) not in self.compiled_codes(path):
++            self.fail('executed code object differs from locked source: ' + str(path))
++        cache[id(code)] = code
++
++    def check_execution(self, filename):
++        path = Path(filename).absolute()
++        if not path.is_relative_to(self.root): return
++        records = _CODE_RECORDS.get(str(path))
++        if not records:
++            self.fail('no startup execution witness; include pinned src in PYTHONPATH: ' + str(path))
++        for code in records:
++            cache = self._verified_codes.get(str(path), {})
++            if cache.get(id(code)) is not code: self.check_code(code)
++
+     def check_loaded(self, *, force=False):
+         self.alive()
+         key = (len(sys.modules), _IMPORT_EPOCH)
+-        if force or key != self._modules_key:
++        if key != self._modules_key:
+             paths = set()
++            local_modules = []
+             for name, module in list(sys.modules.items()):
+                 filename = getattr(module, '__file__', None)
+                 required = name.split('.')[0] in _NAMESPACES
+@@ -184,8 +269,15 @@ class SourceGuard:
+                             self.fail('module name/source origin mismatch: ' + name)
+                     self.check_path(lexical, force=force, required=required)
+                     paths.add(lexical)
++                    local_modules.append((name, module, str(lexical), origin))
+             self._module_paths = paths
++            self._local_modules = local_modules
+             self._modules_key = key
++        for name, module, filename, origin in self._local_modules:
++            if (sys.modules.get(name) is not module or getattr(module, "__file__", None) != filename or
++                    getattr(getattr(module, "__spec__", None), "origin", None) != origin):
++                self.fail("module __file__/spec origin mismatch or replacement: " + name)
++            self.check_execution(filename)
+         # With no import event, hook calls check their own code file only.
+         # Full content checks remain mandatory before accepting a rollout,
+         # every optimizer step, and checkpoint save/load.
+@@ -210,7 +302,8 @@ class SourceGuard:
+ 
+     def call(self, function, *args, **kwargs):
+         code = getattr(getattr(function, '__func__', function), '__code__', None)
+-        if code is not None: self.check_path(code.co_filename, required=True)
++        if code is None: code = getattr(getattr(function, '__call__', None), '__code__', None)
++        if code is not None: self.check_code(code, required=True)
+         with self.scope(force=False): return function(*args, **kwargs)
+ 
+     def preflight(self, functions):
+@@ -221,6 +314,8 @@ class SourceGuard:
+             except TypeError: path = None
+             if not path: continue
+             self.check_path(path, force=True, required=True)
++            code = getattr(getattr(function, "__func__", function), "__code__", None)
++            if code is not None: self.check_code(code, required=True)
+             tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
+             for node in ast.walk(tree):
+                 if not isinstance(node, ast.Call) or not node.args: continue
+diff --git a/test/test_terl_mappo_batch01_base_20261009.py b/test/test_terl_mappo_batch01_base_20261009.py
+index 2016591..f18c10c 100644
+--- a/test/test_terl_mappo_batch01_base_20261009.py
++++ b/test/test_terl_mappo_batch01_base_20261009.py
+@@ -152,8 +152,8 @@ def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
+ 
+ def test_config_scope_before_values_and_no_silent_unknown_keys():
+     lock = committed_lock(); d = delta(lock, 'P1')
+-    d['config_changes'] = [{'path': 'ppo.actor_lr', 'before': 3e-5, 'after': 1e-5, 'reason': 'controlled PPO fork'}]
+-    assert resolve_config(lock, d)['ppo']['actor_lr'] == 1e-5
++    d['config_changes'] = [{'path': 'ppo.target_kl', 'before': 0.02, 'after': 0.01, 'reason': 'controlled PPO fork'}]
++    assert resolve_config(lock, d)['ppo']['target_kl'] == 0.01
+     d['line'] = 'T0'
+     with pytest.raises(ValueError, match='outside'): resolve_config(lock, d)
+     d['line'] = 'P1'; d['config_changes'][0]['before'] = 999
+diff --git a/test/test_terl_mappo_batch01_qa_repairs_20261009.py b/test/test_terl_mappo_batch01_qa_repairs_20261009.py
+index 51c04b9..8a9cb4a 100644
+--- a/test/test_terl_mappo_batch01_qa_repairs_20261009.py
++++ b/test/test_terl_mappo_batch01_qa_repairs_20261009.py
+@@ -32,7 +32,7 @@ def test_q1_production_lock_generator_stays_core_only(monkeypatch):
+     monkeypatch.setattr(contracts, 'git', lambda *args: 'audit/terl-mappo-batch01-base-qa-20261009')
+     with pytest.raises(ValueError, match='authorized Core branch'): contracts.create_lock()
+     lock = committed_lock()
+-    assert lock['status'] == 'BATCH01_BASE_CANDIDATE_V2'
++    assert lock['status'] == 'BATCH01_BASE_CANDIDATE_V3'
+ 
+ 
+ @pytest.fixture
+diff --git a/test/test_terl_mappo_batch01_source_bootstrap_20261009.py b/test/test_terl_mappo_batch01_source_bootstrap_20261009.py
+new file mode 100644
+index 0000000..fb23764
+--- /dev/null
++++ b/test/test_terl_mappo_batch01_source_bootstrap_20261009.py
+@@ -0,0 +1,53 @@
++"""Bootstrap itself must never execute old Guard/site bytecode."""
++import importlib.util
++import json
++import os
++from pathlib import Path
++import py_compile
++import subprocess
++import sys
++from terl_mappo.batch01.contracts import ROOT
++
++def cache_for(source,old,tmp):
++ old=old+b'\n'+b'#'*(source.stat().st_size-len(old)-1)
++ assert len(old)==source.stat().st_size
++ text=tmp/'previous_source.txt';text.write_bytes(old);s=source.stat();os.utime(text,ns=(s.st_atime_ns,s.st_mtime_ns))
++ cache=Path(importlib.util.cache_from_source(str(source)));cache.parent.mkdir(exist_ok=True)
++ previous=cache.read_bytes() if cache.exists() else None
++ py_compile.compile(str(text),cfile=str(cache),dfile=str(source),doraise=True)
++ return cache,previous
++
++def restore(cache,previous):
++ if previous is None:cache.unlink()
++ else:cache.write_bytes(previous)
++
++def test_same_size_mtime_V2_SourceGuard_cache_never_executes(tmp_path):
++ source=ROOT/'src/terl_mappo/batch01/source_guard.py'
++ old=subprocess.check_output(['git','show','863a0cf55aca0ace8a0aaab36d9166aa4c97268f:src/terl_mappo/batch01/source_guard.py'],cwd=ROOT)
++ cache,previous=cache_for(source,old,tmp_path)
++ try:
++  p=subprocess.run([sys.executable,'-c','import terl_mappo.batch01.source_guard as m; g=m.SourceGuard.committed(); g.check(); assert hasattr(m,"code_signature"); print("CURRENT_GUARD_EXECUTED")'],cwd=ROOT,capture_output=True,text=True)
++  assert p.returncode==0,p.stdout+p.stderr
++  assert 'CURRENT_GUARD_EXECUTED' in p.stdout
++ finally:restore(cache,previous)
++
++def test_same_size_mtime_site_cache_never_executes(tmp_path):
++ source=ROOT/'src/sitecustomize.py';cache,previous=cache_for(source,b'raise RuntimeError("OBSOLETE_SITE_EXECUTED")',tmp_path)
++ try:
++  p=subprocess.run([sys.executable,'-c','from terl_mappo.batch01.source_guard import SourceGuard; SourceGuard.committed().check(); print("SOURCE_SITE_EXECUTED")'],cwd=ROOT,capture_output=True,text=True)
++  assert p.returncode==0,p.stdout+p.stderr
++  assert 'OBSOLETE_SITE_EXECUTED' not in p.stderr and 'SOURCE_SITE_EXECUTED' in p.stdout
++ finally:restore(cache,previous)
++
++def test_legal_Guard_bytecode_positive(tmp_path):
++ source=ROOT/'src/terl_mappo/batch01/source_guard.py';cache=Path(importlib.util.cache_from_source(str(source)));previous=cache.read_bytes() if cache.exists() else None
++ try:
++  py_compile.compile(str(source),cfile=str(cache),doraise=True)
++  p=subprocess.run([sys.executable,'-c','from terl_mappo.batch01.source_guard import SourceGuard; SourceGuard.committed().check(); print("LEGAL_BYTECODE_SOURCE_PASS")'],cwd=ROOT,capture_output=True,text=True)
++  assert p.returncode==0,p.stdout+p.stderr
++ finally:restore(cache,previous)
++
++
++def test_plain_python_without_trusted_bootstrap_fails_before_training():
++ p=subprocess.run([sys._batch01_real_python,'-c','from terl_mappo.batch01.source_guard import SourceGuard; SourceGuard.committed().check()'],cwd=ROOT,capture_output=True,text=True)
++ assert p.returncode!=0 and 'trusted source-first bootstrap required' in p.stderr,p.stdout+p.stderr
+diff --git a/test/test_terl_mappo_batch01_v3_20261009.py b/test/test_terl_mappo_batch01_v3_20261009.py
+new file mode 100644
+index 0000000..68de8f8
+--- /dev/null
++++ b/test/test_terl_mappo_batch01_v3_20261009.py
+@@ -0,0 +1,80 @@
++"""V3 actual-code and new paired-seed contracts, fresh process per cache case."""
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++
++import pytest
++
++from terl_mappo.batch01.contracts import ROOT, LOCK_PATH
++from terl_mappo.batch01.evaluation import seed_manifest, protocol_for_line
++from test_terl_mappo_batch01_qa_repairs_20261009 import source_snapshot
++
++PROBE = r'''
++import importlib, json, os, py_compile, sys
++from pathlib import Path
++from terl_mappo.batch01.contracts import ROOT, LOCK_PATH
++from terl_mappo.batch01.source_guard import SourceGuard, SourceViolation
++from terl_mappo.run import file_hash
++name='cocap_voradj.models.continuous.qa_v3_cache'
++p=ROOT/('src/'+name.replace('.','/')+'.py')
++marker=ROOT/'runs/body.txt'
++source='from pathlib import Path\nPath('+repr(str(marker))+').write_text("ran")\nVALUE = 0.4\ndef reward(raw,info):\n    return raw + VALUE\n'
++p.write_text(source)
++expected=json.loads((ROOT/LOCK_PATH).read_text())['common_sources'];expected[str(p.relative_to(ROOT))]=file_hash(p)
++case=sys.argv[1];stamp=int(p.stat().st_mtime)
++if case in {'stale','preloaded'}:
++ p.write_text(source.replace('VALUE = 0.4','VALUE = 0.9'));os.utime(p,(stamp,stamp))
++ py_compile.compile(str(p),doraise=True)
++ p.write_text(source);os.utime(p,(stamp,stamp))
++elif case=='legal_cache':py_compile.compile(str(p),doraise=True)
++if case=='preloaded':
++ # Deliberately execute an actual old object before guard construction.
++ # Ordinary imports now ignore stale caches, so use marshal to test witnesses.
++ import marshal,types
++ cache=Path(importlib.util.cache_from_source(str(p)))
++ module=types.ModuleType(name);module.__file__=str(p);module.__spec__=importlib.util.spec_from_file_location(name,p)
++ sys.modules[name]=module
++ exec(marshal.loads(cache.read_bytes()[16:]),module.__dict__)
++ assert module.VALUE == 0.9
++ marker.unlink()
++guard=SourceGuard(expected)
++try:
++ with guard.scope():module=importlib.import_module(name)
++ value=guard.call(module.reward,0,{})
++ if case=='drift':
++  p.write_text(source.replace('VALUE = 0.4','VALUE = 0.9'))
++  guard.call(module.reward,0,{})
++ assert case in {'legal_source','legal_cache','stale'} and value == 0.4
++ print('POSITIVE_PASS')
++except SourceViolation:
++ assert case in {'preloaded','drift'} and guard.failure
++ if case=='stale':assert not marker.exists() and name not in sys.modules
++ try:guard.check()
++ except SourceViolation:pass
++ else:raise AssertionError('failure not latched')
++ print('NEGATIVE_PASS')
++'''
++
++@pytest.mark.parametrize('case',['legal_source','legal_cache','stale','preloaded','drift'])
++def test_actual_execution_matches_source(source_snapshot,case):
++    (source_snapshot/'runs').mkdir()
++    env=dict(os.environ,PYTHONPATH=str(source_snapshot/'src')+':'+str(source_snapshot)+':'+os.environ['PYTHONPATH'],TMPDIR=str(source_snapshot/'runs'))
++    result=subprocess.run([sys.executable,'-c',PROBE,case],cwd=source_snapshot,env=env,capture_output=True,text=True,timeout=60)
++    assert result.returncode==0,result.stdout+result.stderr
++    assert 'PASS' in result.stdout
++
++
++def test_new_arm_seeds_are_locked_paired_and_disjoint():
++    lock=json.loads((ROOT/LOCK_PATH).read_text());config=lock['anchor_config']
++    legacy=seed_manifest(config,protocol_for_line(lock,'T0'))
++    manifests=[seed_manifest(config,protocol_for_line(lock,line)) for line in ('T1','N1','R1','P1','C0')]
++    assert all(m==manifests[0] for m in manifests)
++    assert legacy['final']==list(range(2046101800,2046101850))
++    assert manifests[0]['final']==list(range(2076100900,2076100950))
++    assert manifests[0]['historical_reserved_seed_count']==180
++    bad=protocol_for_line(lock,'R1');bad['final']['seed_base']=2046101800
++    with pytest.raises(ValueError,match='overlap'):seed_manifest(config,bad)
++    bad=protocol_for_line(lock,'R1');bad['scene_offsets']['4P1E1O6C']=1
++    with pytest.raises(ValueError,match='overlap'):seed_manifest(config,bad)
+diff --git a/tools/batch01_python.py b/tools/batch01_python.py
+new file mode 100644
+index 0000000..af327ab
+--- /dev/null
++++ b/tools/batch01_python.py
+@@ -0,0 +1,87 @@
++#!/usr/bin/env python3
++"""Trusted source-first entrypoint. Invoke with python -S, never import it."""
++import os
++import sys
++ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++# Keep project imports out of bootstrap's stdlib dependency resolution.
++sys.path[:]=[p for p in sys.path if not os.path.abspath(p or os.getcwd()).startswith(ROOT+os.sep) and os.path.abspath(p or os.getcwd())!=ROOT]
++import argparse
++import hashlib
++import importlib.machinery
++import json
++from pathlib import Path
++import runpy
++import shlex
++from types import MappingProxyType
++
++P=Path(ROOT);LOCK='configs/experiments/terl_mappo_batch01_20261009/base_lock.json'
++if not sys.flags.no_site:raise RuntimeError('Batch01 source bootstrap requires python -S')
++ap=argparse.ArgumentParser();ap.add_argument('--lock-sha',required=True);ap.add_argument('--delta');ap.add_argument('--python-args',nargs=argparse.REMAINDER,required=True)
++a=ap.parse_args();lock=json.loads((P/LOCK).read_text());digest=hashlib.sha256(json.dumps(lock,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
++if digest!=a.lock_sha:raise RuntimeError('source bootstrap canonical lock mismatch')
++expected=dict(lock['common_sources']);delta_path=a.delta or os.environ.get('BATCH01_BOOTSTRAP_DELTA')
++if delta_path:
++ path=Path(delta_path)
++ if not path.is_absolute():path=P/path
++ if not path.resolve().is_relative_to(P) or not path.is_file():raise RuntimeError('bootstrap delta missing/outside project')
++ delta=json.loads(path.read_text())
++ if delta['base']['lock_sha256']!=a.lock_sha:raise RuntimeError('bootstrap ARM delta lock mismatch')
++ for change in delta.get('source_changes',[]):
++  relative=Path(change['path'])
++  if relative.is_absolute() or '..' in relative.parts or change['before']!=expected.get(str(relative)):raise RuntimeError('bootstrap source delta before/path mismatch')
++  if change['after'] is None:expected.pop(str(relative),None)
++  else:expected[str(relative)]=change['after']
++ os.environ['BATCH01_BOOTSTRAP_DELTA']=str(path.relative_to(P))
++bootstrap_sha=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
++if expected.get('tools/batch01_python.py')!=bootstrap_sha:raise RuntimeError('source bootstrap itself differs from canonical pin')
++sys._batch01_verified_source_bootstrap=MappingProxyType({'root':ROOT,'lock_sha256':a.lock_sha,'bootstrap_sha256':bootstrap_sha})
++sys._batch01_source_bootstrap_failure=None
++original=importlib.machinery.SourceFileLoader.get_code
++
++def source_code(loader,fullname):
++ path=Path(loader.get_filename(fullname)).absolute()
++ if not path.resolve().is_relative_to(P):return original(loader,fullname)
++ raw=loader.get_data(str(path));relative=str(path.relative_to(P));actual=hashlib.sha256(raw).hexdigest()
++ module=sys.modules.get('terl_mappo.batch01.source_guard');active=getattr(module,'_ACTIVE',None);guard=active.get() if active is not None else None
++ sources=guard.expected if guard is not None else expected
++ declared=sources.get(relative)
++ # One exact framework template is already pinned by the canonical contract.
++ framework=sys.modules.get('torch.distributed.nn.jit.instantiator');directory=getattr(framework,'INSTANTIATED_TEMPLATE_DIR_PATH',None)
++ generated=directory is not None and path==Path(directory)/'_remote_module_non_scriptable.py' and path==path.resolve()
++ if declared is None and guard is None:
++  # Cold source delta imports execute fresh source, never cached code. They get
++  # no permission here: SourceGuard must later verify their locked declaration
++  # and actual exec witness before any hook/update/checkpoint.
++  return compile(raw,str(path),'exec',dont_inherit=True,optimize=sys.flags.optimize)
++ if declared!=actual and not (generated and actual==lock['generated_runtime_sources'].get('torch.distributed.nn.non_scriptable_remote_template')):
++  message='source-first loader rejected undeclared/changed source: '+relative
++  if guard is not None:guard.fail(message)
++  sys._batch01_source_bootstrap_failure=message
++  raise RuntimeError(message)
++ # Deliberately never call get_code/get_bytecode_path or read any local pyc.
++ return compile(raw,str(path),'exec',dont_inherit=True,optimize=sys.flags.optimize)
++
++importlib.machinery.SourceFileLoader.get_code=source_code
++sys.path[:0]=[str(P/'src'),str(P)]
++import site
++site.main()
++# sitecustomize cannot witness the bootstrap frame that started before it.
++sys._batch01_exec_records.setdefault(str(Path(__file__).absolute()),[]).append(sys._getframe().f_code)
++# Child evaluators/QA subprocesses inherit the same source-first policy, including
++# archives with the same canonical lock. This is a shell shim, never a module.
++real_python=sys.executable;directory=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime/source_launchers');directory.mkdir(parents=True,exist_ok=True)
++shim=directory/(a.lock_sha+'.sh')
++script='#!/bin/bash\nset -euo pipefail\nscience_root=""\nIFS=: read -ra candidates <<< "${PYTHONPATH:-}"\nfor candidate in "${candidates[@]}"; do\n if [[ "$candidate" == */src && -f "${candidate%/src}/tools/batch01_python.py" ]]; then science_root="${candidate%/src}"; break; fi\ndone\nif [[ -z "$science_root" && -f "$PWD/tools/batch01_python.py" ]]; then science_root="$PWD"; fi\n[[ -n "$science_root" ]] || exit 91\nexec '+shlex.quote(real_python)+' -S "$science_root/tools/batch01_python.py" --lock-sha '+shlex.quote(a.lock_sha)+' --python-args "$@"\n'
++if not shim.exists():
++ temp=shim.with_name(shim.name+'.'+str(os.getpid()));temp.write_text(script);temp.chmod(0o755);temp.replace(shim)
++elif shim.read_text()!=script:raise RuntimeError('existing child source launcher differs')
++sys._batch01_real_python=real_python;sys.executable=str(shim)
++args=a.python_args
++while args and args[0] in ('-B','-u'):args=args[1:]
++if not args:raise ValueError('missing Python module/script/inline program')
++if args[0]=='-m':
++ sys.argv=[args[1],*args[2:]];runpy.run_module(args[1],run_name='__main__',alter_sys=True)
++elif args[0]=='-c':
++ sys.argv=['-c',*args[2:]];exec(compile(args[1],'<string>','exec'),{'__name__':'__main__'})
++else:
++ sys.argv=args;runpy.run_path(args[0],run_name='__main__')
