@@ -1,0 +1,1723 @@
+..FFFFFFFFFFFFFFFsFFF..FFFF.......F                                      [100%]
+=================================== FAILURES ===================================
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[lazy_import] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot')
+case = 'lazy_import'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:45:39,821 - logger - INFO - Process 1580710 Train logger is successfully set up.
+E         2026-10-09 20:45:40,776 - logger - INFO - Process 1580710 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_1/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmp6ssm3k9v/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmp6ssm3k9v/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+__ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[legal] ___
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot')
+case = 'legal'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:45:44,730 - logger - INFO - Process 1580743 Train logger is successfully set up.
+E         2026-10-09 20:45:45,786 - logger - INFO - Process 1580743 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_2/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmpa2m18qkl/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmpa2m18qkl/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[disk_drift] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot')
+case = 'disk_drift'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:45:49,733 - logger - INFO - Process 1580807 Train logger is successfully set up.
+E         2026-10-09 20:45:50,795 - logger - INFO - Process 1580807 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_3/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmp6gv3kavp/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmp6gv3kavp/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[update_boundary] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot')
+case = 'update_boundary'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:45:54,604 - logger - INFO - Process 1580812 Train logger is successfully set up.
+E         2026-10-09 20:45:55,563 - logger - INFO - Process 1580812 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_4/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmplsd1z9xb/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmplsd1z9xb/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_save] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot')
+case = 'checkpoint_save'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:45:59,431 - logger - INFO - Process 1580863 Train logger is successfully set up.
+E         2026-10-09 20:46:00,373 - logger - INFO - Process 1580863 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_5/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmpt81f9if2/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmpt81f9if2/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_load] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot')
+case = 'checkpoint_load'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:04,211 - logger - INFO - Process 1580866 Train logger is successfully set up.
+E         2026-10-09 20:46:05,167 - logger - INFO - Process 1580866 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_6/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmp7b00gr7y/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmp7b00gr7y/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+__ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[origin] __
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot')
+case = 'origin'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:09,134 - logger - INFO - Process 1580909 Train logger is successfully set up.
+E         2026-10-09 20:46:10,092 - logger - INFO - Process 1580909 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_7/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmp3ulku13s/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmp3ulku13s/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[symlink] __
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot')
+case = 'symlink'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:14,077 - logger - INFO - Process 1580918 Train logger is successfully set up.
+E         2026-10-09 20:46:15,037 - logger - INFO - Process 1580918 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_8/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmp688lf5ez/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmp688lf5ez/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[executed_drift] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot')
+case = 'executed_drift'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:18,977 - logger - INFO - Process 1580923 Train logger is successfully set up.
+E         2026-10-09 20:46:19,933 - logger - INFO - Process 1580923 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_9/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmpeizla4uu/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmpeizla4uu/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[optimizer_import] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot')
+case = 'optimizer_import'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:23,772 - logger - INFO - Process 1580968 Train logger is successfully set up.
+E         2026-10-09 20:46:24,728 - logger - INFO - Process 1580968 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_10/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmpgg594nf_/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmpgg594nf_/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[foreign_origin] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot')
+case = 'foreign_origin'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:28,528 - logger - INFO - Process 1580972 Train logger is successfully set up.
+E         2026-10-09 20:46:29,488 - logger - INFO - Process 1580972 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_11/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmpvj46dlzx/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmpvj46dlzx/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+_ test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[original_qa_box_drift] _
+
+source_snapshot = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot')
+case = 'original_qa_box_drift'
+
+    @pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
+                                     'update_boundary', 'checkpoint_save', 'checkpoint_load',
+                                     'origin', 'symlink', 'executed_drift', 'optimizer_import',
+                                     'foreign_origin', 'original_qa_box_drift'])
+    def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
+        env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
+                   CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
+        (source_snapshot / 'runs').mkdir()
+        result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
+                                env=env, text=True, capture_output=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:33,348 - logger - INFO - Process 1581011 Train logger is successfully set up.
+E         2026-10-09 20:46:34,938 - logger - INFO - Process 1581011 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 51, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/batch01/interfaces.py", line 212, in assemble
+E             return _assemble(config, device, hooks, line, guard)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/batch01/interfaces.py", line 223, in _assemble
+E             trainer = build(config, device)
+E                       ^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/run.py", line 42, in build
+E             trainer=MAPPOTrainer(actor,value,MAPPOConfig(**config['ppo']),device)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/cocap_voradj/training/small_step_ac.py", line 288, in __init__
+E             self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.actor_lr, eps=1e-5)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/adam.py", line 101, in __init__
+E             super().__init__(params, defaults)
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/optim/optimizer.py", line 401, in __init__
+E             self.add_param_group(cast(dict, param_group))
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_compile.py", line 46, in inner
+E             import torch._dynamo
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+E             from . import convert_frame
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+E             from torch._dynamo.symbolic_convert import TensorifyState
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 59, in <module>
+E             from . import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py", line 58, in <module>
+E             from .variables import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/__init__.py", line 19, in <module>
+E             from .base import VariableTracker
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/base.py", line 650, in <module>
+E             from . import builder
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 94, in <module>
+E             from ..side_effects import SideEffects
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/side_effects.py", line 34, in <module>
+E             from torch._dynamo.variables.misc import AutogradFunctionContextVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 61, in <module>
+E             from .functions import NestedUserFunctionVariable, UserFunctionVariable
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 88, in <module>
+E             from torch.distributed.fsdp._fully_shard import _fsdp_param_group
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/__init__.py", line 1, in <module>
+E             from ._flat_param import FlatParameter as FlatParameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_flat_param.py", line 33, in <module>
+E             from ._fsdp_extensions import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/fsdp/_fsdp_extensions.py", line 6, in <module>
+E             from torch.distributed._shard.sharded_tensor.api import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/__init__.py", line 1, in <module>
+E             from .api import _shard_tensor, load_with_process_group, shard_module, shard_parameter
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/api.py", line 9, in <module>
+E             from torch.distributed._shard.sharded_tensor import ShardedTensor
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/__init__.py", line 8, in <module>
+E             from .api import (
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/api.py", line 32, in <module>
+E             from .reshard import reshard_local_shard, reshuffle_local_shard
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/_shard/sharded_tensor/reshard.py", line 13, in <module>
+E             from torch.distributed.nn.functional import all_to_all, all_to_all_single
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/__init__.py", line 7, in <module>
+E             from .api.remote_module import RemoteModule
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/api/remote_module.py", line 31, in <module>
+E             instantiator.instantiate_non_scriptable_remote_module_template()
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 156, in instantiate_non_scriptable_remote_module_template
+E             return _do_instantiate_remote_module_template(generated_module_name, str_dict, True)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/site-packages/torch/distributed/nn/jit/instantiator.py", line 98, in _do_instantiate_remote_module_template
+E             generated_module = importlib.import_module(f"{generated_module_name}")
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/usr/local/anaconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E             return _bootstrap._gcd_import(name[level:], package, level)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/batch01/source_guard.py", line 79, in _audit
+E             guard.check_code(args[0])
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/batch01/source_guard.py", line 214, in check_code
+E             if code_signature(code) not in self.compiled_codes(path):
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/runs/v3_selftest/pytest_fast/test_b1_dynamic_source_guards_12/snapshot/src/terl_mappo/batch01/source_guard.py", line 184, in compiled_codes
+E             digest = self.expected[relative]
+E                      ~~~~~~~~~~~~~^^^^^^^^^^
+E         KeyError: 'runs/tmphcbyorf4/_remote_module_non_scriptable.py'
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', '\nimport copy, importlib, json, sys\nfrom pathlib imp...ed[relative]\n             ~~~~~~~~~~~~~^^^^^^^^^^\nKeyError: \'runs/tmphcbyorf4/_remote_module_non_scriptable.py\'\n').returncode
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:188: AssertionError
+____________ test_b2_lambda_native_adapter_rejected_during_startup _____________
+
+    def test_b2_lambda_native_adapter_rejected_during_startup():
+        with pytest.raises(ValueError, match='actual adapter capabilities'):
+>           assemble(config(), hooks=Hooks(env_factory=lambda seed: NativeStage1(seed),
+                                            backend=continuous_backend()), line='C0')
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    if force: self.check()
+src/terl_mappo/batch01/source_guard.py:284: in check
+    self.check_loaded(force=force)
+src/terl_mappo/batch01/source_guard.py:275: in check_loaded
+    self.check_execution(filename)
+src/terl_mappo/batch01/source_guard.py:226: in check_execution
+    if cache.get(id(code)) is not code: self.check_code(code)
+src/terl_mappo/batch01/source_guard.py:215: in check_code
+    self.fail('executed code object differs from locked source: ' + str(path))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45bb34620>
+message = 'executed code object differs from locked source: /home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/test/test_terl_mappo_batch01_base_20261009.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: executed code object differs from locked source: /home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/test/test_terl_mappo_batch01_base_20261009.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+
+During handling of the above exception, another exception occurred:
+
+    def test_b2_lambda_native_adapter_rejected_during_startup():
+>       with pytest.raises(ValueError, match='actual adapter capabilities'):
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'actual adapter capabilities'
+E        Input: 'latched source contract failure: executed code object differs from locked source: /home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/test/test_terl_mappo_batch01_base_20261009.py'
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:200: AssertionError
+____ test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state ____
+
+    def test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state():
+        guard = SourceGuard.committed()
+        adapter = AdapterProbe()
+        before = rng_state()
+>       validate_adapter(adapter, continuous_backend(), guard)
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:229: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:67: in validate_adapter
+    capability = guard.call(adapter.action_capabilities)
+src/terl_mappo/batch01/source_guard.py:301: in call
+    def preflight(self, functions):
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:289: in scope
+    try:
+src/terl_mappo/batch01/source_guard.py:265: in check_loaded
+    local_modules.append((name, module, str(lexical), origin))
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af81ee0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+____ test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cpu] _____
+
+device = 'cpu'
+
+    @pytest.mark.parametrize('device', ['cpu', 'cuda:0'])
+    def test_b3_density_guard_preserves_all_rng_and_replays_exact_latent(device):
+        if device.startswith('cuda') and not torch.cuda.is_available(): pytest.skip('CUDA requires Master gate/available device')
+        expected = dict(committed_lock()['common_sources'])
+        expected[BOX_PATH] = file_hash(contracts.ROOT / BOX_PATH)
+        guard = SourceGuard(expected)
+        try:
+>           with guard.scope(): box = importlib.import_module(BOX)
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af5ade0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+___ test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets ___
+
+    def test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets():
+        assert 'post-update denormalized V' in METRIC_DEFINITIONS['critic_ev']
+        assert 'pre-update GAE raw return targets' in METRIC_DEFINITIONS['critic_ev']
+>       runtime = assemble(config())
+
+test/test_terl_mappo_batch01_qa_repairs_20261009.py:283: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af58ad0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+__________ test_real_source_lock_matches_anchor_and_rejects_wrong_pin __________
+
+    def test_real_source_lock_matches_anchor_and_rejects_wrong_pin():
+        lock = committed_lock(); d = delta(lock)
+>       assert verify_base(lock, d, fingerprint(lock)) == config()
+
+test/test_terl_mappo_batch01_base_20261009.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+lock = {'anchor_config': {'actor_seed': 109, 'budget': 1000000, 'checkpoint_interval': 25000, 'evaluation_workers': 2, ...}, ... only', 'final': {'max_episodes_per_mode': 50, 'seed_base': 2046101800}, 'late_stage_window_checkpoints': 5, ...}, ...}
+delta = {'base': {'candidate_sha': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'lock_sha256': 'a98652616b5bbd878a75ea1c591b1a9..., 'parent_sha': 'bb794ca8435f06b9fa5693c0fed98f567320decf'}, 'config_changes': [], 'extensions': {}, 'line': 'T0', ...}
+expected_lock_sha256 = 'a98652616b5bbd878a75ea1c591b1a971e06958d176b45268606d108c8efd487'
+root = PosixPath('/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009')
+
+    
+    def verify_base(lock, delta, expected_lock_sha256, root=ROOT):
+        if lock.get('schema') != 'terl.batch01.base.v1' or lock.get('parent_sha') != PARENT_SHA:
+            raise ValueError('wrong BASE lineage/schema')
+        if fingerprint(lock) != expected_lock_sha256:
+            raise ValueError('BASE lock pin mismatch; do not adopt a newer Core HEAD')
+        base = delta.get('base', {})
+        if base.get('lock_sha256') != expected_lock_sha256 or base.get('parent_sha') != PARENT_SHA:
+            raise ValueError('delta BASE pin mismatch')
+        sha = base.get('candidate_sha', '')
+        if len(sha) != 40 or any(c not in '0123456789abcdef' for c in sha):
+            raise ValueError('an explicit full candidate SHA is required')
+        actual = source_inventory(root)
+        declared = {}
+        for entry in delta.get('source_changes', []):
+            path = safe_relative(entry['path'])
+            if path in declared or not entry.get('reason') or not entry.get('science_impact'):
+                raise ValueError('source delta requires unique path, reason and science_impact')
+            if entry.get('before') != lock['common_sources'].get(path):
+                raise ValueError('source delta before hash mismatch')
+            # Dynamic ARM dependencies outside the static closure need an explicit
+            # declaration too. Never grow the trusted set from live sys.modules.
+            if path not in actual and entry.get('after') is not None:
+                source = Path(root) / path
+                if not source.resolve().is_relative_to(Path(root).resolve()):
+                    raise ValueError('source delta escapes project realpath')
+                if source.is_file(): actual[path] = file_hash(source)
+            if entry.get('after') != actual.get(path):
+                raise ValueError('source delta after hash mismatch')
+            if path in lock['common_sources'] and not entry.get('candidate_fix'):
+                raise ValueError('common source edit needs explicit candidate_fix review')
+            declared[path] = entry
+        changed = {p for p in actual.keys() | lock['common_sources'].keys()
+                   if actual.get(p) != lock['common_sources'].get(p)}
+>       if changed != set(declared):
+E       ValueError: undeclared/stale common source delta: src/terl_mappo/batch01/contracts.py, src/terl_mappo/batch01/source_guard.py
+
+src/terl_mappo/batch01/contracts.py:212: ValueError
+_________ test_fresh_process_all_transitive_runtime_imports_are_locked _________
+
+    def test_fresh_process_all_transitive_runtime_imports_are_locked():
+        code = ('from terl_mappo.batch01.provenance import assert_loaded_sources_covered; '
+                'from terl_mappo.batch01.source_guard import SourceGuard; '
+                'SourceGuard.committed().check()')
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-09 20:46:40,293 - logger - INFO - Process 1581043 Train logger is successfully set up.
+E         2026-10-09 20:46:41,264 - logger - INFO - Process 1581043 Train logger is successfully set up.
+E         Traceback (most recent call last):
+E           File "<string>", line 1, in <module>
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/src/terl_mappo/batch01/source_guard.py", line 281, in check
+E             for relative in self.expected: self.check_path(self.root / relative, force=force)
+E                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/src/terl_mappo/batch01/source_guard.py", line 172, in check_path
+E             if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/src/terl_mappo/batch01/source_guard.py", line 133, in fail
+E             raise SourceViolation('latched source contract failure: ' + self.failure)
+E         terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/usr/local/anaconda3/bin/python', '-c', 'from terl_mappo.batch01.provenance import assert_load...ourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py\n').returncode
+
+test/test_terl_mappo_batch01_base_20261009.py:132: AssertionError
+________ test_reward_identity_hook_preserves_all_rollout_fields_and_rng ________
+
+    def test_reward_identity_hook_preserves_all_rollout_fields_and_rng():
+        c = config()
+>       expected = assemble(c); batch, episodes = expected.collect(4); rng = rng_state()
+
+test/test_terl_mappo_batch01_base_20261009.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af871a0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+_________ test_formal_256_8_4_fully_masked_no_target_forward_backward __________
+
+    def test_formal_256_8_4_fully_masked_no_target_forward_backward():
+>       runtime = assemble(config())
+
+test/test_terl_mappo_batch01_base_20261009.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af84470>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+________ test_runtime_assertions_reject_unapplied_optimizer_and_dropout ________
+
+    def test_runtime_assertions_reject_unapplied_optimizer_and_dropout():
+>       runtime = assemble(config())
+
+test/test_terl_mappo_batch01_base_20261009.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45afd76e0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+______ test_c0_interface_rejects_continuous_coercion_and_requires_adapter ______
+
+    def test_c0_interface_rejects_continuous_coercion_and_requires_adapter():
+        categorical = ActionBackend()
+        categorical.validate(np.array([0, 4, 8]), 3)
+        with pytest.raises(ValueError, match='integer'): categorical.validate(np.zeros((3, 2)), 3)
+        with pytest.raises(ValueError, match='integer'): categorical.validate(np.array([0., 4., 8.]), 3)
+        continuous = ActionBackend('tanh_gaussian_aw', 'physical_differential_mc_nats',
+                                   'tanh_and_scale_corrected_density', False)
+        continuous.validate(np.zeros((3, 2)), 3)
+        with pytest.raises(ValueError, match='physical action'):
+>           assemble(config(), hooks=Hooks(backend=continuous), line='C0')
+
+test/test_terl_mappo_batch01_base_20261009.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e45af670b0>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+
+During handling of the above exception, another exception occurred:
+
+    def test_c0_interface_rejects_continuous_coercion_and_requires_adapter():
+        categorical = ActionBackend()
+        categorical.validate(np.array([0, 4, 8]), 3)
+        with pytest.raises(ValueError, match='integer'): categorical.validate(np.zeros((3, 2)), 3)
+        with pytest.raises(ValueError, match='integer'): categorical.validate(np.array([0., 4., 8.]), 3)
+        continuous = ActionBackend('tanh_gaussian_aw', 'physical_differential_mc_nats',
+                                   'tanh_and_scale_corrected_density', False)
+        continuous.validate(np.zeros((3, 2)), 3)
+>       with pytest.raises(ValueError, match='physical action'):
+E       AssertionError: Regex pattern did not match.
+E        Regex: 'physical action'
+E        Input: 'latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+test/test_terl_mappo_batch01_base_20261009.py:203: AssertionError
+____________ test_shared_selected_checkpoint_strict_resume_readonly ____________
+
+    def test_shared_selected_checkpoint_strict_resume_readonly():
+        path = Path('/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt')
+        if not path.exists(): pytest.skip('shared original anchor not available on this host')
+        digest = '590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4'
+>       runtime = assemble(config())
+
+test/test_terl_mappo_batch01_base_20261009.py:309: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/terl_mappo/batch01/interfaces.py:211: in assemble
+    with guard.scope():
+/usr/local/anaconda3/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+src/terl_mappo/batch01/source_guard.py:288: in scope
+    token = _ACTIVE.set(self)
+src/terl_mappo/batch01/source_guard.py:283: in check
+    ???
+src/terl_mappo/batch01/source_guard.py:172: in check_path
+    if digest != expected: self.fail('declared source hash mismatch: ' + relative)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <terl_mappo.batch01.source_guard.SourceGuard object at 0x76e458a97c50>
+message = 'declared source hash mismatch: src/terl_mappo/batch01/contracts.py'
+
+    def fail(self, message):
+        if self.failure is None:
+            self.failure = message
+            self.diagnostics.mkdir(parents=True, exist_ok=True)
+            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
+            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
+                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
+                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
+                        'generated_runtime_sources': dict(self.generated_sources)})
+>       raise SourceViolation('latched source contract failure: ' + self.failure)
+E       terl_mappo.batch01.source_guard.SourceViolation: latched source contract failure: declared source hash mismatch: src/terl_mappo/batch01/contracts.py
+
+src/terl_mappo/batch01/source_guard.py:133: SourceViolation
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009/artifacts/2026-10-09_batch01_v3_selftest/fast.xml -
+=========================== short test summary info ============================
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[lazy_import]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[legal]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[disk_drift]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[update_boundary]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_save]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_load]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[origin]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[symlink]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[executed_drift]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[optimizer_import]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[foreign_origin]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[original_qa_box_drift]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b2_lambda_native_adapter_rejected_during_startup
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cpu]
+FAILED test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_real_source_lock_matches_anchor_and_rejects_wrong_pin
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_fresh_process_all_transitive_runtime_imports_are_locked
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_reward_identity_hook_preserves_all_rollout_fields_and_rng
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_formal_256_8_4_fully_masked_no_target_forward_backward
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_runtime_assertions_reject_unapplied_optimizer_and_dropout
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_c0_interface_rejects_continuous_coercion_and_requires_adapter
+FAILED test/test_terl_mappo_batch01_base_20261009.py::test_shared_selected_checkpoint_strict_resume_readonly
+23 failed, 11 passed, 1 skipped, 2 deselected, 2 warnings in 70.68s (0:01:10)

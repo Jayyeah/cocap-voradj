@@ -1,0 +1,48 @@
+--- A3 V2 original
++++ Core V3 adaptation
+@@ -5,8 +5,8 @@
+ """
+ import io,json,os,subprocess,sys,tarfile,time
+ from pathlib import Path
+-CANDIDATE='863a0cf55aca0ace8a0aaab36d9166aa4c97268f'
+-PIN='885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4'
++CANDIDATE='0b2686a06e900a090a34fd3be4e0143ba3f794f0'
++PIN='9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19'
+ HERE=Path(__file__).resolve().parent
+ ROOT=HERE.parents[1]
+ CHILD=r'''
+@@ -34,7 +34,7 @@
+ changes=[{'path':str(ext.relative_to(ROOT)),'before':None,'after':file_hash(ext),'reason':'independent QA reward hook','science_impact':'diagnostic only'}]
+ legal=case not in {'computed_undeclared','literal_undeclared','late_undeclared','optimizer_import'}
+ if legal:changes.append({'path':str(p.relative_to(ROOT)),'before':None,'after':file_hash(p),'reason':'explicit dynamic dependency','science_impact':'diagnostic only'})
+-delta={'schema':'terl.batch01.delta.v1','line':'R1','base':{'parent_sha':lock['parent_sha'],'candidate_sha':'863a0cf55aca0ace8a0aaab36d9166aa4c97268f','lock_sha256':fingerprint(lock)},'config_changes':[],'source_changes':changes,'extensions':{'entrypoint':'terl_mappo.batch01.extensions.qa_reward_probe:factory','parameters':{'module':name}}}
++delta={'schema':'terl.batch01.delta.v1','line':'R1','base':{'parent_sha':lock['parent_sha'],'candidate_sha':'0b2686a06e900a090a34fd3be4e0143ba3f794f0','lock_sha256':fingerprint(lock)},'config_changes':[],'source_changes':changes,'extensions':{'entrypoint':'terl_mappo.batch01.extensions.qa_reward_probe:factory','parameters':{'module':name}}}
+ resolved=verify_base(lock,delta,fingerprint(lock))
+ guard=SourceGuard.from_base(lock,delta,fingerprint(lock),diagnostics=ROOT/'runs/source_failures')
+ with guard.scope():hooks=importlib.import_module('terl_mappo.batch01.extensions.qa_reward_probe').factory({'module':name})
+@@ -65,7 +65,11 @@
+    p.write_text(source.replace('VALUE = 0.4','VALUE = 0.9'));os.utime(p,(stamp,stamp))
+    py_compile.compile(str(p),doraise=True)
+    p.write_text(source);os.utime(p,(stamp,stamp));assert file_hash(p)==guard.expected[str(p.relative_to(ROOT))]
+-  if case=='symlink':
++  if case=='pyc_stale':
++   record['rejection']=rejected(lambda:runtime.collect(1))
++   assert not marker.exists() and name not in sys.modules
++   record.update(module_body_executed=False,stale_bytecode_accepted=False,optimizer_updates=0)
++  elif case=='symlink':
+    target=ROOT/'runs/alias_dep.py';target.write_text(source);p.unlink();p.symlink_to(target)
+    record['rejection']=rejected(lambda:runtime.collect(1))
+   elif case in {'generated_drift','generated_extra'}:
+@@ -123,10 +127,10 @@
+ '''
+ if __name__=='__main__':
+  cases=sys.argv[1:] or ['computed_undeclared','literal_undeclared','legal','disk_drift','late_undeclared','symlink','spec_swap','location_swap','generated_drift','generated_extra','timing','pyc_stale']
+- archive=subprocess.check_output(['git','archive',CANDIDATE,'src','vendor','configs/experiments/terl_mappo_20261008','configs/experiments/terl_mappo_batch01_20261009','test','tools'])
++ archive=subprocess.check_output(['git','archive',CANDIDATE,'src','vendor','configs/experiments/terl_mappo_20261008','configs/experiments/terl_mappo_batch01_20261009','test','tools','pyproject.toml'])
+  records=[]
+  for case in cases:
+-  snapshot=ROOT/'runs/a3_v2_cpu'/('independent_'+case)
++  snapshot=ROOT/'runs/v3_a3_reuse_retry1'/('independent_'+case)
+   if snapshot.exists():raise SystemExit('Refuse existing snapshot: '+str(snapshot))
+   snapshot.mkdir(parents=True)
+   with tarfile.open(fileobj=io.BytesIO(archive)) as tar:tar.extractall(snapshot,filter='data')
