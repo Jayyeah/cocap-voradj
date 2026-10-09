@@ -1,13 +1,15 @@
 # TERL-MAPPO 累计1m Stage1自动线
 
-更新时间：2026-10-09T10:13:57.935391+08:00。
-自动线状态：`RUNNING_TO_1M`；总目标1,000,000 joint environment decisions；已完成累计步数：1,000,000。
-科学分类：`PENDING`。100k gate结果不控制续训。
+更新时间：2026-10-09T10:21:33.590830+08:00。
+自动线状态：`COMPLETE_1M_AND_FINAL_TEST`；总目标1,000,000 joint environment decisions；已完成累计步数：1,000,000。
+科学分类：`TERL_MAPPO_STAGE1_LEARNABLE`。100k gate结果不控制续训。
 
 100k原run为精确续训parent；从100k checkpoint恢复actor/critic、Adam、ValueNorm、环境、全部RNG与计数。只改变累计budget：100k→1m；原native Stage1、256/8/4 backbone、seed9/109、PPO超参及25k保存切点全部保持。
 
 | step | domain | mode | normal/capture/n | ring2/ring3/strict | collision | capture mean/median/p90 s | censored |
 |---:|---|---|---|---|---|---|---|
+| 775000 | final | argmax | 45/45/50 | 46/46/45 | 5/50 | 90.69/70.50/160.50 | 5 |
+| 775000 | final | sample | 45/45/50 | 49/46/45 | 5/50 | 125.78/93.00/227.10 | 5 |
 | 0 | screen | argmax | 0/0/20 | 0/0/0 | 1/20 | —/—/— | 20 |
 | 0 | screen | sample | 0/0/20 | 0/0/0 | 2/20 | —/—/— | 20 |
 | 25000 | screen | argmax | 0/0/20 | 0/0/0 | 1/20 | —/—/— | 20 |
@@ -90,11 +92,17 @@
 | 975000 | screen | sample | 5/5/10 | 9/9/5 | 3/10 | 994.00/1221.00/1380.10 | 5 |
 | 1000000 | screen | argmax | 6/6/20 | 13/12/6 | 10/20 | 65.08/30.00/144.00 | 14 |
 | 1000000 | screen | sample | 6/6/20 | 13/10/6 | 12/20 | 591.00/409.00/1204.25 | 14 |
+| 450000 | selection | argmax | 19/19/20 | 19/19/19 | 1/20 | 81.87/73.50/120.60 | 1 |
+| 450000 | selection | sample | 13/13/20 | 19/19/13 | 6/20 | 392.42/143.50/916.90 | 7 |
+| 500000 | selection | argmax | 20/20/20 | 20/20/20 | 0/20 | 121.60/50.75/320.75 | 0 |
+| 500000 | selection | sample | 11/11/20 | 20/20/11 | 4/20 | 498.59/109.00/1253.50 | 9 |
+| 775000 | selection | argmax | 18/18/20 | 19/19/18 | 2/20 | 76.47/65.50/122.65 | 2 |
+| 775000 | selection | sample | 16/16/20 | 20/18/16 | 4/20 | 132.41/106.75/228.50 | 4 |
 
 原100k的screen结果复用且记录来源，后续每25k regular各10局，100/250/500/750/1000k各20局。screen/selection seed沿用原配置；最终独立seed2046101800起，各50局，与原100k final隔离。
 最终selection候选为screen预声明排序的前三个checkpoint，held-out各20局，再按normal、低collision、strict、ring3、较早step排序。保留latest、固定milestones、当前前三候选和待评估点，其余仅在完整screen/hash验证后删除本自动线文件。
 
-best checkpoint/hash：`PENDING` / `PENDING`。
+best checkpoint/hash：`/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt` / `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`。
 最新数值健康：`True`；training PID：`1045822`。
 最新PPO指标：`{"steps": 1000000, "agent_transitions": 3000000, "optimizer_steps": 22994, "reward_mean": 8.928660046187426, "reward_min": 8.702436133663618, "reward_max": 9.0, "actor_loss": -0.01352843758650124, "value_loss": 3.9233041661645984e-05, "entropy": 1.1553861200809479, "clip_fraction": 0.12103175558149815, "approx_kl": 0.009457017228539477, "actor_grad_norm": 7.074973464012146, "value_grad_norm": 0.09086663741618395, "explained_variance": 0.2487378716468811, "value_norm_mean": 555.6096801757812, "value_norm_std": 361.8458251953125, "kl_early_stop": 1.0, "ppo_epochs_completed": 2.0, "minibatch_updates": 4.0, "actor_update_l2": 0.020216251883053475, "actor_update_relative_l2": 0.000212360931949506, "approx_kl_max": 0.0242058876901865, "update_count": 3920.0, "post_update_ratio_mean": 0.9998602271080017, "post_update_ratio_min": 0.4118098318576813, "post_update_ratio_max": 2.159834384918213, "post_update_clip_fraction": 0.313492089509964, "post_update_kl": 0.027279965579509735, "episodes": 0, "training_capture": 0, "training_collision": 0}`。
 
