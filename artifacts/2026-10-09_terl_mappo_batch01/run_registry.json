@@ -1,7 +1,7 @@
 {
   "schema": "terl-mappo-run-registry-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
-  "updated_at": "2026-10-09T14:17:26.660225+08:00",
+  "updated_at": "2026-10-09T15:18:55.622062+08:00",
   "owner": "MASTER",
   "BATCH01_BASE_SHA": null,
   "runs": [
@@ -194,7 +194,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -211,24 +211,25 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
@@ -236,7 +237,9 @@
         "multi-target native reward repetition and cooperation count semantics",
         "stage promotion thresholds/budget freeze"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     },
     {
       "run_id": "BATCH01-N1",
@@ -288,7 +291,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -305,31 +308,34 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
         "exact CoCap actor adapter/pooling implementation and information equality",
         "matched fresh initialization and parameter-count reporting"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     },
     {
       "run_id": "BATCH01-R1",
@@ -380,7 +386,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -397,31 +403,34 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
         "exact shaping formula/coefficients/clock/target aggregation",
         "native retained positive global residence incentive is not removed by definition"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     },
     {
       "run_id": "BATCH01-P1",
@@ -472,7 +481,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -489,31 +498,34 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
         "full775k cross-BASE strict resume proof",
         "P1-control authorization and paired fork reproducibility"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     },
     {
       "run_id": "BATCH01-C0",
@@ -566,7 +578,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -583,31 +595,34 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
         "continuous native action dispatch and Jacobian proof",
         "initial std/entropy estimator deterministic action definition"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     },
     {
       "run_id": "BATCH01-P1-control",
@@ -654,7 +669,7 @@
       "seed_manifest": null,
       "output_root": null,
       "command": null,
-      "storage_audit_id": null,
+      "storage_audit_id": "A0-HOME-STORAGE-20261009",
       "benchmark_id": null,
       "lease_id": null,
       "launch_authorization_id": null,
@@ -671,31 +686,40 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "WAITING_CORE",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+        "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+        "INDEPENDENT_QA_SAME_SHA": "PENDING",
         "BASE_FREEZE": "WAITING_BASE",
         "ARM_DELTA_REVIEW": "WAITING_BASE",
-        "STORAGE_CAPACITY": "WAITING_STORAGE",
+        "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
         "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
         "GPU_LEASE": "NOT_REQUESTED",
         "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-        "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+        "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
       },
       "blockers": [
-        "WAITING_CORE",
-        "WAITING_QA",
+        "QA_SAME_SHA_PENDING",
         "WAITING_BASE",
-        "WAITING_STORAGE",
+        "ARM_DELTA_REVIEW_PENDING",
+        "EVALUATION_SEED_RECONCILIATION_PENDING",
+        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
         "BENCHMARK_NOT_EXECUTED",
-        "GPU_LEASE_NOT_GRANTED",
+        "FORMAL_GPU_LEASE_NOT_GRANTED",
         "NO_RUN_AUTHORIZATION"
       ],
       "unresolved": [
         "full775k cross-BASE strict resume proof",
         "P1-control authorization and paired fork reproducibility"
       ],
-      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates"
+      "next_gate": "Independent QA same candidate + open issue/seed review -> later explicit Master freeze; then arm and formal launch gates",
+      "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
+      "candidate_sha_for_review_only": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a"
     }
-  ]
+  ],
+  "core_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+  "core_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
+  "core_candidate_canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
+  "QA_SAME_SHA": "PENDING",
+  "qa_smoke_registry": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
+  "qa_smoke_is_not_formal_run": true
 }

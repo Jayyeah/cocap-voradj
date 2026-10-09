@@ -1,12 +1,28 @@
 # TERL-MAPPO Batch01 并行迁移矩阵与中央管理合同
 
-日期：2026-10-09，Asia/Shanghai。中央唯一写入者：Master；branch `ops/ac-master-dag-20260921`。本轮交付是规划、登记与门禁，**没有训练启动授权，没有新 GPU lease，没有创建子 Agent**。本轮提出的预算、阈值和实现选择均为 `PROPOSED`，须随 Core 交付、独立 QA 和 Master 合同冻结确认后，另行获得运行授权。
+日期：2026-10-09，Asia/Shanghai。中央唯一写入者：Master；branch `ops/ac-master-dag-20260921`。A1-MASTER-02已接收A0/A2并发放QA专用短时CUDA correctness lease；**没有正式训练/benchmark授权，没有冻结BASE，没有创建子Agent，也没有删除或归档**。五条线及P1-control继续WAITING_BASE；预算、阈值和实现选择仍为提案。
+
+## A1-MASTER-02 最新交付登记（覆盖下方初次规划快照）
+
+登记时间：`2026-10-09T15:18:55.622062+08:00`。恢复中央local=origin=GitHub `5c0641635af6cbbf6a8dcd38baeb619024e9ebdc`。Core交付HEAD `bdbd502ff2f071b0cac07a0d0d956a2f35015ea1` 已push且从其可达科学candidate **`40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`**。二者不能互换；`BATCH01_BASE_SHA=null`、`QA_SAME_SHA=PENDING`。
+
+Master对candidate Git对象、交付对象、工作树的78个lock源码hash逐一一致核验；canonical digest **`91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3`**。candidate至交付仅4个证据/文档文件变化；T0原源码/配置保持一致。Core JUnit确有61 passed/0 failure/error/skip，属于Core自测，不能自动赋值QA_PASS。详见[Core核验回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json)和[收到的candidate lock](../../artifacts/2026-10-09_terl_mappo_batch01/master02/received_core_candidate_lock.json)。后者只是交付快照，中央冻结lock的digest仍为null。
+
+A0实际原件在`/home/yjq/storage-audit-A0-20261009`，并未假定已进入中央Git。已核验报告、TSV行数/hash、保护清单及零删除/归档记录；中央仅保存[容量审计回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json)。closing `/home/yjq`261.60GiB、共享可用136.77GiB；个人quota UNKNOWN，共享余量不是独占quota。5线74GiB、8并发98GiB均含30GiB reserve；20.66GiB可清理候选仍未授权。状态为**CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED**；正式启动前重审实际output mount、quota、保留峰值与其它任务增长。
+
+资源窗口 `2026-10-09T15:09:02.192187+08:00`–`2026-10-09T15:09:12.049591+08:00`：两卡util mean/peak均0、未观察到compute PID；GPU0 min free48521MiB、GPU1 48522MiB；RAM available106.14GiB、128CPU load1=3.31、共享disk available136.76GiB。只支持一次有界QA正确性smoke，不构成并发吞吐或容量结论。[QA lease](../../artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json)：物理GPU0/进程内cuda:0，单进程/单线程，两个允许节点串行，总CUDA测试≤300秒、active lease≤600秒、joint decisions≤128、PPO calls≤8、torch allocation≤2048MiB/自身driver VRAM≤4096MiB、RSS≤8GiB、新写入≤1GiB、evaluator workers=0；有效至`2026-10-09T17:18:55.622062+08:00`，启动前必须重新采样并留足10分钟。Master未执行smoke，正式GPU_LEASE仍NOT_REQUESTED。
+
+QA工作树观察HEAD `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`，branch `audit/terl-mappo-batch01-base-qa-20261009`，已有未提交CPU suite/问题复现；[interim回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json)仅记进展，不代替验收。其延迟依赖源码锁逃逸记录为REPORTED_PENDING_FINAL_QA_TRIAGE，等待QA正式结论。
+
+冻结前待解决：Core的screen/selection/final沿用T0 `2026100800/2036100800/2046101800`，中央Batch01新域提案是`2056100900/2066100900/2076100900`。先区分历史T0复现与新arm held-out合同，检查实际seed集合与采样RNG；QA返回reconciliation，Master审定后由Core另交合法版本/配置接口。不得在当前candidate上改lock或把已见过T0 final冒充新held-out。
+
+直接转交[BASE独立QA handoff](BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)。本轮结束等待QA验收，不自动冻结BASE，不启动T1/N1/R1/P1/C0/P1-control。下方初次恢复段和旧PID仅为历史快照。
 
 ## 1. 权威状态与恢复事实
 
 唯一中央状态：[AC_MASTER_DAG](../ops/AC_MASTER_DAG_20260921_ZH.md) 与 [state.json](../../artifacts/2026-09-21_ac_master_dag/state.json)。本目录文档和 Batch01 JSON 是中央登记的附件；发生不一致时 fail closed，不能自行挑选较宽松的状态。
 
-恢复起点 local=origin=GitHub HEAD：`381b61dba6c94478ed23b712d39018fc70e2341f`。中央 worktree clean。TERL 交付 local=origin=GitHub：`bb794ca8435f06b9fa5693c0fed98f567320decf`；Core/QA worktree 在本轮读取时均在该提交，Core clean、QA detached clean。**该提交是已验证 T0 交付来源，不是 BATCH01_BASE_SHA。** 不合并或修改其它 worktree 的科学代码。
+初次规划恢复快照：local=origin=GitHub HEAD为`381b61dba6c94478ed23b712d39018fc70e2341f`，当时中央clean。TERL交付为`bb794ca8435f06b9fa5693c0fed98f567320decf`；Core/QA当时均在该提交，Core clean、QA detached clean。**该提交是已验证T0交付来源，不是BATCH01_BASE_SHA。** 当前Core/QA状态见顶部A1-MASTER-02登记；不合并或修改其它worktree科学代码。
 
 固定事实来源（按提交读取，旧启动段落不能覆盖最终结论）：
 
@@ -21,7 +37,7 @@ Stage1=3P1E0obs4cores，seed9/actor109，random-origin，无 teacher/BC。100k f
 
 selected=775k；实际 `step_000775000.pt` 与 `best.pt` SHA256 均重新核对为 `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`。final seed base=2046101800；argmax/sample normal capture 均45/50，collision均5/50。1M末点 screen normal 均6/20，collision=10/20与12/20；late degradation 保留为事实，不能写成 reward、critic 或 entropy 的已证因果。历史约24.31 decisions/s只是已结束单 run 的累计指标，不是当前并发容量。
 
-服务器锚点：`/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt`。恢复审计见 [recovery_snapshot.json](../../artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json)。旧 trainer/controller/evaluator PID 已退出；本轮观察到其它用户 PID1335255 同时占用两卡，不能认领、停止或修改。
+服务器锚点：`/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt`。初次恢复审计见[recovery_snapshot.json](../../artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json)：旧trainer/controller/evaluator已退出，当时外部PID1335255占用两卡。本轮新采样未观察到compute PID；任何其它任务仍受保护，不能认领、停止或修改。
 
 ## 2. 四个参照合同：实际值与目标值分开
 
@@ -92,7 +108,7 @@ selected=775k；实际 `step_000775000.pt` 与 `best.pt` SHA256 均重新核对�
 
 冻结顺序：Core提交并push真实candidate SHA/完整源码hash清单 → 独立QA对**同一个candidate SHA**验收并push报告 → Master核对交付、填写真实 `BATCH01_BASE_SHA` 与 lock digest、冻结BASE-v1 → 各线从该SHA建立delta branch → 审核arm差异、Storage、benchmark和lease → 后续授权训练。不能用T0 SHA、placeholder、分支名或QA自己的报告HEAD填BASE。冻结前五条线始终WAITING_BASE。
 
-冻结时归档不可变版本到 `artifacts/2026-10-09_terl_mappo_batch01/bases/BASE-v1/`（lock、source/dependency manifest、Core/QA引用）；后续BASE-v2建立新目录，当前lock只作版本入口，旧run引用原不可变lock/hash。Storage可在Core candidate上并行做CPU容量测算；如果QA需要CUDA验收，必须先取得该candidate的Storage PASS与专门bounded smoke lease/后续授权，再完成QA，不把正式训练门禁与QA验收形成循环依赖。本轮这些GPU工作均未执行。
+冻结时归档不可变版本到 `artifacts/2026-10-09_terl_mappo_batch01/bases/BASE-v1/`（lock、source/dependency manifest、Core/QA引用）；后续BASE-v2建立新目录，当前lock只作版本入口，旧run引用原不可变lock/hash。Storage容量审计已经接收；QA CUDA以本轮A0审计+当前smoke资源门禁+专用短lease为前置，启动时再复核。正式训练Storage/GPU/benchmark门禁独立保留，不形成QA等待冻结的循环。Master本轮未执行GPU工作。
 
 每run必须登记 `base_version/base_sha/base_lock_sha256/arm_head/delta_hash/resolved_config_sha256/scientific_sources_sha256/runtime_contract_hash/evaluator_sha256/dependency_lock_sha256/parent_checkpoint_sha256/init_mode/seed_manifest/counter_units/output_root/lease_id/command`。训练source树必须clean并固定到科学源码hash，依赖、原vendor和所有import consumer纳入manifest；启动前hash验证失败即退出。各arm的common env/PPO/evaluator/dependency hashes必须一致；只有批准delta文件和配置允许不同，R1/C0/N1通过common入口选择各自插件。禁止各线拷贝或私改共同PPO、native环境和评估器。
 
@@ -100,19 +116,19 @@ selected=775k；实际 `step_000775000.pt` 与 `best.pt` SHA256 均重新核对�
 
 统一评估：新screen/selection/final域提案分别2056100900/2066100900/2076100900起；scene_index偏移100000、episode_index递增，same-scene arms配对物理seeds，不同动作sampling RNG隔离。与历史T0三个域及旧100k final逐项做集合disjoint检验，QA通过后冻结。regular screen10/模式、milestone20/模式、top3 selection20/模式、final50/模式；同场景完整3001 horizon/spawn，用parameter_updates=0独立CPU evaluator。C0的deterministic mean/sample明确标名，禁止将mean说成离散argmax。fingerprint/hash/计数来自实际episode，不以expected manifest代替验证。不得使用final调参或选checkpoint。
 
-## 5. Core / QA / Storage 待交付
+## 5. Core / QA / Storage 交付登记与待验收
 
 | 接口 | 必需交付 | 当前状态 |
 |---|---|---|
-| Core | push candidate SHA；共有config/arm插件/scene接口/连续动作入口/strict resume allowlist；T0不变路径parity；变人数/洋流critic及权重迁移规则；runtime consumer assertions；源码与依赖hash；统一eval/seed/retention/benchmark instrumentation；commit影响分类 | WAITING_CORE；不在本轮替Core实现 |
-| QA | 独立审同candidate；vendor字节、T0actor有效路径/physics/reward/info/terminal/pre-reset bootstrap/GAE/ValueNorm/active loss/dropout；CPU full-state restore与CUDA后续经lease的有界路径；N1信息不扩展、R1组件、C0Jacobian/action bounds、T1 multi-target/current、P1唯一参数；final seed隔离与manifest fail-closed；报告SHA/限制/FAIL项 | WAITING_QA；历史43项通过不等于新BASE验证 |
-| Storage | 按GPU计划审root及实际output mount、df字节/inode、各run目录du、checkpoint/resume/metrics/GIF/eval保留峰值与atomic临时文件；并发总峰值+其它任务增长+≥15GiB margin；write/fsync速度、ETA、清理建议/保护清单；有时效的PASS或WAIT | WAITING_STORAGE；Master的137GiB快照不是容量审计 |
+| Core | push candidate SHA；共有config/arm插件/scene接口/连续动作入口/strict resume allowlist；T0不变路径parity；变人数/洋流critic及权重迁移规则；runtime consumer assertions；源码与依赖hash；统一eval/seed/retention/benchmark instrumentation；commit影响分类 | RECEIVED_HASH_VERIFIED；candidate40bd91b，delivery bdbd502；共同源码78hash一致，独立QA未通过 |
+| QA | 独立审同candidate；vendor字节、T0actor有效路径/physics/reward/info/terminal/pre-reset bootstrap/GAE/ValueNorm/active loss/dropout；CPU full-state restore与CUDA后续经lease的有界路径；N1信息不扩展、R1组件、C0Jacobian/action bounds、T1 multi-target/current、P1唯一参数；final seed隔离与manifest fail-closed；报告SHA/限制/FAIL项 | QA_SAME_SHA=PENDING；CPU进展已观察，尚未接收正式验收；专用CUDA smoke lease已发放 |
+| Storage | 按GPU计划审root及实际output mount、df字节/inode、各run目录du、checkpoint/resume/metrics/GIF/eval保留峰值与atomic临时文件；并发总峰值+其它任务增长+≥15GiB margin；write/fsync速度、ETA、清理建议/保护清单；有时效的PASS或WAIT | A0容量审计已接收；formal动态复核仍需完成，quota UNKNOWN，禁止清理 |
 
 无需等待GPU做独立CPU规划；没有可评审新交付时以handoff结束，不长期轮询。用户转交Core/QA/Storage handoff后Master继续冻结；不给现有工作树发消息、不启动它们的任务。
 
 ## 6. 资源门禁与有限并发benchmark（设计，未执行）
 
-目标每GPU3–4条，允许按容量降为1–2条；不是最低并发承诺。所有新GPU工作包括benchmark/CUDA smoke须先Storage PASS，再申请独立lease。`CUDA_VISIBLE_DEVICES=physical_gpu`，程序内`cuda:0`；必须核对GPU UUID，不能依logical编号claim设备。
+目标每GPU3–4条，允许按容量降为1–2条；不是最低并发承诺。正式训练/benchmark须先Storage动态容量PASS，再申请独立lease；QA correctness smoke单独依A0已完成审计、fresh资源门禁与本轮专用短lease执行，不解锁正式门禁。`CUDA_VISIBLE_DEVICES=physical_gpu`，程序内`cuda:0`；必须核对GPU UUID，不能依logical编号claim设备。
 
 建议benchmark分级：1/GPU基线 → 2/GPU → 3/GPU → 4/GPU；前一级PASS且总吞吐收益明显才升级。每级至少3个重复窗口，warm-up256 decisions，measurement2048 decisions/run或5分钟上限；未完成2048时如实报告实际steps与置信不足。使用冻结BASE、全宽256/8/4、Stage1及T1最高计划场景/C0代表混合，真实PPO update、25k样式checkpoint写入和完整CPU evaluator负载；benchmark专用fresh输出/seed，不进入formal结果、不复用其权重。
 
@@ -152,4 +168,4 @@ evaluator初始每run最多2 CPU workers，**全机Batch初始总额4 workers**�
 
 中央登记校验工具：[validate_terl_mappo_batch01.py](../../tools/validate_terl_mappo_batch01.py)，仅验证元数据一致性、不启动环境或模型。正常commit/push中央branch，push后fetch并直接ls-remote核验；最终交付HEAD由Git/final handoff给出，避免把包含自身的commit SHA写进本commit。当前附件中的HEAD字段明确是恢复或核验快照，不能冒充未来交付SHA。
 
-交付核验：metadata consistency PASS，readiness按预期FAIL（BASE/Core/QA/Storage/benchmark/lease/授权尚未完成）。规划commit `a5d5072c16e0cb0e1f38c2dfc4f1eb3ad95921ff` 已完成正常push/fetch并核验local=origin=GitHub；[remote_verification.json](../../artifacts/2026-10-09_terl_mappo_batch01/remote_verification.json)保存该核验点。最终回执commit独立push/fetch/ls-remote核验；最终HEAD见Git与本轮handoff。
+交付核验：中央metadata consistency PASS，4项内存注入负检查均拒绝（文档HEAD冒充candidate、冻结前正式lease、QA lease扩大为正式工作、共享空间冒充独占quota）；readiness按预期FAIL（QA/BASE/arm/Storage动态复核/seed/benchmark/正式lease/授权未完成）。此前规划commit `a5d5072c16e0cb0e1f38c2dfc4f1eb3ad95921ff` 的[旧同步回执](../../artifacts/2026-10-09_terl_mappo_batch01/remote_verification.json)保留为历史。A1-MASTER-02交付另行正常push/fetch/ls-remote核验；当前交付HEAD见Git与本轮handoff，不自引用。

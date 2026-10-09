@@ -2,6 +2,16 @@
 
 本文件与 `artifacts/2026-09-21_ac_master_dag/state.json` 是跨 session 的唯一中央状态。只有 MASTER 可以写这两个文件；child 只能在各自 branch/worktree/rundir 工作，并以结构化 handoff 返回结果。禁止 nested subagents。
 
+## 2026-10-09 A1-MASTER-02 A0/A2接收与BASE独立QA（覆盖下方全部旧快照）
+
+- 中央恢复local=origin=GitHub `5c0641635af6cbbf6a8dcd38baeb619024e9ebdc`；最新交付HEAD以本轮Git push/fetch/ls-remote及handoff为准。只更新中央管理文件，不合并Core科学代码、不改变运行中实验。
+- **A0容量审计完成、正式启动前动态复核**：原件`/home/yjq/storage-audit-A0-20261009`，closing home261.60GiB/shared available136.77GiB，个人quota UNKNOWN。5线74GiB/8并发98GiB含30GiB reserve；20.66GiB清理候选未授权，删除/归档均0。[A0回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json)存原件/TSV/保护清单hash，未复制巨大原TSV到中央Git。
+- **A2 candidate接收并完成Master hash核验**：科学candidate `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`，文档交付HEAD `bdbd502ff2f071b0cac07a0d0d956a2f35015ea1`；canonical lock `91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3`；78文件逐一一致，T0原源码/配置不变，delivery仅证据/文档差异。Core61 passed不是独立QA通过。[A2回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json)。
+- **BASE未冻结**：`BATCH01_BASE_SHA=null`、`QA_SAME_SHA=PENDING`，T1/N1/R1/P1/C0与P1-control继续WAITING_BASE。QA工作树已有同candidate未提交CPU测试和延迟依赖源码锁问题记录；只记REPORTED_PENDING_FINAL_QA_TRIAGE，不自动接受/修复/赋QA_PASS。Core旧T0 seed域与中央新Batch域需冻结前reconciliation。
+- **仅QA短时CUDA lease** `B01-QA-CUDA-40bd91b-20261009T151855`：物理GPU0/进程内cuda:0；单进程/单线程、两个correctness节点串行，CUDA总≤300s/active≤600s/≤128joint decisions/≤8PPO calls，torch≤2048MiB/自身driver VRAM≤4096MiB、RSS≤8GiB、新输出≤1GiB，无evaluator。有效至`2026-10-09T17:18:55.622062+08:00`；启动前重新10×1s采样、核对candidate/lock、磁盘/RAM/VRAM和自身写入，留足10分钟；失败仅停止自身QA。GPU1无新lease，正式GPU_LEASE仍NOT_REQUESTED。Master未启动smoke或任何训练。
+- 资源审计窗口2026-10-09T15:09:02.192187+08:00–2026-10-09T15:09:12.049591+08:00，未观察compute PID、两卡util0、GPU0 free48521MiB、RAM available106.14GiB、共享disk136.76GiB。旧外部PID1335255不是当前活跃事实；所有其它任务仍受保护。[快照](../../artifacts/2026-10-09_terl_mappo_batch01/master02/resource_snapshot.json)，lease不构成GPU/空间独占权。
+- **NEXT WAKE-UP**：用户转交[QA handoff](../experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)的同SHA独立报告、CUDA lease使用/WAIT证据与seed/源码锁问题结论；Master评审后再决定冻结，本轮停在等待QA。无子Agent、清理、正式benchmark或五线launch；Evidence/Persistent N0与Batch02锁定不变。
+
 ## 2026-10-09 TERL-MAPPO Batch01 中央规划（覆盖下方历史快照）
 
 - 本轮只恢复事实、规划与中央登记；没有新训练、benchmark、GPU lease或子Agent。恢复起点local=origin=GitHub `381b61dba6c94478ed23b712d39018fc70e2341f`，中央clean；最终交付HEAD由Git及handoff核验，不自引用。

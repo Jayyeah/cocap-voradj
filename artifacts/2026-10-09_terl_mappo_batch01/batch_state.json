@@ -2,23 +2,23 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T14:17:26.660225+08:00",
+  "updated_at": "2026-10-09T15:18:55.622062+08:00",
   "status": "WAITING_BASE",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
   "base_contract": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
   "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
   "gates": {
-    "CORE_CANDIDATE": "WAITING_CORE",
-    "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+    "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
+    "INDEPENDENT_QA_SAME_SHA": "PENDING",
     "BASE_FREEZE": "WAITING_BASE",
     "ARM_DELTA_REVIEW": "WAITING_BASE",
-    "STORAGE_CAPACITY": "WAITING_STORAGE",
+    "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
     "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
     "GPU_LEASE": "NOT_REQUESTED",
     "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
-    "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+    "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
   },
   "training_launched": false,
   "benchmark_executed": false,
@@ -39,23 +39,54 @@
     "trigger": "T1 failure -> Master review need for multiple seeds; no automatic launch"
   },
   "core": {
-    "status": "WAITING_CORE",
+    "status": "CANDIDATE_RECEIVED_HASH_VERIFIED",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009",
-    "observed_head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
-    "candidate_sha": null
+    "observed_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
+    "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
+    "branch": "experiment/terl-mappo-batch01-base-20261009",
+    "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
+    "common_source_count": 78,
+    "verification": "artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json",
+    "core_test_report": {
+      "passed": 61,
+      "failed": 0,
+      "independent_qa": false
+    }
   },
   "qa": {
-    "status": "WAITING_QA",
+    "status": "CPU_ACTIVITY_OBSERVED_FINAL_ACCEPTANCE_PENDING",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
-    "observed_head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+    "observed_head": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
     "tested_candidate_sha": null,
-    "report_head": null
+    "report_head": null,
+    "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
+    "requested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "requested_canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
+    "QA_SAME_SHA": "PENDING",
+    "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
+    "cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
+    "cuda_smoke_status": "LEASE_GRANTED_NOT_EXECUTED_BY_MASTER",
+    "handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md"
   },
   "storage": {
-    "status": "WAITING_STORAGE",
-    "audit_id": null,
-    "snapshot_available_gib": 136.77510452270508,
-    "snapshot_is_not_capacity_pass": true
+    "status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
+    "audit_id": "A0-HOME-STORAGE-20261009",
+    "external_report_root": "/home/yjq/storage-audit-A0-20261009",
+    "central_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
+    "home_allocated_gib_at_audit_closing": 261.6022758483887,
+    "shared_available_gib_at_audit_closing": 136.7727279663086,
+    "current_shared_available_gib": 136.76150131225586,
+    "personal_quota": "UNKNOWN",
+    "shared_space_is_exclusive_quota": false,
+    "five_arm_budget_gib": 74,
+    "eight_concurrent_budget_gib": 98,
+    "included_safety_reserve_gib": 30,
+    "potential_reclaim_gib": 20.659420013427734,
+    "cleanup_authorized": false,
+    "archive_authorized": false,
+    "actual_reclaimed_bytes": 0,
+    "formal_launch_requires_dynamic_output_mount_quota_retention_and_capacity_recheck": true
   },
   "concurrency_proposal": {
     "target_per_gpu": [
@@ -199,6 +230,58 @@
     }
   ],
   "version_migrations": [],
-  "incidents": [],
-  "next_wake_up": "User forwards Core candidate, independent QA same-SHA report, and Storage capacity audit; no time-based GPU polling"
+  "incidents": [
+    {
+      "incident_id": "B01-EVAL-SEED-DOMAINS",
+      "status": "OPEN_BEFORE_FREEZE",
+      "reported_at": "2026-10-09T15:18:55.622062+08:00",
+      "details": {
+        "core_candidate_domains": {
+          "screen": 2026100800,
+          "selection": 2036100800,
+          "final": 2046101800
+        },
+        "central_batch01_proposed_domains": {
+          "screen": 2056100900,
+          "selection": 2066100900,
+          "final": 2076100900
+        },
+        "assessment": "Candidate intentionally preserves T0 historical domains; fresh Batch01 held-out domains were proposed centrally. QA must audit historical-vs-new-run separation and return reconciliation before Master freezes a training contract; do not mutate pinned candidate/lock."
+      },
+      "candidate_changed": false,
+      "resolution_owner": "QA findings + Core proposal + Master review"
+    },
+    {
+      "incident_id": "B01-QA-INTERIM-LAZY-SOURCE-LOCK",
+      "status": "REPORTED_PENDING_FINAL_QA_TRIAGE",
+      "evidence": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
+      "master_reproduced": false,
+      "next_gate": "Receive final same-SHA independent QA verdict; no candidate repair in Master branch"
+    }
+  ],
+  "next_wake_up": "User forwards pushed independent QA same-candidate verdict and CUDA lease usage/wait evidence; Master reviews open issues and seed reconciliation. No auto-freeze or training.",
+  "QA_SAME_SHA": "PENDING",
+  "qa_smoke_leases": [
+    "B01-QA-CUDA-40bd91b-20261009T151855"
+  ],
+  "qa_smoke_gates": {
+    "A0_AUDIT_RECEIVED": "PASS",
+    "MASTER_RESOURCE_SAMPLE": "PASS",
+    "QA_START_TIME_PREFLIGHT": "REQUIRED",
+    "QA_ONLY_LEASE": "GRANTED_CONDITIONAL",
+    "CUDA_TEST_EXECUTION": "NOT_EXECUTED_BY_MASTER"
+  },
+  "evaluation_protocol_open_issue": {
+    "core_candidate_domains": {
+      "screen": 2026100800,
+      "selection": 2036100800,
+      "final": 2046101800
+    },
+    "central_batch01_proposed_domains": {
+      "screen": 2056100900,
+      "selection": 2066100900,
+      "final": 2076100900
+    },
+    "assessment": "Candidate intentionally preserves T0 historical domains; fresh Batch01 held-out domains were proposed centrally. QA must audit historical-vs-new-run separation and return reconciliation before Master freezes a training contract; do not mutate pinned candidate/lock."
+  }
 }
