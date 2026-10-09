@@ -8,6 +8,10 @@
 
 科学 parent：`bb794ca8435f06b9fa5693c0fed98f567320decf`，来自 `experiment/terl-backbone-mappo-20261008`；开始工作时实际 remote HEAD 已核验相同。原 TERL 为 `143359b2722d49c29b4fecc0ad1fd8d46326e45a`。候选版本以最终交付证据的 candidate SHA 为准。第一次工程提交 `9a97d39` 被自身 startup gate 拦截，因为历史包初始化的日志等传递依赖尚未完整纳入 source lock；修订补充静态 import closure 和全新进程覆盖回归，原始科学模块未改。后续仅补充交付证据的 HEAD 与最终 candidate SHA 分开记录；各实验必须显式固定 candidate SHA 与 canonical lock SHA256，不跟随 Core HEAD。
 
+最终 BASE candidate SHA：`40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`。Canonical lock SHA256：`91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3`，覆盖78个共同源码/config文件。该 candidate 已 push，并于2026-10-09 14:34:47+08独立读取 remote HEAD 核验相同；后续 evidence-only提交不替换该BASE。
+
+真实启动检查已通过：`OFFLINE_PREPARED_NO_TRAINING`，manifest fingerprint `c8277d2a375924e912b23a59661668f60a8fbde36aaf013dfb738c6c9234dd3f`。实际样例：[T0 delta](../artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json)、[T0 runtime manifest](../artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json)、[delivery evidence](../artifacts/2026-10-09_terl_mappo_batch01_base/delivery.json)。Runtime包含真实256/8/4 actor/critic、optimizer/ValueNorm、seed domains、resources与三种语义fingerprints，checkpoint=null，未执行训练。
+
 Selected checkpoint 为原始服务器文件：
 
 `/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt`
