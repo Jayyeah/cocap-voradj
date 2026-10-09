@@ -1,0 +1,79 @@
+{
+  "status": "BASE_QA_BLOCK",
+  "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+  "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
+  "delivery_sha": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
+  "t0_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+  "qa_branch": "audit/terl-mappo-batch01-base-qa-20261009",
+  "execution_head": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+  "unmodified_suite": {
+    "passed": 55,
+    "failed": 4,
+    "skipped_cuda": 2,
+    "failure_cause": "Core-only create_lock fixture on independent QA branch"
+  },
+  "committed_lock_fixture_suite": {
+    "passed": 59,
+    "failed": 0,
+    "skipped_cuda": 2,
+    "production_code_modified": false
+  },
+  "full_size_cpu": {
+    "hidden_dim": 256,
+    "heads": 8,
+    "layers": 4,
+    "decisions": 256,
+    "active_transitions": 768,
+    "paired_minibatches": 6,
+    "exact_t0_parity": true,
+    "exact_full_resume": true
+  },
+  "selected_775k_strict_load": true,
+  "t0_scientific_parity": "PASS_WITHIN_TESTED_CPU_SCOPE",
+  "baseline_loaded_dependency_coverage": true,
+  "runtime_source_lock": "FAIL_LAZY_DEPENDENCY_ESCAPE_INCLUDING_FULL_CHECKPOINT",
+  "cuda_executed": false,
+  "cuda_authorized": false,
+  "formal_training_launched": false,
+  "core_or_t0_science_modified": false,
+  "central_dag_modified": false,
+  "recommend_master_freeze_base": false,
+  "bugs": [
+    {
+      "id": "B1",
+      "severity": "HIGH",
+      "layer": "BASE",
+      "description": "Undeclared lazy repository dependency changes reward and passes rollout/update/save_bound/load_bound",
+      "evidence": "lazy_dependency_repro.json"
+    },
+    {
+      "id": "B2",
+      "severity": "MEDIUM",
+      "layer": "BASE_C0_INTERFACE",
+      "description": "Wrapped NativeStage1 factory passes continuous startup and reaches native integer path",
+      "evidence": "continuous_guards_repro.json"
+    },
+    {
+      "id": "B3",
+      "severity": "MEDIUM",
+      "layer": "BASE_C0_INTERFACE",
+      "description": "Zero-update continuous density guard changes Torch RNG via MC entropy",
+      "evidence": "continuous_guards_repro.json"
+    },
+    {
+      "id": "B4",
+      "severity": "LOW",
+      "layer": "BASE_METADATA",
+      "description": "critic_ev definition says pre-update V but learner uses post-update denormalized V"
+    }
+  ],
+  "arm_gates": {
+    "T1": "fixed capacity/current information; multi-target/partial-agent lifecycle; curriculum switch/full resume/permutation",
+    "N1": "TERL observation parity; actor-only capacity and fixed critic; mask/pooling/evaluator",
+    "R1": "geometry/recipient/target and event parity; explicit raw/native/shaping/shaped telemetry",
+    "P1": "controlled full-state 775k fork; live optimizer overrides; single-variable changes",
+    "C0": "B2/B3 fixes; actual physical continuous AW/AW9 parity; latent/Jacobian/density/PPO/evaluator"
+  },
+  "next_action": "Master/Core publish new candidate SHA and canonical lock; independently reaccept new SHA; CUDA only after resource authorization",
+  "report": "docs/TERL_MAPPO_BATCH01_BASE_QA_20261009_ZH.md"
+}
