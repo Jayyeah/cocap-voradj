@@ -1,263 +1,42 @@
 {
-  "schema": "terl-mappo-batch-contract-lock-v1",
-  "batch_id": "TERL-MAPPO-BATCH01",
-  "updated_at": "2026-10-09T14:47:42.976449+00:00",
-  "owner": "MASTER",
-  "status": "WAITING_QA_V3",
-  "base_version": null,
-  "BATCH01_BASE_SHA": null,
-  "base_lock_sha256": null,
-  "core_candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
-  "core_manifest_sha256": "ee414d7e6653b7a84808716104232c2b49b7815f46ba64cd57932f35e2a2e104",
-  "qa_tested_candidate_sha": null,
-  "qa_report_head": null,
-  "qa_report_sha256": null,
-  "common_source_hashes": {},
-  "dependency_lock_sha256": null,
-  "evaluator_sha256": null,
-  "scientific_manifest_sha256": null,
-  "candidate_seed_source_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
-  "candidate_seed_source_is_not_frozen_base": true,
-  "freeze_requires": [
-    "CORE_PUSHED_CANDIDATE_AND_MANIFEST",
-    "INDEPENDENT_QA_SAME_CANDIDATE_PASS",
-    "MASTER_REVIEW_AND_REAL_SHA_LOCK",
-    "EVALUATION_SEED_DOMAIN_RECONCILIATION_REVIEWED"
-  ],
-  "lock_digest_algorithm": "sha256 canonical JSON UTF8 sorted keys separators comma/colon excluding base_lock_sha256; pending until freeze",
-  "common_code_policy": "Common PPO/native environment/evaluator/dependencies identical hash in all arms; only explicitly reviewed arm plugin/config deltas allowed",
-  "process_code_policy": "Fixed clean immutable scientific source tree per run; no hot replacement; full import consumers and vendor/dependencies hashed before launch and resume",
-  "authorization_scope": "CENTRAL_QA_BLOCK_REGISTRATION_AND_WAITING_CORE_V2_ONLY",
-  "long_training_authorized": false,
-  "gpu_benchmark_executed": false,
-  "gpu_leases_granted": [],
-  "t0_runtime_reference": {
-    "counts": [
-      3,
-      1,
-      0,
-      4
-    ],
-    "map": [
-      120.0,
-      120.0
-    ],
-    "spawn_min_pe": 10.0,
-    "dt": 0.05,
-    "integration_substeps": 10,
-    "decision_seconds": 0.5,
-    "pursuer_max_speed": 3.0,
-    "evader_max_speed": 3.5,
-    "aw9": [
-      [
-        -0.4,
-        -0.5235987755982988
-      ],
-      [
-        -0.4,
-        0.0
-      ],
-      [
-        -0.4,
-        0.5235987755982988
-      ],
-      [
-        0.0,
-        -0.5235987755982988
-      ],
-      [
-        0.0,
-        0.0
-      ],
-      [
-        0.0,
-        0.5235987755982988
-      ],
-      [
-        0.4,
-        -0.5235987755982988
-      ],
-      [
-        0.4,
-        0.0
-      ],
-      [
-        0.4,
-        0.5235987755982988
-      ]
-    ],
-    "capture_distance": 8.0,
-    "related_distance": 18.0,
-    "goal_reward": 120.0,
-    "distance_reward": 5.0,
-    "timestep_penalty": -1.0,
-    "emergency_penalty": -5.0,
-    "collision_penalty": -80.0,
-    "boundary_penalty": -5.0,
-    "decay_factor": -0.05,
-    "evenly_distributed_reward": 5.0,
-    "unevenly_distributed_reward": -10.0,
-    "perception_range": 20.0,
-    "token_count": 19,
-    "horizon_decisions": 3001,
-    "episode_reset_min_active": 3,
-    "collision_semantics": "native_end_of_decision",
-    "enemy_distance_filter": false
-  },
-  "t0_ppo_reference": {
-    "gamma": 0.99,
-    "gae_lambda": 0.95,
-    "clip_param": 0.2,
-    "ppo_epochs": 3,
-    "minibatches": 2,
-    "actor_lr": 3e-05,
-    "critic_lr": 0.0001,
-    "entropy_coef": 0.01,
-    "value_coef": 1.0,
-    "max_grad_norm": 0.5,
-    "target_kl": 0.02,
-    "value_norm": true,
-    "value_norm_beta": 0.99999,
-    "value_norm_epsilon": 1e-05,
+  "schema": "terl.batch01.base.v1",
+  "status": "BATCH01_BASE_CANDIDATE_V3",
+  "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+  "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
+  "anchor_config": {
+    "experiment": "EXP-TERL-MAPPO-01",
+    "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
+    "seed": 9,
+    "actor_seed": 109,
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "masked_pool": false,
+    "budget": 1000000,
+    "stage1_ceiling": 2000000,
     "rollout_length": 256,
-    "adam_epsilon": 1e-05
-  },
-  "evaluation_proposal": {
-    "status": "CANDIDATE_BOUND_PENDING_INDEPENDENT_QA",
-    "protocol": {
-      "schema": "terl.batch01.arm_evaluation.v1",
-      "checkpoint_interval": 25000,
-      "sample_torch_offset": 100000,
-      "screen": {
-        "seed_base": 2056100900,
-        "max_episodes_per_mode": 20,
-        "regular_episodes_per_mode": 10
-      },
-      "screen_milestones": [
-        0,
-        25000,
-        50000,
-        100000,
-        250000,
-        500000,
-        750000,
-        1000000
-      ],
-      "selection": {
-        "seed_base": 2066100900,
-        "max_episodes_per_mode": 20,
-        "top_screen_candidates": 3
-      },
-      "final": {
-        "seed_base": 2076100900,
-        "max_episodes_per_mode": 50
-      },
-      "modes": [
-        "argmax",
-        "sample"
-      ],
-      "selection_order": [
-        "mean_normal_capture_rate",
-        "negative_mean_collision_rate",
-        "mean_strict_geometry_rate",
-        "mean_ring3_rate",
-        "negative_step"
-      ],
-      "late_stage_window_checkpoints": 5,
-      "entropy_comparison": "within declared probability measure only",
-      "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
-      "protocol_id": "batch01-new-paired-20261009",
-      "scene_offsets": {
-        "3P1E0O4C": 0,
-        "4P1E1O6C": 1000,
-        "7P2E2O8C": 2000
-      },
-      "reserved_historical_protocol": {
-        "schema": "terl.batch01.evaluation.v1",
-        "checkpoint_interval": 25000,
-        "sample_torch_offset": 100000,
-        "screen": {
-          "seed_base": 2026100800,
-          "max_episodes_per_mode": 20,
-          "regular_episodes_per_mode": 10
-        },
-        "screen_milestones": [
-          0,
-          25000,
-          50000,
-          100000,
-          250000,
-          500000,
-          750000,
-          1000000
-        ],
-        "selection": {
-          "seed_base": 2036100800,
-          "max_episodes_per_mode": 20,
-          "top_screen_candidates": 3
-        },
-        "final": {
-          "seed_base": 2046101800,
-          "max_episodes_per_mode": 50
-        },
-        "modes": [
-          "argmax",
-          "sample"
-        ],
-        "selection_order": [
-          "mean_normal_capture_rate",
-          "negative_mean_collision_rate",
-          "mean_strict_geometry_rate",
-          "mean_ring3_rate",
-          "negative_step"
-        ],
-        "late_stage_window_checkpoints": 5,
-        "entropy_comparison": "within declared probability measure only",
-        "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
-      },
-      "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
+    "checkpoint_interval": 25000,
+    "screen_seed_base": 2026100800,
+    "heldout_seed_base": 2036100800,
+    "evaluation_workers": 2,
+    "ppo": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_param": 0.2,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "actor_lr": 3e-05,
+      "critic_lr": 0.0001,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 1e-05
     }
   },
-  "gates": {
-    "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
-    "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
-    "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "V3R2_PER_ARM_GATES_REQUIRED_V3R1_QUARANTINED",
-    "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "CONCURRENCY_BENCHMARK": "V3R2_SHARED_GPU_TWO_WAY_TESTED_PER_ARM",
-    "GPU_LEASE": "FORMAL_NONE_SHARED_MAX2_OWN_LINES_PER_GPU",
-    "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "V3R2_SOURCE_FIRST_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
-    "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
-  },
-  "dynamic_repair_protocol": {
-    "states": [
-      "BASE-v1_FROZEN",
-      "ARM_DELTA_BRANCHES",
-      "COMMON_BUG_REGISTERED",
-      "CORE_FIX",
-      "QA_VERIFIED",
-      "BASE-v2_RELEASED",
-      "PER_RUN_IMPACT_REVIEW",
-      "RETRAIN_OR_CONTROLLED_MIGRATION"
-    ],
-    "no_hot_replace": true,
-    "old_base_and_artifacts_retained": true,
-    "semantic_change_axes_require_retrain_review": [
-      "reward",
-      "PPO",
-      "observation",
-      "terminal",
-      "physics",
-      "policy_likelihood"
-    ],
-    "paired_comparators_retraining_review_required": true
-  },
-  "immutable_base_archive_pattern": "artifacts/2026-10-09_terl_mappo_batch01/bases/BASE-v{version}/",
-  "qa_cuda_dependency_policy": "V2-only conditional correctness lease after fresh resource sample; QA must recheck at activation. CPU/static independent. V1 grant closed and forbidden; no formal training/benchmark authorization.",
-  "core_delivery_head": "d6e201052f0eac319342c35cd4efd9171df3fd54",
-  "core_candidate_canonical_lock_sha256": "384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab",
-  "candidate_common_source_hashes": {
+  "common_sources": {
     "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
     "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
     "configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json": "65def8826d2eb5aa9a66187b210324cece80cddf5e403d05e288ee33509392ea",
@@ -361,42 +140,150 @@
     "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
     "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
   },
-  "QA_SAME_SHA": "PENDING",
-  "qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master04/qa_smoke_lease.json",
-  "candidate_lock_digest_algorithm": "Core json.dumps(sort_keys=True,separators=(comma,colon),allow_nan=False), default ensure_ascii=True; hash entire candidate lock object",
-  "core_v1_status": "CORE_V1_QA_BLOCKED",
-  "base_freeze_status": "BASE_FREEZE_BLOCKED",
-  "qa_verdict": "PENDING",
-  "core_candidate_status": "CORE_V3_SELFTEST_PASS",
-  "next_core_candidate_sha": null,
-  "next_core_candidate_lock_sha256": null,
-  "qa_block_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
-  "qa_smoke_lease_closeout_ref": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json",
-  "historical_qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
-  "active_qa_smoke_leases": [],
-  "core_verification_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/core_v3r2_verification.json",
-  "candidate_lock_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/received_core_v3r2_lock.json",
-  "historical_v1_review": {
-    "verdict": "BASE_QA_BLOCK",
-    "tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
-    "report_head": "974cdd171898a261b7c862622463537cdc31a487",
-    "report_sha256": "72f29ce45f50379f1179d32188aca2c02a230ad90fefc8b48fe118089e7f36b3",
-    "receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
-    "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
-    "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
+  "generated_runtime_sources": {
+    "torch.distributed.nn.non_scriptable_remote_template": "8205b16956fb264841ecd8644784a0d157f87df79b17c16825dc1163433ce5d8"
   },
-  "qa_block_receipt_historical_only": true,
-  "batch_status": "WAITING_QA_V3",
-  "launch_gates": {
-    "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
-    "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
-    "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "V3R2_PER_ARM_GATES_REQUIRED_V3R1_QUARANTINED",
-    "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "CONCURRENCY_BENCHMARK": "V3R2_SHARED_GPU_TWO_WAY_TESTED_PER_ARM",
-    "GPU_LEASE": "FORMAL_NONE_SHARED_MAX2_OWN_LINES_PER_GPU",
-    "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "V3R2_SOURCE_FIRST_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
-    "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
-  }
+  "evaluation_protocol": {
+    "schema": "terl.batch01.evaluation.v1",
+    "checkpoint_interval": 25000,
+    "sample_torch_offset": 100000,
+    "screen": {
+      "seed_base": 2026100800,
+      "max_episodes_per_mode": 20,
+      "regular_episodes_per_mode": 10
+    },
+    "screen_milestones": [
+      0,
+      25000,
+      50000,
+      100000,
+      250000,
+      500000,
+      750000,
+      1000000
+    ],
+    "selection": {
+      "seed_base": 2036100800,
+      "max_episodes_per_mode": 20,
+      "top_screen_candidates": 3
+    },
+    "final": {
+      "seed_base": 2046101800,
+      "max_episodes_per_mode": 50
+    },
+    "modes": [
+      "argmax",
+      "sample"
+    ],
+    "selection_order": [
+      "mean_normal_capture_rate",
+      "negative_mean_collision_rate",
+      "mean_strict_geometry_rate",
+      "mean_ring3_rate",
+      "negative_step"
+    ],
+    "late_stage_window_checkpoints": 5,
+    "entropy_comparison": "within declared probability measure only",
+    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
+  },
+  "arm_evaluation_protocol": {
+    "schema": "terl.batch01.arm_evaluation.v1",
+    "checkpoint_interval": 25000,
+    "sample_torch_offset": 100000,
+    "screen": {
+      "seed_base": 2056100900,
+      "max_episodes_per_mode": 20,
+      "regular_episodes_per_mode": 10
+    },
+    "screen_milestones": [
+      0,
+      25000,
+      50000,
+      100000,
+      250000,
+      500000,
+      750000,
+      1000000
+    ],
+    "selection": {
+      "seed_base": 2066100900,
+      "max_episodes_per_mode": 20,
+      "top_screen_candidates": 3
+    },
+    "final": {
+      "seed_base": 2076100900,
+      "max_episodes_per_mode": 50
+    },
+    "modes": [
+      "argmax",
+      "sample"
+    ],
+    "selection_order": [
+      "mean_normal_capture_rate",
+      "negative_mean_collision_rate",
+      "mean_strict_geometry_rate",
+      "mean_ring3_rate",
+      "negative_step"
+    ],
+    "late_stage_window_checkpoints": 5,
+    "entropy_comparison": "within declared probability measure only",
+    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
+    "protocol_id": "batch01-new-paired-20261009",
+    "scene_offsets": {
+      "3P1E0O4C": 0,
+      "4P1E1O6C": 1000,
+      "7P2E2O8C": 2000
+    },
+    "reserved_historical_protocol": {
+      "schema": "terl.batch01.evaluation.v1",
+      "checkpoint_interval": 25000,
+      "sample_torch_offset": 100000,
+      "screen": {
+        "seed_base": 2026100800,
+        "max_episodes_per_mode": 20,
+        "regular_episodes_per_mode": 10
+      },
+      "screen_milestones": [
+        0,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        750000,
+        1000000
+      ],
+      "selection": {
+        "seed_base": 2036100800,
+        "max_episodes_per_mode": 20,
+        "top_screen_candidates": 3
+      },
+      "final": {
+        "seed_base": 2046101800,
+        "max_episodes_per_mode": 50
+      },
+      "modes": [
+        "argmax",
+        "sample"
+      ],
+      "selection_order": [
+        "mean_normal_capture_rate",
+        "negative_mean_collision_rate",
+        "mean_strict_geometry_rate",
+        "mean_ring3_rate",
+        "negative_step"
+      ],
+      "late_stage_window_checkpoints": 5,
+      "entropy_comparison": "within declared probability measure only",
+      "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
+    },
+    "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
+  },
+  "execution_policy": {
+    "entrypoint": "python -S tools/batch01_python.py --lock-sha PIN --python-args ...",
+    "local_loader": "hash exact source bytes, compile those bytes, never read pyc",
+    "child_interpreter": "canonical-pinned source launcher"
+  },
+  "scientific_delta_from_t0": [],
+  "independent_qa": "PENDING_MASTER_QA"
 }

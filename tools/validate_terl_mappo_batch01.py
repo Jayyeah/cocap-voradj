@@ -54,7 +54,11 @@ def validate_v3(require_ready=False):
     for run in registry.get('pilot_runs',[]):
         check(run['execution_mode']=='PROVISIONAL' and run['max_additional_joint_decisions']<=25000,'unbounded or mislabeled pilot')
         check(not run.get('formal_evidence') and not run.get('retroactive_promotion'),'pilot treated as formal evidence')
-        check(run['source_candidate_sha']==receipt['candidate_sha'] and run['source_lock_sha256']==digest,'pilot source pin drift')
+        if run.get('scientific_quarantine'):
+            old=state['historical_v3r1_snapshot']
+            check(run['status']=='QUARANTINED_PROVISIONAL' and run['source_candidate_sha']==old['candidate_sha'] and run['source_lock_sha256']==old['canonical_lock_sha256'],'historical quarantined pilot pin/status mismatch')
+        else:
+            check(run['source_candidate_sha']==receipt['candidate_sha'] and run['source_lock_sha256']==digest,'pilot source pin drift')
         check(run['authorized_end_step']-run['start_step']<=25000,'pilot endpoint exceeds cap')
         if run.get('status')=='PROVISIONAL_RUNNING':
             check(run.get('pid') and run.get('gpu_uuid') and run.get('step',run['start_step'])>run['start_step'] and run.get('update',0)>run.get('start_update',0),'RUNNING without actual PPO update evidence')

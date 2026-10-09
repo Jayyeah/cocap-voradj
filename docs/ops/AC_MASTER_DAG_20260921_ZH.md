@@ -1,3 +1,5 @@
+> 2026-10-09 V3r2：candidate 9cc2d47c532c76239a61a0f6a19c8603358c92bf，canonical 384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab，CPU87/CUDA3/A3复用12自测通过；QA_PENDING、BASE未冻结。修复自身Guard缓存启动漏洞，强制源码启动入口；旧六pilot隔离。P1配对/R1/N1优先按每卡最多两线共享资源门禁启动新25k PROVISIONAL；T1/C0按独立CUDA容量门禁随后推进。
+
 > 2026-10-09 更新：V3r1 自身 SourceGuard 可命中同 size/mtime 旧V2缓存，启动来源门禁不完整。全部六条旧pilot已隔离，不作正式证据；V3r2源码启动修复候选5b6224f正在回归。QA_PENDING、BASE未冻结。监督器registry锁等待已修复，重启前保持停止。两GPU目前均有其他用户任务，之后每卡最多两条自己的线。
 
 ## Commander 六路pilot交付状态（覆盖下方历史启动快照）
