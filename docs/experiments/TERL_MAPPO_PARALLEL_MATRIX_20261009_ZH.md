@@ -1,3 +1,9 @@
+## Commander 六路pilot交付状态（覆盖下方历史启动快照）
+
+P1-control/treatment均已完成775k→800k，R1/N1均已完成scratch25k，并按硬上限停止；T1 Stage2 PID1621721与C0 PID1623197已真实PPO update后登记PROVISIONAL_RUNNING，均限定25k。所有训练使用GPU1，GPU0外部任务受保护。T1三规模mask/current/partial生命周期与Stage2/Stage3完整恢复、C0九点原生物理parity/连续概率合同/完整恢复、CPU/CUDA256/8/4与新seed evaluator均SELFTEST_PASS。正式RUNNING=0，QA_PENDING，BASE未冻结；Stage3正式另需Stage2 selection与Stage1 retention条件。P1已生成两条pilot screen保持曲线与best-observed/last/collision，不能作为正式比较结论。
+
+持久监督：`python tools/batch01_status.py --json`；`tools/batch01_supervise.py`在独立tmux运行，不自动重启或扩预算。checkpoint hash、PID身份、磁盘reserve/容量、GPU外部占用与lease均纳入监测；每run完整registry可在CLI断连后恢复。
+
 # 2026-10-09 Commander V3 当前状态（覆盖以下历史快照）
 
 **CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED**。科学candidate `0b2686a06e900a090a34fd3be4e0143ba3f794f0`，canonical lock `9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19`；交付HEAD `5ecb8774612f2002576b66f9a8a6cba46dad09a6`。最终CPU83 passed+CUDA3 passed；A3原脚本12探针由同一Commander执行，不能冒充独立签字。V2独立报告c20b632的BASE_QA_BLOCK完整保留。BASE共同正式parent仍为空。

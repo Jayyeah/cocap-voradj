@@ -1,3 +1,9 @@
+## Commander 六路pilot交付状态（覆盖下方历史启动快照）
+
+P1-control/treatment均已完成775k→800k，R1/N1均已完成scratch25k，并按硬上限停止；T1 Stage2 PID1621721与C0 PID1623197已真实PPO update后登记PROVISIONAL_RUNNING，均限定25k。所有训练使用GPU1，GPU0外部任务受保护。T1三规模mask/current/partial生命周期与Stage2/Stage3完整恢复、C0九点原生物理parity/连续概率合同/完整恢复、CPU/CUDA256/8/4与新seed evaluator均SELFTEST_PASS。正式RUNNING=0，QA_PENDING，BASE未冻结；Stage3正式另需Stage2 selection与Stage1 retention条件。P1已生成两条pilot screen保持曲线与best-observed/last/collision，不能作为正式比较结论。
+
+持久监督：`python tools/batch01_status.py --json`；`tools/batch01_supervise.py`在独立tmux运行，不自动重启或扩预算。checkpoint hash、PID身份、磁盘reserve/容量、GPU外部占用与lease均纳入监测；每run完整registry可在CLI断连后恢复。
+
 ## Commander 首批pilot实际启动
 
 GPU1四路并发门禁通过：P1-control PID1598749、P1-treatment PID1598755、R1 PID1598763、N1 PID1598768，均真实PPO update后登记PROVISIONAL_RUNNING。各自最多追加25k，分别停于800k/800k/25k/25k，禁止自动扩展。GPU0被hl训练PID1592050占用，未操作该任务；曾误起的短预检已结束且完整记录资源门禁事件，所有pilot只使用GPU1。实时进程/heartbeat/checkpoint/evaluation通过`python tools/batch01_status.py --json`读取，CLI断连不影响tmux及run registry恢复。BASE独立QA仍待签字，正式RUNNING=0。

@@ -56,3 +56,11 @@ Core V2 T0历史2026100800/2036100800/2046101800保持；未来ARM提案20561009
 
 - V2→V3：实际code/source编译比对、startup execution witness、fail-closed缓存负测、新ARM protocol绑定；不修改T0环境/actor/critic/PPO/reward/动力学。candidate0b2686a，lock9ca6c24e…cdf19。
 - CORE_V3_SELFTEST_PASS不等于A3独立验收。BASE未冻结；用户只允许合格且最多25k的PROVISIONAL pilots，不能追认。P1配对control和treatment保留完整775k状态，只有target_kl .02/.01差异。
+
+## Commander V3 六路工程与pilot交付
+
+- P1-control .02/treatment .01：同selected775k完整严格恢复，仅live target KL不同；各25k已停止于800k。新screen配对曲线保存在commander_v3/p1_pilot_screen_curve.csv；best-observed和last只用于pilot报告，不生成final选择。
+- R1：仅native distance dense替换CR-MS类annular mean-shift shaping；其余raw分量、MarineEnv、actor/critic/PPO不变；scratch25k已停止。N1：仅CoCap-style256/8/4 actor，native self4/friend5x7/enemy8x7/obstacle5x5，无新增信息；critic固定T0原架构；scratch25k已停止。
+- T1：selected775k actor严格warm，新fixed7P2E2O8C critic/Adam/ValueNorm及Stage2场景；包含全部currents、partial agent、多目标native reward和terminal；Stage2/3同规模完整恢复自测通过。跨规模不是exact resume。原升级阈值率.8/.2用于selection20/模式的Stage2与Stage1 retention，final保持盲态；Stage3仅接受绑定hash的正式promotion bundle，禁止pilot升级。
+- C0：双维tanh Gaussian含scale/tanh joint Jacobian、pre-tanh latent；连续物理AW直接传入未改原生积分、不AW9量化；九点parity/zero-update概率/full-resume通过，独立mean/sample evaluator。
+- 全部CPU/CUDA/source/delta/consumer/checkpoint/new-seed与GPU1并发门禁SELFTEST_PASS；T1/C0各25k pilot真实update后启动。无独立V3签字，所有pilot不自动扩预算、不消费final、不追认为正式。BASE SHA仍null。单Agent执行，无嵌套Agent。

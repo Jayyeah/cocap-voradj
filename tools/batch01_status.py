@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Inspect persistent registry, actual processes and bounded pilot progress."""
 import argparse
+import fcntl
 from datetime import datetime,timezone
 import json
 import os
@@ -17,6 +18,12 @@ def alive(pid,run_id):
   return p.stat().st_uid==os.getuid() and 'terl_mappo.batch01.arms.runner' in cmd and run_id in cmd
  except FileNotFoundError:return False
 
+def evaluator_alive(pid,output):
+ try:
+  p=Path(f'/proc/{pid}');cmd=(p/'cmdline').read_bytes().replace(b'\0',b' ').decode()
+  return p.stat().st_uid==os.getuid() and 'terl_mappo.batch01.arms.evaluator' in cmd and str(output) in cmd
+ except FileNotFoundError:return False
+
 def inspect_runs():
  registry=read(DIRECTORY/'run_registry.json');rows=[]
  for registered in registry.get('pilot_runs',[]):
@@ -25,9 +32,11 @@ def inspect_runs():
    live=read(progress)
    if live['run_id']!=row['run_id']:raise ValueError('registry/progress ID mismatch')
    if live['base']['candidate_sha']!=row['source_candidate_sha'] or live['delta_hash']!=row['delta_hash']:raise ValueError('registry/live source pin mismatch')
+   prior_evaluations=row.get('evaluation',[])
    row.update({k:v for k,v in live.items() if k not in ('base','branch','head','delta_hash','run_id')})
+   row['evaluation']=list({e['output']:dict(e) for e in prior_evaluations+live.get('evaluation',[])}.values())
    row['actual_process_head']=live['head'];row['alive']=alive(row.get('pid'),row['run_id'])
-   if row['status'] in {'PROVISIONAL_RUNNING','STARTING'} and not row['alive']:row['status']='STOPPED_UNEXPECTEDLY'
+   if row['status'] in {'PROVISIONAL_RUNNING','STARTING'} and not row['alive']:row['status']='STOPPED_BY_SUPERVISOR' if row.get('supervisor_event') else 'STOPPED_UNEXPECTEDLY'
    if row['status']=='PROVISIONAL_RUNNING' and (row['step']<=row['start_step'] or row['update']<=row['start_update']):raise ValueError('unverified RUNNING')
    for evaluation in row.get('evaluation',[]):
     p=Path(evaluation['output'])
@@ -35,12 +44,20 @@ def inspect_runs():
      e=read(p);evaluation.update(status=e['status'],episodes=len(e['episodes']),checkpoint_sha256=e['checkpoint_sha256'])
     elif p.with_suffix('.partial.json').exists():evaluation.update(status='IN_PROGRESS',episodes=read(p.with_suffix('.partial.json'))['completed'])
     else:evaluation['status']='PENDING_SCREEN'
+    if not p.exists() and not evaluator_alive(evaluation.get('pid'),p):
+     evaluation['status']='EVALUATION_FAILED_PARTIAL' if p.with_suffix('.partial.json').exists() else 'EVALUATION_STOPPED'
+     log=out/'logs'/f"eval_screen_{evaluation['step']:09d}.log"
+     if log.exists():evaluation['last_exception']='\n'.join(log.read_text(errors='replace').splitlines()[-15:])
+   if row['status']=='PROVISIONAL_COMPLETE_PENDING_SCREEN' and row.get('evaluation') and all(e['status']=='PROVISIONAL_SCREEN' for e in row['evaluation']):row['status']='PROVISIONAL_COMPLETE'
   else:row['alive']=False
   rows.append(row)
  return registry,rows
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('--write',action='store_true');p.add_argument('--json',action='store_true');args=p.parse_args()
+ if args.write:
+  lockdir=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime');lockdir.mkdir(parents=True,exist_ok=True)
+  descriptor=(lockdir/'registry.lock').open('w');fcntl.flock(descriptor,fcntl.LOCK_EX)
  registry,rows=inspect_runs();now=datetime.now(timezone.utc).isoformat()
  if args.write:
   registry['pilot_runs']=rows;registry['updated_at']=now;write(DIRECTORY/'run_registry.json',registry)

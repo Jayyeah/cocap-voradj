@@ -1,0 +1,11 @@
+# V3 独立QA剩余门禁
+
+科学candidate：0b2686a06e900a090a34fd3be4e0143ba3f794f0；canonical lock：9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19；交付HEAD：5ecb8774612f2002576b66f9a8a6cba46dad09a6。
+
+Core工作区：/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009；报告docs/TERL_MAPPO_BATCH01_BASE_V3_20261009_ZH.md，证据artifacts/2026-10-09_batch01_v3_selftest。完整V2 diff、canonical lock、原A3脚本与定点适配patch均已交付。CPU83通过、CUDA3通过；原A3脚本12探针由同一个Commander执行，只属于CORE_V3_SELFTEST_PASS。
+
+必须由独立审核人确认同科学SHA/lock上的stale timestamp pyc、合法动态import/bytecode、预加载code object、runtime drift、optimizer前拒绝和失败latch；已有B1/B2/B3/B4/Q1、T0 parity、775k strict load、256/8/4和full-state恢复证据。核验新ARMseed合同与历史final不重叠、full inventory每个optimizer边界仍检查、执行code与锁定compile一致。无须重做已验收且未影响的历史1200局evaluation。
+
+A3_INDEPENDENT_QA_PASS目前未签字；QA_PENDING和BASE_FREEZE_BLOCKED保留，正式parent=null。V2 c20b632的独立BASE_QA_BLOCK原件与全部证据不覆盖。不得把自己跑独立脚本称为独立审核通过，也不得自行删门禁。
+
+用户已授权对应门禁通过后的每run最多25k PROVISIONAL pilot；六分支与全部结果独立登记在run_registry.pilot_runs，与正式runs隔离。若独立QA发现语义问题，隔离pilot并重新判断可复用性，不追认为正式。正式预算P1追加225k、R1/N1/C0 scratch1M、T1分阶段review须最终冻结后新正式run登记及fresh资源门禁。

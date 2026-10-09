@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T13:20:51.320047+00:00",
+  "updated_at": "2026-10-09T14:05:08.721010+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -12,12 +12,12 @@
     "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
     "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
     "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "P1_R1_N1_SELFTEST_PASS_T1_C0_IMPLEMENTING",
+    "ARM_DELTA_REVIEW": "ALL_ARMS_V3_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_PASS",
-    "GPU_LEASE": "NOT_REQUESTED",
+    "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_AND_SECONDARY2_PASS",
+    "GPU_LEASE": "FORMAL_NOT_GRANTED_PROVISIONAL_GPU1_ONLY",
     "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "V3_CORE_AND_ARMS_SELFTEST_PASS_PENDING_QA",
     "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
   },
   "training_launched": false,
@@ -49,9 +49,11 @@
     "common_source_count": 100,
     "verification": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/core_v3_verification.json",
     "core_test_report": {
-      "passed": 77,
-      "cuda_skipped": 3,
+      "CPU_passed": 83,
+      "CPU_CUDA_skipped": 3,
+      "CUDA_passed": 3,
       "failed": 0,
+      "A3_script_selftest_probes_passed": 12,
       "independent_qa": false
     },
     "v1_status": "CORE_V1_QA_BLOCKED",
@@ -59,15 +61,15 @@
     "v1_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
     "v2_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
     "v2_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
-    "fix_task_status": "DELIVERED_REPORTED_FIXED_PENDING_INDEPENDENT_A3",
-    "requirements": "artifacts/2026-10-09_terl_mappo_batch01/master03/core_v2_reqa_requirements.json",
-    "repair_report": "docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md",
+    "fix_task_status": "V3_DELIVERED_SELFTEST_PASS_INDEPENDENT_QA_PENDING",
+    "requirements": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
+    "repair_report": "https://github.com/Jayyeah/cocap-voradj/blob/5ecb8774612f2002576b66f9a8a6cba46dad09a6/docs/TERL_MAPPO_BATCH01_BASE_V3_20261009_ZH.md",
     "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
   },
   "qa": {
     "status": "QA_PENDING",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
-    "observed_head": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+    "observed_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
     "tested_candidate_sha": null,
     "report_head": null,
     "observed_branch": "audit/terl-mappo-batch01-v2-recheck-20261009",
@@ -75,13 +77,13 @@
     "requested_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
     "QA_SAME_SHA": "PENDING",
     "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
-    "cuda_smoke_lease_id": "B01-QA-CUDA-V2-863a0cf-20261009T173831",
-    "cuda_smoke_status": "GRANTED_CONDITIONAL_PREFLIGHT_NOT_EXECUTED_BY_MASTER",
-    "handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+    "cuda_smoke_lease_id": null,
+    "cuda_smoke_status": "V3_SELFTEST_CUDA_DONE_NO_INDEPENDENT_QA_LEASE_ACTIVE",
+    "handoff": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
     "verdict": "PENDING",
     "report_sha256": null,
     "receipt": null,
-    "v2_retest_status": "WAITING_QA_V2",
+    "v2_retest_status": "BASE_QA_BLOCK",
     "v2_tested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
     "v2_report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
     "v2_handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
@@ -96,7 +98,7 @@
       "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
       "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
     },
-    "observed_worktree_status": "?? artifacts/2026-10-09_batch01_v2_independent_qa/",
+    "observed_worktree_status": "",
     "uncommitted_activity_is_not_acceptance": true,
     "a3_independent_signature": false,
     "v2_verdict": "BASE_QA_BLOCK"
@@ -108,7 +110,7 @@
     "central_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
     "home_allocated_gib_at_audit_closing": 261.6022758483887,
     "shared_available_gib_at_audit_closing": 136.7727279663086,
-    "current_shared_available_gib": 136.73463439941406,
+    "current_shared_available_gib": 130.6648941040039,
     "personal_quota": "UNKNOWN",
     "shared_space_is_exclusive_quota": false,
     "five_arm_budget_gib": 74,
@@ -119,9 +121,9 @@
     "archive_authorized": false,
     "actual_reclaimed_bytes": 0,
     "formal_launch_requires_dynamic_output_mount_quota_retention_and_capacity_recheck": true,
-    "latest_recheck_ref": "artifacts/2026-10-09_terl_mappo_batch01/master04/storage_recheck.json",
-    "latest_resource_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/master04/resource_snapshot.json",
-    "current_resource_observed_at": "2026-10-09T17:38:31.226733+08:00"
+    "latest_recheck_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
+    "latest_resource_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
+    "current_resource_observed_at": "2026-10-09T14:03:33.344923+00:00"
   },
   "concurrency_proposal": {
     "target_per_gpu": [
@@ -401,7 +403,7 @@
       "handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md"
     }
   ],
-  "next_wake_up": "User forwards A3 pushed independent report on exact V2 863a0cf55aca0ace8a0aaab36d9166aa4c97268f + lock 885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4, B1-B4/Q1/T0/full-resume evidence, CUDA lease usage/release or explicit WAIT, and seed reconciliation. Later Master review only; no automatic BASE freeze or launch. CUDA preflight failure/expiry/cap breach also wakes Master for recheck, never reuse V1 lease.",
+  "next_wake_up": "Receive independent review/signature on V3 exact candidate0b2686a+canonical9ca6c24; retain BASE_FREEZE_BLOCKED until accepted. Supervise bounded25k pilots and pending screen; no budget extension, final consumption or retrospective formal promotion. Stage3 formal additionally requires qualified Stage2 selection and Stage1 retention.",
   "QA_SAME_SHA": "PENDING",
   "qa_smoke_leases": [],
   "qa_smoke_gates": {
@@ -676,6 +678,23 @@
       "expires_at": "2026-10-09T21:19:24.693809+00:00",
       "formal": false,
       "keep_reserve_gib": 30,
+      "max_output_gib_per_run": 8,
+      "training_released": true,
+      "training_release_reason": "all four pilots reached hardcap; CPU screens remain separate"
+    },
+    {
+      "id": "B01-COMMANDER-V3-GPU1-SECONDARY2-PROVISIONAL",
+      "gpu": 1,
+      "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+      "runs": [
+        "B01-T1-PROV-V3-20261009",
+        "B01-C0-PROV-V3-20261009"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 25000,
+      "expires_at": "2026-10-09T21:56:38.190193+00:00",
+      "formal": false,
+      "keep_reserve_gib": 30,
       "max_output_gib_per_run": 8
     }
   ],
@@ -689,9 +708,22 @@
     "all_line_specific_science_resource_resume_smokes_required": true
   },
   "pilot_arm_states": {
-    "p1-control": "PROVISIONAL_RUNNING",
-    "p1-treatment": "PROVISIONAL_RUNNING",
-    "r1": "PROVISIONAL_RUNNING",
-    "n1": "PROVISIONAL_RUNNING"
+    "p1-control": "PROVISIONAL_COMPLETE",
+    "p1-treatment": "PROVISIONAL_COMPLETE",
+    "r1": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
+    "n1": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
+    "t1": "PROVISIONAL_RUNNING",
+    "c0": "PROVISIONAL_RUNNING"
+  },
+  "supervision": {
+    "status": "MONITORING",
+    "tmux": "batch01_commander_v3_supervisor",
+    "pid": 1626849,
+    "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
+    "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
+    "tool": "tools/batch01_supervise.py",
+    "interval_seconds": 30,
+    "automatic_restart": false,
+    "automatic_budget_extension": false
   }
 }

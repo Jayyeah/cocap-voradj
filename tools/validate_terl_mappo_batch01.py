@@ -59,7 +59,7 @@ def validate_v3(require_ready=False):
         if run.get('status')=='PROVISIONAL_RUNNING':
             check(run.get('pid') and run.get('gpu_uuid') and run.get('step',run['start_step'])>run['start_step'] and run.get('update',0)>run.get('start_update',0),'RUNNING without actual PPO update evidence')
     if require_ready:errors.append('QA_PENDING: independent V3 signature and final BASE freeze are required for formal readiness')
-    return {'schema':'terl-mappo-batch-metadata-validation-v3','passed':not errors,'errors':errors,'batch_status':state['status'],'BATCH01_BASE_SHA':None,'core_candidate_sha':receipt['candidate_sha'],'QA_SAME_SHA':'PENDING','independent_qa':False,'execution_performed':False,'readiness_requested':require_ready}
+    return {'schema':'terl-mappo-batch-metadata-validation-v3','passed':not errors,'errors':errors,'batch_status':state['status'],'BATCH01_BASE_SHA':None,'core_candidate_sha':receipt['candidate_sha'],'QA_SAME_SHA':'PENDING','independent_qa':False,'execution_performed':bool(state.get('provisional_training_launched') or state.get('engineering_benchmark_executed')),'formal_execution_performed':False,'readiness_requested':require_ready}
 
 
 def validate(require_ready=False):

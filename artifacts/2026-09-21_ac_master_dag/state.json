@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-09T13:20:51.320047+00:00",
+  "updated_at": "2026-10-09T14:05:08.721010+00:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
@@ -23637,18 +23637,18 @@
       "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
       "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
       "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-      "ARM_DELTA_REVIEW": "P1_R1_N1_SELFTEST_PASS_T1_C0_IMPLEMENTING",
+      "ARM_DELTA_REVIEW": "ALL_ARMS_V3_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
       "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-      "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_PASS",
-      "GPU_LEASE": "NOT_REQUESTED",
+      "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_AND_SECONDARY2_PASS",
+      "GPU_LEASE": "FORMAL_NOT_GRANTED_PROVISIONAL_GPU1_ONLY",
       "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
-      "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
+      "RUNTIME_SEMANTIC_ASSERTIONS": "V3_CORE_AND_ARMS_SELFTEST_PASS_PENDING_QA",
       "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
     },
     "new_training_launched": false,
     "new_gpu_leases": [],
     "new_subagents_created": false,
-    "next_wake_up": "User forwards A3 pushed independent report on exact V2 863a0cf55aca0ace8a0aaab36d9166aa4c97268f + lock 885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4, B1-B4/Q1/T0/full-resume evidence, CUDA lease usage/release or explicit WAIT, and seed reconciliation. Later Master review only; no automatic BASE freeze or launch. CUDA preflight failure/expiry/cap breach also wakes Master for recheck, never reuse V1 lease.",
+    "next_wake_up": "Receive independent review/signature on V3 exact candidate0b2686a+canonical9ca6c24; retain BASE_FREEZE_BLOCKED until accepted. Supervise bounded25k pilots and pending screen; no budget extension, final consumption or retrospective formal promotion. Stage3 formal additionally requires qualified Stage2 selection and Stage1 retention.",
     "QA_SAME_SHA": "PENDING",
     "core_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
     "core_delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
@@ -23703,6 +23703,23 @@
         "expires_at": "2026-10-09T21:19:24.693809+00:00",
         "formal": false,
         "keep_reserve_gib": 30,
+        "max_output_gib_per_run": 8,
+        "training_released": true,
+        "training_release_reason": "all four pilots reached hardcap; CPU screens remain separate"
+      },
+      {
+        "id": "B01-COMMANDER-V3-GPU1-SECONDARY2-PROVISIONAL",
+        "gpu": 1,
+        "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+        "runs": [
+          "B01-T1-PROV-V3-20261009",
+          "B01-C0-PROV-V3-20261009"
+        ],
+        "maximum_compute_processes": 2,
+        "maximum_additional_decisions_per_run": 25000,
+        "expires_at": "2026-10-09T21:56:38.190193+00:00",
+        "formal": false,
+        "keep_reserve_gib": 30,
         "max_output_gib_per_run": 8
       }
     ],
@@ -23710,52 +23727,174 @@
     "pilot_runs": [
       {
         "run_id": "B01-P1-CONTROL-PROV-V3-20261009",
-        "status": "PROVISIONAL_RUNNING",
+        "status": "PROVISIONAL_COMPLETE",
         "pid": 1598749,
-        "step": 778328,
+        "step": 800000,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-p1-control-v3-20261009/runs/B01-P1-CONTROL-PROV-V3-20261009/checkpoints/step_000775256.pt",
-          "sha256": "321104d4bcbc79947082b6d2b0cc0d1668dcf92fda356a992ba7a43d0a7160c6",
-          "step": 775256,
-          "bytes": 83239460
+          "path": "/home/yjq/rl/CoCap1/batch01-p1-control-v3-20261009/runs/B01-P1-CONTROL-PROV-V3-20261009/checkpoints/step_000800000.pt",
+          "sha256": "0c38317f35845b228899c17c3c8e102b314faa5eb4f61e1c357e32c5bd060bf6",
+          "step": 800000,
+          "bytes": 84247844
         }
       },
       {
         "run_id": "B01-P1-TREATMENT-PROV-V3-20261009",
-        "status": "PROVISIONAL_RUNNING",
+        "status": "PROVISIONAL_COMPLETE",
         "pid": 1598755,
-        "step": 778328,
+        "step": 800000,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-p1-treatment-v3-20261009/runs/B01-P1-TREATMENT-PROV-V3-20261009/checkpoints/step_000775256.pt",
-          "sha256": "fa180dac9cfcda592c853a1c50e1d369f450d4f2ea6d32d95b5f386c025ddf63",
-          "step": 775256,
-          "bytes": 83239460
+          "path": "/home/yjq/rl/CoCap1/batch01-p1-treatment-v3-20261009/runs/B01-P1-TREATMENT-PROV-V3-20261009/checkpoints/step_000800000.pt",
+          "sha256": "d9c73819d1bcaa8ee0e66cb35d4cb280fb81b77770a04f5a6fbfeeb36b838376",
+          "step": 800000,
+          "bytes": 82872996
         }
       },
       {
         "run_id": "B01-R1-PROV-V3-20261009",
-        "status": "PROVISIONAL_RUNNING",
+        "status": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
         "pid": 1598763,
-        "step": 1280,
+        "step": 25000,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-r1-v3-20261009/runs/B01-R1-PROV-V3-20261009/checkpoints/step_000000256.pt",
-          "sha256": "20b176f28542cc96643d0b5eeeb1ecee5ace2935b9f8895290fabeaefe5b6c1e",
-          "step": 256,
-          "bytes": 82287396
+          "path": "/home/yjq/rl/CoCap1/batch01-r1-v3-20261009/runs/B01-R1-PROV-V3-20261009/checkpoints/step_000025000.pt",
+          "sha256": "12e7f560a45480c4fa4104c1e0ea762554a2fd0a581e163224b0174f2dd14c83",
+          "step": 25000,
+          "bytes": 82033764
         }
       },
       {
         "run_id": "B01-N1-PROV-V3-20261009",
-        "status": "PROVISIONAL_RUNNING",
+        "status": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
         "pid": 1598768,
-        "step": 1792,
+        "step": 25000,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-n1-v3-20261009/runs/B01-N1-PROV-V3-20261009/checkpoints/step_000000256.pt",
-          "sha256": "f98c933cf21d427162f16197cc858e95b89190c8bb561cdda8325287ab134d59",
+          "path": "/home/yjq/rl/CoCap1/batch01-n1-v3-20261009/runs/B01-N1-PROV-V3-20261009/checkpoints/step_000025000.pt",
+          "sha256": "2ee80c51793c2bd0a24ac8604b0825503b3ce086022e105ff4991517dcf201b1",
+          "step": 25000,
+          "bytes": 88461720
+        }
+      },
+      {
+        "run_id": "B01-T1-PROV-V3-20261009",
+        "status": "PROVISIONAL_RUNNING",
+        "pid": 1621721,
+        "step": 11520,
+        "checkpoint": {
+          "path": "/home/yjq/rl/CoCap1/batch01-t1-v3-20261009/runs/B01-T1-PROV-V3-20261009/checkpoints/step_000000256.pt",
+          "sha256": "7549da2e0c189e00d525c6a79b93d49aa2ece8a467d07b2f47ebec164c84c0ce",
           "step": 256,
-          "bytes": 86273304
+          "bytes": 82396964
+        }
+      },
+      {
+        "run_id": "B01-C0-PROV-V3-20261009",
+        "status": "PROVISIONAL_RUNNING",
+        "pid": 1623197,
+        "step": 11264,
+        "checkpoint": {
+          "path": "/home/yjq/rl/CoCap1/batch01-c0-v3-20261009/runs/B01-C0-PROV-V3-20261009/checkpoints/step_000000256.pt",
+          "sha256": "0dad12c218d0b8fe4dd55cea4ddc205a02162f64c913a284f159ce92e5302271",
+          "step": 256,
+          "bytes": 82295996
         }
       }
-    ]
+    ],
+    "core": {
+      "status": "CORE_V3_SELFTEST_PASS",
+      "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009",
+      "observed_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+      "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+      "branch": "experiment/terl-mappo-batch01-v3-20261009",
+      "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+      "common_source_count": 100,
+      "verification": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/core_v3_verification.json",
+      "core_test_report": {
+        "CPU_passed": 83,
+        "CPU_CUDA_skipped": 3,
+        "CUDA_passed": 3,
+        "failed": 0,
+        "A3_script_selftest_probes_passed": 12,
+        "independent_qa": false
+      },
+      "v1_status": "CORE_V1_QA_BLOCKED",
+      "v1_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "v1_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "v2_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "v2_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+      "fix_task_status": "V3_DELIVERED_SELFTEST_PASS_INDEPENDENT_QA_PENDING",
+      "requirements": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
+      "repair_report": "https://github.com/Jayyeah/cocap-voradj/blob/5ecb8774612f2002576b66f9a8a6cba46dad09a6/docs/TERL_MAPPO_BATCH01_BASE_V3_20261009_ZH.md",
+      "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
+    },
+    "qa": {
+      "status": "QA_PENDING",
+      "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
+      "observed_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
+      "tested_candidate_sha": null,
+      "report_head": null,
+      "observed_branch": "audit/terl-mappo-batch01-v2-recheck-20261009",
+      "requested_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "requested_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+      "QA_SAME_SHA": "PENDING",
+      "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
+      "cuda_smoke_lease_id": null,
+      "cuda_smoke_status": "V3_SELFTEST_CUDA_DONE_NO_INDEPENDENT_QA_LEASE_ACTIVE",
+      "handoff": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
+      "verdict": "PENDING",
+      "report_sha256": null,
+      "receipt": null,
+      "v2_retest_status": "BASE_QA_BLOCK",
+      "v2_tested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "v2_report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
+      "v2_handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+      "historical_v1_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+      "historical_cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
+      "historical_v1_review": {
+        "verdict": "BASE_QA_BLOCK",
+        "tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+        "report_head": "974cdd171898a261b7c862622463537cdc31a487",
+        "report_sha256": "72f29ce45f50379f1179d32188aca2c02a230ad90fefc8b48fe118089e7f36b3",
+        "receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+        "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
+        "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
+      },
+      "observed_worktree_status": "",
+      "uncommitted_activity_is_not_acceptance": true,
+      "a3_independent_signature": false,
+      "v2_verdict": "BASE_QA_BLOCK"
+    },
+    "storage": {
+      "status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
+      "audit_id": "A0-HOME-STORAGE-20261009",
+      "external_report_root": "/home/yjq/storage-audit-A0-20261009",
+      "central_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
+      "home_allocated_gib_at_audit_closing": 261.6022758483887,
+      "shared_available_gib_at_audit_closing": 136.7727279663086,
+      "current_shared_available_gib": 130.6648941040039,
+      "personal_quota": "UNKNOWN",
+      "shared_space_is_exclusive_quota": false,
+      "five_arm_budget_gib": 74,
+      "eight_concurrent_budget_gib": 98,
+      "included_safety_reserve_gib": 30,
+      "potential_reclaim_gib": 20.659420013427734,
+      "cleanup_authorized": false,
+      "archive_authorized": false,
+      "actual_reclaimed_bytes": 0,
+      "formal_launch_requires_dynamic_output_mount_quota_retention_and_capacity_recheck": true,
+      "latest_recheck_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
+      "latest_resource_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
+      "current_resource_observed_at": "2026-10-09T14:03:33.344923+00:00"
+    },
+    "supervision": {
+      "status": "MONITORING",
+      "tmux": "batch01_commander_v3_supervisor",
+      "pid": 1626849,
+      "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
+      "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
+      "tool": "tools/batch01_supervise.py",
+      "interval_seconds": 30,
+      "automatic_restart": false,
+      "automatic_budget_extension": false
+    }
   }
 }
