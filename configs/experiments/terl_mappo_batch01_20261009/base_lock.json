@@ -85,11 +85,11 @@
     "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
     "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
     "src/terl_mappo/batch01/checkpoints.py": "8fe00074d56fe9a29f89a2a8b8bb3274c76e4e0b5803369cde48dbaf3e96bb5b",
-    "src/terl_mappo/batch01/contracts.py": "f716823b1f2d8dbc6ffe56cff1fa5b4308b2e6763ad1058b331afce8dd292b8f",
+    "src/terl_mappo/batch01/contracts.py": "b31dce0f41da84d81acbad209fdaa0ea5761dd465098f46e3d84d8be5fa0ec6b",
     "src/terl_mappo/batch01/evaluation.py": "d82f6cc355f20e0c92d6521358b69d6f3e88c420783588ca808f85297fb58fda",
     "src/terl_mappo/batch01/interfaces.py": "9078120f08b49eedf3a19bfc1214c5dbb0793299eef004cab533024e9b1f84c6",
     "src/terl_mappo/batch01/provenance.py": "27d4861175693da243a0c46036ec1b84c29cdd481f3cbf038a2626536682ab5c",
-    "src/terl_mappo/batch01/source_guard.py": "2e80f991f3d6bc31f82f517ec20c61a85e2779c4ee09c4cdd36907435aeda1a9",
+    "src/terl_mappo/batch01/source_guard.py": "483492d893e34756a763f2ac70587e215033156fa5fe2dfb3ee59f9b369f82a7",
     "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
     "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
     "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
@@ -99,10 +99,12 @@
     "test/test_small_step_ac_migration_contract.py": "cc3068c6e5119ed6216cd3799a84d10de1646d89be5995dcfeabf1a2532104a0",
     "test/test_terl_mappo_batch01_base_20261009.py": "7b500f0c67ae30c0389c0834da5b7c77862d926c96c6a1f89829a8424a176bff",
     "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "fb815b37117dbb12b456eb3ca84ffce0923ebd12e05e72d172e341d10493f789",
+    "test/test_terl_mappo_batch01_source_bootstrap_20261009.py": "65758e8099378743b9e5ed81a54c03c4e0f47c917b80df8398b773d76da007c6",
     "test/test_terl_mappo_batch01_v3_20261009.py": "b2c5eb7564a95a8c039c03e2a255a4e1e259e229032019eab4f3c44cf0d7940a",
     "test/test_terl_native_mappo_20261008.py": "292d70892cdedd7f7e3586651fe356bab61d7d787d837b99cd72ef31566f2704",
     "tools/__init__.py": "5ccd26c24a82f19d58ae60476714d66b273227529d96e57b688fef2a68e29612",
     "tools/batch01_base_20261009.py": "3933d6fa1a3790f574b316f1a77fe03fe8c4ec418e7e63feca4fe180ceb517fd",
+    "tools/batch01_python.py": "ccae7e7ea98040e93d6b2cec485e2db695dae537b26bcf9ff4767621f8270ea6",
     "tools/run_continuous_ctde_training.py": "cf433e31fd8fd4a2f73bf26bebde611134f144c58cafe6fdae907b81b265f964",
     "tools/run_small_step_ac_migration.py": "c33131e247ea70cc3cc687c775c786f5e552781d4642ce70268df3f3494109e0",
     "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
@@ -276,6 +278,11 @@
       "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
     },
     "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
+  },
+  "execution_policy": {
+    "entrypoint": "python -S tools/batch01_python.py --lock-sha PIN --python-args ...",
+    "local_loader": "hash exact source bytes, compile those bytes, never read pyc",
+    "child_interpreter": "canonical-pinned source launcher"
   },
   "scientific_delta_from_t0": [],
   "independent_qa": "PENDING_MASTER_QA"

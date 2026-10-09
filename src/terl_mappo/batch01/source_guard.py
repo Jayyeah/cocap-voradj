@@ -109,9 +109,14 @@ class SourceGuard:
         self._compiled = {}
         self._verified_codes = {}
         self._path_cache = {}
+        policy=getattr(sys,'_batch01_verified_source_bootstrap',None)
+        if not policy or policy.get('root')!=str(ROOT) or policy.get('bootstrap_sha256')!=json.loads((ROOT/LOCK_PATH).read_text())['common_sources'].get('tools/batch01_python.py'):
+            self.fail('trusted source-first bootstrap required; invoke python -S tools/batch01_python.py')
 
     @classmethod
     def from_base(cls, lock, delta, pin, **kwargs):
+        if getattr(sys,'_batch01_verified_source_bootstrap',{}).get('lock_sha256')!=pin:
+            raise SourceViolation('bootstrap canonical lock differs from runtime BASE pin')
         verify_base(lock, delta, pin)
         verify_committed_pin(lock, delta)
         return cls(declared_sources(lock, delta), generated_sources=lock.get('generated_runtime_sources', {}), **kwargs)
@@ -133,6 +138,8 @@ class SourceGuard:
         raise SourceViolation('latched source contract failure: ' + self.failure)
 
     def alive(self):
+        bootstrap_failure=getattr(sys,'_batch01_source_bootstrap_failure',None)
+        if bootstrap_failure and self.failure is None:self.fail(bootstrap_failure)
         if self.failure is not None: self.fail(self.failure)
 
     def framework_generated(self, path):

@@ -18,6 +18,7 @@ ANCHOR_CONFIG = 'configs/experiments/terl_mappo_20261008/stage1_1m.json'
 LOCK_PATH = 'configs/experiments/terl_mappo_batch01_20261009/base_lock.json'
 PROTOCOL_PATH = 'configs/experiments/terl_mappo_batch01_20261009/evaluation.json'
 REGRESSION_SOURCES = (
+    'test/test_terl_mappo_batch01_source_bootstrap_20261009.py',
     'test/test_terl_native_mappo_20261008.py',
     'test/test_small_step_ac_migration_contract.py',
     'test/test_mappo_terminal_rows_20260923.py',
@@ -26,6 +27,7 @@ REGRESSION_SOURCES = (
     'test/test_terl_mappo_batch01_v3_20261009.py',
 )
 COMMON_DEPENDENCIES = (
+    'tools/batch01_python.py',
     'src/cocap_voradj/training/small_step_ac.py',
     'src/cocap_voradj/models/small_step_ac.py',
     'src/cocap_voradj/models/iqn.py',
@@ -111,7 +113,7 @@ def source_inventory(root=ROOT):
 
 def create_lock():
     """Offline engineering command; never a launch-time refresh of BASE."""
-    if git('branch', '--show-current') not in {'experiment/terl-mappo-batch01-base-20261009', 'experiment/terl-mappo-batch01-v3-20261009'}:
+    if git('branch', '--show-current') not in {'experiment/terl-mappo-batch01-base-20261009', 'experiment/terl-mappo-batch01-v3-20261009', 'experiment/terl-mappo-batch01-v3r2-20261009'}:
         raise ValueError('create BASE only on the authorized Core branch')
     config = json.loads((ROOT / ANCHOR_CONFIG).read_text())
     # Compare the entire historical source list to the actual immutable Git objects.
@@ -129,6 +131,7 @@ def create_lock():
             'generated_runtime_sources': torch_generated_sources(),
             'evaluation_protocol': json.loads((ROOT / PROTOCOL_PATH).read_text()),
             'arm_evaluation_protocol': json.loads((ROOT / 'configs/experiments/terl_mappo_batch01_20261009/arm_evaluation.json').read_text()),
+            'execution_policy': {'entrypoint':'python -S tools/batch01_python.py --lock-sha PIN --python-args ...','local_loader':'hash exact source bytes, compile those bytes, never read pyc','child_interpreter':'canonical-pinned source launcher'},
             'scientific_delta_from_t0': [], 'independent_qa': 'PENDING_MASTER_QA'}
 
 
