@@ -1,8 +1,30 @@
 # TERL-MAPPO Batch01 并行迁移矩阵与中央管理合同
 
-日期：2026-10-09，Asia/Shanghai。中央唯一写入者：Master；branch `ops/ac-master-dag-20260921`。A1-MASTER-02已接收A0/A2并发放QA专用短时CUDA correctness lease；**没有正式训练/benchmark授权，没有冻结BASE，没有创建子Agent，也没有删除或归档**。五条线及P1-control继续WAITING_BASE；预算、阈值和实现选择仍为提案。
+日期：2026-10-09，Asia/Shanghai。中央唯一写入者Master。A3正式BASE_QA_BLOCK已接收；当前WAITING_CORE_V2、BASE_FREEZE_BLOCKED。T0成功、A0审计和既有科学矩阵继续有效。本轮只登记门禁，不冻结BASE、发放新lease或启动实验。
 
-## A1-MASTER-02 最新交付登记（覆盖下方初次规划快照）
+## A1-MASTER-03：A3正式阻断，等待Core V2（覆盖下方历史快照）
+
+登记时间`2026-10-09T15:38:22.471208+08:00`。已fetch核实A3远程branch `audit/terl-mappo-batch01-base-qa-20261009`、正式HEAD **`974cdd171898a261b7c862622463537cdc31a487`**；[固定QA报告](https://github.com/Jayyeah/cocap-voradj/blob/974cdd171898a261b7c862622463537cdc31a487/docs/TERL_MAPPO_BATCH01_BASE_QA_20261009_ZH.md)结论 **BASE_QA_BLOCK**，被测科学candidate **`40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`**，不是Core文档HEAD。Master核验报告和24份证据hash、JUnit、candidate/lock；QA提交仅新增报告/证据、原78共同源码不变。详见[正式接收回执](../../artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json)。
+
+中央明确登记 **CORE_V1_QA_BLOCKED / WAITING_CORE_V2 / BASE_FREEZE_BLOCKED**；`QA_SAME_SHA=BASE_QA_BLOCK`、`BATCH01_BASE_SHA=null`，五条新线及P1-control仍WAITING_BASE。旧candidate永不因Core61通过或局部CPU通过自动冻结。本轮等待已由用户安排的Core定向修复，不再派Agent。
+
+| Issue | A3正式结论 / Core V2复验门禁 |
+|---|---|
+| B1 | 高：未声明lazy/dynamic依赖改变后rollout/PPO/full checkpoint保存恢复仍通过；须在受影响rollout被接受或learner状态改变前拒绝，save/load也必须fail closed |
+| B2 | 连续动作adapter的callable identity启动检查可绕过；须验证实际构建adapter的动作能力 |
+| B3 | 连续density guard额外采样entropy消耗RNG；须使用density-only或恢复检查RNG |
+| B4 | critic EV元数据应说明post-update denormalized V对pre-update GAE returns；保持历史learner数值不变 |
+| Q1 | independent QA branch测试不可移植；读取committed lock的fixture与Core-only生成权限测试分开，不放宽生产门禁 |
+
+**T0成功保留**：Stage1 seed9累计1M、selected775k，两模式normal45/50与collision5/50、1M末点normal6/20退化不变。A3独立正式CPU256/8/4、完整256 decisions/768active transitions/6paired minibatches、默认T0精确parity/完整resume及真实775k strict load通过。原suite55pass/4fail/2CUDA skip，committed-lock fixture59pass/2CUDA skip；不将局部通过、finite或CUDA skip升级为BASE PASS。
+
+**Storage审计及现有矩阵继续有效，不重新规划**：A0原件/保护清单/容量登记保持；quota UNKNOWN、共享余量不是独占quota，正式启动前动态复核；无清理授权。四参照九轴profile、每线科学delta/预算/初始化提案未改，QA列出的arm剩余证据另记门禁。
+
+旧V1 smoke lease已未使用并关闭：[closeout](../../artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json)，原grant保留为历史。A3本轮实际CPU-only、CUDA未执行；当前无Batch01活跃QA或正式GPU lease，旧窗口不可用于V2。Master不运行/停止任何实验，不发正式lease。
+
+**NEXT WAKE-UP**：接收Core V2新的科学candidate SHA、canonical lock与B1–B4/Q1修复/diff证据，再安排A3对完全相同的新SHA和lock独立复验。V1通过项不可自动转移；CPU/static可先行，V2 CUDA需fresh资源检查和新的专用有界lease。参见[Core V2复验合同](BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md)。共同QA通过后仍须后续Master评审才可能冻结；各arm正式启动门禁独立保留。Core V1/V2是candidate轮次，BASE-v1尚未发布。
+
+## A1-MASTER-02 历史交付登记（当前由上方Master03覆盖）
 
 登记时间：`2026-10-09T15:18:55.622062+08:00`。恢复中央local=origin=GitHub `5c0641635af6cbbf6a8dcd38baeb619024e9ebdc`。Core交付HEAD `bdbd502ff2f071b0cac07a0d0d956a2f35015ea1` 已push且从其可达科学candidate **`40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`**。二者不能互换；`BATCH01_BASE_SHA=null`、`QA_SAME_SHA=PENDING`。
 
@@ -120,8 +142,8 @@ selected=775k；实际 `step_000775000.pt` 与 `best.pt` SHA256 均重新核对�
 
 | 接口 | 必需交付 | 当前状态 |
 |---|---|---|
-| Core | push candidate SHA；共有config/arm插件/scene接口/连续动作入口/strict resume allowlist；T0不变路径parity；变人数/洋流critic及权重迁移规则；runtime consumer assertions；源码与依赖hash；统一eval/seed/retention/benchmark instrumentation；commit影响分类 | RECEIVED_HASH_VERIFIED；candidate40bd91b，delivery bdbd502；共同源码78hash一致，独立QA未通过 |
-| QA | 独立审同candidate；vendor字节、T0actor有效路径/physics/reward/info/terminal/pre-reset bootstrap/GAE/ValueNorm/active loss/dropout；CPU full-state restore与CUDA后续经lease的有界路径；N1信息不扩展、R1组件、C0Jacobian/action bounds、T1 multi-target/current、P1唯一参数；final seed隔离与manifest fail-closed；报告SHA/限制/FAIL项 | QA_SAME_SHA=PENDING；CPU进展已观察，尚未接收正式验收；专用CUDA smoke lease已发放 |
+| Core | push candidate SHA；共有config/arm插件/scene接口/连续动作入口/strict resume allowlist；T0不变路径parity；变人数/洋流critic及权重迁移规则；runtime consumer assertions；源码与依赖hash；统一eval/seed/retention/benchmark instrumentation；commit影响分类 | CORE_V1_QA_BLOCKED；WAITING_CORE_V2；新SHA/lock与B1–B4/Q1修复交付待收 |
+| QA | 独立审同candidate；vendor字节、T0actor有效路径/physics/reward/info/terminal/pre-reset bootstrap/GAE/ValueNorm/active loss/dropout；CPU full-state restore与CUDA后续经lease的有界路径；N1信息不扩展、R1组件、C0Jacobian/action bounds、T1 multi-target/current、P1唯一参数；final seed隔离与manifest fail-closed；报告SHA/限制/FAIL项 | BASE_QA_BLOCK；正式报告974cdd17已接收；CPU parity通过、CUDA未执行，等待新candidate同SHA复验 |
 | Storage | 按GPU计划审root及实际output mount、df字节/inode、各run目录du、checkpoint/resume/metrics/GIF/eval保留峰值与atomic临时文件；并发总峰值+其它任务增长+≥15GiB margin；write/fsync速度、ETA、清理建议/保护清单；有时效的PASS或WAIT | A0容量审计已接收；formal动态复核仍需完成，quota UNKNOWN，禁止清理 |
 
 无需等待GPU做独立CPU规划；没有可评审新交付时以handoff结束，不长期轮询。用户转交Core/QA/Storage handoff后Master继续冻结；不给现有工作树发消息、不启动它们的任务。

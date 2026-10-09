@@ -1,5 +1,7 @@
 # A1-MASTER-02 → Batch01 独立 QA handoff
 
+> **当前执行状态：旧candidate已被正式BASE_QA_BLOCK，旧smoke lease未使用并关闭。下方Master02 handoff仅作历史；不可继续执行其CUDA模板或把窗口沿用于V2。当前等待Core V2，见[新candidate复验合同](BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md)。**
+
 日期：2026-10-09，Asia/Shanghai。由用户直接转交 QA；Master 不创建、调用或等待额外子 Agent。中央唯一写入者仍为 Master。QA 只写自己的 branch/worktree 和新证据目录，交付报告后由用户返回中央。
 
 ## 1. 固定验收对象

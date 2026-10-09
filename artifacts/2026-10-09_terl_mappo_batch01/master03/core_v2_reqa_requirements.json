@@ -1,0 +1,69 @@
+{
+  "schema": "batch01-core-v2-reqa-contract-v1",
+  "issued_at": "2026-10-09T15:38:22.471208+08:00",
+  "status": "WAITING_CORE_V2",
+  "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+  "blocked_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
+  "qa_block_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+  "new_candidate_sha": null,
+  "new_lock_sha256": null,
+  "core_fix_task_already_assigned_by_user": true,
+  "required_fixes": [
+    {
+      "id": "B1",
+      "severity": "HIGH",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Runtime dynamic import/source lock permits undeclared dependency changes through rollout/PPO/full save and restore",
+      "required_fix": "Trusted loaded-dependency coverage and hashes must fail closed before accepting affected rollout or changing learner/optimizer state; enforce save/load too",
+      "required_independent_evidence": "Fresh-process lazy dependency mutation, declared vs undeclared source tests, actual save_bound/load_bound rejection, no learner state mutation before rejection"
+    },
+    {
+      "id": "B2",
+      "severity": "MEDIUM",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Wrapped native adapter factory bypasses continuous action startup capability checks",
+      "required_fix": "Validate actual constructed adapter action semantics/capability against backend; callable identity is insufficient",
+      "required_independent_evidence": "Wrapped NativeStage1 + continuous backend rejected during assemble/prepare before first collect; valid adapter remains accepted"
+    },
+    {
+      "id": "B3",
+      "severity": "MEDIUM",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Continuous density-only guard consumes extra Torch RNG via MC entropy",
+      "required_fix": "Deterministic density-only validation or isolated/restored RNG, preserving behavior latent/logprob",
+      "required_independent_evidence": "RNG identity before density guard and at learner entry, zero-update likelihood consistency, actual actor path"
+    },
+    {
+      "id": "B4",
+      "severity": "LOW",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Critic EV metadata says pre-update V but actual learner uses post-update denormalized V against pre-update GAE returns",
+      "required_fix": "Correct metadata and contract regression; preserve historical learner numerical behavior",
+      "required_independent_evidence": "Definition matches actual calculation point and ValueNorm units; T0 learner parity unchanged"
+    },
+    {
+      "id": "Q1",
+      "severity": "TEST_PORTABILITY",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Four production suite tests recreate lock on independent QA branch and fail the Core-only creation guard",
+      "required_fix": "Use committed-lock read/verify fixtures for portable tests; test Core-only generation permissions separately without relaxing production guard",
+      "required_independent_evidence": "Full suite runs on independent branch at new scientific SHA, complete raw/JUnit output; preserve Core-only lock-generation rejection"
+    }
+  ],
+  "t0_parity_must_remain": true,
+  "common_cpu_cuda_resume_regressions_required": true,
+  "existing_seed_reconciliation_still_open": true,
+  "arm_gate_requirements": {
+    "T1": "fixed capacity/current information; multi-target/partial-agent lifecycle; curriculum switch/full resume/permutation",
+    "N1": "TERL observation parity; actor-only capacity and fixed critic; mask/pooling/evaluator",
+    "R1": "geometry/recipient/target and event parity; explicit raw/native/shaping/shaped telemetry",
+    "P1": "controlled full-state 775k fork; live optimizer overrides; single-variable changes",
+    "C0": "B2/B3 fixes; actual physical continuous AW/AW9 parity; latent/Jacobian/density/PPO/evaluator"
+  },
+  "same_new_scientific_sha_and_lock_required_for_independent_qa": true,
+  "old_qa_passes_cannot_be_transferred_to_new_candidate": true,
+  "cuda_requires_new_fresh_resource_gate_and_qa_only_lease": true,
+  "formal_training_authorized": false,
+  "automatic_base_freeze": false,
+  "core_v1_v2_are_unfrozen_candidate_revisions_not_released_base_versions": true
+}

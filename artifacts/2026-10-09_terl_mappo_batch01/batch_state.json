@@ -2,22 +2,22 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T15:18:55.622062+08:00",
-  "status": "WAITING_BASE",
+  "updated_at": "2026-10-09T15:38:22.471208+08:00",
+  "status": "WAITING_CORE_V2",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
   "base_contract": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
   "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
   "gates": {
-    "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
-    "INDEPENDENT_QA_SAME_SHA": "PENDING",
-    "BASE_FREEZE": "WAITING_BASE",
+    "CORE_CANDIDATE": "WAITING_CORE_V2",
+    "INDEPENDENT_QA_SAME_SHA": "BASE_QA_BLOCK",
+    "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
     "ARM_DELTA_REVIEW": "WAITING_BASE",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
     "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
     "GPU_LEASE": "NOT_REQUESTED",
     "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V1_QA_BLOCKED",
     "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
   },
   "training_launched": false,
@@ -39,7 +39,7 @@
     "trigger": "T1 failure -> Master review need for multiple seeds; no automatic launch"
   },
   "core": {
-    "status": "CANDIDATE_RECEIVED_HASH_VERIFIED",
+    "status": "WAITING_CORE_V2",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009",
     "observed_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
     "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
@@ -52,22 +52,38 @@
       "passed": 61,
       "failed": 0,
       "independent_qa": false
-    }
+    },
+    "v1_status": "CORE_V1_QA_BLOCKED",
+    "v1_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "v1_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+    "v2_candidate_sha": null,
+    "v2_lock_sha256": null,
+    "fix_task_status": "USER_CONFIRMED_ALREADY_ASSIGNED",
+    "requirements": "artifacts/2026-10-09_terl_mappo_batch01/master03/core_v2_reqa_requirements.json"
   },
   "qa": {
-    "status": "CPU_ACTIVITY_OBSERVED_FINAL_ACCEPTANCE_PENDING",
+    "status": "BASE_QA_BLOCK",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
-    "observed_head": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
-    "tested_candidate_sha": null,
-    "report_head": null,
+    "observed_head": "974cdd171898a261b7c862622463537cdc31a487",
+    "tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "report_head": "974cdd171898a261b7c862622463537cdc31a487",
     "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
     "requested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
     "requested_canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
-    "QA_SAME_SHA": "PENDING",
+    "QA_SAME_SHA": "BASE_QA_BLOCK",
     "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
-    "cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
-    "cuda_smoke_status": "LEASE_GRANTED_NOT_EXECUTED_BY_MASTER",
-    "handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md"
+    "cuda_smoke_lease_id": null,
+    "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED",
+    "handoff": "docs/experiments/BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md",
+    "verdict": "BASE_QA_BLOCK",
+    "report_sha256": "72f29ce45f50379f1179d32188aca2c02a230ad90fefc8b48fe118089e7f36b3",
+    "receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+    "v2_retest_status": "WAITING_CORE_V2",
+    "v2_tested_candidate_sha": null,
+    "v2_report_head": null,
+    "v2_handoff": "docs/experiments/BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md",
+    "historical_v1_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+    "historical_cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855"
   },
   "storage": {
     "status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
@@ -253,23 +269,93 @@
     },
     {
       "incident_id": "B01-QA-INTERIM-LAZY-SOURCE-LOCK",
-      "status": "REPORTED_PENDING_FINAL_QA_TRIAGE",
+      "status": "CONFIRMED_BY_A3_QA_BLOCK_B1",
       "evidence": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
       "master_reproduced": false,
-      "next_gate": "Receive final same-SHA independent QA verdict; no candidate repair in Master branch"
+      "next_gate": "Core V2 fix + same-new-SHA independent re-QA",
+      "formal_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "formal_evidence": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json"
+    },
+    {
+      "incident_id": "B01-QA-B1",
+      "status": "OPEN_WAITING_CORE_V2",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "finding": {
+        "id": "B1",
+        "severity": "HIGH",
+        "status": "OPEN_WAITING_CORE_V2",
+        "description": "Runtime dynamic import/source lock permits undeclared dependency changes through rollout/PPO/full save and restore",
+        "required_fix": "Trusted loaded-dependency coverage and hashes must fail closed before accepting affected rollout or changing learner/optimizer state; enforce save/load too",
+        "required_independent_evidence": "Fresh-process lazy dependency mutation, declared vs undeclared source tests, actual save_bound/load_bound rejection, no learner state mutation before rejection"
+      }
+    },
+    {
+      "incident_id": "B01-QA-B2",
+      "status": "OPEN_WAITING_CORE_V2",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "finding": {
+        "id": "B2",
+        "severity": "MEDIUM",
+        "status": "OPEN_WAITING_CORE_V2",
+        "description": "Wrapped native adapter factory bypasses continuous action startup capability checks",
+        "required_fix": "Validate actual constructed adapter action semantics/capability against backend; callable identity is insufficient",
+        "required_independent_evidence": "Wrapped NativeStage1 + continuous backend rejected during assemble/prepare before first collect; valid adapter remains accepted"
+      }
+    },
+    {
+      "incident_id": "B01-QA-B3",
+      "status": "OPEN_WAITING_CORE_V2",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "finding": {
+        "id": "B3",
+        "severity": "MEDIUM",
+        "status": "OPEN_WAITING_CORE_V2",
+        "description": "Continuous density-only guard consumes extra Torch RNG via MC entropy",
+        "required_fix": "Deterministic density-only validation or isolated/restored RNG, preserving behavior latent/logprob",
+        "required_independent_evidence": "RNG identity before density guard and at learner entry, zero-update likelihood consistency, actual actor path"
+      }
+    },
+    {
+      "incident_id": "B01-QA-B4",
+      "status": "OPEN_WAITING_CORE_V2",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "finding": {
+        "id": "B4",
+        "severity": "LOW",
+        "status": "OPEN_WAITING_CORE_V2",
+        "description": "Critic EV metadata says pre-update V but actual learner uses post-update denormalized V against pre-update GAE returns",
+        "required_fix": "Correct metadata and contract regression; preserve historical learner numerical behavior",
+        "required_independent_evidence": "Definition matches actual calculation point and ValueNorm units; T0 learner parity unchanged"
+      }
+    },
+    {
+      "incident_id": "B01-QA-Q1",
+      "status": "OPEN_WAITING_CORE_V2",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "finding": {
+        "id": "Q1",
+        "severity": "TEST_PORTABILITY",
+        "status": "OPEN_WAITING_CORE_V2",
+        "description": "Four production suite tests recreate lock on independent QA branch and fail the Core-only creation guard",
+        "required_fix": "Use committed-lock read/verify fixtures for portable tests; test Core-only generation permissions separately without relaxing production guard",
+        "required_independent_evidence": "Full suite runs on independent branch at new scientific SHA, complete raw/JUnit output; preserve Core-only lock-generation rejection"
+      }
     }
   ],
-  "next_wake_up": "User forwards pushed independent QA same-candidate verdict and CUDA lease usage/wait evidence; Master reviews open issues and seed reconciliation. No auto-freeze or training.",
-  "QA_SAME_SHA": "PENDING",
-  "qa_smoke_leases": [
-    "B01-QA-CUDA-40bd91b-20261009T151855"
-  ],
+  "next_wake_up": "User forwards pushed Core V2 scientific candidate SHA + canonical lock + B1-B4/Q1 repair/delta evidence; verify pins then arrange A3 same-new-SHA independent re-QA. No automatic freeze, old lease reuse, or training.",
+  "QA_SAME_SHA": "BASE_QA_BLOCK",
+  "qa_smoke_leases": [],
   "qa_smoke_gates": {
     "A0_AUDIT_RECEIVED": "PASS",
-    "MASTER_RESOURCE_SAMPLE": "PASS",
-    "QA_START_TIME_PREFLIGHT": "REQUIRED",
-    "QA_ONLY_LEASE": "GRANTED_CONDITIONAL",
-    "CUDA_TEST_EXECUTION": "NOT_EXECUTED_BY_MASTER"
+    "MASTER_RESOURCE_SAMPLE": "HISTORICAL_V1_ONLY_RECHECK_FOR_V2",
+    "QA_START_TIME_PREFLIGHT": "NOT_APPLICABLE_V1_BLOCKED",
+    "QA_ONLY_LEASE": "CLOSED_UNUSED_CORE_V1_QA_BLOCKED",
+    "CUDA_TEST_EXECUTION": "NOT_EXECUTED_QA_CPU_ONLY"
   },
   "evaluation_protocol_open_issue": {
     "core_candidate_domains": {
@@ -283,5 +369,73 @@
       "final": 2076100900
     },
     "assessment": "Candidate intentionally preserves T0 historical domains; fresh Batch01 held-out domains were proposed centrally. QA must audit historical-vs-new-run separation and return reconciliation before Master freezes a training contract; do not mutate pinned candidate/lock."
+  },
+  "core_v1_status": "CORE_V1_QA_BLOCKED",
+  "base_freeze_status": "BASE_FREEZE_BLOCKED",
+  "closed_qa_smoke_leases": [
+    {
+      "schema": "batch01-qa-smoke-lease-closeout-v1",
+      "closed_at": "2026-10-09T15:38:22.471208+08:00",
+      "lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
+      "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "status": "CLOSED_UNUSED_CORE_V1_QA_BLOCKED",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "cuda_executed_by_qa": false,
+      "executed_by_master": false,
+      "new_lease_issued": false,
+      "reason": "A3 delivered CPU-only QA_BLOCK; revoke remaining old candidate smoke permission. Never transfer lease to Core V2.",
+      "original_grant": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
+      "original_grant_preserved": true,
+      "authorization_context_note": "Previous central conditional grant remains a historical fact; A3 reported no CUDA authorization in its execution context and performed no CUDA test. No CUDA PASS inferred."
+    }
+  ],
+  "qa_fix_requirements": [
+    {
+      "id": "B1",
+      "severity": "HIGH",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Runtime dynamic import/source lock permits undeclared dependency changes through rollout/PPO/full save and restore",
+      "required_fix": "Trusted loaded-dependency coverage and hashes must fail closed before accepting affected rollout or changing learner/optimizer state; enforce save/load too",
+      "required_independent_evidence": "Fresh-process lazy dependency mutation, declared vs undeclared source tests, actual save_bound/load_bound rejection, no learner state mutation before rejection"
+    },
+    {
+      "id": "B2",
+      "severity": "MEDIUM",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Wrapped native adapter factory bypasses continuous action startup capability checks",
+      "required_fix": "Validate actual constructed adapter action semantics/capability against backend; callable identity is insufficient",
+      "required_independent_evidence": "Wrapped NativeStage1 + continuous backend rejected during assemble/prepare before first collect; valid adapter remains accepted"
+    },
+    {
+      "id": "B3",
+      "severity": "MEDIUM",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Continuous density-only guard consumes extra Torch RNG via MC entropy",
+      "required_fix": "Deterministic density-only validation or isolated/restored RNG, preserving behavior latent/logprob",
+      "required_independent_evidence": "RNG identity before density guard and at learner entry, zero-update likelihood consistency, actual actor path"
+    },
+    {
+      "id": "B4",
+      "severity": "LOW",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Critic EV metadata says pre-update V but actual learner uses post-update denormalized V against pre-update GAE returns",
+      "required_fix": "Correct metadata and contract regression; preserve historical learner numerical behavior",
+      "required_independent_evidence": "Definition matches actual calculation point and ValueNorm units; T0 learner parity unchanged"
+    },
+    {
+      "id": "Q1",
+      "severity": "TEST_PORTABILITY",
+      "status": "OPEN_WAITING_CORE_V2",
+      "description": "Four production suite tests recreate lock on independent QA branch and fail the Core-only creation guard",
+      "required_fix": "Use committed-lock read/verify fixtures for portable tests; test Core-only generation permissions separately without relaxing production guard",
+      "required_independent_evidence": "Full suite runs on independent branch at new scientific SHA, complete raw/JUnit output; preserve Core-only lock-generation rejection"
+    }
+  ],
+  "qa_arm_gate_requirements": {
+    "T1": "fixed capacity/current information; multi-target/partial-agent lifecycle; curriculum switch/full resume/permutation",
+    "N1": "TERL observation parity; actor-only capacity and fixed critic; mask/pooling/evaluator",
+    "R1": "geometry/recipient/target and event parity; explicit raw/native/shaping/shaped telemetry",
+    "P1": "controlled full-state 775k fork; live optimizer overrides; single-variable changes",
+    "C0": "B2/B3 fixes; actual physical continuous AW/AW9 parity; latent/Jacobian/density/PPO/evaluator"
   }
 }

@@ -2,6 +2,15 @@
 
 本文件与 `artifacts/2026-09-21_ac_master_dag/state.json` 是跨 session 的唯一中央状态。只有 MASTER 可以写这两个文件；child 只能在各自 branch/worktree/rundir 工作，并以结构化 handoff 返回结果。禁止 nested subagents。
 
+## 2026-10-09 A1-MASTER-03：Core V1 QA阻断、等待Core V2（当前权威状态）
+
+- 已fetch接收A3 branch `audit/terl-mappo-batch01-base-qa-20261009` @ `974cdd171898a261b7c862622463537cdc31a487`，正式结论 **BASE_QA_BLOCK**；测试对象 `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`、原canonical lock91dc6ea7…24bf3。24份证据hash/JUnit与报告核验一致，QA提交未改共同科学源码。[正式回执](../../artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json)。
+- **CORE_V1_QA_BLOCKED / WAITING_CORE_V2 / BASE_FREEZE_BLOCKED**。`QA_SAME_SHA=BASE_QA_BLOCK`、`BATCH01_BASE_SHA=null`；T1/N1/R1/P1/C0/P1-control继续WAITING_BASE。Core定向修复任务由用户确认已安排；不冻结旧candidate，不发正式训练lease。
+- 阻断项B1运行期lazy/source lock逃逸含save/load、B2实际continuous adapter启动门禁、B3density guard额外RNG、B4EV元数据、Q1独立分支suite fixture。独立CPU T0正式256-decision parity/full resume/775k strict load通过；CUDA未执行。Core61/局部finite不豁免QA阻断。
+- **T0 COMPLETE成功结论不变**：selected775k、seed9累计1M、两模式45/50normal与5/50collision，末点30%退化事实保留。**A0容量审计及既有科学矩阵继续有效**，不重新规划；quota UNKNOWN、正式启动前动态复核、无删除归档。T2/Batch02/Evidence/Persistent原门禁不变。
+- 旧QA CUDA lease未使用并关闭，原grant保留，[closeout](../../artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json)覆盖旧handoff窗口；当前活跃Batch01 QA/formal GPU lease均空，不沿用V1窗口给V2。没有启动/修改/停止实验或创建Agent。
+- **NEXT WAKE-UP**：用户交Core V2科学candidate完整SHA/新canonical lock/修复与diff证据 → Master核验pin → A3同一新科学SHA独立复验 → 后续Master评审才可能冻结。V2 CUDA须另做fresh资源门禁并专用短lease，CPU/static不依赖GPU。见[Core V2复验合同](../experiments/BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md)。Core V1/V2只是candidate修订轮次，released BASE版本/迁移仍空。
+
 ## 2026-10-09 A1-MASTER-02 A0/A2接收与BASE独立QA（覆盖下方全部旧快照）
 
 - 中央恢复local=origin=GitHub `5c0641635af6cbbf6a8dcd38baeb619024e9ebdc`；最新交付HEAD以本轮Git push/fetch/ls-remote及handoff为准。只更新中央管理文件，不合并Core科学代码、不改变运行中实验。

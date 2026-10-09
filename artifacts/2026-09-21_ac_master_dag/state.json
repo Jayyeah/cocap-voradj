@@ -1,13 +1,13 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-09T15:29:19.402052+08:00",
+  "updated_at": "2026-10-09T15:38:22.471208+08:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
     "branch": "ops/ac-master-dag-20260921",
     "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
-    "head": "a2e8de0fe5964bdfa325206ef1e6e13e52ab7434",
-    "remote_head": "a2e8de0fe5964bdfa325206ef1e6e13e52ab7434",
+    "head": "f9741216f454d4995bb110b2234f8589bd6f2425",
+    "remote_head": "f9741216f454d4995bb110b2234f8589bd6f2425",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
     "child_parallelism_policy": "No additional subagents this turn; user forwards independently managed handoffs",
@@ -17,14 +17,14 @@
     "last_reconciled_commit": "a2e8de0fe5964bdfa325206ef1e6e13e52ab7434",
     "last_remote_fetch_at": "2026-10-09T15:29:19.402052+08:00",
     "last_push_at": "2026-10-09T15:29:19.402052+08:00",
-    "remote_sync_status": "PUSHED_SYNCED_VERIFIED",
-    "remote_sync_reason": "A1-MASTER-02 registration local==origin==GitHub after completed normal push/fetch. Receipt commit is independently verified in final handoff.",
-    "reconciliation_base_head": "5c0641635af6cbbf6a8dcd38baeb619024e9ebdc",
+    "remote_sync_status": "MASTER03_DELIVERY_PENDING_PUSH",
+    "remote_sync_reason": "Formal QA_BLOCK registration awaits normal commit/push",
+    "reconciliation_base_head": "f9741216f454d4995bb110b2234f8589bd6f2425",
     "last_push_verified_at": "2026-10-09T15:29:19.402052+08:00",
     "head_at_push_verification": "a2e8de0fe5964bdfa325206ef1e6e13e52ab7434",
     "remote_head_at_push_verification": "a2e8de0fe5964bdfa325206ef1e6e13e52ab7434",
     "head_semantics": "Verified registration delivery before receipt commit; actual final HEAD is verified by Git/final handoff, avoiding self-reference.",
-    "session_scope": "A1-MASTER-02: receive A0/A2, prepare independent QA and grant bounded QA-only smoke lease; no formal training or freeze"
+    "session_scope": "A1-MASTER-03: receive formal A3 QA_BLOCK, register Core V1 blocked and wait Core V2; no lease/launch/freeze"
   },
   "repo": {
     "remote": "https://github.com/Jayyeah/cocap-voradj.git",
@@ -86,6 +86,11 @@
       "A2": "artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json",
       "QA_interim_unaccepted": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
       "resource_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/master02/resource_snapshot.json"
+    },
+    "batch01_master03": {
+      "qa_block": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+      "qa_lease_closeout": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json",
+      "core_v2_reqa": "artifacts/2026-10-09_terl_mappo_batch01/master03/core_v2_reqa_requirements.json"
     }
   },
   "gpu_leases": {
@@ -414,12 +419,11 @@
       },
       "observed_compute_processes": [],
       "batch01_formal_leases": [],
-      "qa_only_conditional_lease_ids": [
-        "B01-QA-CUDA-40bd91b-20261009T151855"
-      ],
+      "qa_only_conditional_lease_ids": [],
       "historical_gpu0_gpu1_fields_are_not_current_availability": true,
       "other_jobs_protected": true,
-      "exclusive_claim": false
+      "exclusive_claim": false,
+      "qa_lease_closeout_ref": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json"
     }
   },
   "runtime_reconciliation": {
@@ -2386,8 +2390,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-N1",
@@ -2412,8 +2416,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-R1",
@@ -2438,8 +2442,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-P1",
@@ -2464,8 +2468,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-C0",
@@ -2490,8 +2494,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-P1-control",
@@ -2516,8 +2520,8 @@
       "current_step": null,
       "selected_checkpoint_sha256": null,
       "classification": "NO_SCIENTIFIC_RESULT",
-      "next_gate": "Independent QA40bd91b + open issue/seed review -> later Master freeze; all formal launch gates remain closed",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "next_gate": "WAITING_CORE_V2 -> A3 same-new-SHA QA -> later Master freeze; no training",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     },
     {
       "task_id": "BATCH01-T2",
@@ -2622,40 +2626,66 @@
     {
       "task_id": "BATCH01-CORE-A2",
       "task_name": "A2 BASE scientific candidate received",
-      "status": "CANDIDATE_RECEIVED_HASH_VERIFIED",
+      "status": "CORE_V1_QA_BLOCKED",
       "dependencies": [],
       "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
       "delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
       "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
       "evidence": "artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json",
-      "independent_qa": "PENDING",
-      "next_gate": "QA same candidate verdict and open scientific-contract issue review",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "independent_qa": "BASE_QA_BLOCK",
+      "next_gate": "Core V2 directed fix already assigned; no freeze of V1",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487"
     },
     {
       "task_id": "BATCH01-QA-BASE",
       "task_name": "Independent BASE QA",
-      "status": "QA_SAME_SHA_PENDING",
+      "status": "BASE_QA_BLOCK",
       "dependencies": [
         "BATCH01-CORE-A2"
       ],
       "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
       "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
       "handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
-      "cuda_dependencies": [
-        "BATCH01-STORAGE-A0",
-        "B01-QA-CUDA-40bd91b-20261009T151855"
-      ],
+      "cuda_dependencies": [],
       "cpu_static_qa_blocked_by_gpu": false,
-      "qa_report_head": null,
-      "qa_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
-      "next_gate": "User returns independent signed/pushed QA report; no automatic BASE freeze",
-      "updated_at": "2026-10-09T15:18:55.622062+08:00"
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "qa_smoke_lease_id": null,
+      "next_gate": "Wait Core V2 then independent re-QA on exact new SHA/lock",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00",
+      "tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "cuda_status": "NOT_EXECUTED_CPU_ONLY",
+      "qa_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json"
+    },
+    {
+      "task_id": "BATCH01-CORE-V2",
+      "status": "WAITING_CORE_V2",
+      "dependencies": [
+        "BATCH01-QA-BASE"
+      ],
+      "candidate_sha": null,
+      "canonical_lock_sha256": null,
+      "user_confirmed_fix_task_assigned": true,
+      "requirements": "artifacts/2026-10-09_terl_mappo_batch01/master03/core_v2_reqa_requirements.json",
+      "next_gate": "Receive new scientific SHA/lock then A3 same-SHA independent re-QA",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
+    },
+    {
+      "task_id": "BATCH01-BASE-FREEZE",
+      "status": "BASE_FREEZE_BLOCKED",
+      "dependencies": [
+        "BATCH01-CORE-V2"
+      ],
+      "BATCH01_BASE_SHA": null,
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "next_gate": "New candidate independently passes then later explicit Master review; never automatic",
+      "updated_at": "2026-10-09T15:38:22.471208+08:00"
     }
   ],
   "current_snapshot": {
-    "observed_at": "2026-10-09T15:18:55.622062+08:00",
-    "scope": "A1-MASTER-02 A0/A2 receipts and independent QA resource gate",
+    "observed_at": "2026-10-09T15:38:22.471208+08:00",
+    "scope": "A1-MASTER-03 formal QA_BLOCK receipt; resource numbers remain prior dated samples",
     "other_user_gpu_job": {
       "previous_snapshot_pid": 1335255,
       "status": "NOT_OBSERVED_IN_CURRENT_COMPUTE_SAMPLES",
@@ -2686,8 +2716,10 @@
       "BATCH01-P1-control": "WAITING_BASE",
       "BATCH01-T2": "DEFERRED",
       "BATCH01-STORAGE-A0": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-      "BATCH01-CORE-A2": "CANDIDATE_RECEIVED_HASH_VERIFIED",
-      "BATCH01-QA-BASE": "QA_SAME_SHA_PENDING"
+      "BATCH01-CORE-A2": "CORE_V1_QA_BLOCKED",
+      "BATCH01-QA-BASE": "BASE_QA_BLOCK",
+      "BATCH01-CORE-V2": "WAITING_CORE_V2",
+      "BATCH01-BASE-FREEZE": "BASE_FREEZE_BLOCKED"
     },
     "iqn_z_lines": "Z05 frozen selected600k retained; no retraining",
     "resources": {
@@ -2703,8 +2735,9 @@
         3.259765625,
         4.59765625
       ],
-      "gpu_status": "No compute app observed in 10-sample window; conditional QA0 lease only",
-      "qa_gpu_work_executed_by_master": false
+      "gpu_status": "Previous resource snapshot only; no active Batch01 QA or formal GPU lease",
+      "qa_gpu_work_executed_by_master": false,
+      "sample_observed_at": "2026-10-09T15:09:12.049591+08:00"
     },
     "decision_gate": {
       "category": "N0",
@@ -2714,8 +2747,10 @@
     "artifact": "artifacts/2026-10-09_terl_mappo_batch01/master02/resource_snapshot.json",
     "previous_integration_artifact": "artifacts/2026-10-08_experiment_integration/verification.json",
     "remote_sync_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/remote_verification.json",
-    "batch01_qa_smoke_lease": "B01-QA-CUDA-40bd91b-20261009T151855",
-    "next_wake_up": "User forwards pushed independent QA same-candidate verdict and CUDA lease usage/wait evidence; Master reviews open issues and seed reconciliation. No auto-freeze or training."
+    "batch01_qa_smoke_lease": null,
+    "next_wake_up": "User forwards pushed Core V2 scientific candidate SHA + canonical lock + B1-B4/Q1 repair/delta evidence; verify pins then arrange A3 same-new-SHA independent re-QA. No automatic freeze, old lease reuse, or training.",
+    "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+    "qa_verdict": "BASE_QA_BLOCK"
   },
   "event_log": [
     {
@@ -3151,6 +3186,27 @@
       "receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/remote_verification.json",
       "BATCH01_BASE_SHA": null,
       "QA_SAME_SHA": "PENDING"
+    },
+    {
+      "at": "2026-10-09T15:38:22.471208+08:00",
+      "event": "BATCH01_CORE_V1_QA_BLOCKED_WAITING_CORE_V2",
+      "blocked_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "verdict": "BASE_QA_BLOCK",
+      "core_status": "WAITING_CORE_V2",
+      "base_freeze_status": "BASE_FREEZE_BLOCKED",
+      "issues": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "Q1"
+      ],
+      "qa_unused_lease_closed": "B01-QA-CUDA-40bd91b-20261009T151855",
+      "T0": "COMPLETE_SUCCESS_PRESERVED",
+      "Storage_A0": "EXISTING_AUDIT_REMAINS_VALID_DYNAMIC_RECHECK_REQUIRED",
+      "matrix_replanned": false,
+      "training_launched": false
     }
   ],
   "server_recovery": {
@@ -23462,7 +23518,7 @@
     "latest_reconciliation_note": "2026-10-09 Batch01 planning snapshot supersedes historical live TERL/Evidence claims; verified old PIDs exited; protected external GPU job; authoritative Batch01 still WAITING_BASE."
   },
   "batch01": {
-    "status": "WAITING_BASE",
+    "status": "WAITING_CORE_V2",
     "BATCH01_BASE_SHA": null,
     "batch_state": "artifacts/2026-10-09_terl_mappo_batch01/batch_state.json",
     "contract_lock": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
@@ -23471,22 +23527,22 @@
     "changelog": "docs/experiments/BATCH01_SCIENTIFIC_CHANGELOG.md",
     "handoff": "docs/experiments/BATCH01_HANDOFF_TEMPLATE_20261009_ZH.md",
     "gates": {
-      "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
-      "INDEPENDENT_QA_SAME_SHA": "PENDING",
-      "BASE_FREEZE": "WAITING_BASE",
+      "CORE_CANDIDATE": "WAITING_CORE_V2",
+      "INDEPENDENT_QA_SAME_SHA": "BASE_QA_BLOCK",
+      "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
       "ARM_DELTA_REVIEW": "WAITING_BASE",
       "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
       "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
       "GPU_LEASE": "NOT_REQUESTED",
       "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-      "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+      "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V1_QA_BLOCKED",
       "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
     },
     "new_training_launched": false,
     "new_gpu_leases": [],
     "new_subagents_created": false,
-    "next_wake_up": "User forwards pushed independent QA same-candidate verdict and CUDA lease usage/wait evidence; Master reviews open issues and seed reconciliation. No auto-freeze or training.",
-    "QA_SAME_SHA": "PENDING",
+    "next_wake_up": "User forwards pushed Core V2 scientific candidate SHA + canonical lock + B1-B4/Q1 repair/delta evidence; verify pins then arrange A3 same-new-SHA independent re-QA. No automatic freeze, old lease reuse, or training.",
+    "QA_SAME_SHA": "BASE_QA_BLOCK",
     "core_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
     "core_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
     "core_candidate_canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
@@ -23495,11 +23551,20 @@
       "A2": "artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json"
     },
     "storage_status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "qa_status": "CPU_ACTIVITY_OBSERVED_FINAL_ACCEPTANCE_PENDING",
-    "qa_smoke_leases": [
-      "B01-QA-CUDA-40bd91b-20261009T151855"
-    ],
-    "qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
-    "qa_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md"
+    "qa_status": "BASE_QA_BLOCK",
+    "qa_smoke_leases": [],
+    "qa_smoke_lease_ref": null,
+    "qa_handoff": "docs/experiments/BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md",
+    "core_v1_status": "CORE_V1_QA_BLOCKED",
+    "base_freeze_status": "BASE_FREEZE_BLOCKED",
+    "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+    "qa_tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "closed_qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json",
+    "qa_block_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+    "core_v2_candidate_sha": null,
+    "core_v2_lock_sha256": null,
+    "core_v2_reqa_contract": "docs/experiments/BATCH01_CORE_V2_REQA_CONTRACT_20261009_ZH.md",
+    "previous_qa_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+    "historical_qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json"
   }
 }

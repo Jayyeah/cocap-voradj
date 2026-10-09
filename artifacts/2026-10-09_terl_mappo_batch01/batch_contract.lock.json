@@ -1,17 +1,17 @@
 {
   "schema": "terl-mappo-batch-contract-lock-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
-  "updated_at": "2026-10-09T15:18:55.622062+08:00",
+  "updated_at": "2026-10-09T15:38:22.471208+08:00",
   "owner": "MASTER",
-  "status": "WAITING_BASE",
+  "status": "WAITING_CORE_V2",
   "base_version": null,
   "BATCH01_BASE_SHA": null,
   "base_lock_sha256": null,
   "core_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
   "core_manifest_sha256": "c8277d2a375924e912b23a59661668f60a8fbde36aaf013dfb738c6c9234dd3f",
-  "qa_tested_candidate_sha": null,
-  "qa_report_head": null,
-  "qa_report_sha256": null,
+  "qa_tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+  "qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+  "qa_report_sha256": "72f29ce45f50379f1179d32188aca2c02a230ad90fefc8b48fe118089e7f36b3",
   "common_source_hashes": {},
   "dependency_lock_sha256": null,
   "evaluator_sha256": null,
@@ -27,7 +27,7 @@
   "lock_digest_algorithm": "sha256 canonical JSON UTF8 sorted keys separators comma/colon excluding base_lock_sha256; pending until freeze",
   "common_code_policy": "Common PPO/native environment/evaluator/dependencies identical hash in all arms; only explicitly reviewed arm plugin/config deltas allowed",
   "process_code_policy": "Fixed clean immutable scientific source tree per run; no hot replacement; full import consumers and vendor/dependencies hashed before launch and resume",
-  "authorization_scope": "CENTRAL_REGISTRATION_AND_DEDICATED_BOUNDED_QA_CUDA_SMOKE_ONLY",
+  "authorization_scope": "CENTRAL_QA_BLOCK_REGISTRATION_AND_WAITING_CORE_V2_ONLY",
   "long_training_authorized": false,
   "gpu_benchmark_executed": false,
   "gpu_leases_granted": [],
@@ -162,15 +162,15 @@
     }
   },
   "gates": {
-    "CORE_CANDIDATE": "RECEIVED_HASH_VERIFIED",
-    "INDEPENDENT_QA_SAME_SHA": "PENDING",
-    "BASE_FREEZE": "WAITING_BASE",
+    "CORE_CANDIDATE": "WAITING_CORE_V2",
+    "INDEPENDENT_QA_SAME_SHA": "BASE_QA_BLOCK",
+    "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
     "ARM_DELTA_REVIEW": "WAITING_BASE",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
     "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
     "GPU_LEASE": "NOT_REQUESTED",
     "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
-    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_INDEPENDENT_QA_AND_ARM_IMPLEMENTATION",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V1_QA_BLOCKED",
     "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
   },
   "dynamic_repair_protocol": {
@@ -197,7 +197,7 @@
     "paired_comparators_retraining_review_required": true
   },
   "immutable_base_archive_pattern": "artifacts/2026-10-09_terl_mappo_batch01/bases/BASE-v{version}/",
-  "qa_cuda_dependency_policy": "A0 capacity audit received and current smoke resource gates PASS; this turn grants dedicated QA-only conditional lease. Formal STORAGE_CAPACITY/GPU_LEASE gates remain closed. CPU/static QA independent.",
+  "qa_cuda_dependency_policy": "No active QA CUDA lease. V1 unused grant closed after QA_BLOCK. V2 CUDA requires new candidate pin, dynamic Storage/resource check and dedicated bounded authorization.",
   "core_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
   "core_candidate_canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
   "candidate_common_source_hashes": {
@@ -280,7 +280,17 @@
     "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
     "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
   },
-  "QA_SAME_SHA": "PENDING",
-  "qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
-  "candidate_lock_digest_algorithm": "Core json.dumps(sort_keys=True,separators=(comma,colon),allow_nan=False), default ensure_ascii=True; hash entire candidate lock object"
+  "QA_SAME_SHA": "BASE_QA_BLOCK",
+  "qa_smoke_lease_ref": null,
+  "candidate_lock_digest_algorithm": "Core json.dumps(sort_keys=True,separators=(comma,colon),allow_nan=False), default ensure_ascii=True; hash entire candidate lock object",
+  "core_v1_status": "CORE_V1_QA_BLOCKED",
+  "base_freeze_status": "BASE_FREEZE_BLOCKED",
+  "qa_verdict": "BASE_QA_BLOCK",
+  "core_candidate_status": "CORE_V1_QA_BLOCKED",
+  "next_core_candidate_sha": null,
+  "next_core_candidate_lock_sha256": null,
+  "qa_block_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+  "qa_smoke_lease_closeout_ref": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json",
+  "historical_qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
+  "active_qa_smoke_leases": []
 }

@@ -1,0 +1,62 @@
+{
+  "scope": "Offline central control metadata tests and preservation comparison; no scientific rollout/GPU work",
+  "baseline_commit": "f9741216f454d4995bb110b2234f8589bd6f2425",
+  "all_expected_rejections": true,
+  "negative_checks": [
+    {
+      "case": "freeze_blocked_candidate",
+      "rejected": true,
+      "errors": [
+        "QA_BLOCK candidate cannot be frozen",
+        "BASE mismatch between lock/state/registry/central",
+        "BATCH01-T1: different common BASE",
+        "BATCH01-N1: different common BASE",
+        "BATCH01-R1: different common BASE",
+        "BATCH01-P1: different common BASE",
+        "BATCH01-C0: different common BASE",
+        "BATCH01-P1-control: different common BASE",
+        "Common source manifest missing",
+        "Frozen lock digest mismatch"
+      ]
+    },
+    {
+      "case": "wrong_qa_tested_sha",
+      "rejected": true,
+      "errors": [
+        "Blocking QA tested another candidate"
+      ]
+    },
+    {
+      "case": "reuse_closed_v1_lease",
+      "rejected": true,
+      "errors": [
+        "Rejected candidate retains active QA lease",
+        "QA lease registry mismatch"
+      ]
+    },
+    {
+      "case": "remove_blocked_freeze_gate",
+      "rejected": true,
+      "errors": [
+        "Central launch gate mismatch",
+        "BATCH01-T1: launch gate drift",
+        "BATCH01-N1: launch gate drift",
+        "BATCH01-R1: launch gate drift",
+        "BATCH01-P1: launch gate drift",
+        "BATCH01-C0: launch gate drift",
+        "BATCH01-P1-control: launch gate drift",
+        "Rejected candidate freeze gate open"
+      ]
+    }
+  ],
+  "preserved": [
+    "T0 full registry/anchor",
+    "Storage A0 exact registration",
+    "nine scientific axes and four references",
+    "arm deltas/budgets/initialization/P1 KL proposal",
+    "concurrency proposal",
+    "Batch02 preregistration"
+  ],
+  "metadata": "PASS",
+  "formal_readiness": "EXPECTED_BLOCKED"
+}

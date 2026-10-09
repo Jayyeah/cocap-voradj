@@ -28,3 +28,13 @@ Master-only、append-only。科学源码版本与中央文档提交分别登记�
 科学axes/arm预算和初始化提案本轮未改变；以上为交付登记与QA门禁，无BASE发布、版本迁移或正式结果。下一步仅接收独立QA并评审，不自动冻结。
 
 分类补充：继续沿用B01-002的`CONTRACT_COORDINATION`记录共享合同和有界QA授权；只涉及管理门禁，不代表已发布科学BASE。历史条目保留。
+
+## A1-MASTER-03（2026-10-09T15:38:22.471208+08:00）
+
+| Entry | Class | Scope / decision | BASE |
+|---|---|---|---|
+| B01-009 | FACT_RECOVERY | 接收A3正式report `974cdd171898a261b7c862622463537cdc31a487`，被测candidate `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`、原lock91dc6ea7…24bf3；24份证据hash与JUnit核验；正式BASE_QA_BLOCK，T0 CPU parity/full resume/775k strict load通过，CUDA未执行 | UNFROZEN / SHA=null |
+| B01-010 | CONTRACT_COORDINATION | CORE_V1_QA_BLOCKED / WAITING_CORE_V2 / BASE_FREEZE_BLOCKED；登记B1–B4/Q1，等待用户已安排的Core定向修复交新SHA/lock，再A3同新SHA独立复验；旧未使用QA lease关闭，无新lease/训练 | candidate修订，不是BASE发布/迁移 |
+| B01-011 | RESULT_CLASSIFICATION | 保留T0 COMPLETE成功与late degradation；A0审计和四参照九轴/预算/初始化提案继续有效，无重新规划；五线及P1-control仍WAITING_BASE | 无新正式实验结果 |
+
+Core/QA实际科学修复由对应owner在各自branch提交；Master本轮只接收结论、登记复验要求与关闭旧权限，不修改共同PPO/env/reward/observation/terminal代码。

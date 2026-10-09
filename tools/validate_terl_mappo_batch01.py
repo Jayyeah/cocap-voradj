@@ -37,6 +37,7 @@ def validate(require_ready=False):
             errors.append(message)
 
     base = lock['BATCH01_BASE_SHA']
+    check(lock.get('QA_SAME_SHA') != 'BASE_QA_BLOCK' or base is None, 'QA_BLOCK candidate cannot be frozen')
     check(base == state['BATCH01_BASE_SHA'] == registry['BATCH01_BASE_SHA'] == central['batch01']['BATCH01_BASE_SHA'], 'BASE mismatch between lock/state/registry/central')
     check(state['status'] == central['batch01']['status'] == lock['status'], 'Batch status mismatch')
     check(lock['gates'] == state['gates'] == central['batch01']['gates'], 'Central launch gate mismatch')
@@ -75,7 +76,7 @@ def validate(require_ready=False):
         else:
             check(r['common_source_hashes'] == lock['common_source_hashes'], f'{r["run_id"]}: common code hash drift')
     if base is None:
-        check(lock['status'] == state['status'] == 'WAITING_BASE', 'Unfrozen batch status must be WAITING_BASE')
+        check(lock['status'] == state['status'] and state['status'] in {'WAITING_BASE', 'WAITING_CORE_V2'}, 'Unfrozen batch must wait for BASE or revised Core candidate')
         check(all(v == 'WAITING_BASE' for v in state['arm_states'].values()), 'Arm unlocked before BASE freeze')
         check(not state['training_launched'] and not state['benchmark_executed'] and not state['leases'], 'Formal execution/lease present before BASE freeze')
     else:
@@ -102,8 +103,30 @@ def validate(require_ready=False):
         for path, values in receipt['source_hash_checks'].items():
             check(set(values.values()) == {candidate_lock['common_sources'][path]}, f'{path}: candidate/delivery/worktree hash mismatch')
         if base is None:
-            check(lock.get('QA_SAME_SHA') == state.get('QA_SAME_SHA') == registry.get('QA_SAME_SHA') == central['batch01'].get('QA_SAME_SHA') == 'PENDING', 'QA accepted before independent handoff')
-            check(lock['qa_report_head'] is None and lock['qa_tested_candidate_sha'] is None and state['qa']['report_head'] is None and state['qa']['tested_candidate_sha'] is None, 'Core self-tests or interim activity mistaken for independent acceptance')
+            qa_status = lock.get('QA_SAME_SHA')
+            check(qa_status == state.get('QA_SAME_SHA') == registry.get('QA_SAME_SHA') == central['batch01'].get('QA_SAME_SHA') and qa_status in {'PENDING', 'BASE_QA_BLOCK'}, 'Unfrozen candidate QA state inconsistent')
+            if qa_status == 'PENDING':
+                check(lock['qa_report_head'] is None and lock['qa_tested_candidate_sha'] is None and state['qa']['report_head'] is None and state['qa']['tested_candidate_sha'] is None, 'Core self-tests or interim activity mistaken for independent acceptance')
+            elif qa_status == 'BASE_QA_BLOCK':
+                qa_receipt = load(DIRECTORY / 'master03/qa_block_receipt.json')
+                check(qa_receipt['verdict'] == state['qa']['verdict'] == 'BASE_QA_BLOCK', 'Blocking QA verdict missing')
+                check(candidate == lock['qa_tested_candidate_sha'] == state['qa']['tested_candidate_sha'] == qa_receipt['tested_candidate_sha'], 'Blocking QA tested another candidate')
+                check(lock['qa_report_head'] == state['qa']['report_head'] == registry['qa_report_head'] == central['batch01']['qa_report_head'] == qa_receipt['qa_report_head'], 'Blocking QA report HEAD mismatch')
+                check(bool(SHA.fullmatch(qa_receipt['qa_report_head'])) and qa_receipt['qa_same_sha_identity_verified'], 'Independent blocking report pin missing')
+                check(lock['qa_report_sha256'] == state['qa']['report_sha256'] == qa_receipt['report_sha256'], 'Blocking report hash mismatch')
+                check(digest == qa_receipt['canonical_lock_sha256'], 'Blocking QA lock mismatch')
+                check(state['status'] == state['core']['status'] == 'WAITING_CORE_V2', 'QA block must wait for revised Core candidate')
+                check(lock['core_v1_status'] == state['core_v1_status'] == state['core']['v1_status'] == registry['core_v1_status'] == central['batch01']['core_v1_status'] == 'CORE_V1_QA_BLOCKED', 'Rejected V1 candidate status mismatch')
+                check(state['gates']['BASE_FREEZE'] == lock['base_freeze_status'] == state['base_freeze_status'] == registry['base_freeze_status'] == central['batch01']['base_freeze_status'] == 'BASE_FREEZE_BLOCKED', 'Rejected candidate freeze gate open')
+                check(state['gates']['CORE_CANDIDATE'] == 'WAITING_CORE_V2' and state['gates']['INDEPENDENT_QA_SAME_SHA'] == 'BASE_QA_BLOCK', 'QA block launch gates incorrect')
+                check(tasks['BATCH01-CORE-A2']['status'] == 'CORE_V1_QA_BLOCKED' and tasks['BATCH01-CORE-V2']['status'] == 'WAITING_CORE_V2' and tasks['BATCH01-QA-BASE']['status'] == 'BASE_QA_BLOCK' and tasks['BATCH01-BASE-FREEZE']['status'] == 'BASE_FREEZE_BLOCKED', 'Central QA/Core/freeze tasks mismatch')
+                check(state['core']['v2_candidate_sha'] is None and state['core']['v2_lock_sha256'] is None and lock['next_core_candidate_sha'] is None, 'V2 candidate fabricated before delivery')
+                check({f['id'] for f in state['qa_fix_requirements']} == {'B1', 'B2', 'B3', 'B4', 'Q1'}, 'Core V2 fix requirements incomplete')
+                check(not state.get('qa_smoke_leases') and not central['batch01'].get('qa_smoke_leases'), 'Rejected candidate retains active QA lease')
+                closeout = load(DIRECTORY / 'master03/qa_lease_closeout.json')
+                check(closeout['status'] == 'CLOSED_UNUSED_CORE_V1_QA_BLOCKED' and not closeout['cuda_executed_by_qa'] and not closeout['new_lease_issued'], 'Rejected candidate lease not closed unused')
+                check(closeout['candidate_sha'] == candidate and closeout['qa_report_head'] == qa_receipt['qa_report_head'], 'Lease closeout pin mismatch')
+                check(not migrations['versions'] and not migrations['migrations'], 'Rejected unfrozen candidate fabricated a BASE release or migration')
             check(lock['base_lock_sha256'] is None and lock['base_version'] is None and not lock['common_source_hashes'], 'Candidate snapshot mistaken for frozen BASE')
         storage = load(DIRECTORY / 'master02/storage_a0_receipt.json')
         check(state['storage']['audit_id'] == storage['audit_id'], 'Storage receipt audit ID mismatch')
