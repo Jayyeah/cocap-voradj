@@ -46,3 +46,8 @@ def test_legal_Guard_bytecode_positive(tmp_path):
   p=subprocess.run([sys.executable,'-c','from terl_mappo.batch01.source_guard import SourceGuard; SourceGuard.committed().check(); print("LEGAL_BYTECODE_SOURCE_PASS")'],cwd=ROOT,capture_output=True,text=True)
   assert p.returncode==0,p.stdout+p.stderr
  finally:restore(cache,previous)
+
+
+def test_plain_python_without_trusted_bootstrap_fails_before_training():
+ p=subprocess.run([sys._batch01_real_python,'-c','from terl_mappo.batch01.source_guard import SourceGuard; SourceGuard.committed().check()'],cwd=ROOT,capture_output=True,text=True)
+ assert p.returncode!=0 and 'trusted source-first bootstrap required' in p.stderr,p.stdout+p.stderr

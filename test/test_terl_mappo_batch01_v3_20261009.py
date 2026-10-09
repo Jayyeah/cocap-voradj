@@ -30,7 +30,13 @@ if case in {'stale','preloaded'}:
  p.write_text(source);os.utime(p,(stamp,stamp))
 elif case=='legal_cache':py_compile.compile(str(p),doraise=True)
 if case=='preloaded':
- module=importlib.import_module(name)
+ # Deliberately execute an actual old object before guard construction.
+ # Ordinary imports now ignore stale caches, so use marshal to test witnesses.
+ import marshal,types
+ cache=Path(importlib.util.cache_from_source(str(p)))
+ module=types.ModuleType(name);module.__file__=str(p);module.__spec__=importlib.util.spec_from_file_location(name,p)
+ sys.modules[name]=module
+ exec(marshal.loads(cache.read_bytes()[16:]),module.__dict__)
  assert module.VALUE == 0.9
  marker.unlink()
 guard=SourceGuard(expected)
@@ -40,10 +46,10 @@ try:
  if case=='drift':
   p.write_text(source.replace('VALUE = 0.4','VALUE = 0.9'))
   guard.call(module.reward,0,{})
- assert case in {'legal_source','legal_cache'} and value == 0.4
+ assert case in {'legal_source','legal_cache','stale'} and value == 0.4
  print('POSITIVE_PASS')
 except SourceViolation:
- assert case in {'stale','preloaded','drift'} and guard.failure
+ assert case in {'preloaded','drift'} and guard.failure
  if case=='stale':assert not marker.exists() and name not in sys.modules
  try:guard.check()
  except SourceViolation:pass
