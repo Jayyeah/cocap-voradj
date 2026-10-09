@@ -1,0 +1,1259 @@
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_continuous_guards_repro.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_continuous_guards_repro.json
+new file mode 100644
+index 0000000..8f52d1c
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_continuous_guards_repro.json
+@@ -0,0 +1,34 @@
++{
++  "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
++  "declared_extra_sources": [
++    {
++      "path": "src/cocap_voradj/models/continuous/box_actor.py",
++      "before": null,
++      "after": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++      "reason": "QA continuous probe dependency",
++      "science_impact": "C0 declared actor/action interface"
++    },
++    {
++      "path": "src/terl_mappo/batch01/extensions/qa_continuous.py",
++      "before": null,
++      "after": "a3e6dfc4460382c7a9227c610f5fb62f8a765dca9788268354ab9437b147e1f2",
++      "reason": "QA continuous probe dependency",
++      "science_impact": "C0 declared actor/action interface"
++    }
++  ],
++  "startup_manifest_accepted": true,
++  "actual_adapter_class": "NativeStage1",
++  "declared_backend": {
++    "family": "tanh_gaussian_aw",
++    "entropy_measure": "physical_differential_mc_nats",
++    "logprob_measure": "tanh_and_scale_corrected_density",
++    "categorical": false
++  },
++  "first_continuous_rollout_error": "TypeError('only length-1 arrays can be converted to Python scalars')",
++  "zero_update_likelihood_check_passed": true,
++  "continuous_density_guard_changed_torch_rng_before_learner": true,
++  "optimizer_updates_executed": 0,
++  "fixture_only_changes": true,
++  "formal_training": false
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_lazy_dependency_repro.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_lazy_dependency_repro.json
+new file mode 100644
+index 0000000..827c9e0
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_lazy_dependency_repro.json
+@@ -0,0 +1,19 @@
++{
++  "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
++  "declared_extension": "src/terl_mappo/batch01/extensions/qa_lazy_reward.py",
++  "unlocked_dependency": "src/cocap_voradj/models/continuous/box_actor.py",
++  "dependency_before_sha256": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++  "dependency_after_sha256": "5ff537bcc653961b628ce950f5c8ebfd25b187a2b871834d5d5a6003c2fdab7a",
++  "prepare_manifest_passed": true,
++  "rollout_decisions": 2,
++  "ppo_minibatches": 6.0,
++  "ppo_metrics_finite": true,
++  "checkpoint_manifest_source_check_passed_after_dependency_edit": true,
++  "full_save_bound_and_load_bound_passed_after_dependency_edit": true,
++  "explicit_post_rollout_coverage_check": "loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/box_actor.py",
++  "raw_rewards_preserved_in_batch": false,
++  "classification": "BASE_SOURCE_LOCK_LAZY_RUNTIME_ESCAPE",
++  "fixture_only_changes": true,
++  "formal_training": false
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_qa_result.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_qa_result.json
+new file mode 100644
+index 0000000..836fbc6
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/a3_original_qa_result.json
+@@ -0,0 +1,79 @@
++{
++  "status": "BASE_QA_BLOCK",
++  "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
++  "delivery_sha": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
++  "t0_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "qa_branch": "audit/terl-mappo-batch01-base-qa-20261009",
++  "execution_head": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "unmodified_suite": {
++    "passed": 55,
++    "failed": 4,
++    "skipped_cuda": 2,
++    "failure_cause": "Core-only create_lock fixture on independent QA branch"
++  },
++  "committed_lock_fixture_suite": {
++    "passed": 59,
++    "failed": 0,
++    "skipped_cuda": 2,
++    "production_code_modified": false
++  },
++  "full_size_cpu": {
++    "hidden_dim": 256,
++    "heads": 8,
++    "layers": 4,
++    "decisions": 256,
++    "active_transitions": 768,
++    "paired_minibatches": 6,
++    "exact_t0_parity": true,
++    "exact_full_resume": true
++  },
++  "selected_775k_strict_load": true,
++  "t0_scientific_parity": "PASS_WITHIN_TESTED_CPU_SCOPE",
++  "baseline_loaded_dependency_coverage": true,
++  "runtime_source_lock": "FAIL_LAZY_DEPENDENCY_ESCAPE_INCLUDING_FULL_CHECKPOINT",
++  "cuda_executed": false,
++  "cuda_authorized": false,
++  "formal_training_launched": false,
++  "core_or_t0_science_modified": false,
++  "central_dag_modified": false,
++  "recommend_master_freeze_base": false,
++  "bugs": [
++    {
++      "id": "B1",
++      "severity": "HIGH",
++      "layer": "BASE",
++      "description": "Undeclared lazy repository dependency changes reward and passes rollout/update/save_bound/load_bound",
++      "evidence": "lazy_dependency_repro.json"
++    },
++    {
++      "id": "B2",
++      "severity": "MEDIUM",
++      "layer": "BASE_C0_INTERFACE",
++      "description": "Wrapped NativeStage1 factory passes continuous startup and reaches native integer path",
++      "evidence": "continuous_guards_repro.json"
++    },
++    {
++      "id": "B3",
++      "severity": "MEDIUM",
++      "layer": "BASE_C0_INTERFACE",
++      "description": "Zero-update continuous density guard changes Torch RNG via MC entropy",
++      "evidence": "continuous_guards_repro.json"
++    },
++    {
++      "id": "B4",
++      "severity": "LOW",
++      "layer": "BASE_METADATA",
++      "description": "critic_ev definition says pre-update V but learner uses post-update denormalized V"
++    }
++  ],
++  "arm_gates": {
++    "T1": "fixed capacity/current information; multi-target/partial-agent lifecycle; curriculum switch/full resume/permutation",
++    "N1": "TERL observation parity; actor-only capacity and fixed critic; mask/pooling/evaluator",
++    "R1": "geometry/recipient/target and event parity; explicit raw/native/shaping/shaped telemetry",
++    "P1": "controlled full-state 775k fork; live optimizer overrides; single-variable changes",
++    "C0": "B2/B3 fixes; actual physical continuous AW/AW9 parity; latent/Jacobian/density/PPO/evaluator"
++  },
++  "next_action": "Master/Core publish new candidate SHA and canonical lock; independently reaccept new SHA; CUDA only after resource authorization",
++  "report": "docs/TERL_MAPPO_BATCH01_BASE_QA_20261009_ZH.md"
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/core_regression.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/core_regression.json
+new file mode 100644
+index 0000000..b48ba74
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/core_regression.json
+@@ -0,0 +1,87 @@
++{
++  "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++  "canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
++  "suite": {
++    "name": "pytest",
++    "errors": "0",
++    "failures": "0",
++    "skipped": "3",
++    "tests": "80",
++    "time": "217.827",
++    "timestamp": "2026-10-09T16:50:40.471105",
++    "hostname": "super"
++  },
++  "passed": 77,
++  "skipped": 3,
++  "cuda_gate": "NO_MASTER_AUTHORIZATION; CUDA_VISIBLE_DEVICES empty",
++  "formal_entry": "256/8/4, 256-decision CPU rollout/update; bit-exact T0 comparison; full-state resume",
++  "original_selected_checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
++  "b1_results": [
++    {
++      "case": "preflight",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "lazy_import",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "optimizer_import",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "foreign_origin",
++      "result": "latched source contract failure: local module origin outside pinned project: /home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/final_full/test_b1_dynamic_source_guards_11/foreign.py",
++      "failure_latched": true
++    },
++    {
++      "case": "original_qa_box_drift",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/box_actor.py",
++      "failure_latched": true
++    },
++    {
++      "case": "legal",
++      "result": "LEGAL_DECLARED_IMPORT_UPDATE_SAVE_LOAD_PASS",
++      "failure_latched": false
++    },
++    {
++      "case": "disk_drift",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "update_boundary",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "checkpoint_save",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "checkpoint_load",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "origin",
++      "result": "latched source contract failure: module __file__/spec origin mismatch: terl_mappo.model",
++      "failure_latched": true
++    },
++    {
++      "case": "symlink",
++      "result": "latched source contract failure: source symlink escapes project: /home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/final_full/test_b1_dynamic_source_guards_8/snapshot/src/escape.py",
++      "failure_latched": true
++    },
++    {
++      "case": "executed_drift",
++      "result": "latched source contract failure: executed module content differs from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    }
++  ],
++  "formal_training": false
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/delivery.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/delivery.json
+new file mode 100644
+index 0000000..19ff371
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/delivery.json
+@@ -0,0 +1,59 @@
++{
++  "schema": "terl.batch01.delivery.v2",
++  "status": "BATCH01_BASE_CANDIDATE_V2",
++  "branch": "experiment/terl-mappo-batch01-base-20261009",
++  "base": {
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++    "lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
++  },
++  "common_source_count": 96,
++  "issues": {
++    "B1": "PASS_CORE_CPU; PENDING_A3_REVIEW",
++    "B2": "PASS_CORE_CPU; PENDING_A3_REVIEW",
++    "B3": "PASS_CORE_CPU; PENDING_A3_REVIEW",
++    "B4": "PASS_CORE_CPU; PENDING_A3_REVIEW",
++    "Q1": "PASS_CORE_CPU; PENDING_A3_REVIEW"
++  },
++  "core_regression": {
++    "passed": 77,
++    "skipped": 3,
++    "total": 80,
++    "seconds": 217.827
++  },
++  "qa_branch_portability": {
++    "passed": 77,
++    "skipped": 3,
++    "total": 80,
++    "seconds": 238.808,
++    "branch": "audit/terl-mappo-batch01-base-qa-20261009",
++    "production_code_patched": false,
++    "fixture_adapter_used": false,
++    "independent_qa": false
++  },
++  "cuda": {
++    "executed": false,
++    "master_gate": "NO_AUTHORIZATION",
++    "visible_devices": ""
++  },
++  "t0_scientific_delta": [],
++  "formal_training": false,
++  "base_frozen": false,
++  "independent_qa": "PENDING_A3_REVIEW",
++  "runtime_manifest_fingerprint": "ee414d7e6653b7a84808716104232c2b49b7815f46ba64cd57932f35e2a2e104",
++  "evidence_hashes": {
++    "a3_original_continuous_guards_repro.json": "5f47c5080be5f6c788ccbedd212b22ee230fdac574dd90cd63822f87e9e96a5e",
++    "a3_original_lazy_dependency_repro.json": "9ad1db74c18340a6e0637c3238972375ff0491995659b0501d96d32ef6c7ebfc",
++    "a3_original_qa_result.json": "fe368e556dac627c3631c7a33cca02b0f524ebb6bb4d30a180aded8d1c985fce",
++    "core_regression.json": "0bca60b9e4c663ae4c6245d9124f5012a45eae7507ba78dcdd3270d33f601c9d",
++    "qa_branch_tests.txt": "aa03f1448cff5216b0b24467bc590068a8d45e984673beaf80c416d9c78236a0",
++    "qa_branch_tests.xml": "3ae25ec0d321ee6039192ffeff4ffde195486584fbf3f415a3d8f0f3fd0ea640",
++    "qa_portability.json": "73d5d680261eb5bbc81e186076ac05c7a22f46a88a90a9cdb8ff92f3e7ab7a61",
++    "source_audit.json": "c4f40cde6b67de214cc7d635e68dde837d2a26f3cb7f62b4f2bf78842e04a8b6",
++    "t0_delta_manifest.json": "06f19b2b4e07aac2eb8ce117c7d5ba1b317a70d78d59dfb2b58cedd620aa65ae",
++    "t0_runtime_manifest.json": "60c2c2501e0bb3f2aaaa2cea2570280d91bf447eb4f40b488a8eba0ba1615860",
++    "targeted_tests.xml": "792002f7b47f5bce3d34e9573658930e3982accbd9212ad8c6dadae24a33002a",
++    "tests.xml": "6347cbe06286f107b7d1bd63602dda4fd8f38049d0ffc30af91a29acb225bf5d"
++  },
++  "report": "docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md"
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.txt b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.txt
+new file mode 100644
+index 0000000..5cb3991
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.txt
+@@ -0,0 +1,17 @@
++......................s.....................s........................... [ 90%]
++......s.                                                                 [100%]
++=============================== warnings summary ===============================
++<frozen importlib._bootstrap>:488
++  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
++
++<frozen importlib._bootstrap>:488
++  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
++
++test/test_terl_native_mappo_20261008.py::test_parallel_evaluator_smoke_and_seed_domain
++test/test_terl_native_mappo_20261008.py::test_parallel_evaluator_smoke_and_seed_domain
++  /usr/local/anaconda3/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=1487913) is multi-threaded, use of fork() may lead to deadlocks in the child.
++    self.pid = os.fork()
++
++-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
++- generated xml file: /home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.xml -
++77 passed, 3 skipped, 4 warnings in 238.81s (0:03:58)
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.xml b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.xml
+new file mode 100644
+index 0000000..1670f0e
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="3" tests="80" time="238.808" timestamp="2026-10-09T16:56:22.836424" hostname="super"><testcase classname="test.test_terl_native_mappo_20261008" name="test_vendor_byte_identity" time="0.069" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[9]" time="1.055" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[66]" time="1.009" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[2026100800]" time="1.048" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_aw9_shapes_information_runtime" time="0.013" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[3-5.0]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[4-3.5]" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[5--8.0]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[6--9.5]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_capture_goal_credit_and_joint_terminal" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_collision_priority_and_per_agent_done" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_horizon_off_by_one_and_bootstrap" time="0.013" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_boundary_is_penalty_only" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_original_feature_parity_padding_and_no_iqn" time="0.553" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[no_target]" time="0.018" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[all_masked]" time="0.017" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[zero_slots]" time="0.016" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_shared_sampling_logprob_entropy_seed_and_gradients" time="0.028" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_critic_permutation_equivariance_and_no_actor_leakage" time="0.021" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_gae_terminal_truncation_reset_cut_and_active" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_value_norm_active_update_round_trip" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_update_masked_losses_ratio_resume_rng" time="1.133" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_cuda_finite_update_and_rng_resume" time="0.000"><skipped type="pytest.skip" message="CUDA unavailable">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/test/test_terl_native_mappo_20261008.py:195: CUDA unavailable</skipped></testcase><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_clipping_advantage_normalization_active_weighting" time="0.129" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_checkpoint_selection_and_no_false_strong_positive" time="0.000" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[capture]" time="0.016" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[collision]" time="0.014" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_parallel_evaluator_smoke_and_seed_domain" time="20.161" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_post_update_ratio_telemetry_matches_zero_update" time="0.060" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_emergency_friend_distance_is_post_step_not_cached" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_rollout_truncation_bootstraps_before_joint_reset" time="0.028" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_all_formal_configs_resolve_to_same_golden_contract" time="1.060" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_iqn_runtime_retains_historical_padding_and_replay_contract" time="0.045" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_aw_grid_is_exact_legacy_cartesian_order" time="0.076" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_continuous_actor_bounds_and_deterministic_contract" time="0.005" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_central_value_is_action_free_and_masks_inactive_rows" time="0.005" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy9_grid_and_adapter_are_dimensionally_audited" time="0.000" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy_servo_retains_acceleration_and_speed_limits" time="0.017" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_ppo_rollout_and_offpolicy_replay_contracts" time="0.003" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_checkpoint_roundtrip_preserves_actor_outputs" time="0.011" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_final_full_replay_retention_contract" time="0.533" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_legacy_mappo_backbone_all_masked_terminal_row_is_finite_and_immutable" time="0.007" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_all_masked_fallback_matches_explicit_self_valid_reference" time="0.007" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cpu]" time="75.066" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cuda:0]" time="0.001"><skipped type="pytest.skip" message="CUDA unavailable">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/test/test_terl_mappo_batch01_base_20261009.py:62: CUDA unavailable</skipped></testcase><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_real_source_lock_matches_anchor_and_rejects_wrong_pin" time="0.428" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_fresh_process_all_transitive_runtime_imports_are_locked" time="3.194" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_added_removed_and_changed_source_require_exact_delta" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_config_scope_before_values_and_no_silent_unknown_keys" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_reward_identity_hook_preserves_all_rollout_fields_and_rng" time="4.106" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_256_8_4_fully_masked_no_target_forward_backward" time="1.078" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_runtime_assertions_reject_unapplied_optimizer_and_dropout" time="0.993" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_c0_interface_rejects_continuous_coercion_and_requires_adapter" time="0.512" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[3-1-0-4]" time="0.092" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[4-1-1-6]" time="0.231" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[7-2-2-8]" time="0.117" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_evaluation_domains_and_all_rng_restored_on_exception" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_metrics_scene_labels_time_censoring_entropy_and_best_last" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_retention_does_not_touch_other_runs_symlinks_pending_best_or_latest" time="0.004" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_resource_paths_and_gpu_assignment_fail_closed" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_shared_selected_checkpoint_strict_resume_readonly" time="3.241" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_q1_production_lock_generator_stays_core_only" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[preflight]" time="4.345" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[lazy_import]" time="6.922" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[legal]" time="18.296" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[disk_drift]" time="10.471" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[update_boundary]" time="6.584" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_save]" time="8.243" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_load]" time="9.305" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[origin]" time="6.800" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[symlink]" time="6.413" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[executed_drift]" time="8.436" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[optimizer_import]" time="6.551" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[foreign_origin]" time="7.327" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[original_qa_box_drift]" time="6.584" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_lambda_native_adapter_rejected_during_startup" time="0.565" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state" time="0.481" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cpu]" time="2.390" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cuda:0]" time="0.000"><skipped type="pytest.skip" message="CUDA requires Master gate/available device">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/test/test_terl_mappo_batch01_qa_repairs_20261009.py:246: CUDA requires Master gate/available device</skipped></testcase><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets" time="10.170" /></testsuite></testsuites>
+\ No newline at end of file
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_portability.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_portability.json
+new file mode 100644
+index 0000000..b062ccd
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_portability.json
+@@ -0,0 +1,100 @@
++{
++  "schema": "terl.batch01.qa_portability.v1",
++  "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++  "branch": "audit/terl-mappo-batch01-base-qa-20261009",
++  "exit_code": 0,
++  "tests": {
++    "name": "pytest",
++    "errors": "0",
++    "failures": "0",
++    "skipped": "3",
++    "tests": "80",
++    "time": "238.808",
++    "timestamp": "2026-10-09T16:56:22.836424",
++    "hostname": "super"
++  },
++  "code_patches": false,
++  "fixture_adapter": false,
++  "executed_by": "Core local self-check; independent A3 QA still pending",
++  "b1_results": [
++    {
++      "case": "preflight",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "lazy_import",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "optimizer_import",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "foreign_origin",
++      "result": "latched source contract failure: local module origin outside pinned project: /home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/runs/tests/test_b1_dynamic_source_guards_11/foreign.py",
++      "failure_latched": true
++    },
++    {
++      "case": "original_qa_box_drift",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/box_actor.py",
++      "failure_latched": true
++    },
++    {
++      "case": "legal",
++      "result": "LEGAL_DECLARED_IMPORT_UPDATE_SAVE_LOAD_PASS",
++      "failure_latched": false
++    },
++    {
++      "case": "disk_drift",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "update_boundary",
++      "result": "latched source contract failure: loaded local dependency absent from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "checkpoint_save",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "checkpoint_load",
++      "result": "latched source contract failure: declared source hash mismatch: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    },
++    {
++      "case": "origin",
++      "result": "latched source contract failure: module __file__/spec origin mismatch: terl_mappo.model",
++      "failure_latched": true
++    },
++    {
++      "case": "symlink",
++      "result": "latched source contract failure: source symlink escapes project: /home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/runs/tests/test_b1_dynamic_source_guards_8/snapshot/src/escape.py",
++      "failure_latched": true
++    },
++    {
++      "case": "executed_drift",
++      "result": "latched source contract failure: executed module content differs from lock/delta: src/cocap_voradj/models/continuous/qa_dynamic_box.py",
++      "failure_latched": true
++    }
++  ],
++  "command": [
++    "/usr/local/anaconda3/bin/python",
++    "-m",
++    "pytest",
++    "-q",
++    "test/test_terl_native_mappo_20261008.py",
++    "test/test_small_step_ac_migration_contract.py",
++    "test/test_mappo_terminal_rows_20260923.py",
++    "test/test_terl_mappo_batch01_base_20261009.py",
++    "test/test_terl_mappo_batch01_qa_repairs_20261009.py",
++    "--tb=short",
++    "--basetemp=/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_v2_cpu/qa_branch_fixture/runs/tests",
++    "--junitxml=/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/artifacts/2026-10-09_terl_mappo_batch01_base_v2/qa_branch_tests.xml"
++  ]
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/source_audit.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/source_audit.json
+new file mode 100644
+index 0000000..2d5afd7
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/source_audit.json
+@@ -0,0 +1,212 @@
++{
++  "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
++  "common_source_count": 96,
++  "original_science_files_verified": {
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
++    "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
++    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
++    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
++    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
++    "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
++    "vendor/terl/config/config.yaml": "26b2a580a5ef0923cbf4a4594357ad618b0a3e866c96862dcbc2346c69d1daa5",
++    "vendor/terl/config_manager.py": "1c7181cb27b164d85a90a83b2b2b204c4534b2353434d6fb121460c86107a96d",
++    "vendor/terl/environment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/environment/env.py": "b3ec78b83a423574a69b1e0f20cecf1a732b15f5c0a2a87b560cc8aca810c0e2",
++    "vendor/terl/policy/DQN.py": "f732bbd2e1352e4da455c2927c175beb367374898c7edf4ca9a862e2d7c2c29e",
++    "vendor/terl/policy/IQN.py": "e95ed2789a38cd135d42e556a0ea08131a24319abd0a42b12acaa1a78c11b777",
++    "vendor/terl/policy/MEAN.py": "17026d8538588f520e5dc76116b9791699029daaecd997c6d42ae1f5fb910336",
++    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139",
++    "vendor/terl/policy/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/policy/ablation_mlp_with_target_selection.py": "2aa87839d6de24ef1e41d68ad29431c7e0bd328ee06c34bc9befd59dc7da7e19",
++    "vendor/terl/policy/ablation_transformer_without_target_selection.py": "41bc80eacaf355f6abe6beea2c2dd66b0208d4dcee3e8a759de15e26685cd08e",
++    "vendor/terl/policy/agent.py": "eebbb53907c6e9c631f3252345297ea788c0ffae94703dfebf4385f57667418c",
++    "vendor/terl/policy/replay_buffer.py": "482d49817d390e3d10eada5e8b819bce473795d62eaf364253c775f3cdbeda13",
++    "vendor/terl/policy/trainer.py": "be1c2db90d038ec76354136cfe20965d8f407419468c810e4e370d30ec0dc708",
++    "vendor/terl/robots/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/robots/evader.py": "05313a0c2812c9eddce664b00e08afa886c39fa13c5148719e0cb03073f37f6d",
++    "vendor/terl/robots/perception.py": "d07c65737d747df397e94077aafdc6d2920f4fc30892329b8482a4a2cb9d61cb",
++    "vendor/terl/robots/pursuer.py": "2ddb24e33f0837e05735a781f3faddf3418f8e2290388002e12a1d64242f7f4f",
++    "vendor/terl/robots/robot.py": "9d56d1534b1c917e20002b664625fd0e2c0e52f316076183c76034c80ee4d7a3",
++    "vendor/terl/thirdparty/APF.py": "4d8f7232c06fd9f2a02084ecfe16f6e11950545b05e08eacb60bfbcfce4453b4",
++    "vendor/terl/train_rl_with_configs.py": "62e59a6122735aa0726cb92af8e313b9dae0ea015ea42dc9248d91b1e26c56cd",
++    "vendor/terl/utils/__init__.py": "8013770a2aec6796d6e398342e5157136b9e97a9eedd9f410b400b62c2c4485a",
++    "vendor/terl/utils/logger_setter.py": "6b31d2880b7200fd7df0f0ee9b0fbe28dc81b14c019d86f02664af8edb2d8f29",
++    "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
++    "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb",
++    "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
++    "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e"
++  },
++  "additional_cocap_sources_verified": {
++    "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
++    "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
++    "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
++    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
++    "src/cocap_voradj/dynamics/__init__.py": "70249095b00eb50f589ff8ac87faf047543fd60a0ece519cf2fec19bf5c9d022",
++    "src/cocap_voradj/dynamics/continuous_action.py": "da36c8d4328c4c8677d7b40ac6cffe9f1cebf35a10a8b33a0f2b2af46042493b",
++    "src/cocap_voradj/dynamics/evader.py": "1f29b2673c993a5dd9e24a8336c6d4a1f09612f28764cf9b93815a5683b96760",
++    "src/cocap_voradj/dynamics/perception.py": "652dcfe8ae57ea2b03e569050f97f88b27cc61c62f0d6871d9154db4eb517918",
++    "src/cocap_voradj/dynamics/pursuer.py": "63747203e4b76261c0bb020f0b98b734eb15cc853d16c1d6721ed3a6a8828103",
++    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
++    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
++    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
++    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
++    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
++    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
++    "src/cocap_voradj/evaluation/mission_events.py": "d20fc22269c66c43687f4a9fcde6cf8007c7b5fcf7cabdf5f00ab0ba02b9733a",
++    "src/cocap_voradj/models/__init__.py": "e3635359ab4e863ff683ff27daae0c3851a5ed8165f051c21d0c1108353e123b",
++    "src/cocap_voradj/models/continuous/__init__.py": "3ecbe68af8b76d24ab58665c338eaea1246d2225ac48b15e9f0c2ce4878d1309",
++    "src/cocap_voradj/models/continuous/box_actor.py": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++    "src/cocap_voradj/models/continuous/central_attention_critic.py": "11bb8ef018d804f2b8dad507baefc1865af3f8c70eb919ee477601ee1dc03e52",
++    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "a0a396ced192c9e359bb401febea9fc7684092e7d1a5f81e1c1dd0d1c72fecff",
++    "src/cocap_voradj/models/continuous/radial_actor.py": "68a26d36e880e9c4820ae4b35f202e3f5d9148f75c43c8ff1adf937253161ae5",
++    "src/cocap_voradj/models/iqn.py": "916decb01dd1636340581a48e82ae9287949c43d5233571e9279a2df1ac66f82",
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/__init__.py": "2c757d13995cef25427bd8603eb8bed8e068d572584686952c8b57384efa1e4a",
++    "src/cocap_voradj/training/continuous/__init__.py": "08ebcfbce3033bdf096e3fa50fd4b8906a73d34b880b5949931ab63895b53341",
++    "src/cocap_voradj/training/continuous/central_sac.py": "9c370f1e83075b3932edaf0ca0dc5b54ecc7e74034c77957c3137c54d0ce8265",
++    "src/cocap_voradj/training/continuous/central_schema.py": "a10f4910acb812cb5f223069b625905ddbb3675462e6a73c3a75b99c5f4eaf24",
++    "src/cocap_voradj/training/continuous/curriculum_snapshots.py": "d7ed4dec18d85f69e9108ac93f640e0c373b068fe1e81b92d96787bd3a6ff7b6",
++    "src/cocap_voradj/training/continuous/formal_config.py": "c90de9a67048926da6b0f5d1da73e1908e2db316a246caf83bd53b9521ab230f",
++    "src/cocap_voradj/training/continuous/joint_replay.py": "1001e065ee8c2e667d46c51a8ec77575f25520c25b141d229d0eccfa4c4ccbd3",
++    "src/cocap_voradj/training/continuous/local_sac.py": "e2fe10152157af34c1f670b3f23075c4d1857b1b8121ec35a68e77f5650c6776",
++    "src/cocap_voradj/training/replay.py": "cf296692a7bda922873bdf56068f84d9fccc19ab688516ebd4ca9d19dd9e7b26",
++    "src/cocap_voradj/training/runtime_semantics.py": "e88499a70bb725bf4a63efe6205e8bc9b38cbec7f8fa61204d01b832865c74f8",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
++    "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
++    "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
++    "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89"
++  },
++  "science_mismatches": [],
++  "generated_runtime_sources": {
++    "torch.distributed.nn.non_scriptable_remote_template": "8205b16956fb264841ecd8644784a0d157f87df79b17c16825dc1163433ce5d8"
++  },
++  "a3_evidence": {
++    "reproduce_lazy_dependency.py": {
++      "sha256": "92bd0907f8d4e7071e5b91ba8b17868618c0d9d6d0fe49e0d7255a7bfbf136cf",
++      "qa_git_object": "974cdd171898a261b7c862622463537cdc31a487:artifacts/2026-10-09_batch01_base_independent_qa/reproduce_lazy_dependency.py"
++    },
++    "reproduce_continuous_guards.py": {
++      "sha256": "a31e6c42efadab5520b3c55db5ff7249757c5a7ba46feb7eb087953ae13c1996",
++      "qa_git_object": "974cdd171898a261b7c862622463537cdc31a487:artifacts/2026-10-09_batch01_base_independent_qa/reproduce_continuous_guards.py"
++    },
++    "lazy_dependency_repro.json": {
++      "sha256": "9ad1db74c18340a6e0637c3238972375ff0491995659b0501d96d32ef6c7ebfc",
++      "qa_git_object": "974cdd171898a261b7c862622463537cdc31a487:artifacts/2026-10-09_batch01_base_independent_qa/lazy_dependency_repro.json"
++    },
++    "continuous_guards_repro.json": {
++      "sha256": "5f47c5080be5f6c788ccbedd212b22ee230fdac574dd90cd63822f87e9e96a5e",
++      "qa_git_object": "974cdd171898a261b7c862622463537cdc31a487:artifacts/2026-10-09_batch01_base_independent_qa/continuous_guards_repro.json"
++    },
++    "qa_result.json": {
++      "sha256": "fe368e556dac627c3631c7a33cca02b0f524ebb6bb4d30a180aded8d1c985fce",
++      "qa_git_object": "974cdd171898a261b7c862622463537cdc31a487:artifacts/2026-10-09_batch01_base_independent_qa/qa_result.json"
++    }
++  },
++  "original_qa_head": "974cdd171898a261b7c862622463537cdc31a487",
++  "old_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "old_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1",
++  "old_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
++  "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++  "common_source_hashes": {
++    "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
++    "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
++    "configs/experiments/terl_mappo_batch01_20261009/evaluation.json": "75d7382cea852e13ce0aa6345f14f3f33ecc1081810c02140f395d89b1f774b4",
++    "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
++    "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
++    "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
++    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
++    "src/cocap_voradj/dynamics/__init__.py": "70249095b00eb50f589ff8ac87faf047543fd60a0ece519cf2fec19bf5c9d022",
++    "src/cocap_voradj/dynamics/continuous_action.py": "da36c8d4328c4c8677d7b40ac6cffe9f1cebf35a10a8b33a0f2b2af46042493b",
++    "src/cocap_voradj/dynamics/evader.py": "1f29b2673c993a5dd9e24a8336c6d4a1f09612f28764cf9b93815a5683b96760",
++    "src/cocap_voradj/dynamics/perception.py": "652dcfe8ae57ea2b03e569050f97f88b27cc61c62f0d6871d9154db4eb517918",
++    "src/cocap_voradj/dynamics/pursuer.py": "63747203e4b76261c0bb020f0b98b734eb15cc853d16c1d6721ed3a6a8828103",
++    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
++    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
++    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
++    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
++    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
++    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
++    "src/cocap_voradj/evaluation/mission_events.py": "d20fc22269c66c43687f4a9fcde6cf8007c7b5fcf7cabdf5f00ab0ba02b9733a",
++    "src/cocap_voradj/models/__init__.py": "e3635359ab4e863ff683ff27daae0c3851a5ed8165f051c21d0c1108353e123b",
++    "src/cocap_voradj/models/continuous/__init__.py": "3ecbe68af8b76d24ab58665c338eaea1246d2225ac48b15e9f0c2ce4878d1309",
++    "src/cocap_voradj/models/continuous/box_actor.py": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++    "src/cocap_voradj/models/continuous/central_attention_critic.py": "11bb8ef018d804f2b8dad507baefc1865af3f8c70eb919ee477601ee1dc03e52",
++    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "a0a396ced192c9e359bb401febea9fc7684092e7d1a5f81e1c1dd0d1c72fecff",
++    "src/cocap_voradj/models/continuous/radial_actor.py": "68a26d36e880e9c4820ae4b35f202e3f5d9148f75c43c8ff1adf937253161ae5",
++    "src/cocap_voradj/models/iqn.py": "916decb01dd1636340581a48e82ae9287949c43d5233571e9279a2df1ac66f82",
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/__init__.py": "2c757d13995cef25427bd8603eb8bed8e068d572584686952c8b57384efa1e4a",
++    "src/cocap_voradj/training/continuous/__init__.py": "08ebcfbce3033bdf096e3fa50fd4b8906a73d34b880b5949931ab63895b53341",
++    "src/cocap_voradj/training/continuous/central_sac.py": "9c370f1e83075b3932edaf0ca0dc5b54ecc7e74034c77957c3137c54d0ce8265",
++    "src/cocap_voradj/training/continuous/central_schema.py": "a10f4910acb812cb5f223069b625905ddbb3675462e6a73c3a75b99c5f4eaf24",
++    "src/cocap_voradj/training/continuous/curriculum_snapshots.py": "d7ed4dec18d85f69e9108ac93f640e0c373b068fe1e81b92d96787bd3a6ff7b6",
++    "src/cocap_voradj/training/continuous/formal_config.py": "c90de9a67048926da6b0f5d1da73e1908e2db316a246caf83bd53b9521ab230f",
++    "src/cocap_voradj/training/continuous/joint_replay.py": "1001e065ee8c2e667d46c51a8ec77575f25520c25b141d229d0eccfa4c4ccbd3",
++    "src/cocap_voradj/training/continuous/local_sac.py": "e2fe10152157af34c1f670b3f23075c4d1857b1b8121ec35a68e77f5650c6776",
++    "src/cocap_voradj/training/replay.py": "cf296692a7bda922873bdf56068f84d9fccc19ab688516ebd4ca9d19dd9e7b26",
++    "src/cocap_voradj/training/runtime_semantics.py": "e88499a70bb725bf4a63efe6205e8bc9b38cbec7f8fa61204d01b832865c74f8",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
++    "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
++    "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
++    "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89",
++    "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
++    "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
++    "src/terl_mappo/batch01/checkpoints.py": "8fe00074d56fe9a29f89a2a8b8bb3274c76e4e0b5803369cde48dbaf3e96bb5b",
++    "src/terl_mappo/batch01/contracts.py": "3ae1c3c39645319ca5b301b2eade61d4a9ef02a59429027b95d7ab2451540e28",
++    "src/terl_mappo/batch01/evaluation.py": "919327bc1dd761e57af6aaff893db015cf7d12eeba3c90a34fc6beace77ed763",
++    "src/terl_mappo/batch01/interfaces.py": "4562561e9b798b1575f7431acfd6d72ede8e2694cfbf9782be89641ec8be4d01",
++    "src/terl_mappo/batch01/provenance.py": "28d391c7a17a30f898bc3347d62c7dd5a2fcfef070ac0cec203a681ef905de9e",
++    "src/terl_mappo/batch01/source_guard.py": "1fa5b101451f373f3e42b5da5d1ef4f4a141c450127b81a66aee867219b45bc4",
++    "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
++    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
++    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
++    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
++    "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
++    "test/test_mappo_terminal_rows_20260923.py": "a4bc304dac2f01048aa55732c19f70c158afa150fbb08d99b90efca9e93aeb6f",
++    "test/test_small_step_ac_migration_contract.py": "cc3068c6e5119ed6216cd3799a84d10de1646d89be5995dcfeabf1a2532104a0",
++    "test/test_terl_mappo_batch01_base_20261009.py": "f6691605bec00f9757f649423ed78185ae3895091ac9cd6ee3ed1096b7504da9",
++    "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "be86c538075f6e588b6ea2c623b9efe1ae87a7b438f88087c8fa35ede32e8e36",
++    "test/test_terl_native_mappo_20261008.py": "292d70892cdedd7f7e3586651fe356bab61d7d787d837b99cd72ef31566f2704",
++    "tools/__init__.py": "5ccd26c24a82f19d58ae60476714d66b273227529d96e57b688fef2a68e29612",
++    "tools/batch01_base_20261009.py": "3933d6fa1a3790f574b316f1a77fe03fe8c4ec418e7e63feca4fe180ceb517fd",
++    "tools/run_continuous_ctde_training.py": "cf433e31fd8fd4a2f73bf26bebde611134f144c58cafe6fdae907b81b265f964",
++    "tools/run_small_step_ac_migration.py": "c33131e247ea70cc3cc687c775c786f5e552781d4642ce70268df3f3494109e0",
++    "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
++    "vendor/terl/config/config.yaml": "26b2a580a5ef0923cbf4a4594357ad618b0a3e866c96862dcbc2346c69d1daa5",
++    "vendor/terl/config/config_dqn.yaml": "f5b75051423f5aa4563711fe6308f43d1410020d140739b75f5b5e03a42e26bd",
++    "vendor/terl/config/exp_config_large_scale.yaml": "a60662d67432c35eb24a05ee7a5db017830a63c95a4cb817c37521dad6da6afa",
++    "vendor/terl/config/exp_config_less_pursuer_more_evader.yaml": "49ae50396acb8acf3876a5b185b73d3aa7c063d135585796d98232f106d5d799",
++    "vendor/terl/config/exp_config_medium_scale.yaml": "7018241634adc659ae49585b5f246c2f55b8b66ef63278706ff0943d581f0392",
++    "vendor/terl/config/exp_config_small_scale.yaml": "156c707f76c05e3509d32a5fcc22f29032c1ba87dd3257ddc2b1e0f5aa4a1413",
++    "vendor/terl/config_manager.py": "1c7181cb27b164d85a90a83b2b2b204c4534b2353434d6fb121460c86107a96d",
++    "vendor/terl/environment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/environment/env.py": "b3ec78b83a423574a69b1e0f20cecf1a732b15f5c0a2a87b560cc8aca810c0e2",
++    "vendor/terl/policy/DQN.py": "f732bbd2e1352e4da455c2927c175beb367374898c7edf4ca9a862e2d7c2c29e",
++    "vendor/terl/policy/IQN.py": "e95ed2789a38cd135d42e556a0ea08131a24319abd0a42b12acaa1a78c11b777",
++    "vendor/terl/policy/MEAN.py": "17026d8538588f520e5dc76116b9791699029daaecd997c6d42ae1f5fb910336",
++    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139",
++    "vendor/terl/policy/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/policy/ablation_mlp_with_target_selection.py": "2aa87839d6de24ef1e41d68ad29431c7e0bd328ee06c34bc9befd59dc7da7e19",
++    "vendor/terl/policy/ablation_transformer_without_target_selection.py": "41bc80eacaf355f6abe6beea2c2dd66b0208d4dcee3e8a759de15e26685cd08e",
++    "vendor/terl/policy/agent.py": "eebbb53907c6e9c631f3252345297ea788c0ffae94703dfebf4385f57667418c",
++    "vendor/terl/policy/replay_buffer.py": "482d49817d390e3d10eada5e8b819bce473795d62eaf364253c775f3cdbeda13",
++    "vendor/terl/policy/trainer.py": "be1c2db90d038ec76354136cfe20965d8f407419468c810e4e370d30ec0dc708",
++    "vendor/terl/requirements.txt": "b62a23a3e8b323c317548f90ee8ed93a2de65e41d4e055a2f4171700936414ec",
++    "vendor/terl/robots/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/robots/evader.py": "05313a0c2812c9eddce664b00e08afa886c39fa13c5148719e0cb03073f37f6d",
++    "vendor/terl/robots/perception.py": "d07c65737d747df397e94077aafdc6d2920f4fc30892329b8482a4a2cb9d61cb",
++    "vendor/terl/robots/pursuer.py": "2ddb24e33f0837e05735a781f3faddf3418f8e2290388002e12a1d64242f7f4f",
++    "vendor/terl/robots/robot.py": "9d56d1534b1c917e20002b664625fd0e2c0e52f316076183c76034c80ee4d7a3",
++    "vendor/terl/thirdparty/APF.py": "4d8f7232c06fd9f2a02084ecfe16f6e11950545b05e08eacb60bfbcfce4453b4",
++    "vendor/terl/train_rl_with_configs.py": "62e59a6122735aa0726cb92af8e313b9dae0ea015ea42dc9248d91b1e26c56cd",
++    "vendor/terl/utils/__init__.py": "8013770a2aec6796d6e398342e5157136b9e97a9eedd9f410b400b62c2c4485a",
++    "vendor/terl/utils/logger_setter.py": "6b31d2880b7200fd7df0f0ee9b0fbe28dc81b14c019d86f02664af8edb2d8f29",
++    "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
++    "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
++  }
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_delta_manifest.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_delta_manifest.json
+new file mode 100644
+index 0000000..1f85396
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_delta_manifest.json
+@@ -0,0 +1,12 @@
++{
++  "schema": "terl.batch01.delta.v1",
++  "line": "T0",
++  "base": {
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++    "lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
++  },
++  "config_changes": [],
++  "source_changes": [],
++  "extensions": {}
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_runtime_manifest.json b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_runtime_manifest.json
+new file mode 100644
+index 0000000..e42f6c5
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_runtime_manifest.json
+@@ -0,0 +1,493 @@
++{
++  "schema": "terl.batch01.runtime.v1",
++  "status": "OFFLINE_PREPARED_NO_TRAINING",
++  "base": {
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++    "lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
++  },
++  "line": "T0",
++  "resolved_config": {
++    "experiment": "EXP-TERL-MAPPO-01",
++    "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
++    "seed": 9,
++    "actor_seed": 109,
++    "hidden_dim": 256,
++    "num_heads": 8,
++    "num_layers": 4,
++    "masked_pool": false,
++    "budget": 1000000,
++    "stage1_ceiling": 2000000,
++    "rollout_length": 256,
++    "checkpoint_interval": 25000,
++    "screen_seed_base": 2026100800,
++    "heldout_seed_base": 2036100800,
++    "evaluation_workers": 2,
++    "ppo": {
++      "gamma": 0.99,
++      "gae_lambda": 0.95,
++      "clip_param": 0.2,
++      "ppo_epochs": 3,
++      "minibatches": 2,
++      "actor_lr": 3e-05,
++      "critic_lr": 0.0001,
++      "entropy_coef": 0.01,
++      "value_coef": 1.0,
++      "max_grad_norm": 0.5,
++      "target_kl": 0.02,
++      "value_norm": true,
++      "value_norm_beta": 0.99999,
++      "value_norm_epsilon": 1e-05
++    }
++  },
++  "delta_manifest": {
++    "schema": "terl.batch01.delta.v1",
++    "line": "T0",
++    "base": {
++      "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++      "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++      "lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
++    },
++    "config_changes": [],
++    "source_changes": [],
++    "extensions": {}
++  },
++  "common_source_hashes": {
++    "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
++    "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
++    "configs/experiments/terl_mappo_batch01_20261009/evaluation.json": "75d7382cea852e13ce0aa6345f14f3f33ecc1081810c02140f395d89b1f774b4",
++    "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
++    "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
++    "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
++    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
++    "src/cocap_voradj/dynamics/__init__.py": "70249095b00eb50f589ff8ac87faf047543fd60a0ece519cf2fec19bf5c9d022",
++    "src/cocap_voradj/dynamics/continuous_action.py": "da36c8d4328c4c8677d7b40ac6cffe9f1cebf35a10a8b33a0f2b2af46042493b",
++    "src/cocap_voradj/dynamics/evader.py": "1f29b2673c993a5dd9e24a8336c6d4a1f09612f28764cf9b93815a5683b96760",
++    "src/cocap_voradj/dynamics/perception.py": "652dcfe8ae57ea2b03e569050f97f88b27cc61c62f0d6871d9154db4eb517918",
++    "src/cocap_voradj/dynamics/pursuer.py": "63747203e4b76261c0bb020f0b98b734eb15cc853d16c1d6721ed3a6a8828103",
++    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
++    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
++    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
++    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
++    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
++    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
++    "src/cocap_voradj/evaluation/mission_events.py": "d20fc22269c66c43687f4a9fcde6cf8007c7b5fcf7cabdf5f00ab0ba02b9733a",
++    "src/cocap_voradj/models/__init__.py": "e3635359ab4e863ff683ff27daae0c3851a5ed8165f051c21d0c1108353e123b",
++    "src/cocap_voradj/models/continuous/__init__.py": "3ecbe68af8b76d24ab58665c338eaea1246d2225ac48b15e9f0c2ce4878d1309",
++    "src/cocap_voradj/models/continuous/box_actor.py": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++    "src/cocap_voradj/models/continuous/central_attention_critic.py": "11bb8ef018d804f2b8dad507baefc1865af3f8c70eb919ee477601ee1dc03e52",
++    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "a0a396ced192c9e359bb401febea9fc7684092e7d1a5f81e1c1dd0d1c72fecff",
++    "src/cocap_voradj/models/continuous/radial_actor.py": "68a26d36e880e9c4820ae4b35f202e3f5d9148f75c43c8ff1adf937253161ae5",
++    "src/cocap_voradj/models/iqn.py": "916decb01dd1636340581a48e82ae9287949c43d5233571e9279a2df1ac66f82",
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/__init__.py": "2c757d13995cef25427bd8603eb8bed8e068d572584686952c8b57384efa1e4a",
++    "src/cocap_voradj/training/continuous/__init__.py": "08ebcfbce3033bdf096e3fa50fd4b8906a73d34b880b5949931ab63895b53341",
++    "src/cocap_voradj/training/continuous/central_sac.py": "9c370f1e83075b3932edaf0ca0dc5b54ecc7e74034c77957c3137c54d0ce8265",
++    "src/cocap_voradj/training/continuous/central_schema.py": "a10f4910acb812cb5f223069b625905ddbb3675462e6a73c3a75b99c5f4eaf24",
++    "src/cocap_voradj/training/continuous/curriculum_snapshots.py": "d7ed4dec18d85f69e9108ac93f640e0c373b068fe1e81b92d96787bd3a6ff7b6",
++    "src/cocap_voradj/training/continuous/formal_config.py": "c90de9a67048926da6b0f5d1da73e1908e2db316a246caf83bd53b9521ab230f",
++    "src/cocap_voradj/training/continuous/joint_replay.py": "1001e065ee8c2e667d46c51a8ec77575f25520c25b141d229d0eccfa4c4ccbd3",
++    "src/cocap_voradj/training/continuous/local_sac.py": "e2fe10152157af34c1f670b3f23075c4d1857b1b8121ec35a68e77f5650c6776",
++    "src/cocap_voradj/training/replay.py": "cf296692a7bda922873bdf56068f84d9fccc19ab688516ebd4ca9d19dd9e7b26",
++    "src/cocap_voradj/training/runtime_semantics.py": "e88499a70bb725bf4a63efe6205e8bc9b38cbec7f8fa61204d01b832865c74f8",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
++    "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
++    "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
++    "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89",
++    "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
++    "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
++    "src/terl_mappo/batch01/checkpoints.py": "8fe00074d56fe9a29f89a2a8b8bb3274c76e4e0b5803369cde48dbaf3e96bb5b",
++    "src/terl_mappo/batch01/contracts.py": "3ae1c3c39645319ca5b301b2eade61d4a9ef02a59429027b95d7ab2451540e28",
++    "src/terl_mappo/batch01/evaluation.py": "919327bc1dd761e57af6aaff893db015cf7d12eeba3c90a34fc6beace77ed763",
++    "src/terl_mappo/batch01/interfaces.py": "4562561e9b798b1575f7431acfd6d72ede8e2694cfbf9782be89641ec8be4d01",
++    "src/terl_mappo/batch01/provenance.py": "28d391c7a17a30f898bc3347d62c7dd5a2fcfef070ac0cec203a681ef905de9e",
++    "src/terl_mappo/batch01/source_guard.py": "1fa5b101451f373f3e42b5da5d1ef4f4a141c450127b81a66aee867219b45bc4",
++    "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
++    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
++    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
++    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
++    "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
++    "test/test_mappo_terminal_rows_20260923.py": "a4bc304dac2f01048aa55732c19f70c158afa150fbb08d99b90efca9e93aeb6f",
++    "test/test_small_step_ac_migration_contract.py": "cc3068c6e5119ed6216cd3799a84d10de1646d89be5995dcfeabf1a2532104a0",
++    "test/test_terl_mappo_batch01_base_20261009.py": "f6691605bec00f9757f649423ed78185ae3895091ac9cd6ee3ed1096b7504da9",
++    "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "be86c538075f6e588b6ea2c623b9efe1ae87a7b438f88087c8fa35ede32e8e36",
++    "test/test_terl_native_mappo_20261008.py": "292d70892cdedd7f7e3586651fe356bab61d7d787d837b99cd72ef31566f2704",
++    "tools/__init__.py": "5ccd26c24a82f19d58ae60476714d66b273227529d96e57b688fef2a68e29612",
++    "tools/batch01_base_20261009.py": "3933d6fa1a3790f574b316f1a77fe03fe8c4ec418e7e63feca4fe180ceb517fd",
++    "tools/run_continuous_ctde_training.py": "cf433e31fd8fd4a2f73bf26bebde611134f144c58cafe6fdae907b81b265f964",
++    "tools/run_small_step_ac_migration.py": "c33131e247ea70cc3cc687c775c786f5e552781d4642ce70268df3f3494109e0",
++    "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
++    "vendor/terl/config/config.yaml": "26b2a580a5ef0923cbf4a4594357ad618b0a3e866c96862dcbc2346c69d1daa5",
++    "vendor/terl/config/config_dqn.yaml": "f5b75051423f5aa4563711fe6308f43d1410020d140739b75f5b5e03a42e26bd",
++    "vendor/terl/config/exp_config_large_scale.yaml": "a60662d67432c35eb24a05ee7a5db017830a63c95a4cb817c37521dad6da6afa",
++    "vendor/terl/config/exp_config_less_pursuer_more_evader.yaml": "49ae50396acb8acf3876a5b185b73d3aa7c063d135585796d98232f106d5d799",
++    "vendor/terl/config/exp_config_medium_scale.yaml": "7018241634adc659ae49585b5f246c2f55b8b66ef63278706ff0943d581f0392",
++    "vendor/terl/config/exp_config_small_scale.yaml": "156c707f76c05e3509d32a5fcc22f29032c1ba87dd3257ddc2b1e0f5aa4a1413",
++    "vendor/terl/config_manager.py": "1c7181cb27b164d85a90a83b2b2b204c4534b2353434d6fb121460c86107a96d",
++    "vendor/terl/environment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/environment/env.py": "b3ec78b83a423574a69b1e0f20cecf1a732b15f5c0a2a87b560cc8aca810c0e2",
++    "vendor/terl/policy/DQN.py": "f732bbd2e1352e4da455c2927c175beb367374898c7edf4ca9a862e2d7c2c29e",
++    "vendor/terl/policy/IQN.py": "e95ed2789a38cd135d42e556a0ea08131a24319abd0a42b12acaa1a78c11b777",
++    "vendor/terl/policy/MEAN.py": "17026d8538588f520e5dc76116b9791699029daaecd997c6d42ae1f5fb910336",
++    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139",
++    "vendor/terl/policy/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/policy/ablation_mlp_with_target_selection.py": "2aa87839d6de24ef1e41d68ad29431c7e0bd328ee06c34bc9befd59dc7da7e19",
++    "vendor/terl/policy/ablation_transformer_without_target_selection.py": "41bc80eacaf355f6abe6beea2c2dd66b0208d4dcee3e8a759de15e26685cd08e",
++    "vendor/terl/policy/agent.py": "eebbb53907c6e9c631f3252345297ea788c0ffae94703dfebf4385f57667418c",
++    "vendor/terl/policy/replay_buffer.py": "482d49817d390e3d10eada5e8b819bce473795d62eaf364253c775f3cdbeda13",
++    "vendor/terl/policy/trainer.py": "be1c2db90d038ec76354136cfe20965d8f407419468c810e4e370d30ec0dc708",
++    "vendor/terl/requirements.txt": "b62a23a3e8b323c317548f90ee8ed93a2de65e41d4e055a2f4171700936414ec",
++    "vendor/terl/robots/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/robots/evader.py": "05313a0c2812c9eddce664b00e08afa886c39fa13c5148719e0cb03073f37f6d",
++    "vendor/terl/robots/perception.py": "d07c65737d747df397e94077aafdc6d2920f4fc30892329b8482a4a2cb9d61cb",
++    "vendor/terl/robots/pursuer.py": "2ddb24e33f0837e05735a781f3faddf3418f8e2290388002e12a1d64242f7f4f",
++    "vendor/terl/robots/robot.py": "9d56d1534b1c917e20002b664625fd0e2c0e52f316076183c76034c80ee4d7a3",
++    "vendor/terl/thirdparty/APF.py": "4d8f7232c06fd9f2a02084ecfe16f6e11950545b05e08eacb60bfbcfce4453b4",
++    "vendor/terl/train_rl_with_configs.py": "62e59a6122735aa0726cb92af8e313b9dae0ea015ea42dc9248d91b1e26c56cd",
++    "vendor/terl/utils/__init__.py": "8013770a2aec6796d6e398342e5157136b9e97a9eedd9f410b400b62c2c4485a",
++    "vendor/terl/utils/logger_setter.py": "6b31d2880b7200fd7df0f0ee9b0fbe28dc81b14c019d86f02664af8edb2d8f29",
++    "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
++    "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
++  },
++  "generated_runtime_source_hashes": {
++    "torch.distributed.nn.non_scriptable_remote_template": "8205b16956fb264841ecd8644784a0d157f87df79b17c16825dc1163433ce5d8"
++  },
++  "seed_manifest": {
++    "train_environment": [
++      9
++    ],
++    "train_actor": [
++      109
++    ],
++    "sample_torch_offset": 100000,
++    "screen": [
++      2026100800,
++      2026100801,
++      2026100802,
++      2026100803,
++      2026100804,
++      2026100805,
++      2026100806,
++      2026100807,
++      2026100808,
++      2026100809,
++      2026100810,
++      2026100811,
++      2026100812,
++      2026100813,
++      2026100814,
++      2026100815,
++      2026100816,
++      2026100817,
++      2026100818,
++      2026100819
++    ],
++    "selection": [
++      2036100800,
++      2036100801,
++      2036100802,
++      2036100803,
++      2036100804,
++      2036100805,
++      2036100806,
++      2036100807,
++      2036100808,
++      2036100809,
++      2036100810,
++      2036100811,
++      2036100812,
++      2036100813,
++      2036100814,
++      2036100815,
++      2036100816,
++      2036100817,
++      2036100818,
++      2036100819
++    ],
++    "final": [
++      2046101800,
++      2046101801,
++      2046101802,
++      2046101803,
++      2046101804,
++      2046101805,
++      2046101806,
++      2046101807,
++      2046101808,
++      2046101809,
++      2046101810,
++      2046101811,
++      2046101812,
++      2046101813,
++      2046101814,
++      2046101815,
++      2046101816,
++      2046101817,
++      2046101818,
++      2046101819,
++      2046101820,
++      2046101821,
++      2046101822,
++      2046101823,
++      2046101824,
++      2046101825,
++      2046101826,
++      2046101827,
++      2046101828,
++      2046101829,
++      2046101830,
++      2046101831,
++      2046101832,
++      2046101833,
++      2046101834,
++      2046101835,
++      2046101836,
++      2046101837,
++      2046101838,
++      2046101839,
++      2046101840,
++      2046101841,
++      2046101842,
++      2046101843,
++      2046101844,
++      2046101845,
++      2046101846,
++      2046101847,
++      2046101848,
++      2046101849
++    ]
++  },
++  "evaluation_protocol": {
++    "schema": "terl.batch01.evaluation.v1",
++    "checkpoint_interval": 25000,
++    "sample_torch_offset": 100000,
++    "screen": {
++      "seed_base": 2026100800,
++      "max_episodes_per_mode": 20,
++      "regular_episodes_per_mode": 10
++    },
++    "screen_milestones": [
++      0,
++      25000,
++      50000,
++      100000,
++      250000,
++      500000,
++      750000,
++      1000000
++    ],
++    "selection": {
++      "seed_base": 2036100800,
++      "max_episodes_per_mode": 20,
++      "top_screen_candidates": 3
++    },
++    "final": {
++      "seed_base": 2046101800,
++      "max_episodes_per_mode": 50
++    },
++    "modes": [
++      "argmax",
++      "sample"
++    ],
++    "selection_order": [
++      "mean_normal_capture_rate",
++      "negative_mean_collision_rate",
++      "mean_strict_geometry_rate",
++      "mean_ring3_rate",
++      "negative_step"
++    ],
++    "late_stage_window_checkpoints": 5,
++    "entropy_comparison": "within declared probability measure only",
++    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++  },
++  "metric_definitions": {
++    "normal_capture": "all native evaders captured AND no collision at joint end",
++    "ring2/ring3": "full-episode visitation: >=2/>=3 active pursuers within <8m of an evader",
++    "strict_geometry": ">=3 near pursuers; max angle gap<=pi and <=3*min gap",
++    "collision_type": "per-episode incidence of native end-of-decision collision categories",
++    "capture_time": "conditional on ANY native capture; decisions * decision_seconds",
++    "censored": "native T0 convention: all noncapture; collision failure reported separately",
++    "critic_ev": "post-update denormalized V vs pre-update GAE raw return targets on active rows; 1-var(return-V)/var(return)",
++    "ppo_kl": "sample estimator mean((ratio-1)-log_ratio); minibatch and post-update separately",
++    "ppo_ratio_clip": "ratio=exp(new-old); clip fraction=mean(abs(ratio-1)>clip_param)",
++    "entropy": "backend-labelled measure; categorical and continuous raw values never pooled",
++    "multiscale": "group by P/E/O/current/map/horizon label; rates and normalized time per scale"
++  },
++  "active_runtime_values": {
++    "environment": {
++      "counts": [
++        3,
++        1,
++        0,
++        4
++      ],
++      "map": [
++        120.0,
++        120.0
++      ],
++      "spawn_min_pe": 10.0,
++      "dt": 0.05,
++      "integration_substeps": 10,
++      "decision_seconds": 0.5,
++      "pursuer_max_speed": 3.0,
++      "evader_max_speed": 3.5,
++      "aw9": [
++        [
++          -0.4,
++          -0.5235987755982988
++        ],
++        [
++          -0.4,
++          0.0
++        ],
++        [
++          -0.4,
++          0.5235987755982988
++        ],
++        [
++          0.0,
++          -0.5235987755982988
++        ],
++        [
++          0.0,
++          0.0
++        ],
++        [
++          0.0,
++          0.5235987755982988
++        ],
++        [
++          0.4,
++          -0.5235987755982988
++        ],
++        [
++          0.4,
++          0.0
++        ],
++        [
++          0.4,
++          0.5235987755982988
++        ]
++      ],
++      "capture_distance": 8.0,
++      "related_distance": 18.0,
++      "goal_reward": 120.0,
++      "distance_reward": 5.0,
++      "timestep_penalty": -1.0,
++      "emergency_penalty": -5.0,
++      "collision_penalty": -80.0,
++      "boundary_penalty": -5.0,
++      "decay_factor": -0.05,
++      "evenly_distributed_reward": 5.0,
++      "unevenly_distributed_reward": -10.0,
++      "perception_range": 20.0,
++      "token_count": 19,
++      "horizon_decisions": 3001,
++      "episode_reset_min_active": 3,
++      "collision_semantics": "native_end_of_decision",
++      "enemy_distance_filter": false
++    },
++    "scene": {
++      "pursuers": 3,
++      "evaders": 1,
++      "obstacles": 0,
++      "cores": 4,
++      "map": [
++        120.0,
++        120.0
++      ],
++      "horizon_decisions": 3001,
++      "decision_seconds": 0.5
++    },
++    "action_backend": {
++      "family": "categorical_aw9",
++      "entropy_measure": "categorical_shannon_nats",
++      "logprob_measure": "discrete_probability_mass",
++      "categorical": true
++    },
++    "ppo": {
++      "gamma": 0.99,
++      "gae_lambda": 0.95,
++      "clip_param": 0.2,
++      "ppo_epochs": 3,
++      "minibatches": 2,
++      "actor_lr": 3e-05,
++      "critic_lr": 0.0001,
++      "entropy_coef": 0.01,
++      "value_coef": 1.0,
++      "max_grad_norm": 0.5,
++      "target_kl": 0.02,
++      "value_norm": true,
++      "value_norm_beta": 0.99999,
++      "value_norm_epsilon": 1e-05
++    },
++    "architecture": {
++      "actor": {
++        "class": "TERLActor",
++        "layers": 4,
++        "heads": 8,
++        "hidden_dim": 256
++      },
++      "critic": {
++        "class": "CentralValueNetwork",
++        "layers": 4,
++        "heads": 8,
++        "hidden_dim": 256,
++        "self_feature_dim": 25,
++        "max_agents": 3,
++        "max_evaders": 1,
++        "max_obstacles": 1
++      }
++    },
++    "actor_mode": "eval",
++    "critic_mode": "eval",
++    "actor_parameters": 3566857,
++    "critic_parameters": 3240961,
++    "actor_optimizer": {
++      "class": "Adam",
++      "lr": 3e-05,
++      "eps": 1e-05
++    },
++    "critic_optimizer": {
++      "class": "Adam",
++      "lr": 0.0001,
++      "eps": 1e-05
++    },
++    "value_norm_state": {
++      "beta": 0.99999,
++      "epsilon": 1e-05
++    },
++    "device": "cpu"
++  },
++  "environment_fingerprint": "9d3798216bda3a7f3b11882043649cff0834ff2f7c7457fba204a52f84b3823d",
++  "action_fingerprint": "88267d35ab41b1687dd70380d0cb6068bfa1185c37900bdb6df918d8844acc84",
++  "reward_fingerprint": "d01909d9cf82da51207148cc7fe434df6111853cac2f5d9540073b98387b1af7",
++  "initial_state_fingerprint": "77abe94b0c43dc83af178ff48e542ebb8a81852e6836880116d56ae3f7511fe6",
++  "resources": {
++    "output": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/artifacts/2026-10-09_terl_mappo_batch01_base_v2/t0_runtime_manifest.json",
++    "device": "cpu",
++    "threads": 1,
++    "evaluation_workers": 2,
++    "physical_gpu": "",
++    "max_gpu_allocated_mib": 2048
++  },
++  "versions": {
++    "python": "3.12.7",
++    "torch": "2.9.1",
++    "numpy": "1.26.4",
++    "scipy": "1.13.1",
++    "gym": "0.26.2",
++    "PyYAML": "6.0.1"
++  },
++  "pid": 1488068,
++  "source_git_head": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
++  "counters": {
++    "steps": "joint environment decisions",
++    "agent_transitions": "active actor rows",
++    "updates": "on-policy rollout calls",
++    "optimizer_steps": "paired actor/critic minibatches"
++  },
++  "checkpoint": null,
++  "qa_status": "PENDING_INDEPENDENT_QA"
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/targeted_tests.xml b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/targeted_tests.xml
+new file mode 100644
+index 0000000..1e39b71
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/targeted_tests.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="1" tests="35" time="120.671" timestamp="2026-10-09T16:47:57.968926" hostname="super"><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_q1_production_lock_generator_stays_core_only" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[preflight]" time="4.015" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[lazy_import]" time="5.725" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[legal]" time="14.207" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[disk_drift]" time="7.814" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[update_boundary]" time="6.288" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_save]" time="8.184" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_load]" time="8.465" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[origin]" time="5.826" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[symlink]" time="5.827" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[executed_drift]" time="7.957" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[optimizer_import]" time="6.263" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[foreign_origin]" time="6.383" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[original_qa_box_drift]" time="6.247" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_lambda_native_adapter_rejected_during_startup" time="1.854" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state" time="0.810" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cpu]" time="1.982" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cuda:0]" time="0.000"><skipped type="pytest.skip" message="CUDA requires Master gate/available device">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/test/test_terl_mappo_batch01_qa_repairs_20261009.py:246: CUDA requires Master gate/available device</skipped></testcase><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets" time="8.650" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_real_source_lock_matches_anchor_and_rejects_wrong_pin" time="0.435" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_fresh_process_all_transitive_runtime_imports_are_locked" time="2.843" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_added_removed_and_changed_source_require_exact_delta" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_config_scope_before_values_and_no_silent_unknown_keys" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_reward_identity_hook_preserves_all_rollout_fields_and_rng" time="3.467" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_256_8_4_fully_masked_no_target_forward_backward" time="0.878" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_runtime_assertions_reject_unapplied_optimizer_and_dropout" time="0.822" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_c0_interface_rejects_continuous_coercion_and_requires_adapter" time="0.425" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[3-1-0-4]" time="0.086" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[4-1-1-6]" time="0.088" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[7-2-2-8]" time="0.111" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_evaluation_domains_and_all_rng_restored_on_exception" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_metrics_scene_labels_time_censoring_entropy_and_best_last" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_retention_does_not_touch_other_runs_symlinks_pending_best_or_latest" time="0.004" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_resource_paths_and_gpu_assignment_fail_closed" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_shared_selected_checkpoint_strict_resume_readonly" time="2.744" /></testsuite></testsuites>
+\ No newline at end of file
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base_v2/tests.xml b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/tests.xml
+new file mode 100644
+index 0000000..8eea146
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base_v2/tests.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="3" tests="80" time="217.827" timestamp="2026-10-09T16:50:40.471105" hostname="super"><testcase classname="test.test_terl_native_mappo_20261008" name="test_vendor_byte_identity" time="0.075" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[9]" time="1.004" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[66]" time="0.998" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[2026100800]" time="1.016" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_aw9_shapes_information_runtime" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[3-5.0]" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[4-3.5]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[5--8.0]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[6--9.5]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_capture_goal_credit_and_joint_terminal" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_collision_priority_and_per_agent_done" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_horizon_off_by_one_and_bootstrap" time="0.013" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_boundary_is_penalty_only" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_original_feature_parity_padding_and_no_iqn" time="0.382" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[no_target]" time="0.019" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[all_masked]" time="0.017" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[zero_slots]" time="0.017" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_shared_sampling_logprob_entropy_seed_and_gradients" time="0.030" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_critic_permutation_equivariance_and_no_actor_leakage" time="0.023" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_gae_terminal_truncation_reset_cut_and_active" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_value_norm_active_update_round_trip" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_update_masked_losses_ratio_resume_rng" time="1.193" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_cuda_finite_update_and_rng_resume" time="0.000"><skipped type="pytest.skip" message="CUDA unavailable">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/test/test_terl_native_mappo_20261008.py:195: CUDA unavailable</skipped></testcase><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_clipping_advantage_normalization_active_weighting" time="0.114" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_checkpoint_selection_and_no_false_strong_positive" time="0.000" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[capture]" time="0.016" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[collision]" time="0.014" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_parallel_evaluator_smoke_and_seed_domain" time="20.508" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_post_update_ratio_telemetry_matches_zero_update" time="0.061" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_emergency_friend_distance_is_post_step_not_cached" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_rollout_truncation_bootstraps_before_joint_reset" time="0.026" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_all_formal_configs_resolve_to_same_golden_contract" time="1.055" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_iqn_runtime_retains_historical_padding_and_replay_contract" time="0.044" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_aw_grid_is_exact_legacy_cartesian_order" time="0.079" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_continuous_actor_bounds_and_deterministic_contract" time="0.006" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_central_value_is_action_free_and_masks_inactive_rows" time="0.005" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy9_grid_and_adapter_are_dimensionally_audited" time="0.001" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy_servo_retains_acceleration_and_speed_limits" time="0.018" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_ppo_rollout_and_offpolicy_replay_contracts" time="0.003" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_checkpoint_roundtrip_preserves_actor_outputs" time="0.013" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_final_full_replay_retention_contract" time="0.527" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_legacy_mappo_backbone_all_masked_terminal_row_is_finite_and_immutable" time="0.007" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_all_masked_fallback_matches_explicit_self_valid_reference" time="0.008" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cpu]" time="67.160" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cuda:0]" time="0.001"><skipped type="pytest.skip" message="CUDA unavailable">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/test/test_terl_mappo_batch01_base_20261009.py:62: CUDA unavailable</skipped></testcase><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_real_source_lock_matches_anchor_and_rejects_wrong_pin" time="0.628" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_fresh_process_all_transitive_runtime_imports_are_locked" time="3.026" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_added_removed_and_changed_source_require_exact_delta" time="0.002" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_config_scope_before_values_and_no_silent_unknown_keys" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_reward_identity_hook_preserves_all_rollout_fields_and_rng" time="3.004" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_256_8_4_fully_masked_no_target_forward_backward" time="0.767" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_runtime_assertions_reject_unapplied_optimizer_and_dropout" time="0.728" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_c0_interface_rejects_continuous_coercion_and_requires_adapter" time="0.388" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[3-1-0-4]" time="0.135" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[4-1-1-6]" time="0.114" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[7-2-2-8]" time="0.132" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_evaluation_domains_and_all_rng_restored_on_exception" time="0.003" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_metrics_scene_labels_time_censoring_entropy_and_best_last" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_retention_does_not_touch_other_runs_symlinks_pending_best_or_latest" time="0.005" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_resource_paths_and_gpu_assignment_fail_closed" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_shared_selected_checkpoint_strict_resume_readonly" time="2.469" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_q1_production_lock_generator_stays_core_only" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[preflight]" time="4.815" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[lazy_import]" time="6.829" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[legal]" time="15.994" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[disk_drift]" time="7.919" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[update_boundary]" time="5.993" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_save]" time="7.353" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[checkpoint_load]" time="9.756" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[origin]" time="6.652" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[symlink]" time="6.449" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[executed_drift]" time="8.874" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[optimizer_import]" time="6.309" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[foreign_origin]" time="6.699" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta[original_qa_box_drift]" time="5.958" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_lambda_native_adapter_rejected_during_startup" time="0.444" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state" time="0.326" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cpu]" time="1.654" /><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cuda:0]" time="0.000"><skipped type="pytest.skip" message="CUDA requires Master gate/available device">/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/test/test_terl_mappo_batch01_qa_repairs_20261009.py:246: CUDA requires Master gate/available device</skipped></testcase><testcase classname="test.test_terl_mappo_batch01_qa_repairs_20261009" name="test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets" time="7.387" /></testsuite></testsuites>
+\ No newline at end of file
+diff --git a/docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md b/docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md
+new file mode 100644
+index 0000000..fe0028b
+--- /dev/null
++++ b/docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md
+@@ -0,0 +1,57 @@
++# TERL-MAPPO Batch01 BASE QA blocker 修复 V2
++
++状态：`BATCH01_BASE_CANDIDATE_V2`。Core CPU 修复回归已通过，等待 A3 对新 candidate 独立复审及 Master 确认；未冻结 BASE，未启动正式训练。
++
++分支为 `experiment/terl-mappo-batch01-base-20261009`。新的代码 candidate 是 `863a0cf55aca0ace8a0aaab36d9166aa4c97268f`，canonical lock SHA256 是 `885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4`。交付报告和证据随后单独提交，交付 HEAD 以该分支的 `git rev-parse HEAD` 与 `git ls-remote` 核验值为准；candidate pin 不随报告 HEAD 移动。
++
++原始成功科学 parent 仍为 `bb794ca8435f06b9fa5693c0fed98f567320decf`。旧 candidate `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`、旧交付 `bdbd502ff2f071b0cac07a0d0d956a2f35015ea1`、旧 lock `91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3` 保留为历史 `BASE_QA_BLOCK` 版本，原有报告与证据没有覆盖。A3 事实源为 `974cdd171898a261b7c862622463537cdc31a487` 的 [QA 报告](https://github.com/Jayyeah/cocap-voradj/blob/974cdd171898a261b7c862622463537cdc31a487/docs/TERL_MAPPO_BATCH01_BASE_QA_20261009_ZH.md)。两个复现脚本及三个原始 JSON 均通过只读 Git 对象核对，hash 记录于 `source_audit.json`；没有修改 A3 工作区或报告。
++
++| 问题 | A3 原始行为 | V2 修复和 Core 验证 |
++| --- | --- | --- |
++| B1 | R1 lazy import 未锁定源码，修改后仍可 collect、6 个 PPO minibatch、save/load | 显式 BASE+delta membership、实际 content hash、模块名字/位置/spec/realpath 检查；audit 在 importlib 模块执行前拒绝未声明源码；collect/update/每个 optimizer step/save/load 完整复核；失败锁住 Runtime 并写诊断。13 个场景含合法声明、preflight、晚加载、磁盘漂移、优化器内导入、checkpoint save/load、symlink、错误位置及已执行源码 hash。原 QA 的 box_actor `.4 -> .35` 修改在 collect 前被拒绝。 |
++| B2 | `lambda seed: NativeStage1(seed)` 被当作连续 adapter，首次 collect 才报 TypeError | 检查实际 step consumer 和 `ActionCapabilities`；AW9 与 physical AW 不匹配时 assemble 即拒绝。非原生 adapter 需要严格 validator，并在隔离 RNG 的副本上接受 off-grid AW 行为探针、拒绝错误表示。lambda 绕过与谎报 consumer 均在 startup 拒绝。 |
++| B3 | likelihood guard 的 MC entropy 改变进入 learner 前的 Torch RNG | 使用与 learner 相同的 `evaluate_latent()[0]`，只在 guard 中隔离 Python/NumPy/Torch CPU/CUDA RNG。CPU 检查进入 learner 前与退出后的全部 RNG 一致；latent replay 与 density-only 路径一致，zero-update ratio≈1；错误 logprob 仍拒绝。未改变 entropy 学习公式。CUDA 此轮待门禁。 |
++| B4 | metadata 错写 pre-update raw V | 改为 post-update denormalized V 对 pre-update GAE raw return targets、仅 active rows 的 EV。数值回归按原 learner 重新计算并精确相等；learner 公式未改。 |
++| Q1 | 普通测试在 QA 分支调用 Core-only create_lock，4 项失败 | 普通回归读取已提交 canonical lock；独立权限测试仍要求非 Core 分支拒绝生成。另在 Core 自己的 disposable QA-named repo 执行完整套件，未改 production code、未使用锁 fixture adapter。结果见 `qa_portability.json`。这是 Core 可移植性自测，不替代 A3 独立 QA。 |
++
++新增 `src/terl_mappo/batch01/source_guard.py`；调整共同层 `contracts.py`、`interfaces.py`、`provenance.py`、`checkpoints.py`、`evaluation.py`、offline prepare 工具和两份 Batch01 测试。原始 TERL 环境、actor/critic、PPO/GAE/ValueNorm learner、reward、动力学、动作、原 runner/evaluator 和两个 Stage1 config 均未改动。35 项原始 source_hash/config 与成功 parent 的 Git 对象一致，39 项 CoCap 递归依赖另行与 parent 核对一致，两组可能重叠。
++
++新 lock 覆盖 96 个文件，包含新增 guard、测试及测试的递归依赖。原测试工具递归导入的 `box_actor.py` 现在也被明确锁住；另一个未锁定动态模块用于覆盖原 B1 membership 逃逸，不能只靠扩大静态 closure 通过回归。Torch Adam 的 import 在 TMPDIR 内生成一个临时 Python 模板：lock 增加 `generated_runtime_sources` 的精确内容 pin，guard 同时确认 Torch 当前生成目录与内容，不能授权其它生成文件。标准 Python 安装目录及锚点已有的 Gym runtime 包按外部运行库处理，没有把 sys.modules 自动加入白名单。
++
++完整 Core CPU 回归为 **77 passed / 3 skipped / 0 failed**，80 个参数化测试，217.83 秒。三项 skip 都因本轮主动设置 `CUDA_VISIBLE_DEVICES=''`：原始 CUDA finite、正式入口 CUDA、B3 CUDA RNG。没有取得 Master CUDA 资源门禁，不将 V1 CUDA 结果算作 V2 验证。另有 34 passed / 1 skipped 的针对性回归，正式入口两项留给完整套件。完整套件包含原有 43 项、正式 256/8/4 网络的 256-decision rollout/update、逐张量/指标/优化器/环境/RNG 的 T0 bit-exact parity、完整 checkpoint resume、775k 严格读取恢复、PPO/GAE/ValueNorm、terminal/truncation/active-mask、多尺度、评估 RNG 和 retention。
++
++T0 科学语义差异为零，lock 的 `scientific_delta_from_t0=[]`。C0 相对 V1 的 guard RNG 消耗修复是已声明变化：额外 MC entropy 样本不会再改变正式 learner 的随机流；原 continuous learner 及 entropy 定义未改。B4 只改变报告描述。checkpoint 保存增加经源码复核后的临时文件 promotion，字段和完整恢复合同沿用原版；新文件的序列化 hash 不承诺与旧保存路径相同。
++
++复用的 selected 775k 文件仍在 `/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt`，SHA256 为 `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`。只读核验和 strict resume 通过，没有复制、覆盖或清理该模型。1M 完成和历史 evaluation 证据沿用 V1 恢复记录；本轮没有重新训练，也不对历史结果作统一有效/无效结论。
++
++五条 ARM 接口保持原设计：T1 用 env_factory/state_encoder/critic_factory；N1 用 actor_factory；R1 用 reward_transform；P1 用显式 resolved config 的 ppo delta；C0 用 actor_factory、physical AW adapter 和声明分布语义的 ActionBackend。C0 adapter 新增 `action_capabilities() -> ActionCapabilities` 与 `validate_actions()` 合同，本轮的测试 double 不是完整 C0 实现。
++
++ARM 必须显式使用 `SourceGuard.from_base(lock, delta, pin)`，其内部执行 `verify_base` 和 `verify_committed_pin`，再传入 `assemble(..., source_guard=guard)`。新增本地依赖即使只通过动态 import 使用，也必须声明 source_changes 的 path/before/after/reason/science_impact；修改共同文件还需 candidate_fix 标记及审查。不要从 live source_inventory/sys.modules 派生信任集合，不要采用新的 Core HEAD 自动替换既有 BASE。prepare 在导入 extension factory 前启用 guard，并预加载能解析的动态依赖。computed imports 仍由运行期 audit 与边界复核保护。
++
++格式仍为 `terl.batch01.base.v1`、`terl.batch01.delta.v1`、`terl.batch01.runtime.v1`、`terl.batch01.checkpoint.v1`。delta.base 明确记录 parent_sha/candidate_sha/lock_sha256；runtime 保留 resolved_config、delta_manifest、common_source_hashes、seed_manifest、active_runtime_values、环境/动作/reward fingerprint、资源与版本，并增加 generated_runtime_source_hashes。checkpoint sidecar 绑定 checkpoint SHA256、BASE 和整个 manifest fingerprint。失败诊断为 `terl.batch01.source_failure.v1`，状态 `RUN_FAILED_SOURCE_CONTRACT`，写在该 run 的诊断目录；同一 guard 的失败不会自动解除。已提交真实 T0 prepare 的 manifest，状态为 `OFFLINE_PREPARED_NO_TRAINING`。
++
++hook 检查按 import/exec 事件刷新模块缓存并检查 hook 本身的文件，未在每个 env decision 扫描整个源码树。完整固定集合 hash 检查位于 collect/update/每个 optimizer step/checkpoint 边界。非法 rollout 不返回给调用者，source failure 后不能继续 update/save/load。此机制面向协作 Python 扩展的 provenance 合同，不是防恶意任意 Python 的安全沙箱；已安装外部库仍按现有 runtime/package version 管理，本轮没有建立全系统逐文件 hash。正式 C0 物理语义、完整连续分布，以及 T1/N1/R1/P1 的各自科学 gate 仍由 ARM 独立验收。
++
++所有测试 run、临时文件、临时 checkpoint 和 portability fixture 均在本 Core 工作区 `/home/yjq` 下；TMPDIR 显式设置，CPU threads=1、CUDA hidden，未修改或停止其它进程。测试的大型 checkpoint 与导出 fixture 已清理，保留轻量 JSON/XML 和诊断证据。
++
++A3 在自己的独立工作区 fetch 后从 **candidate SHA** 建立 QA 分支；无需运行 create_lock、无需改 production code 或使用锁 adapter。CPU 复审命令如下（在 QA 工作区执行）：
++
++```bash
++git fetch origin experiment/terl-mappo-batch01-base-20261009
++git switch -c audit/terl-mappo-batch01-v2-recheck-20261009 863a0cf55aca0ace8a0aaab36d9166aa4c97268f
++mkdir -p "$PWD/runs/a3_v2_cpu/tmp"
++export CUDA_VISIBLE_DEVICES=''
++export PYTHONPATH="/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/.runtime-deps:$PWD/src:$PWD"
++export TMPDIR="$PWD/runs/a3_v2_cpu/tmp"
++export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
++python -m pytest -q \
++  test/test_terl_native_mappo_20261008.py \
++  test/test_small_step_ac_migration_contract.py \
++  test/test_mappo_terminal_rows_20260923.py \
++  test/test_terl_mappo_batch01_base_20261009.py \
++  test/test_terl_mappo_batch01_qa_repairs_20261009.py \
++  --basetemp="$PWD/runs/a3_v2_cpu/pytest" \
++  --junitxml="$PWD/runs/a3_v2_cpu/tests.xml"
++```
++
++完整证据目录为 `artifacts/2026-10-09_terl_mappo_batch01_base_v2/`：`tests.xml`、`core_regression.json`、`source_audit.json`、原 A3 JSON、`qa_branch_tests.xml`、`qa_portability.json`、`t0_delta_manifest.json`、`t0_runtime_manifest.json`。独立 QA 资格是具备 CPU 复审条件；A3 和 Master 结论仍待给出，CUDA 待资源门禁，不能据此宣布 BASE_FROZEN。

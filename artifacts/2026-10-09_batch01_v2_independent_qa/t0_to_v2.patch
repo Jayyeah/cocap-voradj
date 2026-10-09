@@ -1,0 +1,3297 @@
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/delivery.json b/artifacts/2026-10-09_terl_mappo_batch01_base/delivery.json
+new file mode 100644
+index 0000000..00f49a4
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/delivery.json
+@@ -0,0 +1,32 @@
++{
++  "schema": "terl.batch01.delivery.v1",
++  "status": "BATCH01_BASE_CANDIDATE",
++  "branch": "experiment/terl-mappo-batch01-base-20261009",
++  "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "scientific_parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "canonical_lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3",
++  "common_source_file_count": 78,
++  "scientific_delta_from_t0": [],
++  "startup_status": "OFFLINE_PREPARED_NO_TRAINING",
++  "runtime_manifest_fingerprint": "c8277d2a375924e912b23a59661668f60a8fbde36aaf013dfb738c6c9234dd3f",
++  "runtime_manifest": "artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json",
++  "delta_manifest": "artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json",
++  "validation": "artifacts/2026-10-09_terl_mappo_batch01_base/validation.json",
++  "tests_passed": 61,
++  "tests_failed": 0,
++  "qa_eligible": true,
++  "independent_qa": "PENDING",
++  "master_frozen": false,
++  "candidate_push_verification": {
++    "remote": "origin",
++    "ref": "refs/heads/experiment/terl-mappo-batch01-base-20261009",
++    "expected_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++    "observed_remote_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++    "verified_at": "2026-10-09T14:34:47+08:00",
++    "passed": true
++  },
++  "delivery_head_policy": "later evidence-only HEAD must not replace the explicit candidate SHA",
++  "formal_training_started": false,
++  "central_dag_written": false,
++  "other_worktrees_or_processes_modified": false
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/recovery.json b/artifacts/2026-10-09_terl_mappo_batch01_base/recovery.json
+new file mode 100644
+index 0000000..f15b63c
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/recovery.json
+@@ -0,0 +1,492 @@
++{
++  "schema": "terl.batch01.recovery.v1",
++  "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt",
++  "checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
++  "checkpoint_bytes": 82882019,
++  "checkpoint_steps": 775000,
++  "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
++  "source_hashes_verified": true,
++  "original_manifest_sha256": "3fd9d422832ff38dde42e6ddb504ce7a20db418b69ae46195b117468ab3ffc55",
++  "original_completion_audit": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/artifacts/2026-10-08_terl_mappo_1m/completion_audit_20261009.json",
++  "original_completion_audit_sha256": "638c096d664d3768230910830e74622673e8107bf677ef16b31fb8be872bdfd8",
++  "original_completion_audit_passed": true,
++  "original_full_state_resume_evidence": {
++    "passed": true,
++    "reference_checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_100k/checkpoints/step_000050000.pt",
++    "sha256": "d618a7c4fe5016138deded570a89b24a0c96d0a259b07feb48bc147763665e48",
++    "reference_steps": 50000,
++    "device": "cuda:0",
++    "torch_version": "2.9.1+cu128",
++    "config_only_difference": {
++      "budget": [
++        100000,
++        1000000
++      ]
++    },
++    "rollout_decisions_compared": 32,
++    "paired_minibatch_updates": 6.0,
++    "bit_exact": [
++      "loaded actor/critic/Adam/ValueNorm/counters",
++      "all rollout fields and episodes",
++      "updated actor/critic/Adam/ValueNorm/counters",
++      "PPO telemetry",
++      "full serialized environment",
++      "Python/NumPy/CPU/CUDA RNG"
++    ],
++    "sources_strictly_verified": true,
++    "duration_seconds": 9.676589968148619
++  },
++  "training_progress": {
++    "status": "COMPLETE_BUDGET",
++    "pid": 1045822,
++    "steps": 1000000,
++    "budget": 1000000,
++    "agent_transitions": 3000000,
++    "updates": 3920,
++    "optimizer_steps": 22994,
++    "finite": true,
++    "steps_per_second": 24.314304438365582,
++    "eta_seconds": 0.0,
++    "updated_at": "2026-10-09T10:10:55.897292+08:00",
++    "last_metrics": {
++      "steps": 1000000,
++      "agent_transitions": 3000000,
++      "optimizer_steps": 22994,
++      "reward_mean": 8.928660046187426,
++      "reward_min": 8.702436133663618,
++      "reward_max": 9.0,
++      "actor_loss": -0.01352843758650124,
++      "value_loss": 3.9233041661645984e-05,
++      "entropy": 1.1553861200809479,
++      "clip_fraction": 0.12103175558149815,
++      "approx_kl": 0.009457017228539477,
++      "actor_grad_norm": 7.074973464012146,
++      "value_grad_norm": 0.09086663741618395,
++      "explained_variance": 0.2487378716468811,
++      "value_norm_mean": 555.6096801757812,
++      "value_norm_std": 361.8458251953125,
++      "kl_early_stop": 1.0,
++      "ppo_epochs_completed": 2.0,
++      "minibatch_updates": 4.0,
++      "actor_update_l2": 0.020216251883053475,
++      "actor_update_relative_l2": 0.000212360931949506,
++      "approx_kl_max": 0.0242058876901865,
++      "update_count": 3920.0,
++      "post_update_ratio_mean": 0.9998602271080017,
++      "post_update_ratio_min": 0.4118098318576813,
++      "post_update_ratio_max": 2.159834384918213,
++      "post_update_clip_fraction": 0.313492089509964,
++      "post_update_kl": 0.027279965579509735,
++      "episodes": 0,
++      "training_capture": 0,
++      "training_collision": 0
++    },
++    "peak_allocated_mib": 616.04736328125
++  },
++  "performance": {
++    "best_screen": {
++      "checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt",
++      "checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
++      "steps": 775000,
++      "seed_domain": "screen",
++      "seed_base": 2026100800,
++      "episodes_per_mode": 10,
++      "duration_seconds": 27.497063557151705,
++      "modes": {
++        "argmax": {
++          "capture_count": 10,
++          "normal_capture_count": 10,
++          "collision_count": 0,
++          "ring2_count": 10,
++          "ring3_count": 10,
++          "strict_geometry_count": 10,
++          "censored_count": 0,
++          "capture_rate": 1.0,
++          "normal_capture_rate": 1.0,
++          "collision_rate": 0.0,
++          "ring2_rate": 1.0,
++          "ring3_rate": 1.0,
++          "strict_geometry_rate": 1.0,
++          "censored_rate": 0.0,
++          "episodes": 10,
++          "success_n": 10,
++          "censored_n": 0,
++          "capture_time_mean": 78.25,
++          "capture_time_median": 71.25,
++          "capture_time_p90": 117.69999999999999,
++          "action_entropy": 1.1842577804090872,
++          "episode_reward_mean": 1176.3392928142077,
++          "collision_types": {},
++          "reward_components": {
++            "time": -156.5,
++            "distance": 635.6903834532837,
++            "global": 524.0,
++            "emergency": -6.0,
++            "collision": 0.0,
++            "goal": 179.14890936092397
++          }
++        },
++        "sample": {
++          "capture_count": 10,
++          "normal_capture_count": 10,
++          "collision_count": 0,
++          "ring2_count": 10,
++          "ring3_count": 10,
++          "strict_geometry_count": 10,
++          "censored_count": 0,
++          "capture_rate": 1.0,
++          "normal_capture_rate": 1.0,
++          "collision_rate": 0.0,
++          "ring2_rate": 1.0,
++          "ring3_rate": 1.0,
++          "strict_geometry_rate": 1.0,
++          "censored_rate": 0.0,
++          "episodes": 10,
++          "success_n": 10,
++          "censored_n": 0,
++          "capture_time_mean": 159.6,
++          "capture_time_median": 101.0,
++          "capture_time_p90": 345.59999999999997,
++          "action_entropy": 1.116978643774478,
++          "episode_reward_mean": 2587.516661325683,
++          "collision_types": {},
++          "reward_components": {
++            "time": -319.2,
++            "distance": 1414.776627777702,
++            "global": 1314.0,
++            "emergency": -16.66666666666667,
++            "collision": 0.0,
++            "goal": 194.60670021464762
++          }
++        }
++      }
++    },
++    "last_screen": {
++      "checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_001000000.pt",
++      "checkpoint_sha256": "e1c7eef2adf95dd43e230f74fa52c7c2e8492f6ca1bb3aa679ef9d2b8295ba6d",
++      "steps": 1000000,
++      "seed_domain": "screen",
++      "seed_base": 2026100800,
++      "episodes_per_mode": 20,
++      "duration_seconds": 175.50506214494817,
++      "modes": {
++        "argmax": {
++          "capture_count": 6,
++          "normal_capture_count": 6,
++          "collision_count": 10,
++          "ring2_count": 13,
++          "ring3_count": 12,
++          "strict_geometry_count": 6,
++          "censored_count": 14,
++          "capture_rate": 0.3,
++          "normal_capture_rate": 0.3,
++          "collision_rate": 0.5,
++          "ring2_rate": 0.65,
++          "ring3_rate": 0.6,
++          "strict_geometry_rate": 0.3,
++          "censored_rate": 0.7,
++          "episodes": 20,
++          "success_n": 6,
++          "censored_n": 14,
++          "capture_time_mean": 65.08333333333333,
++          "capture_time_median": 30.0,
++          "capture_time_p90": 144.0,
++          "action_entropy": 1.06248242129636,
++          "episode_reward_mean": 6436.6343513124175,
++          "collision_types": {
++            "pursuer_evader": 9,
++            "pursuer_pursuer": 1
++          },
++          "reward_components": {
++            "time": -751.65,
++            "distance": 3619.1236541720523,
++            "global": 3534.166666666667,
++            "emergency": -7.249999999999998,
++            "collision": -14.666666666666668,
++            "goal": 56.910697140363176
++          }
++        },
++        "sample": {
++          "capture_count": 6,
++          "normal_capture_count": 6,
++          "collision_count": 12,
++          "ring2_count": 13,
++          "ring3_count": 10,
++          "strict_geometry_count": 6,
++          "censored_count": 14,
++          "capture_rate": 0.3,
++          "normal_capture_rate": 0.3,
++          "collision_rate": 0.6,
++          "ring2_rate": 0.65,
++          "ring3_rate": 0.5,
++          "strict_geometry_rate": 0.3,
++          "censored_rate": 0.7,
++          "episodes": 20,
++          "success_n": 6,
++          "censored_n": 14,
++          "capture_time_mean": 591.0,
++          "capture_time_median": 409.0,
++          "capture_time_p90": 1204.25,
++          "action_entropy": 1.0109057998542421,
++          "episode_reward_mean": 6926.0644228080055,
++          "collision_types": {
++            "pursuer_evader": 10,
++            "pursuer_pursuer": 2
++          },
++          "reward_components": {
++            "time": -813.2,
++            "distance": 3883.3813888922878,
++            "global": 3841.4166666666665,
++            "emergency": -17.25,
++            "collision": -18.666666666666668,
++            "goal": 50.383033915716695
++          }
++        }
++      }
++    },
++    "selected_heldout": {
++      "checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt",
++      "checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
++      "steps": 775000,
++      "seed_domain": "selection",
++      "seed_base": 2036100800,
++      "episodes_per_mode": 20,
++      "duration_seconds": 40.45209305500612,
++      "modes": {
++        "argmax": {
++          "capture_count": 18,
++          "normal_capture_count": 18,
++          "collision_count": 2,
++          "ring2_count": 19,
++          "ring3_count": 19,
++          "strict_geometry_count": 18,
++          "censored_count": 2,
++          "capture_rate": 0.9,
++          "normal_capture_rate": 0.9,
++          "collision_rate": 0.1,
++          "ring2_rate": 0.95,
++          "ring3_rate": 0.95,
++          "strict_geometry_rate": 0.9,
++          "censored_rate": 0.1,
++          "episodes": 20,
++          "success_n": 18,
++          "censored_n": 2,
++          "capture_time_mean": 76.47222222222223,
++          "capture_time_median": 65.5,
++          "capture_time_p90": 122.65,
++          "action_entropy": 1.1332435461269204,
++          "episode_reward_mean": 1022.9331249419354,
++          "collision_types": {
++            "pursuer_evader": 1,
++            "pursuer_pursuer": 1
++          },
++          "reward_components": {
++            "time": -143.6,
++            "distance": 543.9748932218205,
++            "global": 457.16666666666663,
++            "emergency": -7.083333333333333,
++            "collision": -4.0,
++            "goal": 176.4748983867816
++          }
++        },
++        "sample": {
++          "capture_count": 16,
++          "normal_capture_count": 16,
++          "collision_count": 4,
++          "ring2_count": 20,
++          "ring3_count": 18,
++          "strict_geometry_count": 16,
++          "censored_count": 4,
++          "capture_rate": 0.8,
++          "normal_capture_rate": 0.8,
++          "collision_rate": 0.2,
++          "ring2_rate": 1.0,
++          "ring3_rate": 0.9,
++          "strict_geometry_rate": 0.8,
++          "censored_rate": 0.2,
++          "episodes": 20,
++          "success_n": 16,
++          "censored_n": 4,
++          "capture_time_mean": 132.40625,
++          "capture_time_median": 106.75,
++          "capture_time_p90": 228.5,
++          "action_entropy": 1.0765053701176233,
++          "episode_reward_mean": 1654.9895489861624,
++          "collision_types": {
++            "pursuer_evader": 2,
++            "pursuer_pursuer": 2
++          },
++          "reward_components": {
++            "time": -224.45,
++            "distance": 924.1933414645407,
++            "global": 838.9166666666667,
++            "emergency": -14.416666666666666,
++            "collision": -8.0,
++            "goal": 138.74620752162224
++          }
++        }
++      }
++    },
++    "selected_final": {
++      "checkpoint": "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt",
++      "checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
++      "steps": 775000,
++      "seed_domain": "final",
++      "seed_base": 2046101800,
++      "episodes_per_mode": 50,
++      "duration_seconds": 110.55060917790979,
++      "modes": {
++        "argmax": {
++          "capture_count": 45,
++          "normal_capture_count": 45,
++          "collision_count": 5,
++          "ring2_count": 46,
++          "ring3_count": 46,
++          "strict_geometry_count": 45,
++          "censored_count": 5,
++          "capture_rate": 0.9,
++          "normal_capture_rate": 0.9,
++          "collision_rate": 0.1,
++          "ring2_rate": 0.92,
++          "ring3_rate": 0.92,
++          "strict_geometry_rate": 0.9,
++          "censored_rate": 0.1,
++          "episodes": 50,
++          "success_n": 45,
++          "censored_n": 5,
++          "capture_time_mean": 90.68888888888888,
++          "capture_time_median": 70.5,
++          "capture_time_p90": 160.50000000000003,
++          "action_entropy": 1.1260447932532123,
++          "episode_reward_mean": 1246.8848123905273,
++          "collision_types": {
++            "pursuer_evader": 5
++          },
++          "reward_components": {
++            "time": -167.86,
++            "distance": 670.2522728515542,
++            "global": 576.8,
++            "emergency": -6.066666666666666,
++            "collision": -2.666666666666667,
++            "goal": 176.42587287230657
++          }
++        },
++        "sample": {
++          "capture_count": 45,
++          "normal_capture_count": 45,
++          "collision_count": 5,
++          "ring2_count": 49,
++          "ring3_count": 46,
++          "strict_geometry_count": 45,
++          "censored_count": 5,
++          "capture_rate": 0.9,
++          "normal_capture_rate": 0.9,
++          "collision_rate": 0.1,
++          "ring2_rate": 0.98,
++          "ring3_rate": 0.92,
++          "strict_geometry_rate": 0.9,
++          "censored_rate": 0.1,
++          "episodes": 50,
++          "success_n": 45,
++          "censored_n": 5,
++          "capture_time_mean": 125.77777777777777,
++          "capture_time_median": 93.0,
++          "capture_time_p90": 227.1,
++          "action_entropy": 1.0797813690752411,
++          "episode_reward_mean": 1785.8848534016643,
++          "collision_types": {
++            "pursuer_evader": 3,
++            "pursuer_pursuer": 2
++          },
++          "reward_components": {
++            "time": -233.42,
++            "distance": 978.2892512100707,
++            "global": 887.5666666666666,
++            "emergency": -14.23333333333333,
++            "collision": -3.733333333333334,
++            "goal": 171.41560219159345
++          }
++        }
++      }
++    },
++    "late_stage": {
++      "checkpoint_steps": [
++        900000,
++        925000,
++        950000,
++        975000,
++        1000000
++      ],
++      "normal_rate_mean": 0.48999999999999994,
++      "normal_rate_min": 0.3,
++      "normal_rate_max": 0.7,
++      "normal_rate_std": 0.15620499351813305,
++      "last_minus_best": -0.7
++    },
++    "status": "EVALUATION_COMPLETE"
++  },
++  "evaluation_counts": {
++    "screen": {
++      "checkpoints": 41,
++      "episodes": 980
++    },
++    "selection": {
++      "checkpoints": 3,
++      "episodes": 120
++    },
++    "final": {
++      "checkpoints": 1,
++      "episodes": 100
++    }
++  },
++  "evaluation_file_hashes": {
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/final_000775000.json": "996db51d419ae4e47292d3df70a6b4000e5046e6f5d1e424824f7bb30644069c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000000000.json": "ed534dc6ee492095d4458e4bcad1bef4c3b1da65ca3933a538ba5a9a2134d674",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000025000.json": "ba4988f39ee763b48fa5e3f9336509fb74c52019d742cc0c8002f33f4fb6672d",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000050000.json": "2a7b1400c02b7346a39e65b4d0d60821de6369da93ea3e7645a53f8e467bb819",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000075000.json": "9c14594b1ba35cd5e993f11923360f88fc10a6211a0f1542de50cf8e9c8a1cfb",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000100000.json": "67a7019ea6f05eae770eed607174708517cf1f58c59aed47a0575da97c217666",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000125000.json": "3a0eb165f69e357ade3cb8b0fe461efd3cb9a2fa16b0bddce2ba1833a00bb6c1",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000150000.json": "de0cec551897800d7f80f477e4377f33f30ab6bfd966d7bdf19a71b7c0870aa7",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000175000.json": "5899288a811a1cc7f5b589cf9ea8962f1d722b83eba3ddfae9d4f352d770b765",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000200000.json": "da779bdda2b406f7151c8f96b275b9ad8633941fb089a43c7f041dc24e556602",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000225000.json": "5af90cbf982b10695eb26045d1d89e9f094fe509e835a1fcbd5195eb006b1af7",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000250000.json": "f40493864ae231e55dc55458dc4403bf589fff2981cc68b332b25544e81138eb",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000275000.json": "12eea3f12e38b46016c33e925f4df9546fa3b1bb5c6b1278d926810d2740a76b",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000300000.json": "5cf3b8a67c4066d9868f05fcf0315017b2a6cf846f3aa0b0219057ddd91f4df5",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000325000.json": "605161660390d6dfc226552ee5a6e2691cee1a34af9d31c9b6fd6b0717d9bcb3",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000350000.json": "a6f31ddc91e908484b2d1aac37b96f2fc2c07f1f045e172797bbab3aa4ccaee0",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000375000.json": "24d10072bb581305c7d7f4eab20a8db5aaf11fa9287ed47705d251f65ac3a409",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000400000.json": "acb19faa23a4af0a8449b4388a04e374f912722fddabc0e2c9f51e7b048a3b2c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000425000.json": "ee005c781d452585e00cc138e2c607821aef7b68fb7f2213ff10db0176900466",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000450000.json": "0007167ffde39cde738fe88f8b7125ca28d8d9a09a46c077407d499c14bc040c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000475000.json": "691579c2a2e037d839ea3bf29e8f80ea76616a8683771b9d3ef20b3d05ee6918",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000500000.json": "68e62377f78a64e0380c78208a9c61e78c59f9fd0dbc216d117773d2e03bbe80",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000525000.json": "2d6d4dcd8a3941e96e5c89683a97a95b014a443f0ac5d28b2c25aa907b2c317b",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000550000.json": "10d20fd5682073459336827adf1bc1d4df419799f56a6b112b09503b9c8f6e89",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000575000.json": "ee79e80af99bbb32ef6a2d2098d823d55dcb1517ca86401243418a92e8626dd9",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000600000.json": "d9d186eed96b0511baf535a9f6187edc4db86b538be3eec7ccebf4d9d62e51ca",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000625000.json": "ca6e0d7cba40cd03ba938483d57bb08924c0f36643923014be0f730e4848dec7",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000650000.json": "90c8a1f48e3f5f911af03fe19fcfe1b0f027e2479da362f783abe920260c5747",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000675000.json": "685f1ba8b27bb228bf4ba203cdd7b6b333cda17a136108a0ec1040059f956468",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000700000.json": "d783af58fdb9203ae76b3281c3aa88fb9dd1ea291f9b9747eb8b1eab3e254faa",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000725000.json": "68398344e523197326b5cc9cf3e344a3065cb5fd7e120d9f456b0a972829639c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000750000.json": "672758d7dd39411bdd0e301dde8a3efac8bc1dacca50d291c8fee5ae6e76b628",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000775000.json": "285080ccc5c29ee33ecea35c7f937013be43a37d9c86e8dc69e9bee9b4e0eabf",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000800000.json": "9b3efcb13345a08e12e78af92d5228c77af2594b4954ff88a80a874e832c1e8c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000825000.json": "41352484779b8f9c045f4cc55482a0c027aff2a2c104200866f7b6bb830c99a0",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000850000.json": "4346d828198ae8a25749209a1019d4bbc631ce577bc8de78b2cbdc7454551081",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000875000.json": "1797ae4d15e0f767791b2ed0f3f41353d660358621a4b5c819699e0896bc5b1d",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000900000.json": "50361d22b9a1f302edc6b7cb2ed3ff4e05609e070b141c6fa8d69b65123e3206",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000925000.json": "5868018728a055e1388b4b8a950eee333e7c2b3ef5a4334e6435c8170c360c4c",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000950000.json": "e2127287e3fc8cf6531fd577e90e56f2392db25c1389c45a98a61a819877a953",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_000975000.json": "c5a75c55f1f5fcbf56927cbfc92cff33e3a1953533f2d6e3ddc157c48fe29ec8",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/screen_001000000.json": "b3e65515257f9a609933fa1f074289e44ab2ce09016b005227b4fb1e0a317ea2",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/selection_000450000.json": "5a86fc085481426fef32f2886c8146f5d1ec8570a122f330af469bd426e067e5",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/selection_000500000.json": "ee8d80712d6a0c70686dfc0864acb1c9eef4a8e89d08431b2bf33ec4c23a61a6",
++    "/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/evaluations/selection_000775000.json": "18c21cf80795ab810e42ecf7262ce4aeef3e857957b8696ade87440ef93640be"
++  },
++  "storage": "original verified file reused read-only; no model copies",
++  "science_status": "original single-seed Stage1 result preserved; candidate requires independent QA"
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json b/artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json
+new file mode 100644
+index 0000000..7f638cd
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json
+@@ -0,0 +1,12 @@
++{
++  "schema": "terl.batch01.delta.v1",
++  "line": "T0",
++  "base": {
++    "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3"
++  },
++  "config_changes": [],
++  "source_changes": [],
++  "extensions": {}
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json b/artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json
+new file mode 100644
+index 0000000..02a1a2f
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json
+@@ -0,0 +1,472 @@
++{
++  "schema": "terl.batch01.runtime.v1",
++  "status": "OFFLINE_PREPARED_NO_TRAINING",
++  "base": {
++    "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3"
++  },
++  "line": "T0",
++  "resolved_config": {
++    "experiment": "EXP-TERL-MAPPO-01",
++    "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
++    "seed": 9,
++    "actor_seed": 109,
++    "hidden_dim": 256,
++    "num_heads": 8,
++    "num_layers": 4,
++    "masked_pool": false,
++    "budget": 1000000,
++    "stage1_ceiling": 2000000,
++    "rollout_length": 256,
++    "checkpoint_interval": 25000,
++    "screen_seed_base": 2026100800,
++    "heldout_seed_base": 2036100800,
++    "evaluation_workers": 2,
++    "ppo": {
++      "gamma": 0.99,
++      "gae_lambda": 0.95,
++      "clip_param": 0.2,
++      "ppo_epochs": 3,
++      "minibatches": 2,
++      "actor_lr": 3e-05,
++      "critic_lr": 0.0001,
++      "entropy_coef": 0.01,
++      "value_coef": 1.0,
++      "max_grad_norm": 0.5,
++      "target_kl": 0.02,
++      "value_norm": true,
++      "value_norm_beta": 0.99999,
++      "value_norm_epsilon": 1e-05
++    }
++  },
++  "delta_manifest": {
++    "schema": "terl.batch01.delta.v1",
++    "line": "T0",
++    "base": {
++      "candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++      "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++      "lock_sha256": "91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3"
++    },
++    "config_changes": [],
++    "source_changes": [],
++    "extensions": {}
++  },
++  "common_source_hashes": {
++    "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
++    "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
++    "configs/experiments/terl_mappo_batch01_20261009/evaluation.json": "75d7382cea852e13ce0aa6345f14f3f33ecc1081810c02140f395d89b1f774b4",
++    "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
++    "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
++    "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
++    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
++    "src/cocap_voradj/dynamics/__init__.py": "70249095b00eb50f589ff8ac87faf047543fd60a0ece519cf2fec19bf5c9d022",
++    "src/cocap_voradj/dynamics/continuous_action.py": "da36c8d4328c4c8677d7b40ac6cffe9f1cebf35a10a8b33a0f2b2af46042493b",
++    "src/cocap_voradj/dynamics/evader.py": "1f29b2673c993a5dd9e24a8336c6d4a1f09612f28764cf9b93815a5683b96760",
++    "src/cocap_voradj/dynamics/perception.py": "652dcfe8ae57ea2b03e569050f97f88b27cc61c62f0d6871d9154db4eb517918",
++    "src/cocap_voradj/dynamics/pursuer.py": "63747203e4b76261c0bb020f0b98b734eb15cc853d16c1d6721ed3a6a8828103",
++    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
++    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
++    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
++    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
++    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
++    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
++    "src/cocap_voradj/models/__init__.py": "e3635359ab4e863ff683ff27daae0c3851a5ed8165f051c21d0c1108353e123b",
++    "src/cocap_voradj/models/continuous/__init__.py": "3ecbe68af8b76d24ab58665c338eaea1246d2225ac48b15e9f0c2ce4878d1309",
++    "src/cocap_voradj/models/continuous/central_attention_critic.py": "11bb8ef018d804f2b8dad507baefc1865af3f8c70eb919ee477601ee1dc03e52",
++    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "a0a396ced192c9e359bb401febea9fc7684092e7d1a5f81e1c1dd0d1c72fecff",
++    "src/cocap_voradj/models/continuous/radial_actor.py": "68a26d36e880e9c4820ae4b35f202e3f5d9148f75c43c8ff1adf937253161ae5",
++    "src/cocap_voradj/models/iqn.py": "916decb01dd1636340581a48e82ae9287949c43d5233571e9279a2df1ac66f82",
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/__init__.py": "2c757d13995cef25427bd8603eb8bed8e068d572584686952c8b57384efa1e4a",
++    "src/cocap_voradj/training/replay.py": "cf296692a7bda922873bdf56068f84d9fccc19ab688516ebd4ca9d19dd9e7b26",
++    "src/cocap_voradj/training/runtime_semantics.py": "e88499a70bb725bf4a63efe6205e8bc9b38cbec7f8fa61204d01b832865c74f8",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
++    "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
++    "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
++    "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89",
++    "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
++    "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
++    "src/terl_mappo/batch01/checkpoints.py": "9cbeaed7b7cf96890e95290fb6da6d0e251cd8514818aee41cf13b989328f80c",
++    "src/terl_mappo/batch01/contracts.py": "a37ee09979dbfeab0f6d41585765ed768d8c76cee0dc39c1531ef2a8e23f882d",
++    "src/terl_mappo/batch01/evaluation.py": "9f2176ddd0ff26fc3b055d0b3ee9c0c2ddb0fd411175f777bc36c6422d3866c5",
++    "src/terl_mappo/batch01/interfaces.py": "c7615359e2223395285f33466de00073935fa0a0a4133a826717ce89a00ff937",
++    "src/terl_mappo/batch01/provenance.py": "153165fcc45ad6eec52a70e63c48f55a37accb36e7989aabc22473e0fe7df05d",
++    "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
++    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
++    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
++    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
++    "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
++    "tools/batch01_base_20261009.py": "47238c26969a246ab1c94aa4d97326fe9bfbbdc3aaa85c79602fbf85b8d524c0",
++    "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
++    "vendor/terl/config/config.yaml": "26b2a580a5ef0923cbf4a4594357ad618b0a3e866c96862dcbc2346c69d1daa5",
++    "vendor/terl/config/config_dqn.yaml": "f5b75051423f5aa4563711fe6308f43d1410020d140739b75f5b5e03a42e26bd",
++    "vendor/terl/config/exp_config_large_scale.yaml": "a60662d67432c35eb24a05ee7a5db017830a63c95a4cb817c37521dad6da6afa",
++    "vendor/terl/config/exp_config_less_pursuer_more_evader.yaml": "49ae50396acb8acf3876a5b185b73d3aa7c063d135585796d98232f106d5d799",
++    "vendor/terl/config/exp_config_medium_scale.yaml": "7018241634adc659ae49585b5f246c2f55b8b66ef63278706ff0943d581f0392",
++    "vendor/terl/config/exp_config_small_scale.yaml": "156c707f76c05e3509d32a5fcc22f29032c1ba87dd3257ddc2b1e0f5aa4a1413",
++    "vendor/terl/config_manager.py": "1c7181cb27b164d85a90a83b2b2b204c4534b2353434d6fb121460c86107a96d",
++    "vendor/terl/environment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/environment/env.py": "b3ec78b83a423574a69b1e0f20cecf1a732b15f5c0a2a87b560cc8aca810c0e2",
++    "vendor/terl/policy/DQN.py": "f732bbd2e1352e4da455c2927c175beb367374898c7edf4ca9a862e2d7c2c29e",
++    "vendor/terl/policy/IQN.py": "e95ed2789a38cd135d42e556a0ea08131a24319abd0a42b12acaa1a78c11b777",
++    "vendor/terl/policy/MEAN.py": "17026d8538588f520e5dc76116b9791699029daaecd997c6d42ae1f5fb910336",
++    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139",
++    "vendor/terl/policy/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/policy/ablation_mlp_with_target_selection.py": "2aa87839d6de24ef1e41d68ad29431c7e0bd328ee06c34bc9befd59dc7da7e19",
++    "vendor/terl/policy/ablation_transformer_without_target_selection.py": "41bc80eacaf355f6abe6beea2c2dd66b0208d4dcee3e8a759de15e26685cd08e",
++    "vendor/terl/policy/agent.py": "eebbb53907c6e9c631f3252345297ea788c0ffae94703dfebf4385f57667418c",
++    "vendor/terl/policy/replay_buffer.py": "482d49817d390e3d10eada5e8b819bce473795d62eaf364253c775f3cdbeda13",
++    "vendor/terl/policy/trainer.py": "be1c2db90d038ec76354136cfe20965d8f407419468c810e4e370d30ec0dc708",
++    "vendor/terl/requirements.txt": "b62a23a3e8b323c317548f90ee8ed93a2de65e41d4e055a2f4171700936414ec",
++    "vendor/terl/robots/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/robots/evader.py": "05313a0c2812c9eddce664b00e08afa886c39fa13c5148719e0cb03073f37f6d",
++    "vendor/terl/robots/perception.py": "d07c65737d747df397e94077aafdc6d2920f4fc30892329b8482a4a2cb9d61cb",
++    "vendor/terl/robots/pursuer.py": "2ddb24e33f0837e05735a781f3faddf3418f8e2290388002e12a1d64242f7f4f",
++    "vendor/terl/robots/robot.py": "9d56d1534b1c917e20002b664625fd0e2c0e52f316076183c76034c80ee4d7a3",
++    "vendor/terl/thirdparty/APF.py": "4d8f7232c06fd9f2a02084ecfe16f6e11950545b05e08eacb60bfbcfce4453b4",
++    "vendor/terl/train_rl_with_configs.py": "62e59a6122735aa0726cb92af8e313b9dae0ea015ea42dc9248d91b1e26c56cd",
++    "vendor/terl/utils/__init__.py": "8013770a2aec6796d6e398342e5157136b9e97a9eedd9f410b400b62c2c4485a",
++    "vendor/terl/utils/logger_setter.py": "6b31d2880b7200fd7df0f0ee9b0fbe28dc81b14c019d86f02664af8edb2d8f29",
++    "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
++    "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
++  },
++  "seed_manifest": {
++    "train_environment": [
++      9
++    ],
++    "train_actor": [
++      109
++    ],
++    "sample_torch_offset": 100000,
++    "screen": [
++      2026100800,
++      2026100801,
++      2026100802,
++      2026100803,
++      2026100804,
++      2026100805,
++      2026100806,
++      2026100807,
++      2026100808,
++      2026100809,
++      2026100810,
++      2026100811,
++      2026100812,
++      2026100813,
++      2026100814,
++      2026100815,
++      2026100816,
++      2026100817,
++      2026100818,
++      2026100819
++    ],
++    "selection": [
++      2036100800,
++      2036100801,
++      2036100802,
++      2036100803,
++      2036100804,
++      2036100805,
++      2036100806,
++      2036100807,
++      2036100808,
++      2036100809,
++      2036100810,
++      2036100811,
++      2036100812,
++      2036100813,
++      2036100814,
++      2036100815,
++      2036100816,
++      2036100817,
++      2036100818,
++      2036100819
++    ],
++    "final": [
++      2046101800,
++      2046101801,
++      2046101802,
++      2046101803,
++      2046101804,
++      2046101805,
++      2046101806,
++      2046101807,
++      2046101808,
++      2046101809,
++      2046101810,
++      2046101811,
++      2046101812,
++      2046101813,
++      2046101814,
++      2046101815,
++      2046101816,
++      2046101817,
++      2046101818,
++      2046101819,
++      2046101820,
++      2046101821,
++      2046101822,
++      2046101823,
++      2046101824,
++      2046101825,
++      2046101826,
++      2046101827,
++      2046101828,
++      2046101829,
++      2046101830,
++      2046101831,
++      2046101832,
++      2046101833,
++      2046101834,
++      2046101835,
++      2046101836,
++      2046101837,
++      2046101838,
++      2046101839,
++      2046101840,
++      2046101841,
++      2046101842,
++      2046101843,
++      2046101844,
++      2046101845,
++      2046101846,
++      2046101847,
++      2046101848,
++      2046101849
++    ]
++  },
++  "evaluation_protocol": {
++    "schema": "terl.batch01.evaluation.v1",
++    "checkpoint_interval": 25000,
++    "sample_torch_offset": 100000,
++    "screen": {
++      "seed_base": 2026100800,
++      "max_episodes_per_mode": 20,
++      "regular_episodes_per_mode": 10
++    },
++    "screen_milestones": [
++      0,
++      25000,
++      50000,
++      100000,
++      250000,
++      500000,
++      750000,
++      1000000
++    ],
++    "selection": {
++      "seed_base": 2036100800,
++      "max_episodes_per_mode": 20,
++      "top_screen_candidates": 3
++    },
++    "final": {
++      "seed_base": 2046101800,
++      "max_episodes_per_mode": 50
++    },
++    "modes": [
++      "argmax",
++      "sample"
++    ],
++    "selection_order": [
++      "mean_normal_capture_rate",
++      "negative_mean_collision_rate",
++      "mean_strict_geometry_rate",
++      "mean_ring3_rate",
++      "negative_step"
++    ],
++    "late_stage_window_checkpoints": 5,
++    "entropy_comparison": "within declared probability measure only",
++    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++  },
++  "metric_definitions": {
++    "normal_capture": "all native evaders captured AND no collision at joint end",
++    "ring2/ring3": "full-episode visitation: >=2/>=3 active pursuers within <8m of an evader",
++    "strict_geometry": ">=3 near pursuers; max angle gap<=pi and <=3*min gap",
++    "collision_type": "per-episode incidence of native end-of-decision collision categories",
++    "capture_time": "conditional on ANY native capture; decisions * decision_seconds",
++    "censored": "native T0 convention: all noncapture; collision failure reported separately",
++    "critic_ev": "active raw returns vs pre-update raw V; 1-var(return-V)/var(return)",
++    "ppo_kl": "sample estimator mean((ratio-1)-log_ratio); minibatch and post-update separately",
++    "ppo_ratio_clip": "ratio=exp(new-old); clip fraction=mean(abs(ratio-1)>clip_param)",
++    "entropy": "backend-labelled measure; categorical and continuous raw values never pooled",
++    "multiscale": "group by P/E/O/current/map/horizon label; rates and normalized time per scale"
++  },
++  "active_runtime_values": {
++    "environment": {
++      "counts": [
++        3,
++        1,
++        0,
++        4
++      ],
++      "map": [
++        120.0,
++        120.0
++      ],
++      "spawn_min_pe": 10.0,
++      "dt": 0.05,
++      "integration_substeps": 10,
++      "decision_seconds": 0.5,
++      "pursuer_max_speed": 3.0,
++      "evader_max_speed": 3.5,
++      "aw9": [
++        [
++          -0.4,
++          -0.5235987755982988
++        ],
++        [
++          -0.4,
++          0.0
++        ],
++        [
++          -0.4,
++          0.5235987755982988
++        ],
++        [
++          0.0,
++          -0.5235987755982988
++        ],
++        [
++          0.0,
++          0.0
++        ],
++        [
++          0.0,
++          0.5235987755982988
++        ],
++        [
++          0.4,
++          -0.5235987755982988
++        ],
++        [
++          0.4,
++          0.0
++        ],
++        [
++          0.4,
++          0.5235987755982988
++        ]
++      ],
++      "capture_distance": 8.0,
++      "related_distance": 18.0,
++      "goal_reward": 120.0,
++      "distance_reward": 5.0,
++      "timestep_penalty": -1.0,
++      "emergency_penalty": -5.0,
++      "collision_penalty": -80.0,
++      "boundary_penalty": -5.0,
++      "decay_factor": -0.05,
++      "evenly_distributed_reward": 5.0,
++      "unevenly_distributed_reward": -10.0,
++      "perception_range": 20.0,
++      "token_count": 19,
++      "horizon_decisions": 3001,
++      "episode_reset_min_active": 3,
++      "collision_semantics": "native_end_of_decision",
++      "enemy_distance_filter": false
++    },
++    "scene": {
++      "pursuers": 3,
++      "evaders": 1,
++      "obstacles": 0,
++      "cores": 4,
++      "map": [
++        120.0,
++        120.0
++      ],
++      "horizon_decisions": 3001,
++      "decision_seconds": 0.5
++    },
++    "action_backend": {
++      "family": "categorical_aw9",
++      "entropy_measure": "categorical_shannon_nats",
++      "logprob_measure": "discrete_probability_mass",
++      "categorical": true
++    },
++    "ppo": {
++      "gamma": 0.99,
++      "gae_lambda": 0.95,
++      "clip_param": 0.2,
++      "ppo_epochs": 3,
++      "minibatches": 2,
++      "actor_lr": 3e-05,
++      "critic_lr": 0.0001,
++      "entropy_coef": 0.01,
++      "value_coef": 1.0,
++      "max_grad_norm": 0.5,
++      "target_kl": 0.02,
++      "value_norm": true,
++      "value_norm_beta": 0.99999,
++      "value_norm_epsilon": 1e-05
++    },
++    "architecture": {
++      "actor": {
++        "class": "TERLActor",
++        "layers": 4,
++        "heads": 8,
++        "hidden_dim": 256
++      },
++      "critic": {
++        "class": "CentralValueNetwork",
++        "layers": 4,
++        "heads": 8,
++        "hidden_dim": 256,
++        "self_feature_dim": 25,
++        "max_agents": 3,
++        "max_evaders": 1,
++        "max_obstacles": 1
++      }
++    },
++    "actor_mode": "eval",
++    "critic_mode": "eval",
++    "actor_parameters": 3566857,
++    "critic_parameters": 3240961,
++    "actor_optimizer": {
++      "class": "Adam",
++      "lr": 3e-05,
++      "eps": 1e-05
++    },
++    "critic_optimizer": {
++      "class": "Adam",
++      "lr": 0.0001,
++      "eps": 1e-05
++    },
++    "value_norm_state": {
++      "beta": 0.99999,
++      "epsilon": 1e-05
++    },
++    "device": "cpu"
++  },
++  "environment_fingerprint": "9d3798216bda3a7f3b11882043649cff0834ff2f7c7457fba204a52f84b3823d",
++  "action_fingerprint": "88267d35ab41b1687dd70380d0cb6068bfa1185c37900bdb6df918d8844acc84",
++  "reward_fingerprint": "d01909d9cf82da51207148cc7fe434df6111853cac2f5d9540073b98387b1af7",
++  "initial_state_fingerprint": "77abe94b0c43dc83af178ff48e542ebb8a81852e6836880116d56ae3f7511fe6",
++  "resources": {
++    "output": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json",
++    "device": "cpu",
++    "threads": 1,
++    "evaluation_workers": 2,
++    "physical_gpu": "0",
++    "max_gpu_allocated_mib": 2048
++  },
++  "versions": {
++    "python": "3.12.7",
++    "torch": "2.9.1",
++    "numpy": "1.26.4",
++    "scipy": "1.13.1",
++    "gym": "0.26.2",
++    "PyYAML": "6.0.1"
++  },
++  "pid": 1431270,
++  "source_git_head": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
++  "counters": {
++    "steps": "joint environment decisions",
++    "agent_transitions": "active actor rows",
++    "updates": "on-policy rollout calls",
++    "optimizer_steps": "paired actor/critic minibatches"
++  },
++  "checkpoint": null,
++  "qa_status": "PENDING_INDEPENDENT_QA"
++}
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml b/artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml
+new file mode 100644
+index 0000000..12efaf2
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml
+@@ -0,0 +1 @@
++<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="61" time="53.919" timestamp="2026-10-09T14:30:35.643716" hostname="super"><testcase classname="test.test_terl_native_mappo_20261008" name="test_vendor_byte_identity" time="0.075" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[9]" time="1.149" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[66]" time="1.084" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_transition_reward_done_parity[2026100800]" time="1.120" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_aw9_shapes_information_runtime" time="0.010" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[3-5.0]" time="0.011" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[4-3.5]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[5--8.0]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_global_reward_unreachable_branch_effective[6--9.5]" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_capture_goal_credit_and_joint_terminal" time="0.014" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_collision_priority_and_per_agent_done" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_horizon_off_by_one_and_bootstrap" time="0.014" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_native_boundary_is_penalty_only" time="0.012" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_original_feature_parity_padding_and_no_iqn" time="0.497" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[no_target]" time="0.020" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[all_masked]" time="0.018" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_empty_masks_finite_gradients[zero_slots]" time="0.018" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_actor_shared_sampling_logprob_entropy_seed_and_gradients" time="0.030" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_critic_permutation_equivariance_and_no_actor_leakage" time="0.024" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_gae_terminal_truncation_reset_cut_and_active" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_value_norm_active_update_round_trip" time="0.001" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_update_masked_losses_ratio_resume_rng" time="1.118" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_cuda_finite_update_and_rng_resume" time="1.171" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_ppo_clipping_advantage_normalization_active_weighting" time="0.128" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_checkpoint_selection_and_no_false_strong_positive" time="0.000" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[capture]" time="0.018" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_event_transition_and_reward_parity_direct_native[collision]" time="0.015" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_parallel_evaluator_smoke_and_seed_domain" time="23.306" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_post_update_ratio_telemetry_matches_zero_update" time="0.085" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_emergency_friend_distance_is_post_step_not_cached" time="0.013" /><testcase classname="test.test_terl_native_mappo_20261008" name="test_rollout_truncation_bootstraps_before_joint_reset" time="0.028" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_all_formal_configs_resolve_to_same_golden_contract" time="1.279" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_iqn_runtime_retains_historical_padding_and_replay_contract" time="0.049" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_aw_grid_is_exact_legacy_cartesian_order" time="0.087" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_continuous_actor_bounds_and_deterministic_contract" time="0.006" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_central_value_is_action_free_and_masks_inactive_rows" time="0.005" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy9_grid_and_adapter_are_dimensionally_audited" time="0.001" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_vxy_servo_retains_acceleration_and_speed_limits" time="0.020" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_ppo_rollout_and_offpolicy_replay_contracts" time="0.003" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_checkpoint_roundtrip_preserves_actor_outputs" time="0.013" /><testcase classname="test.test_small_step_ac_migration_contract" name="test_final_full_replay_retention_contract" time="0.583" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_legacy_mappo_backbone_all_masked_terminal_row_is_finite_and_immutable" time="0.007" /><testcase classname="test.test_mappo_terminal_rows_20260923" name="test_all_masked_fallback_matches_explicit_self_valid_reference" time="0.008" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cpu]" time="8.047" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_entry_t0_full_update_and_exact_resume[cuda:0]" time="4.375" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_real_source_lock_matches_anchor_and_rejects_wrong_pin" time="0.761" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_fresh_process_all_transitive_runtime_imports_are_locked" time="3.648" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_added_removed_and_changed_source_require_exact_delta" time="0.375" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_config_scope_before_values_and_no_silent_unknown_keys" time="0.356" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_reward_identity_hook_preserves_all_rollout_fields_and_rng" time="0.237" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_formal_256_8_4_fully_masked_no_target_forward_backward" time="0.080" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_runtime_assertions_reject_unapplied_optimizer_and_dropout" time="0.038" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_c0_interface_rejects_continuous_coercion_and_requires_adapter" time="0.000" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[3-1-0-4]" time="0.090" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[4-1-1-6]" time="0.097" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_multiscale_formal_actor_critic_observation_shapes[7-2-2-8]" time="0.121" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_evaluation_domains_and_all_rng_restored_on_exception" time="0.367" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_metrics_scene_labels_time_censoring_entropy_and_best_last" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_retention_does_not_touch_other_runs_symlinks_pending_best_or_latest" time="0.004" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_resource_paths_and_gpu_assignment_fail_closed" time="0.001" /><testcase classname="test.test_terl_mappo_batch01_base_20261009" name="test_shared_selected_checkpoint_strict_resume_readonly" time="0.439" /></testsuite></testsuites>
+\ No newline at end of file
+diff --git a/artifacts/2026-10-09_terl_mappo_batch01_base/validation.json b/artifacts/2026-10-09_terl_mappo_batch01_base/validation.json
+new file mode 100644
+index 0000000..c8b2a3c
+--- /dev/null
++++ b/artifacts/2026-10-09_terl_mappo_batch01_base/validation.json
+@@ -0,0 +1,36 @@
++{
++  "schema": "terl.batch01.validation.v1",
++  "status": "BATCH01_BASE_CANDIDATE",
++  "qa_status": "PENDING_INDEPENDENT_QA",
++  "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "scientific_delta_from_t0": [],
++  "baseline_tests": {"passed": 43, "warnings": 4},
++  "final_tests": {"passed": 61, "failed": 0, "errors": 0, "skipped": 0, "warnings": 4, "seconds": 53.92},
++  "new_tests": 18,
++  "test_report": "artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml",
++  "formal_network": {"hidden_dim": 256, "heads": 8, "layers": 4, "devices_tested": ["cpu", "cuda:0"], "physical_gpu": 0},
++  "formal_resume": {
++    "initial_rollout_decisions": 16,
++    "post_checkpoint_decisions": 8,
++    "exact_numeric_comparisons": ["initialization", "rollout fields", "actor/critic", "both Adam states", "ValueNorm", "update counters", "PPO metrics", "Python/NumPy/CPU/CUDA RNG", "environment fields and PRNG", "KDTree data and spatial queries"],
++    "pickle_byte_identity_claimed": false,
++    "optimizer_scalar_tensor_residency_identity_claimed": false
++  },
++  "multiscale_shape_smoke": [[3, 1, 0, 4], [4, 1, 1, 6], [7, 2, 2, 8]],
++  "cuda_peak_allocated_gate_mib": 2048,
++  "cuda_peak_allocated_gate_passed": true,
++  "cpu_threads": 1,
++  "initial_candidate_startup_failure": {
++    "candidate_sha": "9a97d392bcf0ab47b01ef8a638dc0b6e57bccafc",
++    "reason": "source lock omitted historical package-init transitive imports",
++    "first_missing_path": "src/cocap_voradj/utils/logger_setter.py",
++    "fix": "static local import closure plus fresh-process loaded-dependency regression",
++    "science_impact": "none; original scientific files unchanged"
++  },
++  "checkpoint_copies_created": 0,
++  "formal_test_checkpoints_deleted_by_test_finally": true,
++  "retention_is_readonly_plan": true,
++  "formal_training_started": false,
++  "central_dag_written": false,
++  "other_processes_modified": false
++}
+diff --git a/configs/experiments/terl_mappo_batch01_20261009/base_lock.json b/configs/experiments/terl_mappo_batch01_20261009/base_lock.json
+new file mode 100644
+index 0000000..9903341
+--- /dev/null
++++ b/configs/experiments/terl_mappo_batch01_20261009/base_lock.json
+@@ -0,0 +1,185 @@
++{
++  "schema": "terl.batch01.base.v1",
++  "status": "BATCH01_BASE_CANDIDATE_V2",
++  "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++  "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
++  "anchor_config": {
++    "experiment": "EXP-TERL-MAPPO-01",
++    "terl_sha": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
++    "seed": 9,
++    "actor_seed": 109,
++    "hidden_dim": 256,
++    "num_heads": 8,
++    "num_layers": 4,
++    "masked_pool": false,
++    "budget": 1000000,
++    "stage1_ceiling": 2000000,
++    "rollout_length": 256,
++    "checkpoint_interval": 25000,
++    "screen_seed_base": 2026100800,
++    "heldout_seed_base": 2036100800,
++    "evaluation_workers": 2,
++    "ppo": {
++      "gamma": 0.99,
++      "gae_lambda": 0.95,
++      "clip_param": 0.2,
++      "ppo_epochs": 3,
++      "minibatches": 2,
++      "actor_lr": 3e-05,
++      "critic_lr": 0.0001,
++      "entropy_coef": 0.01,
++      "value_coef": 1.0,
++      "max_grad_norm": 0.5,
++      "target_kl": 0.02,
++      "value_norm": true,
++      "value_norm_beta": 0.99999,
++      "value_norm_epsilon": 1e-05
++    }
++  },
++  "common_sources": {
++    "configs/experiments/terl_mappo_20261008/stage1.json": "385de99786be3307a1c07269306526591dc59c832b8fe4c0a679cf0a576c51b7",
++    "configs/experiments/terl_mappo_20261008/stage1_1m.json": "4460a6738c0044538054addeef63436273a331722ccfc3529a818aa2c59c3e7e",
++    "configs/experiments/terl_mappo_batch01_20261009/evaluation.json": "75d7382cea852e13ce0aa6345f14f3f33ecc1081810c02140f395d89b1f774b4",
++    "src/cocap_voradj/__init__.py": "b5f1e2ab921f187584e2b27019e50a4831c91def43dd178f844ac4f88e88826a",
++    "src/cocap_voradj/config.py": "2b318d73938e415ef42a7d18d71e603cea55141cc3def1a04f75d8b8f125b496",
++    "src/cocap_voradj/control/__init__.py": "b3f90c26a6913e5fcd2ed0a3392d2cd1243fa26ba4f2447ce6627fea8ec341b9",
++    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
++    "src/cocap_voradj/dynamics/__init__.py": "70249095b00eb50f589ff8ac87faf047543fd60a0ece519cf2fec19bf5c9d022",
++    "src/cocap_voradj/dynamics/continuous_action.py": "da36c8d4328c4c8677d7b40ac6cffe9f1cebf35a10a8b33a0f2b2af46042493b",
++    "src/cocap_voradj/dynamics/evader.py": "1f29b2673c993a5dd9e24a8336c6d4a1f09612f28764cf9b93815a5683b96760",
++    "src/cocap_voradj/dynamics/perception.py": "652dcfe8ae57ea2b03e569050f97f88b27cc61c62f0d6871d9154db4eb517918",
++    "src/cocap_voradj/dynamics/pursuer.py": "63747203e4b76261c0bb020f0b98b734eb15cc853d16c1d6721ed3a6a8828103",
++    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
++    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
++    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
++    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
++    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
++    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
++    "src/cocap_voradj/evaluation/mission_events.py": "d20fc22269c66c43687f4a9fcde6cf8007c7b5fcf7cabdf5f00ab0ba02b9733a",
++    "src/cocap_voradj/models/__init__.py": "e3635359ab4e863ff683ff27daae0c3851a5ed8165f051c21d0c1108353e123b",
++    "src/cocap_voradj/models/continuous/__init__.py": "3ecbe68af8b76d24ab58665c338eaea1246d2225ac48b15e9f0c2ce4878d1309",
++    "src/cocap_voradj/models/continuous/box_actor.py": "6d79825e51bfaa0e16ac51f6d085d6864c3628faa6114ff7d75faf04aa5bcd90",
++    "src/cocap_voradj/models/continuous/central_attention_critic.py": "11bb8ef018d804f2b8dad507baefc1865af3f8c70eb919ee477601ee1dc03e52",
++    "src/cocap_voradj/models/continuous/local_entity_token_encoder.py": "a0a396ced192c9e359bb401febea9fc7684092e7d1a5f81e1c1dd0d1c72fecff",
++    "src/cocap_voradj/models/continuous/radial_actor.py": "68a26d36e880e9c4820ae4b35f202e3f5d9148f75c43c8ff1adf937253161ae5",
++    "src/cocap_voradj/models/iqn.py": "916decb01dd1636340581a48e82ae9287949c43d5233571e9279a2df1ac66f82",
++    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
++    "src/cocap_voradj/training/__init__.py": "2c757d13995cef25427bd8603eb8bed8e068d572584686952c8b57384efa1e4a",
++    "src/cocap_voradj/training/continuous/__init__.py": "08ebcfbce3033bdf096e3fa50fd4b8906a73d34b880b5949931ab63895b53341",
++    "src/cocap_voradj/training/continuous/central_sac.py": "9c370f1e83075b3932edaf0ca0dc5b54ecc7e74034c77957c3137c54d0ce8265",
++    "src/cocap_voradj/training/continuous/central_schema.py": "a10f4910acb812cb5f223069b625905ddbb3675462e6a73c3a75b99c5f4eaf24",
++    "src/cocap_voradj/training/continuous/curriculum_snapshots.py": "d7ed4dec18d85f69e9108ac93f640e0c373b068fe1e81b92d96787bd3a6ff7b6",
++    "src/cocap_voradj/training/continuous/formal_config.py": "c90de9a67048926da6b0f5d1da73e1908e2db316a246caf83bd53b9521ab230f",
++    "src/cocap_voradj/training/continuous/joint_replay.py": "1001e065ee8c2e667d46c51a8ec77575f25520c25b141d229d0eccfa4c4ccbd3",
++    "src/cocap_voradj/training/continuous/local_sac.py": "e2fe10152157af34c1f670b3f23075c4d1857b1b8121ec35a68e77f5650c6776",
++    "src/cocap_voradj/training/replay.py": "cf296692a7bda922873bdf56068f84d9fccc19ab688516ebd4ca9d19dd9e7b26",
++    "src/cocap_voradj/training/runtime_semantics.py": "e88499a70bb725bf4a63efe6205e8bc9b38cbec7f8fa61204d01b832865c74f8",
++    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
++    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
++    "src/cocap_voradj/utils/__init__.py": "0da1edabf287171e2a42e90819d28ac6d3761e4fbd6f29c38c5790bc7e53528b",
++    "src/cocap_voradj/utils/logger_setter.py": "a4f6369b338491e61142dc13eb89b61f1aab6a615bc74f2ec4a8b2e7a5a89066",
++    "src/cocap_voradj/utils/utils_functions.py": "4896139bf5b954e2c8a9beac0a450b67185346898b46dc6c5e54dff1a939ea89",
++    "src/terl_mappo/__init__.py": "3adeab015fd1a4b44cb0f605aac75cb9b6f4453caf4028432ac5b9ac7633857e",
++    "src/terl_mappo/batch01/__init__.py": "160bd1c993e2829c21aa6593e5c9937a2fbd077d5d1dfc51ddaf838d59837213",
++    "src/terl_mappo/batch01/checkpoints.py": "8fe00074d56fe9a29f89a2a8b8bb3274c76e4e0b5803369cde48dbaf3e96bb5b",
++    "src/terl_mappo/batch01/contracts.py": "3ae1c3c39645319ca5b301b2eade61d4a9ef02a59429027b95d7ab2451540e28",
++    "src/terl_mappo/batch01/evaluation.py": "919327bc1dd761e57af6aaff893db015cf7d12eeba3c90a34fc6beace77ed763",
++    "src/terl_mappo/batch01/interfaces.py": "4562561e9b798b1575f7431acfd6d72ede8e2694cfbf9782be89641ec8be4d01",
++    "src/terl_mappo/batch01/provenance.py": "28d391c7a17a30f898bc3347d62c7dd5a2fcfef070ac0cec203a681ef905de9e",
++    "src/terl_mappo/batch01/source_guard.py": "1fa5b101451f373f3e42b5da5d1ef4f4a141c450127b81a66aee867219b45bc4",
++    "src/terl_mappo/evaluate.py": "a4c6fd4ad82e1e65444344feda8c2c6f794c6384552c3f506923fe00229d5950",
++    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
++    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
++    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
++    "src/terl_mappo/supervise.py": "fb955227c6eda98078eb3424f305237eee92530d0d28828556e6df4e75167998",
++    "test/test_mappo_terminal_rows_20260923.py": "a4bc304dac2f01048aa55732c19f70c158afa150fbb08d99b90efca9e93aeb6f",
++    "test/test_small_step_ac_migration_contract.py": "cc3068c6e5119ed6216cd3799a84d10de1646d89be5995dcfeabf1a2532104a0",
++    "test/test_terl_mappo_batch01_base_20261009.py": "f6691605bec00f9757f649423ed78185ae3895091ac9cd6ee3ed1096b7504da9",
++    "test/test_terl_mappo_batch01_qa_repairs_20261009.py": "be86c538075f6e588b6ea2c623b9efe1ae87a7b438f88087c8fa35ede32e8e36",
++    "test/test_terl_native_mappo_20261008.py": "292d70892cdedd7f7e3586651fe356bab61d7d787d837b99cd72ef31566f2704",
++    "tools/__init__.py": "5ccd26c24a82f19d58ae60476714d66b273227529d96e57b688fef2a68e29612",
++    "tools/batch01_base_20261009.py": "3933d6fa1a3790f574b316f1a77fe03fe8c4ec418e7e63feca4fe180ceb517fd",
++    "tools/run_continuous_ctde_training.py": "cf433e31fd8fd4a2f73bf26bebde611134f144c58cafe6fdae907b81b265f964",
++    "tools/run_small_step_ac_migration.py": "c33131e247ea70cc3cc687c775c786f5e552781d4642ce70268df3f3494109e0",
++    "vendor/terl/LICENSE": "86cf4db8db423ca0dd39b3d0f5303ac64beed31fb9aa36479ca76a61555b34af",
++    "vendor/terl/config/config.yaml": "26b2a580a5ef0923cbf4a4594357ad618b0a3e866c96862dcbc2346c69d1daa5",
++    "vendor/terl/config/config_dqn.yaml": "f5b75051423f5aa4563711fe6308f43d1410020d140739b75f5b5e03a42e26bd",
++    "vendor/terl/config/exp_config_large_scale.yaml": "a60662d67432c35eb24a05ee7a5db017830a63c95a4cb817c37521dad6da6afa",
++    "vendor/terl/config/exp_config_less_pursuer_more_evader.yaml": "49ae50396acb8acf3876a5b185b73d3aa7c063d135585796d98232f106d5d799",
++    "vendor/terl/config/exp_config_medium_scale.yaml": "7018241634adc659ae49585b5f246c2f55b8b66ef63278706ff0943d581f0392",
++    "vendor/terl/config/exp_config_small_scale.yaml": "156c707f76c05e3509d32a5fcc22f29032c1ba87dd3257ddc2b1e0f5aa4a1413",
++    "vendor/terl/config_manager.py": "1c7181cb27b164d85a90a83b2b2b204c4534b2353434d6fb121460c86107a96d",
++    "vendor/terl/environment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/environment/env.py": "b3ec78b83a423574a69b1e0f20cecf1a732b15f5c0a2a87b560cc8aca810c0e2",
++    "vendor/terl/policy/DQN.py": "f732bbd2e1352e4da455c2927c175beb367374898c7edf4ca9a862e2d7c2c29e",
++    "vendor/terl/policy/IQN.py": "e95ed2789a38cd135d42e556a0ea08131a24319abd0a42b12acaa1a78c11b777",
++    "vendor/terl/policy/MEAN.py": "17026d8538588f520e5dc76116b9791699029daaecd997c6d42ae1f5fb910336",
++    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139",
++    "vendor/terl/policy/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/policy/ablation_mlp_with_target_selection.py": "2aa87839d6de24ef1e41d68ad29431c7e0bd328ee06c34bc9befd59dc7da7e19",
++    "vendor/terl/policy/ablation_transformer_without_target_selection.py": "41bc80eacaf355f6abe6beea2c2dd66b0208d4dcee3e8a759de15e26685cd08e",
++    "vendor/terl/policy/agent.py": "eebbb53907c6e9c631f3252345297ea788c0ffae94703dfebf4385f57667418c",
++    "vendor/terl/policy/replay_buffer.py": "482d49817d390e3d10eada5e8b819bce473795d62eaf364253c775f3cdbeda13",
++    "vendor/terl/policy/trainer.py": "be1c2db90d038ec76354136cfe20965d8f407419468c810e4e370d30ec0dc708",
++    "vendor/terl/requirements.txt": "b62a23a3e8b323c317548f90ee8ed93a2de65e41d4e055a2f4171700936414ec",
++    "vendor/terl/robots/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++    "vendor/terl/robots/evader.py": "05313a0c2812c9eddce664b00e08afa886c39fa13c5148719e0cb03073f37f6d",
++    "vendor/terl/robots/perception.py": "d07c65737d747df397e94077aafdc6d2920f4fc30892329b8482a4a2cb9d61cb",
++    "vendor/terl/robots/pursuer.py": "2ddb24e33f0837e05735a781f3faddf3418f8e2290388002e12a1d64242f7f4f",
++    "vendor/terl/robots/robot.py": "9d56d1534b1c917e20002b664625fd0e2c0e52f316076183c76034c80ee4d7a3",
++    "vendor/terl/thirdparty/APF.py": "4d8f7232c06fd9f2a02084ecfe16f6e11950545b05e08eacb60bfbcfce4453b4",
++    "vendor/terl/train_rl_with_configs.py": "62e59a6122735aa0726cb92af8e313b9dae0ea015ea42dc9248d91b1e26c56cd",
++    "vendor/terl/utils/__init__.py": "8013770a2aec6796d6e398342e5157136b9e97a9eedd9f410b400b62c2c4485a",
++    "vendor/terl/utils/logger_setter.py": "6b31d2880b7200fd7df0f0ee9b0fbe28dc81b14c019d86f02664af8edb2d8f29",
++    "vendor/terl/utils/save_project.py": "abbb207cdfaed3385c89fb9dabcf42399846859b525d4413922b10bceb952ee5",
++    "vendor/terl/utils/utils_functions.py": "0f2e7c04eb2de6bac8424839be41e76f6860b03580fa1627559617a93430f5fb"
++  },
++  "generated_runtime_sources": {
++    "torch.distributed.nn.non_scriptable_remote_template": "8205b16956fb264841ecd8644784a0d157f87df79b17c16825dc1163433ce5d8"
++  },
++  "evaluation_protocol": {
++    "schema": "terl.batch01.evaluation.v1",
++    "checkpoint_interval": 25000,
++    "sample_torch_offset": 100000,
++    "screen": {
++      "seed_base": 2026100800,
++      "max_episodes_per_mode": 20,
++      "regular_episodes_per_mode": 10
++    },
++    "screen_milestones": [
++      0,
++      25000,
++      50000,
++      100000,
++      250000,
++      500000,
++      750000,
++      1000000
++    ],
++    "selection": {
++      "seed_base": 2036100800,
++      "max_episodes_per_mode": 20,
++      "top_screen_candidates": 3
++    },
++    "final": {
++      "seed_base": 2046101800,
++      "max_episodes_per_mode": 50
++    },
++    "modes": [
++      "argmax",
++      "sample"
++    ],
++    "selection_order": [
++      "mean_normal_capture_rate",
++      "negative_mean_collision_rate",
++      "mean_strict_geometry_rate",
++      "mean_ring3_rate",
++      "negative_step"
++    ],
++    "late_stage_window_checkpoints": 5,
++    "entropy_comparison": "within declared probability measure only",
++    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++  },
++  "scientific_delta_from_t0": [],
++  "independent_qa": "PENDING_MASTER_QA"
++}
+diff --git a/configs/experiments/terl_mappo_batch01_20261009/evaluation.json b/configs/experiments/terl_mappo_batch01_20261009/evaluation.json
+new file mode 100644
+index 0000000..f43caa0
+--- /dev/null
++++ b/configs/experiments/terl_mappo_batch01_20261009/evaluation.json
+@@ -0,0 +1,14 @@
++{
++  "schema": "terl.batch01.evaluation.v1",
++  "checkpoint_interval": 25000,
++  "sample_torch_offset": 100000,
++  "screen": {"seed_base": 2026100800, "max_episodes_per_mode": 20, "regular_episodes_per_mode": 10},
++  "screen_milestones": [0, 25000, 50000, 100000, 250000, 500000, 750000, 1000000],
++  "selection": {"seed_base": 2036100800, "max_episodes_per_mode": 20, "top_screen_candidates": 3},
++  "final": {"seed_base": 2046101800, "max_episodes_per_mode": 50},
++  "modes": ["argmax", "sample"],
++  "selection_order": ["mean_normal_capture_rate", "negative_mean_collision_rate", "mean_strict_geometry_rate", "mean_ring3_rate", "negative_step"],
++  "late_stage_window_checkpoints": 5,
++  "entropy_comparison": "within declared probability measure only",
++  "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
++}
+diff --git a/docs/TERL_MAPPO_BATCH01_BASE_CANDIDATE_20261009_ZH.md b/docs/TERL_MAPPO_BATCH01_BASE_CANDIDATE_20261009_ZH.md
+new file mode 100644
+index 0000000..62c5458
+--- /dev/null
++++ b/docs/TERL_MAPPO_BATCH01_BASE_CANDIDATE_20261009_ZH.md
+@@ -0,0 +1,134 @@
++# TERL-MAPPO Batch01 Common Base Candidate
++
++状态：`BATCH01_BASE_CANDIDATE`。Core 工程与自身回归已完成，具备提交独立 QA 的条件；独立 QA 尚未执行，只有 Master 在 QA 通过后可以确认 `BATCH01_BASE_FROZEN`。本轮没有启动 T1/N1/R1/P1/C0 正式训练，没有写中央 DAG，没有修改其它 worktree 或运行进程。
++
++## 1. 成功锚点与候选版本
++
++工作分支：`experiment/terl-mappo-batch01-base-20261009`。
++
++科学 parent：`bb794ca8435f06b9fa5693c0fed98f567320decf`，来自 `experiment/terl-backbone-mappo-20261008`；开始工作时实际 remote HEAD 已核验相同。原 TERL 为 `143359b2722d49c29b4fecc0ad1fd8d46326e45a`。候选版本以最终交付证据的 candidate SHA 为准。第一次工程提交 `9a97d39` 被自身 startup gate 拦截，因为历史包初始化的日志等传递依赖尚未完整纳入 source lock；修订补充静态 import closure 和全新进程覆盖回归，原始科学模块未改。后续仅补充交付证据的 HEAD 与最终 candidate SHA 分开记录；各实验必须显式固定 candidate SHA 与 canonical lock SHA256，不跟随 Core HEAD。
++
++最终 BASE candidate SHA：`40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`。Canonical lock SHA256：`91dc6ea76c0f7b76ffa43441286db40b9e4ea1e9e19885a328df16ab6d024bf3`，覆盖78个共同源码/config文件。该 candidate 已 push，并于2026-10-09 14:34:47+08独立读取 remote HEAD 核验相同；后续 evidence-only提交不替换该BASE。
++
++真实启动检查已通过：`OFFLINE_PREPARED_NO_TRAINING`，manifest fingerprint `c8277d2a375924e912b23a59661668f60a8fbde36aaf013dfb738c6c9234dd3f`。实际样例：[T0 delta](../artifacts/2026-10-09_terl_mappo_batch01_base/t0_delta.json)、[T0 runtime manifest](../artifacts/2026-10-09_terl_mappo_batch01_base/t0_runtime_manifest.json)、[delivery evidence](../artifacts/2026-10-09_terl_mappo_batch01_base/delivery.json)。Runtime包含真实256/8/4 actor/critic、optimizer/ValueNorm、seed domains、resources与三种语义fingerprints，checkpoint=null，未执行训练。
++
++Selected checkpoint 为原始服务器文件：
++
++`/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt`
++
++SHA256：`590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`，82,882,019 bytes。实际文件重新 hash、完整来源 config/source/counter、actor/critic finite 和 strict resume 均已核验，没有复制模型到新 worktree。
++
++原报告与已有 1M audit 保留：[Stage1 Final](TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md)、[Implementation](TERL_MAPPO_IMPLEMENTATION_20261008_ZH.md)、[Completion Audit](../artifacts/2026-10-08_terl_mappo_1m/completion_audit_20261009.json)。本轮恢复证据：[recovery.json](../artifacts/2026-10-09_terl_mappo_batch01_base/recovery.json)。恢复报告重算 best/last/held-out selection/final 与最后五个 screen 点稳定性摘要，并记录原评估文件的真实 hash；没有重新训练或重做全部 1200 局评估。
++
++原 1M 为 1,000,000 joint decisions、3,000,000 active transitions、3,920 PPO rollout calls、22,994 paired optimizer minibatches；41 个 screen 点 / 980 局，selection 3 点 / 120 局，final 1 点 / 100 局。775k selected final 两模式均 normal 45/50、collision 5/50；last 1M screen 两模式 normal 均 6/20，collision 10/20、12/20。best 不能覆盖末尾退化。原始 50k CUDA32-step budget-resume 证据和实际 100k→1M lineage 均原样引用。
++
++## 2. 相对 T0 的科学语义差异
++
++**T0 科学语义差异为空。** `vendor/terl/`、`src/terl_mappo/` 顶层原模块、原 actor/critic learner 及 `terl_mappo_20261008` 两份配置没有修改。原 `source_hash()` 只枚举顶层 TERL-MAPPO 模块，因此新增 `batch01` 子包不破坏已存在 checkpoint 的 strict source contract。新 lock 递归覆盖该子包，并补充实际导入的 IQN/encoder/package 依赖，防止新设施未被校验。
++
++T0 `assemble/collect/update` 使用原 `build/collect/MAPPOTrainer`；CPU/CUDA 实际 256/8/4 入口比较初始化、完整 rollout、PPO 指标、actor/critic、两 Adam、ValueNorm 与全部 RNG，逐值一致。完整保存后再续接的环境比较覆盖所有 Python 字段、PRNG、数组以及 KDTree 数据与空间查询。pickle 字节包含存储引用布局，不作为 uninterrupted-vs-resumed 的科学等价判据；Adam 标量 step 在 CUDA 加载后的存储设备可能不同，比较其精确数值与后续参数/指标/RNG。没有修改 anchor 序列化实现。
++
++新增变化仅为工程合同：显式 BASE/config/source delta、独立 RNG context、runtime fingerprint、checkpoint sidecar、保留计划以及带规模/分布标签的报告接口。历史 evaluator 与 checkpoint 文件格式均保留。新 `load_bound` 更严格地绑定 manifest/source/BASE；导入原锚点用 `load_anchor(expected_sha256)`，仍执行原 strict resume。
++
++## 3. 共同模块与五条扩展线
++
++| 模块 | 责任 |
++|---|---|
++| `batch01/contracts.py` | parent/lock pin、resolved config、精确源码 delta、资源/路径校验 |
++| `batch01/interfaces.py` | `Hooks/Runtime/ActionBackend`、T0 复用、multi-scale state/critic shape 入口 |
++| `batch01/evaluation.py` | 原指标定义、seed manifest、隔离 RNG、scene 标签、best/last/selected final、late stability |
++| `batch01/checkpoints.py` | 原 full-state save/resume + BASE sidecar、只读 retention plan |
++| `batch01/provenance.py` | active optimizer/ValueNorm/模式/架构断言、实际导入依赖检查、runtime manifest |
++| `tools/batch01_base_20261009.py` | 仅 offline `lock/recover/prepare`；没有训练或自动 supervisor 入口 |
++
++| 实验线 | 应采用的接口 | 必须由该线独立实现/验证 |
++|---|---|---|
++| T1 Curriculum | `Hooks.env_factory/state_encoder/critic_factory`；`multiscale_state/multiscale_critic` | schedule、native lifecycle、跨场景固定容量 padding、切换/resume；shape smoke 不代表课程已实现 |
++| N1 Actor backbone | `Hooks.actor_factory(hidden_dim,heads,layers,seed,masked_pool)` | 返回共享 local actor，提供 categorical `sample/evaluate_indices`；保持 critic/reward/环境不变 |
++| R1 Capture reward shaping | `Hooks.reward_transform(raw_reward, deepcopy(info))` | 只返回 finite per-agent shaped reward；保留 native done/collision/capture、原 reward 分量与独立 shaping 记录 |
++| P1 PPO fork | manifest `config_changes` 的 `ppo.*` | before/after/reason；两 optimizer、raw-return GAE、ValueNorm、likelihood check 保持共同入口 |
++| C0 Action distribution | `ActionBackend` + `ContinuousPolicy` + `Hooks.actor_factory/env_factory` | physical AW 环境 adapter、变换 Jacobian/logprob、概率分布 entropy、连续 evaluator；原 `NativeStage1` 的整数动作路径明确拒绝连续策略 |
++
++新扩展模块放在 `src/terl_mappo/batch01/extensions/`，由 `module:factory` 返回 `Hooks`。新增源文件必须逐一在 `source_changes` 中声明 before=null、真实 after hash、reason、science_impact。各线不得通过修改共享模块绕过其接口；共同文件修改需要 `candidate_fix=true` 和影响说明，不能静默纳入 anchor。
++
++T1 padding 必须让一个 rollout 内 local/global/reward/active 的容量一致；场景切换须在 joint reset/update 边界完成，并保存 schedule/布局/PRNG。当前 multi-scale helper 仅验证 3P1E0O4C、4P1E1O6C、7P2E2O8C 的原生观测和正式网络前后向形状；不是已完成的 T1 curriculum runner。推荐跨规模保持固定物理尺度和最大 current 容量，保留场景标签，不以重新建 critic 来悄悄丢掉 optimizer 状态。
++
++C0 `sample` 返回 physical AW `[P,2]`、变换后 logprob `[P]`、pre-tanh latent `[P,2]`；`evaluate_latent` 返回 logprob、physical MC entropy、base Gaussian entropy、具有 loc/scale 的 distribution、log_std `[P,2]`。`Runtime.update` 在 continuous PPO 前检查同一 latent 的行为 likelihood。连续 deterministic 模式必须明确记录其策略规则，不能把 tanh(mean) 描述为已计算的 density argmax。entropy 单独按概率测度比较，不与 AW9 Shannon entropy 原值混合。
++
++## 4. 统一 runtime 与评估口径
++
++原生 Stage1 继续是 3P1E0O4C、120×120、AW9、0.05×10=0.5秒、capture8m、related18m、native end-of-decision collision、3001 decisions horizon。capture 步 native done 可全 false；wrapper 保留 trainer joint lifecycle，terminal 优先、timeout truncated、pre-reset normalized V bootstrap，learner 按旧 ValueNorm stats 还原 raw-return GAE。
++
++共同约定：on-policy rollout256，25k checkpoint boundary 使用较短尾 rollout；raw reward，active-only advantage/loss，独立 Adam eps1e-5；actor rollout/update 都 eval 且 autograd 开启。完整 checkpoint 包含模型/两 optimizer/ValueNorm/update counters、环境/APF/观测/return/PRNG、Python/NumPy/CPU/CUDA RNG。不得从 selected policy-only 权重伪装 exact resume。
++
++评估协议见 [evaluation.json](../configs/experiments/terl_mappo_batch01_20261009/evaluation.json)。screen 每25k、regular 各10局、指定 milestone 各20局；top3 screen 候选在 selection 各20局；selected final 各50局。排序固定为 pooled normal、低collision、strict、ring3、较早step；final 不参与 selection。screen2026100800、selection2036100800、final2046101800，sample Torch offset100000；训练 env/actor seed 与全部物理和动作 seed 域交叉校验。
++
++原 normal=capture 且无同时 collision。ring2/3/strict 是全 episode visitation，T0 对单 evader 的 near active P `<8m`、最大角 gap≤π 且≤3倍最小 gap。多目标 T1 必须声明其 per-target 和 joint 聚合，保持 8m/角度判据及整局 visitation，不能直接用终止步 snapshot 替代。规模 summary 保留 P/E/O/core/map/horizon/decision_seconds，报告 rates、秒及 capture_time/horizon；不无标签混合场景。
++
++capture time 保持“任意 native capture 条件下”的 mean/median/p90、成功n/删失n；所有 noncapture 仍按 T0 原定义 censored，同时分列 collision failure 与纯 timeout censor，不能将碰撞当作普通独立生存删失作因果解释。collision type 是逐局发生率。critic EV、minibatch/post-update KL/ratio/clip、entropy 同步保留；late stability 报告末五点 normal 的 mean/min/max/std 和 last-minus-best，分别保留 argmax/sample 原结果。
++
++`evaluate_t0` 仅服务原 categorical/native evaluator，并在正常/异常退出后恢复父进程所有 RNG。新 actor/多规模/连续 evaluator 由对应线实现，产出同一 rows/summary 合同；不能把本轮 shape/protocol 接口当作这些 evaluator 已通过 QA。
++
++## 5. manifest 格式与严格检查
++
++`base_lock.json`：schema/status/parent_sha/terl_sha、原 anchor resolved config、common source hashes、固定 evaluation protocol、scientific_delta_from_t0=[]、independent_qa=PENDING。
++
++Delta 格式：
++
++```json
++{
++  "schema": "terl.batch01.delta.v1",
++  "line": "P1",
++  "base": {
++    "candidate_sha": "<explicit 40-character candidate commit>",
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "lock_sha256": "<canonical lock fingerprint>"
++  },
++  "config_changes": [
++    {"path": "ppo.actor_lr", "before": 0.00003, "after": 0.00001, "reason": "controlled P1 fork"}
++  ],
++  "source_changes": [],
++  "extensions": {}
++}
++```
++
++`lock_sha256` 是 sorted-key compact JSON 的 canonical SHA256；它与有缩进 lock 文件的 byte SHA256 不同。`prepare --pin` 必须显式提供该 canonical 值。工具同时验证 pinned candidate Git object 中的 lock；不接受 HEAD/分支名替代 candidate SHA，也不创建或更新锁。未知 delta 字段、错误 before、越线 config、未经声明的文件新增/删除/修改、陈旧 source delta、未经声明的已加载本地依赖均拒绝。
++
++Runtime manifest schema `terl.batch01.runtime.v1` 包含 base、line、resolved_config、delta_manifest、common_source_hashes、seed_manifest、evaluation_protocol、metric_definitions、active_runtime_values、environment/action/reward/initial_state fingerprints、versions、资源、PID/source Git HEAD、counter units、checkpoint=null、qa_status。active 值检查真实 PPO 配置、optimizer lr/eps/参数隔离、ValueNorm beta/epsilon、eval 模式及原生 runtime getters；记录实际网络参数数目/层数/heads/dims。
++
++Checkpoint sidecar schema `terl.batch01.checkpoint.v1` 含 checkpoint_sha256、steps、manifest_fingerprint、base。保存/恢复都重新检查 runtime manifest 的当前 common hashes。恢复同一 run 使用其持久化 startup manifest；若改变 operational budget/provenance，需明确评审新的 resume manifest 绑定，不能手改 sidecar。原 anchor 的预算扩展仍使用已验证的原严格加载合同，只豁免 budget 字段。
++
++## 6. 资源、磁盘与保留
++
++所有本轮 run/temp/report/checkpoint 位于 `/home/yjq`。依赖复用原 worktree `.runtime-deps` 只读路径，不复制。诊断设置 physical GPU0 / process-local cuda:0，OMP/MKL/OpenBLAS/Torch 单线程；没有操作 GPU0/GPU1 上其它 PID。资源 validator 限定 1..4 threads、1..2 evaluation workers、声明 GPU allocated budget≤2048MiB，要求 cuda:0 和单个显式 GPU0/1。正式网络 CUDA 测试验证 peak allocated<2048MiB；这是 PyTorch allocated 口径，不能替代驱动含 context 的总显存统计。未来正式 launcher 仍须执行资源 gate 和持续上限监控，本轮工具不提供正式 launcher。
++
++`retention_plan` 只返回当前 run 的删除候选，不删除文件。调用者明确传入 milestones、top3 candidates、pending/evaluating steps；latest/best 的 inode 自动保护。只有当前目录的 `step_<steps>.pt`、完整 argmax/sample rows/summary、checkpoint/metadata/evaluation 三方真实 hash 一致才可入计划。其它实验路径、alias、symlink/目录逃逸均跳过。没有清理原 run 的模型。新增正式测试的约79MiB full checkpoints 已在 finally 删除；仅保留轻量报告与小型 pytest fixtures。
++
++## 7. 测试与独立 QA
++
++修改前先重跑原有基础 suite：43 passed、4 warnings。首次运行仅因 runs 父目录不存在造成5个 fixture setup error，补齐目录后完整重跑通过，没有修改科学实现。第一轮联合回归为60 passed；其后的 fresh-process startup 发现 source lock 传递依赖覆盖遗漏，补充第18项测试。修订候选最终联合回归：**61 passed、4 warnings、53.92秒、无 skip**，见 [JUnit 证据](../artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml)。
++
++覆盖原源字节、Stage1 action/reward/event parity、terminal/truncation/pre-reset bootstrap、PPO/GAE/ValueNorm、no-target/fully-masked、on-policy ratio、optimizer隔离、seed隔离、实际256/8/4 CPU/CUDA完整 update/resume、三场景正式shape前后向、continuous物理动作接口拒绝整数误路由、BASE/source/config漂移、checkpoint sidecar与跨实验 retention。正式resume测试比较16-step更新后保存再8-step续接，科学值逐位一致，不把缩小网络 smoke 当作正式入口。
++
++4个warning为2项 protobuf/Python3.14弃用警告与2项原 evaluator fork 多线程警告。evaluator 原实现不在本轮静默修改；其独立进程启动策略可列为后续候选修复。共同源码/config 与 T0 diff 为空；新增差异格式检查通过。源码锁生成、已提交candidate的 startup prepare 与remote HEAD核验在本轮交付证据中另记。
++
++QA应独立复跑以下命令，复核新 manifest/接口和上述局限后给出决定。Core 本身的通过不等于 independent QA PASS。
++
++```bash
++PYTHONPATH=/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/.runtime-deps:src \
++CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
++TMPDIR=/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009/runs/batch01_base_tmp \
++python -m pytest -q test/test_terl_native_mappo_20261008.py \
++  test/test_small_step_ac_migration_contract.py test/test_mappo_terminal_rows_20260923.py \
++  test/test_terl_mappo_batch01_base_20261009.py --basetemp=runs/batch01_independent_qa_tmp
++```
++
++独立分支从明确的 candidate commit 创建。读取 `base_lock.json` 后生成 T0/某实验线 delta，显式填 candidate SHA 与 canonical pin，再调用 offline `prepare --delta <file> --pin <pin> --output /home/yjq/.../runtime_manifest.json`。已有输出拒绝覆盖。该命令仅构造并核验入口，不采样训练 rollout，也不执行 optimizer update。
++
++## 8. 已知 correctness 风险与冻结边界
++
++原 reward global 分支、goal helper count、驻留 dense 激励及多目标重复计算、enemy token 无半径过滤、unmasked pooling、APF过滤索引、duplicate-current、boundary非terminal/非collision均保留。不能自行认定原结果全部有效或失效，也不能通过修这些语义来声称同一 T0 结果。发现的新科学问题必须先形成 candidate_fix/影响说明并由独立 QA/Master 评审。
++
++原结果只含一个训练 seed；best90% normal仍有10% collision，last退化、晚期critic EV较差。T1通用奖励归因/多目标几何、跨场景容量切换与完整resume，N1不同backbone evaluator，R1shaping组件日志，C0变换概率与物理动作/evaluation必须分别通过该线 QA。本轮只交付可独立实现、测试和锁定的扩展入口，没有宣布五条线已实现或可正式开训。
++
++结论边界：Core 已完成 `BATCH01_BASE_CANDIDATE`；等待独立 QA 与 Master 冻结决定。此后停止本轮工作，不启动任何正式训练。
+diff --git a/src/terl_mappo/batch01/__init__.py b/src/terl_mappo/batch01/__init__.py
+new file mode 100644
+index 0000000..2635dce
+--- /dev/null
++++ b/src/terl_mappo/batch01/__init__.py
+@@ -0,0 +1 @@
++"""Batch01 extension seams. The successful Stage1 modules remain byte frozen."""
+diff --git a/src/terl_mappo/batch01/checkpoints.py b/src/terl_mappo/batch01/checkpoints.py
+new file mode 100644
+index 0000000..7c67014
+--- /dev/null
++++ b/src/terl_mappo/batch01/checkpoints.py
+@@ -0,0 +1,104 @@
++"""Full-state checkpoints with BASE binding, and deletion plans scoped to one run."""
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++from ..run import save_checkpoint, load_checkpoint, atomic_json, file_hash
++from .contracts import fingerprint, validate_resources
++from .source_guard import SourceGuard
++
++
++def assert_manifest_sources(manifest, runtime=None):
++    guard = runtime.source_guard if runtime is not None else SourceGuard.committed()
++    if manifest.get('common_source_hashes') != guard.expected:
++        raise ValueError('checkpoint runtime manifest has stale/undeclared common sources')
++    if manifest.get('generated_runtime_source_hashes', dict(guard.generated_sources)) != dict(guard.generated_sources):
++        raise ValueError('checkpoint runtime manifest has stale generated runtime sources')
++    guard.check()
++
++
++def save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps):
++    with runtime.source_guard.scope():
++        return _save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps)
++
++
++def _save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps):
++    assert_manifest_sources(manifest, runtime)
++    validate_resources(path, str(runtime.trainer.device))
++    path = Path(path)
++    pending = path.with_name(path.name + '.pending')
++    try:
++        digest = save_checkpoint(pending, runtime.trainer, runtime.adapter, runtime.config,
++                                 steps, agent_steps, optimizer_steps)
++        runtime.source_guard.check()
++        pending.replace(path)
++    finally:
++        pending.unlink(missing_ok=True)
++        pending.with_suffix('.pt.tmp').unlink(missing_ok=True)
++    atomic_json(Path(path).with_suffix('.batch01.json'),
++                {'schema': 'terl.batch01.checkpoint.v1', 'checkpoint_sha256': digest,
++                 'steps': steps, 'manifest_fingerprint': fingerprint(manifest), 'base': manifest['base']})
++    return digest
++
++
++def load_bound(path, runtime, manifest):
++    with runtime.source_guard.scope(): return _load_bound(path, runtime, manifest)
++
++
++def _load_bound(path, runtime, manifest):
++    assert_manifest_sources(manifest, runtime)
++    side = json.loads(Path(path).with_suffix('.batch01.json').read_text())
++    if (side['checkpoint_sha256'] != file_hash(path) or side['base'] != manifest['base'] or
++            side['manifest_fingerprint'] != fingerprint(manifest)):
++        raise ValueError('checkpoint manifest/BASE/hash mismatch')
++    return load_checkpoint(path, runtime.trainer, runtime.adapter, runtime.config,
++                           runtime.trainer.device, strict=True)
++
++
++def load_anchor(path, expected_sha256, runtime):
++    with runtime.source_guard.scope(): return _load_anchor(path, expected_sha256, runtime)
++
++
++def _load_anchor(path, expected_sha256, runtime):
++    """Explicit import of the original full-state anchor, never strict=False."""
++    if runtime.hooks != type(runtime.hooks)():
++        raise ValueError('historical exact resume requires T0 hooks')
++    if file_hash(path) != expected_sha256:
++        raise ValueError('historical anchor hash mismatch')
++    return load_checkpoint(path, runtime.trainer, runtime.adapter, runtime.config,
++                           runtime.trainer.device, strict=True)
++
++
++def retention_plan(run, completed_screens, *, keep_steps, pending_steps=()):
++    """Read-only plan. No checkpoint is removed by this common-base delivery."""
++    root = Path(run).resolve()
++    validate_resources(root)
++    directory = root / 'checkpoints'
++    keep = set(keep_steps) | set(pending_steps)
++    protected_inodes = set()
++    for alias in ('latest.pt', 'best.pt'):
++        p = directory / alias
++        if p.exists(): protected_inodes.add((p.stat().st_dev, p.stat().st_ino))
++    result = []
++    for evaluation in completed_screens:
++        if evaluation.get('seed_domain') != 'screen' or 'modes' not in evaluation or 'episodes' not in evaluation:
++            raise ValueError('retention requires complete screening evidence')
++        step = evaluation['steps']
++        original = Path(evaluation['checkpoint'])
++        if not original.is_absolute(): raise ValueError('absolute checkpoint provenance required')
++        path = original.resolve()
++        if original.is_symlink() or path.parent != directory or path.name != f'step_{step:09d}.pt':
++            continue  # unrelated experiment, alias, directory escape or symlink
++        if step in keep or not path.exists(): continue
++        if (path.stat().st_dev, path.stat().st_ino) in protected_inodes: continue
++        metadata = json.loads(path.with_suffix('.json').read_text())
++        digest = file_hash(path)
++        if metadata.get('steps') != step or metadata.get('sha256') != digest or evaluation['checkpoint_sha256'] != digest:
++            raise ValueError('retention checkpoint/evaluation/metadata hash mismatch')
++        n = evaluation['episodes_per_mode']
++        if any(evaluation['modes'].get(m, {}).get('episodes') != n or
++               len([r for r in evaluation['episodes'] if r['mode'] == m]) != n for m in ('argmax', 'sample')):
++            raise ValueError('partial screening cannot authorize retention')
++        result.append({'path': str(path), 'steps': step, 'sha256': digest})
++    return result
+diff --git a/src/terl_mappo/batch01/contracts.py b/src/terl_mappo/batch01/contracts.py
+new file mode 100644
+index 0000000..304ad9c
+--- /dev/null
++++ b/src/terl_mappo/batch01/contracts.py
+@@ -0,0 +1,246 @@
++"""Explicit BASE pins and fail-closed source/config delta verification."""
++from __future__ import annotations
++
++import copy
++import ast
++import hashlib
++import json
++import os
++from pathlib import Path
++import platform
++import subprocess
++
++from ..native import ROOT, TERL_SHA
++from ..run import file_hash
++
++PARENT_SHA = 'bb794ca8435f06b9fa5693c0fed98f567320decf'
++ANCHOR_CONFIG = 'configs/experiments/terl_mappo_20261008/stage1_1m.json'
++LOCK_PATH = 'configs/experiments/terl_mappo_batch01_20261009/base_lock.json'
++PROTOCOL_PATH = 'configs/experiments/terl_mappo_batch01_20261009/evaluation.json'
++REGRESSION_SOURCES = (
++    'test/test_terl_native_mappo_20261008.py',
++    'test/test_small_step_ac_migration_contract.py',
++    'test/test_mappo_terminal_rows_20260923.py',
++    'test/test_terl_mappo_batch01_base_20261009.py',
++    'test/test_terl_mappo_batch01_qa_repairs_20261009.py',
++)
++COMMON_DEPENDENCIES = (
++    'src/cocap_voradj/training/small_step_ac.py',
++    'src/cocap_voradj/models/small_step_ac.py',
++    'src/cocap_voradj/models/iqn.py',
++    'src/cocap_voradj/models/continuous/local_entity_token_encoder.py',
++    'src/cocap_voradj/__init__.py', 'src/cocap_voradj/models/__init__.py',
++    'src/cocap_voradj/models/continuous/__init__.py',
++    'src/cocap_voradj/training/__init__.py',
++)
++OPERATIONAL_KEYS = {'experiment', 'seed', 'actor_seed', 'budget', 'stage1_ceiling'}
++LINE_KEYS = {
++    'T0': set(), 'T1': set(), 'N1': {'hidden_dim', 'num_heads', 'num_layers', 'masked_pool'},
++    'R1': set(), 'P1': {'ppo'}, 'C0': set(),
++}
++
++
++def canonical(value):
++    return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
++
++
++def fingerprint(value):
++    return hashlib.sha256(canonical(value)).hexdigest()
++
++
++def git(*args):
++    return subprocess.check_output(['git', '-C', str(ROOT), *args], text=True).strip()
++
++
++def safe_relative(value):
++    p = Path(value)
++    if p.is_absolute() or '..' in p.parts or not p.parts:
++        raise ValueError('source paths must be project-relative')
++    return p.as_posix()
++
++
++def source_inventory(root=ROOT):
++    root = Path(root)
++    files = set(COMMON_DEPENDENCIES)
++    for directory in ('src/terl_mappo', 'vendor/terl'):
++        for p in (root / directory).rglob('*'):
++            if p.is_file() and (p.suffix in {'.py', '.yaml', '.json'} or
++                                p.name in {'LICENSE', 'requirements.txt'}):
++                files.add(p.relative_to(root).as_posix())
++    files.update({ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json',
++                  PROTOCOL_PATH, 'tools/batch01_base_20261009.py'})
++    files.update(REGRESSION_SOURCES)
++    # Package __init__ files import historical trainer/dynamics/logging modules
++    # even when only the MAPPO learner is requested. Freeze their import closure
++    # without rewriting those packages or accepting unverified live dependencies.
++    pending = [p for p in files if p.endswith('.py')]
++    visited = set()
++
++    def include_module(name):
++        if not name.startswith(('cocap_voradj', 'terl_mappo', 'tools')):
++            return
++        parts = name.split('.')
++        for length in range(1, len(parts) + 1):
++            prefix = '/'.join(parts[:length])
++            base = '' if parts[0] == 'tools' else 'src/'
++            for candidate in (f'{base}{prefix}.py', f'{base}{prefix}/__init__.py'):
++                if (root / candidate).is_file() and candidate not in files:
++                    files.add(candidate); pending.append(candidate)
++
++    while pending:
++        path = pending.pop()
++        if path in visited: continue
++        visited.add(path)
++        parts = (Path(path).relative_to('src') if path.startswith('src/') else Path(path)).with_suffix('').parts
++        package = parts[:-1]
++        for node in ast.walk(ast.parse((root / path).read_text())):
++            if isinstance(node, ast.Import):
++                for alias in node.names: include_module(alias.name)
++            elif isinstance(node, ast.ImportFrom):
++                prefix = list(package[:len(package) - node.level + 1]) if node.level else []
++                module = '.'.join(prefix + (node.module.split('.') if node.module else []))
++                include_module(module)
++                for alias in node.names:
++                    if alias.name != '*': include_module(module + '.' + alias.name)
++    return {p: file_hash(root / p) for p in sorted(files)}
++
++
++def create_lock():
++    """Offline engineering command; never a launch-time refresh of BASE."""
++    if git('branch', '--show-current') != 'experiment/terl-mappo-batch01-base-20261009':
++        raise ValueError('create BASE only on the authorized Core branch')
++    config = json.loads((ROOT / ANCHOR_CONFIG).read_text())
++    # Compare the entire historical source list to the actual immutable Git objects.
++    from ..run import source_hash
++    historical = source_hash()
++    historical.update({p: file_hash(ROOT / p) for p in
++                       (ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json')})
++    for path, digest in historical.items():
++        raw = subprocess.check_output(['git', '-C', str(ROOT), 'show', f'{PARENT_SHA}:{path}'])
++        if hashlib.sha256(raw).hexdigest() != digest:
++            raise ValueError('T0 anchor source changed: ' + path)
++    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V2',
++            'parent_sha': PARENT_SHA, 'terl_sha': TERL_SHA, 'anchor_config': config,
++            'common_sources': source_inventory(),
++            'generated_runtime_sources': torch_generated_sources(),
++            'evaluation_protocol': json.loads((ROOT / PROTOCOL_PATH).read_text()),
++            'scientific_delta_from_t0': [], 'independent_qa': 'PENDING_MASTER_QA'}
++
++
++def torch_generated_sources():
++    """Explicit content pin for Torch's Adam-import temporary Python template.
++
++    Its per-process filename changes with TMPDIR. It is a framework dependency,
++    never permission for ARM-generated code or arbitrary runtime modules.
++    """
++    from torch.distributed.nn.jit.instantiator import get_remote_module_template
++    text = get_remote_module_template(True).format(
++        assign_module_interface_cls='module_interface_cls = None', args='*args', kwargs='**kwargs',
++        arg_types='*args, **kwargs', arrow_and_return_type='', arrow_and_future_return_type='',
++        jit_script_decorator='')
++    return {'torch.distributed.nn.non_scriptable_remote_template': hashlib.sha256(text.encode()).hexdigest()}
++
++
++def resolve_config(lock, delta):
++    if delta.get('schema') != 'terl.batch01.delta.v1' or delta.get('line') not in LINE_KEYS:
++        raise ValueError('unknown delta schema/experiment line')
++    if set(delta) - {'schema', 'line', 'base', 'config_changes', 'source_changes', 'extensions'}:
++        raise ValueError('unknown delta fields; never silently ignore configuration')
++    if delta['line'] == 'T0' and delta.get('extensions'):
++        raise ValueError('T0 does not accept extensions')
++    config = copy.deepcopy(lock['anchor_config'])
++    seen = set()
++    for entry in delta.get('config_changes', []):
++        if set(entry) != {'path', 'before', 'after', 'reason'} or not entry['reason']:
++            raise ValueError('config delta requires path/before/after/reason')
++        keys = entry['path'].split('.')
++        if entry['path'] in seen or keys[0] not in OPERATIONAL_KEYS | LINE_KEYS[delta['line']]:
++            raise ValueError('config delta outside experiment scope: ' + entry['path'])
++        seen.add(entry['path'])
++        node = config
++        for key in keys[:-1]:
++            if key not in node or not isinstance(node[key], dict):
++                raise ValueError('unknown config path')
++            node = node[key]
++        if keys[-1] not in node or node[keys[-1]] != entry['before']:
++            raise ValueError('config delta before value mismatch')
++        node[keys[-1]] = entry['after']
++    if config['checkpoint_interval'] != 25000 or config['rollout_length'] != 256:
++        raise ValueError('shared rollout/screening cuts changed')
++    if config['terl_sha'] != TERL_SHA or not 0 < config['budget'] <= config['stage1_ceiling']:
++        raise ValueError('invalid native provenance/budget')
++    return config
++
++
++def verify_base(lock, delta, expected_lock_sha256, root=ROOT):
++    if lock.get('schema') != 'terl.batch01.base.v1' or lock.get('parent_sha') != PARENT_SHA:
++        raise ValueError('wrong BASE lineage/schema')
++    if fingerprint(lock) != expected_lock_sha256:
++        raise ValueError('BASE lock pin mismatch; do not adopt a newer Core HEAD')
++    base = delta.get('base', {})
++    if base.get('lock_sha256') != expected_lock_sha256 or base.get('parent_sha') != PARENT_SHA:
++        raise ValueError('delta BASE pin mismatch')
++    sha = base.get('candidate_sha', '')
++    if len(sha) != 40 or any(c not in '0123456789abcdef' for c in sha):
++        raise ValueError('an explicit full candidate SHA is required')
++    actual = source_inventory(root)
++    declared = {}
++    for entry in delta.get('source_changes', []):
++        path = safe_relative(entry['path'])
++        if path in declared or not entry.get('reason') or not entry.get('science_impact'):
++            raise ValueError('source delta requires unique path, reason and science_impact')
++        if entry.get('before') != lock['common_sources'].get(path):
++            raise ValueError('source delta before hash mismatch')
++        # Dynamic ARM dependencies outside the static closure need an explicit
++        # declaration too. Never grow the trusted set from live sys.modules.
++        if path not in actual and entry.get('after') is not None:
++            source = Path(root) / path
++            if not source.resolve().is_relative_to(Path(root).resolve()):
++                raise ValueError('source delta escapes project realpath')
++            if source.is_file(): actual[path] = file_hash(source)
++        if entry.get('after') != actual.get(path):
++            raise ValueError('source delta after hash mismatch')
++        if path in lock['common_sources'] and not entry.get('candidate_fix'):
++            raise ValueError('common source edit needs explicit candidate_fix review')
++        declared[path] = entry
++    changed = {p for p in actual.keys() | lock['common_sources'].keys()
++               if actual.get(p) != lock['common_sources'].get(p)}
++    if changed != set(declared):
++        raise ValueError('undeclared/stale common source delta: ' + ', '.join(sorted(changed ^ set(declared))))
++    return resolve_config(lock, delta)
++
++
++def declared_sources(lock, delta):
++    """Use only after verify_base; immutable BASE plus the exact ARM delta."""
++    result = dict(lock['common_sources'])
++    for entry in delta.get('source_changes', []):
++        if entry['after'] is None: result.pop(entry['path'], None)
++        else: result[entry['path']] = entry['after']
++    return result
++
++
++def verify_committed_pin(lock, delta):
++    sha = delta['base']['candidate_sha']
++    committed = json.loads(git('show', f'{sha}:{LOCK_PATH}'))
++    if committed != lock:
++        raise ValueError('lock does not belong to the pinned candidate commit')
++
++
++def validate_resources(output, device='cpu', threads=1, workers=2, max_gpu_mib=2048):
++    path = Path(output).resolve()
++    if not path.is_relative_to(Path('/home/yjq')):
++        raise ValueError('all run/checkpoint/temp paths must resolve under /home/yjq')
++    if not 1 <= threads <= 4 or not 1 <= workers <= 2 or not 0 < max_gpu_mib <= 2048:
++        raise ValueError('Batch01 resource limits: 1..4 threads, 1..2 workers, <=2048 MiB')
++    if device not in {'cpu', 'cuda:0'}:
++        raise ValueError('use process-local cuda:0')
++    if device == 'cuda:0' and os.environ.get('CUDA_VISIBLE_DEVICES') not in {'0', '1'}:
++        raise ValueError('explicit single physical CUDA_VISIBLE_DEVICES=0 or 1 required')
++    return {'output': str(path), 'device': device, 'threads': threads, 'evaluation_workers': workers,
++            'physical_gpu': os.environ.get('CUDA_VISIBLE_DEVICES'), 'max_gpu_allocated_mib': max_gpu_mib}
++
++
++def environment_versions():
++    from importlib.metadata import version
++    return {'python': platform.python_version(),
++            **{name: version(name) for name in ('torch', 'numpy', 'scipy', 'gym', 'PyYAML')}}
+diff --git a/src/terl_mappo/batch01/evaluation.py b/src/terl_mappo/batch01/evaluation.py
+new file mode 100644
+index 0000000..98a55a2
+--- /dev/null
++++ b/src/terl_mappo/batch01/evaluation.py
+@@ -0,0 +1,114 @@
++"""Shared definitions and seed isolation; metrics retain native T0 semantics."""
++from __future__ import annotations
++
++from contextlib import contextmanager
++import copy
++import random
++
++import numpy as np
++import torch
++
++from ..evaluate import summarize, evaluate
++from ..run import rng_state
++from ..supervise import selection_score
++
++METRIC_DEFINITIONS = {
++    'normal_capture': 'all native evaders captured AND no collision at joint end',
++    'ring2/ring3': 'full-episode visitation: >=2/>=3 active pursuers within <8m of an evader',
++    'strict_geometry': '>=3 near pursuers; max angle gap<=pi and <=3*min gap',
++    'collision_type': 'per-episode incidence of native end-of-decision collision categories',
++    'capture_time': 'conditional on ANY native capture; decisions * decision_seconds',
++    'censored': 'native T0 convention: all noncapture; collision failure reported separately',
++    'critic_ev': 'post-update denormalized V vs pre-update GAE raw return targets on active rows; 1-var(return-V)/var(return)',
++    'ppo_kl': 'sample estimator mean((ratio-1)-log_ratio); minibatch and post-update separately',
++    'ppo_ratio_clip': 'ratio=exp(new-old); clip fraction=mean(abs(ratio-1)>clip_param)',
++    'entropy': 'backend-labelled measure; categorical and continuous raw values never pooled',
++    'multiscale': 'group by P/E/O/current/map/horizon label; rates and normalized time per scale',
++}
++
++
++def seed_manifest(config, protocol):
++    result = {'train_environment': [config['seed']], 'train_actor': [config['actor_seed']],
++              'sample_torch_offset': protocol['sample_torch_offset']}
++    for name in ('screen', 'selection', 'final'):
++        domain = protocol[name]
++        result[name] = list(range(domain['seed_base'], domain['seed_base'] + domain['max_episodes_per_mode']))
++    seen = set(result['train_environment'] + result['train_actor'])
++    for name in ('screen', 'selection', 'final'):
++        seeds = set(result[name])
++        action_seeds = {s + protocol['sample_torch_offset'] for s in seeds}
++        if seeds & seen or action_seeds & seen or seeds & action_seeds:
++            raise ValueError('seed domains overlap (including sample action streams)')
++        seen |= seeds | action_seeds
++    return result
++
++
++@contextmanager
++def isolated_rng():
++    """Restore every train RNG even on evaluator exceptions (including CUDA)."""
++    state = rng_state()
++    try:
++        yield
++    finally:
++        random.setstate(state['python']); np.random.set_state(state['numpy'])
++        torch.set_rng_state(state['torch'].cpu())
++        if state['cuda']:
++            torch.cuda.set_rng_state_all([x.cpu() for x in state['cuda']])
++
++
++def evaluate_t0(checkpoint, output, config, protocol, domain='screen', step=0, workers=2):
++    seed_manifest(config, protocol)
++    if domain not in {'screen', 'selection', 'final'} or not 1 <= workers <= 2:
++        raise ValueError('invalid evaluator domain/resources')
++    setting = protocol[domain]
++    n = setting['max_episodes_per_mode']
++    if domain == 'screen' and step not in protocol['screen_milestones']:
++        n = setting['regular_episodes_per_mode']
++    from .contracts import validate_resources
++    validate_resources(output, workers=workers)
++    with isolated_rng():
++        return evaluate(checkpoint, output, n, setting['seed_base'], workers, domain)
++
++
++def scene_label(env):
++    return {'pursuers': len(env.pursuers), 'evaders': len(env.evaders),
++            'obstacles': len(env.obstacles), 'cores': len(env.cores),
++            'map': [env.width, env.height], 'horizon_decisions': env.episode_max_length + 1,
++            'decision_seconds': env.pursuers[0].dt * env.pursuers[0].N}
++
++
++def summarize_scene(rows, scene, backend):
++    if not rows or any(r.get('scene', scene) != scene for r in rows):
++        raise ValueError('one nonempty scale per summary; never silently pool scenes')
++    result = summarize(rows)
++    result.update(scene=copy.deepcopy(scene), action_family=backend.family,
++                  entropy_measure=backend.entropy_measure, logprob_measure=backend.logprob_measure,
++                  collision_failure_n=sum(not r['capture'] and r['collision'] for r in rows),
++                  time_limit_censored_n=sum(not r['capture'] and not r['collision'] for r in rows))
++    horizon_seconds = scene['horizon_decisions'] * scene['decision_seconds']
++    times = [r['capture_time'] / horizon_seconds for r in rows if r['capture']]
++    result['capture_time_fraction_of_horizon_mean'] = float(np.mean(times)) if times else None
++    return result
++
++
++def performance_report(screens, selections, finals, late_points=5):
++    """Report best AND last. Final never enters selection or stability sorting."""
++    if not screens or late_points <= 0:
++        raise ValueError('screen evidence and positive late window required')
++    if any(r['seed_domain'] != 'screen' for r in screens) or any(r['seed_domain'] != 'selection' for r in selections):
++        raise ValueError('wrong selection domain')
++    selected = max(selections, key=selection_score) if selections else None
++    if finals and (selected is None or len(finals) != 1 or finals[0]['seed_domain'] != 'final' or
++                   (finals[0]['steps'], finals[0]['checkpoint_sha256']) !=
++                   (selected['steps'], selected['checkpoint_sha256'])):
++        raise ValueError('final must evaluate the held-out selected immutable checkpoint')
++    ordered = sorted(screens, key=lambda r: r['steps'])
++    late = ordered[-late_points:]
++    rates = [sum(m['normal_capture_rate'] for m in r['modes'].values()) / 2 for r in late]
++    return {'best_screen': max(screens, key=selection_score), 'last_screen': ordered[-1],
++            'selected_heldout': selected, 'selected_final': finals[0] if finals else None,
++            'late_stage': {'checkpoint_steps': [r['steps'] for r in late],
++                           'normal_rate_mean': float(np.mean(rates)), 'normal_rate_min': min(rates),
++                           'normal_rate_max': max(rates), 'normal_rate_std': float(np.std(rates)),
++                           'last_minus_best': rates[-1] - max(sum(m['normal_capture_rate'] for m in r['modes'].values()) / 2 for r in screens)},
++            'status': 'EVALUATION_COMPLETE' if finals else 'PENDING_FINAL'}
+diff --git a/src/terl_mappo/batch01/interfaces.py b/src/terl_mappo/batch01/interfaces.py
+new file mode 100644
+index 0000000..5f6124a
+--- /dev/null
++++ b/src/terl_mappo/batch01/interfaces.py
+@@ -0,0 +1,277 @@
++"""Small injectable interfaces, without rewriting TERL or its historical runner."""
++from __future__ import annotations
++
++from dataclasses import dataclass, field
++import copy
++from typing import Callable, Protocol, Any
++
++import numpy as np
++import torch
++
++from ..native import NativeStage1, central_state, pack_local
++from ..model import TERLActor, make_critic
++from ..run import build, collect
++from cocap_voradj.models.small_step_ac import CentralValueNetwork
++from cocap_voradj.training.small_step_ac import MAPPOConfig, MAPPOTrainer, tensor_tree
++from .source_guard import SourceGuard
++from .evaluation import isolated_rng
++
++
++class ContinuousPolicy(Protocol):
++    """C0 implements the existing learner's continuous branch, with Jacobians.
++
++    sample -> physical [P,2] AW, transformed log_prob [P], unsquashed latent [P,2].
++    evaluate_latent -> log_prob, physical MC entropy, base Gaussian entropy,
++    distribution, log_std [P,2]. distribution exposes loc/scale [P,2]; config
++    exposes saturation_threshold (or its default). Log densities include tanh
++    AND physical scale. Entropy estimation must not perturb the density check.
++    """
++    config: Any
++    def sample(self, obs, deterministic=False): ...
++    def evaluate_latent(self, obs, latent): ...
++
++
++class EnvironmentAdapter(Protocol):
++    observations: list
++    env: Any
++    def reset(self): ...
++    def step(self, actions): ...  # obs,reward,terminated,truncated,joint_end,info
++    def contract(self): ...
++    def state_dict(self): ...
++    def load_state_dict(self, state): ...
++    def fingerprint(self): ...
++    def action_capabilities(self): ...  # ActionCapabilities, actual consumer
++    def validate_actions(self, actions): ...  # shape/dtype/bounds, no coercion
++
++
++@dataclass(frozen=True)
++class ActionCapabilities:
++    family: str
++    representation: str  # integer_indices or physical_aw
++    bounds: tuple | None = None  # ((min_a,max_a),(min_w,max_w)) for physical AW
++
++
++def validate_adapter(adapter, backend, guard):
++    """Validate the instantiated consumer, including an isolated behavior probe.
++
++    NativeStage1's unchanged step implementation defines its AW9 capability.
++    Other adapters declare capabilities and supply a strict action validator.
++    Probing a copy preserves the live environment and every training RNG.
++    """
++    native_step = getattr(adapter.step, '__func__', None) is NativeStage1.step
++    if native_step:
++        capability = ActionCapabilities('categorical_aw9', 'integer_indices')
++    else:
++        if not callable(getattr(adapter, 'action_capabilities', None)) or not callable(getattr(adapter, 'validate_actions', None)):
++            raise ValueError('adapter must declare actual action capabilities and validation')
++        capability = guard.call(adapter.action_capabilities)
++    representation = 'integer_indices' if backend.categorical else 'physical_aw'
++    if not isinstance(capability, ActionCapabilities) or (capability.family, capability.representation) != (backend.family, representation):
++        raise ValueError('physical action/backend incompatible with actual adapter capabilities')
++    if native_step: return capability
++    with isolated_rng():
++        probe = copy.deepcopy(adapter)
++        agents = len(pack_local(probe.observations)['self'])
++        if backend.categorical:
++            valid = np.full(agents, 4, np.int64)
++            invalid = np.zeros((agents, 2))
++        else:
++            bounds = np.asarray(capability.bounds, dtype=float)
++            if bounds.shape != (2, 2) or not np.isfinite(bounds).all() or np.any(bounds[:, 0] >= bounds[:, 1]):
++                raise ValueError('physical action adapter requires finite AW bounds')
++            # Nonzero off-grid AW detects integer coercion in a wrapper consumer.
++            valid = np.broadcast_to(bounds[:, 0] + .371 * (bounds[:, 1] - bounds[:, 0]), (agents, 2)).copy()
++            invalid = np.zeros(agents, dtype=np.int64)
++        guard.call(probe.validate_actions, valid)
++        try: guard.call(probe.validate_actions, invalid)
++        except (ValueError, TypeError): pass
++        else: raise ValueError('adapter validator accepts incompatible action representation')
++        try: row = guard.call(probe.step, valid)
++        except (ValueError, TypeError) as error:
++            raise ValueError('actual adapter rejects physical action behavior probe') from error
++        if not isinstance(row, tuple) or len(row) != 6 or np.asarray(row[1]).shape != (agents,) or not np.isfinite(row[1]).all():
++            raise ValueError('action adapter reset/step behavior contract mismatch')
++    return capability
++
++
++@dataclass(frozen=True)
++class ActionBackend:
++    family: str = 'categorical_aw9'
++    entropy_measure: str = 'categorical_shannon_nats'
++    logprob_measure: str = 'discrete_probability_mass'
++    categorical: bool = True
++
++    def validate(self, actions, agents):
++        x = np.asarray(actions)
++        if self.categorical:
++            if x.shape != (agents,) or not np.issubdtype(x.dtype, np.integer) or np.any((x < 0) | (x > 8)):
++                raise ValueError('native AW9 needs integer indices [P]; never coerce continuous AW')
++        elif x.shape != (agents, 2) or not np.isfinite(x).all():
++            raise ValueError('continuous backend needs finite physical AW [P,2]')
++        return x
++
++
++@dataclass
++class Hooks:
++    """An experiment supplies only its own delta; every factory is testable.
++
++    T1: env_factory + state_encoder (+ critic_factory when shape changes).
++    N1: actor_factory. R1: reward_transform. P1: resolved config['ppo'].
++    C0: backend + actor_factory + env_factory that accepts physical AW directly.
++    reward_transform receives raw native reward/info; may change reward only.
++    """
++    env_factory: Callable = NativeStage1
++    state_encoder: Callable = central_state
++    actor_factory: Callable = TERLActor
++    critic_factory: Callable = make_critic
++    reward_transform: Callable | None = None
++    backend: ActionBackend = field(default_factory=ActionBackend)
++
++    def validate_line(self, line):
++        changed = {name for name in ('env_factory', 'state_encoder', 'actor_factory', 'critic_factory',
++                                     'reward_transform', 'backend')
++                   if getattr(self, name) != getattr(Hooks(), name)}
++        allowed = {'T0': set(), 'T1': {'env_factory', 'state_encoder', 'critic_factory'},
++                   'N1': {'actor_factory'}, 'R1': {'reward_transform'}, 'P1': set(),
++                   'C0': {'env_factory', 'actor_factory', 'backend'}}
++        if changed - allowed[line]:
++            raise ValueError('hooks outside experiment line: ' + ','.join(sorted(changed)))
++        if not self.backend.categorical:
++            if line != 'C0':
++                raise ValueError('continuous C0 requires a physical action environment adapter')
++            if self.backend.entropy_measure == 'categorical_shannon_nats':
++                raise ValueError('continuous entropy must declare its own measure')
++
++
++@dataclass
++class Runtime:
++    trainer: Any
++    adapter: EnvironmentAdapter
++    hooks: Hooks
++    config: dict
++    source_guard: SourceGuard
++
++    def collect(self, length):
++        with self.source_guard.scope(): return self._collect(length)
++
++    def _collect(self, length):
++        if length <= 0:
++            raise ValueError('positive on-policy rollout length required')
++        if self.hooks == Hooks():
++            return collect(self.trainer, self.adapter, length)
++        # Preserve pre-reset normalized V, active masks, terminal precedence and
++        # raw reward GAE. Dynamic P/E/O shapes are supplied by T1's state encoder.
++        rows, episodes = [], []
++        for _ in range(length):
++            local = pack_local(self.adapter.observations)
++            state = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
++            actions, logp, latent, value = self.trainer.act(local, {k: v[None] for k, v in state.items()})
++            self.hooks.backend.validate(actions, len(local['self']))
++            _, raw, term, trunc, end, info = self.source_guard.call(self.adapter.step, actions)
++            reward = np.asarray(raw).copy()
++            if self.hooks.reward_transform is not None:
++                reward = np.asarray(self.source_guard.call(self.hooks.reward_transform, reward.copy(), copy.deepcopy(info)))
++            if reward.shape != np.asarray(raw).shape or not np.isfinite(reward).all():
++                raise ValueError('reward adapter must preserve finite per-agent shape')
++            following = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
++            with torch.no_grad():
++                nv = self.trainer.value(tensor_tree({k: v[None] for k, v in following.items()}, self.trainer.device)).cpu().numpy()[0]
++            rows.append({'local_obs': local, 'global_obs': state, 'actions': actions, 'latent': latent,
++                         'log_prob': logp, 'values': value[0], 'next_values': nv, 'rewards': reward,
++                         'terminated': term, 'truncated': trunc,
++                         'episode_end': np.full(len(raw), end), 'active_mask': info['active']})
++            if end:
++                episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos')})
++                self.source_guard.call(self.adapter.reset)
++        return {k: {j: np.stack([r[k][j] for r in rows]) for j in rows[0][k]}
++                if isinstance(rows[0][k], dict) else np.stack([r[k] for r in rows])
++                for k in rows[0]}, episodes
++
++    def update(self, batch):
++        with self.source_guard.scope(): return self._update(batch)
++
++    def _update(self, batch):
++        if not self.hooks.backend.categorical and np.asarray(batch['active_mask']).any():
++            # The historical continuous learner lacks the categorical zero-update
++            # check. Require the corresponding latent-density check before PPO.
++            from cocap_voradj.training.small_step_ac import flatten_local
++            local, _ = flatten_local(tensor_tree(batch['local_obs'], self.trainer.device))
++            active = torch.as_tensor(batch['active_mask'], device=self.trainer.device).bool().reshape(-1)
++            latent = torch.as_tensor(batch['latent'], device=self.trainer.device).reshape(-1, 2)
++            with isolated_rng(), torch.no_grad():
++                new = self.trainer.actor.evaluate_latent({k: v[active] for k, v in local.items()}, latent[active])[0]
++                old = torch.as_tensor(batch['log_prob'], device=self.trainer.device).reshape(-1)[active]
++                if not torch.isfinite(new).all() or not torch.allclose(new, old, atol=1e-4, rtol=0):
++                    raise ValueError('continuous behavior log-prob mismatch')
++        return self.trainer.update(batch, categorical=self.hooks.backend.categorical)
++
++
++def assemble(config, device='cpu', hooks=None, line='T0', source_guard=None):
++    guard = source_guard or SourceGuard.committed()
++    with guard.scope():
++        return _assemble(config, device, hooks, line, guard)
++
++
++def _assemble(config, device, hooks, line, guard):
++    hooks = hooks or Hooks()
++    hooks.validate_line(line)
++    guard.preflight([hooks.env_factory, hooks.state_encoder, hooks.actor_factory,
++                     hooks.critic_factory, hooks.reward_transform])
++    # Native build owns seed/init order. Replacement factories are used only
++    # after an explicitly declared line change; T0 remains bit exact.
++    if hooks.actor_factory is TERLActor and hooks.critic_factory is make_critic:
++        trainer = build(config, device)
++    else:
++        import random
++        random.seed(config['actor_seed']); np.random.seed(config['actor_seed']); torch.manual_seed(config['actor_seed'])
++        if torch.cuda.is_available(): torch.cuda.manual_seed_all(config['actor_seed'])
++        actor = hooks.actor_factory(config['hidden_dim'], config['num_heads'], config['num_layers'],
++                                    config['actor_seed'], config['masked_pool'])
++        value = hooks.critic_factory(config['hidden_dim'], config['num_heads'], config['num_layers'])
++        trainer = MAPPOTrainer(actor, value, MAPPOConfig(**config['ppo']), device)
++        trainer.value.eval()
++    adapter = guard.call(hooks.env_factory, config['seed'])
++    validate_adapter(adapter, hooks.backend, guard)
++    # Guard before each optimizer mutation too. Keep the learner and numerical
++    # operations intact; the hooks neither sample RNG nor alter gradients.
++    for optimizer in (trainer.actor_optimizer, trainer.value_optimizer):
++        optimizer.register_step_pre_hook(lambda *args: guard.check())
++    return Runtime(trainer, adapter, hooks, config, guard)
++
++
++def multiscale_state(env, *, max_cores, map_scale=120., horizon_scale=3000.):
++    """T1 shape seam: preserve physical scales; zero-pad ordered current slots.
++
++    T1 still owns schedule/reset/reward lifecycle. This encoder is NOT a new
++    curriculum or a replacement for Stage1's assertion-laden native encoder.
++    """
++    ps, es, obstacles = env.pursuers, env.evaders, env.obstacles
++    if not ps or len(env.cores) > max_cores or min(map_scale, horizon_scale) <= 0:
++        raise ValueError('invalid scene capacity/physical scale')
++    active = np.array([not p.deactivated for p in ps])
++    cv = np.zeros((max_cores, 4))
++    for i, c in enumerate(sorted(env.cores, key=lambda c: (c.x, c.y))):
++        cv[i] = [c.x / map_scale, c.y / map_scale, 1 if c.clockwise else -1, c.Gamma / (10 * np.pi)]
++    focal = np.array([[p.x / map_scale, p.y / map_scale, *(p.velocity / 3.5), np.cos(p.theta),
++                      np.sin(p.theta), p.speed / 3, float(p.is_pursuing),
++                      env.episode_time_steps / horizon_scale, *cv.reshape(-1)] for p in ps], np.float32)
++    pfeat = np.array([[p.x / map_scale, p.y / map_scale, *(p.velocity / 3.5), np.cos(p.theta),
++                      np.sin(p.theta), float(p.is_pursuing)] for p in ps], np.float32)
++    efeat = np.array([[e.x / map_scale, e.y / map_scale, *(e.velocity / 3.5), np.cos(e.theta),
++                      np.sin(e.theta), e.speed / 3.5] for e in es], np.float32).reshape(-1, 7)
++    # Critic slot dimensions are scene capacities, including a masked empty slot.
++    if not es: efeat = np.zeros((1, 7), np.float32)
++    ofeat = np.array([[o.x / map_scale, o.y / map_scale, o.r / map_scale, 0., 0.]
++                      for o in obstacles], np.float32).reshape(-1, 5)
++    if not obstacles: ofeat = np.zeros((1, 5), np.float32)
++    n = len(ps)
++    return {'self': focal, 'pursuers': np.broadcast_to(pfeat, (n, n, 7)).copy(),
++            'pursuer_mask': np.broadcast_to(active, (n, n)).copy(), 'evaders': efeat,
++            'evader_mask': np.array([not e.deactivated for e in es]) if es else np.zeros(1, bool),
++            'obstacles': ofeat, 'obstacle_mask': np.ones(len(obstacles), bool) if obstacles else np.zeros(1, bool),
++            'active_mask': active}
++
++
++def multiscale_critic(*, agents, evaders, obstacles, max_cores, hidden_dim=256, num_heads=8, num_layers=4):
++    return CentralValueNetwork(hidden_dim, num_heads, num_layers, self_feature_dim=9 + 4 * max_cores,
++                               max_agents=agents, max_evaders=max(1, evaders), max_obstacles=max(1, obstacles)).eval()
+diff --git a/src/terl_mappo/batch01/provenance.py b/src/terl_mappo/batch01/provenance.py
+new file mode 100644
+index 0000000..4da5850
+--- /dev/null
++++ b/src/terl_mappo/batch01/provenance.py
+@@ -0,0 +1,96 @@
++"""Startup assertions and reviewable runtime/config/delta manifests."""
++from __future__ import annotations
++
++from dataclasses import asdict
++import os
++from pathlib import Path
++
++import torch
++
++from .contracts import ROOT, environment_versions, fingerprint, declared_sources, git
++from .source_guard import SourceGuard
++from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label
++from ..native import NativeStage1
++from ..model import TERLActor
++
++
++def active_values(runtime):
++    t, a, c = runtime.trainer, runtime.adapter, runtime.config
++    if t.actor.training or t.value.training:
++        raise ValueError('PPO actor/critic must stay in eval mode with autograd available')
++    if asdict(t.config) != asdict(type(t.config)(**c['ppo'])):
++        raise ValueError('PPO requested/runtime mismatch')
++    for optimizer, lr in ((t.actor_optimizer, c['ppo']['actor_lr']), (t.value_optimizer, c['ppo']['critic_lr'])):
++        if len(optimizer.param_groups) != 1 or optimizer.param_groups[0]['lr'] != lr or optimizer.param_groups[0]['eps'] != 1e-5:
++            raise ValueError('actor/critic optimizer contract mismatch')
++    actor_ids = {id(p) for group in t.actor_optimizer.param_groups for p in group['params']}
++    critic_ids = {id(p) for group in t.value_optimizer.param_groups for p in group['params']}
++    if actor_ids != {id(p) for p in t.actor.parameters()} or critic_ids != {id(p) for p in t.value.parameters()} or actor_ids & critic_ids:
++        raise ValueError('optimizer parameter isolation mismatch')
++    if (t.value_norm is not None) != c['ppo']['value_norm']:
++        raise ValueError('ValueNorm requested/runtime mismatch')
++    if isinstance(a, NativeStage1):
++        a.assert_contract()
++    architecture = {}
++    if hasattr(t.actor, 'transformer_encoder'):
++        layers = t.actor.transformer_encoder.layers
++        architecture['actor'] = {'class': type(t.actor).__qualname__, 'layers': len(layers),
++                                 'heads': layers[0].self_attn.num_heads, 'hidden_dim': layers[0].self_attn.embed_dim}
++        if runtime.hooks.actor_factory is TERLActor and (
++            len(layers), layers[0].self_attn.num_heads, layers[0].self_attn.embed_dim) != (
++                c['num_layers'], c['num_heads'], c['hidden_dim']):
++            raise ValueError('actor requested/runtime architecture mismatch')
++    if hasattr(t.value, 'attention'):
++        layers = t.value.attention.layers
++        architecture['critic'] = {'class': type(t.value).__qualname__, 'layers': len(layers),
++                                  'heads': layers[0].self_attn.num_heads, 'hidden_dim': layers[0].self_attn.embed_dim,
++                                  'self_feature_dim': t.value.self_feature_dim, 'max_agents': t.value.max_agents,
++                                  'max_evaders': t.value.max_evaders, 'max_obstacles': t.value.max_obstacles}
++    return {'environment': a.contract(), 'scene': scene_label(a.env),
++            'action_backend': asdict(runtime.hooks.backend), 'ppo': asdict(t.config), 'architecture': architecture,
++            'actor_mode': 'eval', 'critic_mode': 'eval',
++            'actor_parameters': sum(p.numel() for p in t.actor.parameters()),
++            'critic_parameters': sum(p.numel() for p in t.value.parameters()),
++            'actor_optimizer': {'class': type(t.actor_optimizer).__name__, 'lr': c['ppo']['actor_lr'], 'eps': 1e-5},
++            'critic_optimizer': {'class': type(t.value_optimizer).__name__, 'lr': c['ppo']['critic_lr'], 'eps': 1e-5},
++            'value_norm_state': None if t.value_norm is None else
++                {'beta': t.value_norm.beta, 'epsilon': t.value_norm.epsilon},
++            'device': str(t.device)}
++
++
++def assert_loaded_sources_covered(declared_sources):
++    SourceGuard(declared_sources).check()
++
++
++def runtime_manifest(lock, delta, resolved, runtime, resources):
++    sources = declared_sources(lock, delta)
++    if sources != runtime.source_guard.expected:
++        runtime.source_guard.fail('runtime source guard differs from pinned BASE/delta')
++    runtime.source_guard.check()
++    active = active_values(runtime)
++    if resources['device'] == 'cuda:0' and torch.cuda.max_memory_allocated() / 1024**2 > resources['max_gpu_allocated_mib']:
++        raise ValueError('GPU allocated memory exceeds declared limit')
++    if active['value_norm_state'] is not None and active['value_norm_state'] != {
++        'beta': resolved['ppo']['value_norm_beta'], 'epsilon': resolved['ppo']['value_norm_epsilon']}:
++        raise ValueError('ValueNorm active settings mismatch')
++    raw_env = active['environment']
++    reward = {k: v for k, v in raw_env.items() if any(s in k for s in ('reward', 'penalty', 'decay'))}
++    action = {'backend': active['action_backend'],
++              'physics': {k: v for k, v in raw_env.items() if k in
++                          {'dt', 'integration_substeps', 'aw9', 'pursuer_max_speed', 'evader_max_speed'}}}
++    return {'schema': 'terl.batch01.runtime.v1', 'status': 'OFFLINE_PREPARED_NO_TRAINING',
++            'base': delta['base'], 'line': delta['line'], 'resolved_config': resolved,
++            'delta_manifest': delta, 'common_source_hashes': sources,
++            'generated_runtime_source_hashes': dict(runtime.source_guard.generated_sources),
++            'seed_manifest': seed_manifest(resolved, lock['evaluation_protocol']),
++            'evaluation_protocol': lock['evaluation_protocol'], 'metric_definitions': METRIC_DEFINITIONS,
++            'active_runtime_values': active, 'environment_fingerprint': fingerprint(raw_env),
++            'action_fingerprint': fingerprint(action),
++            'reward_fingerprint': fingerprint({'native': reward, 'extension': delta.get('extensions', {}),
++                                               'source_delta': delta.get('source_changes', [])}),
++            'initial_state_fingerprint': runtime.adapter.fingerprint(),
++            'resources': resources, 'versions': environment_versions(),
++            'pid': os.getpid(), 'source_git_head': git('rev-parse', 'HEAD'),
++            'counters': {'steps': 'joint environment decisions', 'agent_transitions': 'active actor rows',
++                         'updates': 'on-policy rollout calls', 'optimizer_steps': 'paired actor/critic minibatches'},
++            'checkpoint': None, 'qa_status': 'PENDING_INDEPENDENT_QA'}
+diff --git a/src/terl_mappo/batch01/source_guard.py b/src/terl_mappo/batch01/source_guard.py
+new file mode 100644
+index 0000000..aecb2cd
+--- /dev/null
++++ b/src/terl_mappo/batch01/source_guard.py
+@@ -0,0 +1,233 @@
++"""Pinned source membership, execution-time imports, and latched run failures.
++
++This is a provenance contract for cooperative Python extensions, not a sandbox
++against arbitrary hostile Python. No live module can grant itself permission.
++Full hashes are checked at rollout/update/checkpoint boundaries; hook checks
++cache hashes by stat and imports invalidate the module cache. Audit events reject
++undeclared importlib execution before the module body runs.
++"""
++from __future__ import annotations
++
++import ast
++from contextlib import contextmanager
++from contextvars import ContextVar
++import importlib
++import inspect
++import json
++from pathlib import Path
++import sys
++import os
++import time
++import textwrap
++from types import MappingProxyType
++import sysconfig
++import site
++
++from .contracts import ROOT, LOCK_PATH, declared_sources, verify_base, verify_committed_pin
++from ..run import file_hash, atomic_json
++
++_ACTIVE = ContextVar('batch01_source_guard', default=None)
++_EXECUTED = {}
++_IMPORT_EPOCH = 0
++_NAMESPACES = {'terl_mappo', 'cocap_voradj', 'config_manager', 'environment',
++               'policy', 'robots', 'thirdparty', 'utils'}
++_EXTERNAL_SOURCE_ROOTS = {Path(sysconfig.get_path(key)).resolve()
++                          for key in ('stdlib', 'purelib', 'platlib')}
++_EXTERNAL_SOURCE_ROOTS.update(Path(p).resolve() for p in site.getsitepackages())
++_EXTERNAL_SOURCE_ROOTS.add(Path(site.getusersitepackages()).resolve())
++# The successful anchor uses an existing read-only Gym installation outside
++# Python's standard installation. Permit these named runtime packages only.
++for _package in ('gym', 'gym_notices'):
++    _filename = getattr(sys.modules.get(_package), '__file__', None)
++    if _filename: _EXTERNAL_SOURCE_ROOTS.add(Path(_filename).resolve().parent)
++
++
++class SourceViolation(ValueError):
++    pass
++
++
++def _audit(event, args):
++    global _IMPORT_EPOCH
++    if event == 'import': _IMPORT_EPOCH += 1
++    if event != 'exec': return
++    filename = getattr(args[0], 'co_filename', '')
++    if not filename or filename.startswith('<'): return
++    p = Path(filename).absolute()
++    guard = _ACTIVE.get()
++    if guard is not None:
++        guard.check_path(p, force=True)
++    # Capture executed content separately from permissions, including unguarded
++    # imports between boundaries. This does not add anything to the allow-list.
++    real = p.resolve()
++    if real.is_relative_to(ROOT) and real.suffix == '.py' and real.is_file():
++        _EXECUTED[str(p)] = file_hash(real)
++    _IMPORT_EPOCH += 1
++
++
++sys.addaudithook(_audit)
++
++
++class SourceGuard:
++    def __init__(self, expected, *, root=ROOT, diagnostics=None, generated_sources=None):
++        self.root = Path(root).resolve()
++        self.expected = MappingProxyType(dict(expected))
++        if generated_sources is None:
++            generated_sources = json.loads((self.root / LOCK_PATH).read_text()).get('generated_runtime_sources', {})
++        self.generated_sources = MappingProxyType(dict(generated_sources))
++        self.diagnostics = Path(diagnostics or (self.root / 'runs/batch01_source_failures')).resolve()
++        if not self.diagnostics.is_relative_to(Path('/home/yjq')):
++            raise ValueError('source diagnostics must stay under /home/yjq')
++        self.failure = None
++        self.failure_path = None
++        self._hash_cache = {}
++        self._modules_key = None
++        self._module_paths = set()
++
++    @classmethod
++    def from_base(cls, lock, delta, pin, **kwargs):
++        verify_base(lock, delta, pin)
++        verify_committed_pin(lock, delta)
++        return cls(declared_sources(lock, delta), generated_sources=lock.get('generated_runtime_sources', {}), **kwargs)
++
++    @classmethod
++    def committed(cls):
++        lock = json.loads((ROOT / LOCK_PATH).read_text())
++        return cls(lock['common_sources'], generated_sources=lock.get('generated_runtime_sources', {}))
++
++    def fail(self, message):
++        if self.failure is None:
++            self.failure = message
++            self.diagnostics.mkdir(parents=True, exist_ok=True)
++            self.failure_path = self.diagnostics / f'{os.getpid()}_{time.monotonic_ns()}.json'
++            atomic_json(self.failure_path, {'schema': 'terl.batch01.source_failure.v1',
++                        'status': 'RUN_FAILED_SOURCE_CONTRACT', 'reason': message,
++                        'pid': os.getpid(), 'expected_sources': dict(self.expected),
++                        'generated_runtime_sources': dict(self.generated_sources)})
++        raise SourceViolation('latched source contract failure: ' + self.failure)
++
++    def alive(self):
++        if self.failure is not None: self.fail(self.failure)
++
++    def framework_generated(self, path):
++        module = sys.modules.get('torch.distributed.nn.jit.instantiator')
++        directory = getattr(module, 'INSTANTIATED_TEMPLATE_DIR_PATH', None)
++        digest = self.generated_sources.get('torch.distributed.nn.non_scriptable_remote_template')
++        if not directory or path != Path(directory) / '_remote_module_non_scriptable.py': return False
++        if not digest or path != path.resolve() or not path.is_file() or file_hash(path) != digest:
++            self.fail('Torch generated template differs from explicit runtime content pin')
++        if _EXECUTED.get(str(path), digest) != digest:
++            self.fail('executed Torch generated template differs from runtime pin')
++        return True
++
++    def check_path(self, path, *, force=False, required=False):
++        self.alive()
++        lexical = Path(path).absolute()
++        real = lexical.resolve()
++        if self.framework_generated(lexical): return
++        local = lexical.is_relative_to(self.root) or real.is_relative_to(self.root)
++        if not local:
++            if not required and any(real.is_relative_to(p) for p in _EXTERNAL_SOURCE_ROOTS): return
++            self.fail('local module origin outside pinned project: ' + str(lexical))
++        if not real.is_relative_to(self.root): self.fail('source symlink escapes project: ' + str(lexical))
++        relative = lexical.relative_to(self.root).as_posix()
++        # Symlink aliases must not silently substitute another declared file.
++        if lexical != real: self.fail('source lexical/realpath mismatch: ' + relative)
++        expected = self.expected.get(relative)
++        if expected is None: self.fail('loaded local dependency absent from lock/delta: ' + relative)
++        if not real.is_file(): self.fail('declared source missing: ' + relative)
++        stat = real.stat()
++        stamp = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
++        cached = self._hash_cache.get(relative)
++        if force or cached is None or cached[0] != stamp:
++            digest = file_hash(real)
++            if digest != expected: self.fail('declared source hash mismatch: ' + relative)
++            self._hash_cache[relative] = (stamp, digest)
++        executed = _EXECUTED.get(str(lexical))
++        if executed is not None and executed != expected:
++            self.fail('executed module content differs from lock/delta: ' + relative)
++
++    def check_loaded(self, *, force=False):
++        self.alive()
++        key = (len(sys.modules), _IMPORT_EPOCH)
++        if force or key != self._modules_key:
++            paths = set()
++            for name, module in list(sys.modules.items()):
++                filename = getattr(module, '__file__', None)
++                required = name.split('.')[0] in _NAMESPACES
++                if not filename:
++                    if required and module is not None:
++                        locations = list(getattr(getattr(module, '__spec__', None), 'submodule_search_locations', ()) or ())
++                        if not locations: self.fail('local namespace has no source origin: ' + name)
++                        for location in locations:
++                            path = Path(location).absolute()
++                            if path != path.resolve() or not path.is_relative_to(self.root):
++                                self.fail('namespace package origin outside pinned project: ' + name)
++                            prefix = path.relative_to(self.root).as_posix() + '/'
++                            if not any(p.startswith(prefix) for p in self.expected):
++                                self.fail('namespace package absent from lock/delta: ' + name)
++                    continue
++                if not filename.endswith('.py'): continue
++                # torch.ops/classes expose synthetic relative __file__ names.
++                # They have no filesystem origin and are not local source.
++                origin = getattr(getattr(module, '__spec__', None), 'origin', None)
++                if not required and not Path(filename).is_absolute() and not origin and not Path(filename).is_file():
++                    continue
++                lexical = Path(filename).absolute()
++                real = lexical.resolve()
++                if required or not any(real.is_relative_to(p) for p in _EXTERNAL_SOURCE_ROOTS):
++                    if origin and Path(origin).absolute() != lexical:
++                        self.fail('module __file__/spec origin mismatch: ' + name)
++                    if required:
++                        base = 'src' if name.split('.')[0] in {'terl_mappo', 'cocap_voradj'} else 'vendor/terl'
++                        stem = self.root / base / name.replace('.', '/')
++                        if lexical not in {stem.with_suffix('.py'), stem / '__init__.py'}:
++                            self.fail('module name/source origin mismatch: ' + name)
++                    self.check_path(lexical, force=force, required=required)
++                    paths.add(lexical)
++            self._module_paths = paths
++            self._modules_key = key
++        # With no import event, hook calls check their own code file only.
++        # Full content checks remain mandatory before accepting a rollout,
++        # every optimizer step, and checkpoint save/load.
++
++    def check(self, *, force=True):
++        self.alive()
++        # Fixed, explicit inventory only; no recursive filesystem scan here.
++        for relative in self.expected: self.check_path(self.root / relative, force=force)
++        self.check_loaded(force=force)
++
++    @contextmanager
++    def scope(self, *, force=True):
++        if force: self.check()
++        else: self.check_loaded()
++        token = _ACTIVE.set(self)
++        try:
++            yield
++            if force: self.check()
++            else: self.check_loaded()
++        finally:
++            _ACTIVE.reset(token)
++
++    def call(self, function, *args, **kwargs):
++        code = getattr(getattr(function, '__func__', function), '__code__', None)
++        if code is not None: self.check_path(code.co_filename, required=True)
++        with self.scope(force=False): return function(*args, **kwargs)
++
++    def preflight(self, functions):
++        """Resolve literal dynamic imports early; computed names stay guarded."""
++        for function in functions:
++            if function is None: continue
++            try: path = inspect.getsourcefile(function)
++            except TypeError: path = None
++            if not path: continue
++            self.check_path(path, force=True, required=True)
++            tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
++            for node in ast.walk(tree):
++                if not isinstance(node, ast.Call) or not node.args: continue
++                name = node.func.attr if isinstance(node.func, ast.Attribute) else getattr(node.func, 'id', '')
++                if name not in {'import_module', '__import__'}: continue
++                argument = node.args[0]
++                if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
++                    target = argument.value
++                    if target.split('.')[0] in _NAMESPACES:
++                        with self.scope(): importlib.import_module(target)
+diff --git a/test/test_terl_mappo_batch01_base_20261009.py b/test/test_terl_mappo_batch01_base_20261009.py
+new file mode 100644
+index 0000000..2016591
+--- /dev/null
++++ b/test/test_terl_mappo_batch01_base_20261009.py
+@@ -0,0 +1,314 @@
++"""Batch01 contracts + actual 256/8/4 entry regression, without long training."""
++import copy
++import json
++import os
++from pathlib import Path
++import random
++import subprocess
++import sys
++
++import numpy as np
++import pytest
++import torch
++
++from terl_mappo.native import NativeStage1, MarineEnv, central_state, pack_local, stage1_schedule
++from terl_mappo.run import build, collect, save_checkpoint, rng_state, restore_rng, file_hash
++from terl_mappo.batch01 import contracts
++from terl_mappo.batch01.contracts import create_lock, fingerprint, verify_base, resolve_config, validate_resources
++from terl_mappo.batch01.interfaces import Hooks, ActionBackend, assemble, multiscale_state, multiscale_critic
++from terl_mappo.batch01.checkpoints import save_bound, load_bound, load_anchor, retention_plan
++from terl_mappo.batch01.evaluation import isolated_rng, seed_manifest, summarize_scene, performance_report
++from terl_mappo.batch01.provenance import active_values
++from terl_mappo.evaluate import summarize
++from cocap_voradj.training.small_step_ac import tensor_tree
++
++torch.set_num_threads(1)
++
++
++def config():
++    return json.loads((contracts.ROOT / contracts.ANCHOR_CONFIG).read_text())
++
++
++def committed_lock():
++    return json.loads((contracts.ROOT / contracts.LOCK_PATH).read_text())
++
++
++def same(a, b):
++    if isinstance(a, torch.Tensor):
++        assert torch.equal(a.detach().cpu(), b.detach().cpu())
++    elif isinstance(a, np.ndarray):
++        np.testing.assert_array_equal(a, b)
++    elif isinstance(a, dict):
++        assert a.keys() == b.keys()
++        for k in a: same(a[k], b[k])
++    elif isinstance(a, (tuple, list)):
++        assert len(a) == len(b)
++        for x, y in zip(a, b): same(x, y)
++    elif isinstance(a, np.random.RandomState):
++        same(a.get_state(), b.get_state())
++    elif hasattr(a, 'query') and hasattr(a, 'data'):
++        # scipy KDTree's pickle includes storage/alias details. Check every
++        # geometric input and exact spatial queries rather than pickle bytes.
++        same(a.data, b.data); same(a.leafsize, b.leafsize); same(a.boxsize, b.boxsize)
++        same(a.query(a.data, k=len(a.data)), b.query(b.data, k=len(b.data)))
++    elif hasattr(a, '__dict__'):
++        assert type(a) is type(b)
++        same(a.__dict__, b.__dict__)
++    else: assert a == b
++
++
++@pytest.mark.parametrize('device', ['cpu', 'cuda:0'])
++def test_formal_entry_t0_full_update_and_exact_resume(device, tmp_path):
++    if device.startswith('cuda') and not torch.cuda.is_available(): pytest.skip('CUDA unavailable')
++    c = config()
++    assert (c['hidden_dim'], c['num_heads'], c['num_layers']) == (256, 8, 4)
++    runtime = assemble(c, device)
++    assert len(runtime.trainer.actor.transformer_encoder.layers) == 4
++    assert runtime.trainer.actor.transformer_encoder.layers[0].self_attn.num_heads == 8
++    actor_state = copy.deepcopy(runtime.trainer.actor.state_dict())
++    critic_state = copy.deepcopy(runtime.trainer.value.state_dict())
++    batch, episodes = runtime.collect(256)
++    runtime_rng = rng_state()
++    metrics = runtime.update(batch)
++    expected_after = copy.deepcopy(runtime.trainer.state_dict())
++    expected_rng = rng_state()
++    raw = build(c, device); adapter = NativeStage1(c['seed'])
++    same(actor_state, raw.actor.state_dict()); same(critic_state, raw.value.state_dict())
++    reference_batch, reference_episodes = collect(raw, adapter, 256)
++    same(batch, reference_batch); same(episodes, reference_episodes)
++    same(runtime_rng, rng_state())
++    reference_metrics = raw.update(reference_batch, True)
++    same(metrics, reference_metrics); same(expected_after, raw.state_dict()); same(expected_rng, rng_state())
++    assert all(np.isfinite(x) for x in metrics.values())
++    active = active_values(runtime)
++    assert active['actor_parameters'] > 2000000 and active['critic_parameters'] > 2000000
++    manifest = {'base': {'candidate_sha': 'a' * 40, 'lock_sha256': 'b' * 64}, 'contract': active,
++                'common_source_hashes': contracts.source_inventory()}
++    path = tmp_path / 'formal.pt'
++    try:
++        save_bound(path, runtime, manifest, 256, 768, int(metrics['minibatch_updates']))
++        expected, expected_episodes = runtime.collect(8)
++        expected_metrics = runtime.update(expected)
++        after = copy.deepcopy(runtime.trainer.state_dict())
++        env_after = runtime.adapter.state_dict()
++        rng_after = rng_state()
++        restored = assemble(c, device)
++        loaded = load_bound(path, restored, manifest)
++        assert loaded['steps'] == 256 and loaded['agent_transitions'] == 768
++        actual, actual_episodes = restored.collect(8)
++        actual_metrics = restored.update(actual)
++        same(expected, actual); same(expected_episodes, actual_episodes); same(expected_metrics, actual_metrics)
++        same(after, restored.trainer.state_dict()); same(rng_after, rng_state())
++        same(env_after, restored.adapter.state_dict())
++        if device.startswith('cuda'): assert torch.cuda.max_memory_allocated() / 1024**2 < 2048
++        bad = copy.deepcopy(manifest); bad['base']['candidate_sha'] = 'c' * 40
++        with pytest.raises(ValueError, match='BASE/hash'): load_bound(path, restored, bad)
++        bad = copy.deepcopy(manifest); bad['common_source_hashes']['src/terl_mappo/native.py'] = '0' * 64
++        with pytest.raises(ValueError, match='stale/undeclared'): load_bound(path, restored, bad)
++    finally:
++        path.unlink(missing_ok=True); path.with_suffix('.batch01.json').unlink(missing_ok=True)
++
++
++def delta(lock, line='T0'):
++    return {'schema': 'terl.batch01.delta.v1', 'line': line,
++            'base': {'parent_sha': contracts.PARENT_SHA, 'candidate_sha': 'a' * 40,
++                     'lock_sha256': fingerprint(lock)},
++            'config_changes': [], 'source_changes': [], 'extensions': {}}
++
++
++def test_real_source_lock_matches_anchor_and_rejects_wrong_pin():
++    lock = committed_lock(); d = delta(lock)
++    assert verify_base(lock, d, fingerprint(lock)) == config()
++    with pytest.raises(ValueError, match='pin mismatch'): verify_base(lock, d, '0' * 64)
++    bad = copy.deepcopy(d); bad['base']['candidate_sha'] = 'HEAD'
++    with pytest.raises(ValueError, match='explicit full'): verify_base(lock, bad, fingerprint(lock))
++
++
++def test_fresh_process_all_transitive_runtime_imports_are_locked():
++    code = ('from terl_mappo.batch01.provenance import assert_loaded_sources_covered; '
++            'from terl_mappo.batch01.source_guard import SourceGuard; '
++            'SourceGuard.committed().check()')
++    result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
++    assert result.returncode == 0, result.stdout + result.stderr
++
++
++def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
++    lock = committed_lock(); d = delta(lock)
++    changed = dict(lock['common_sources'])
++    path = 'src/terl_mappo/native.py'
++    changed[path] = '1' * 64
++    monkeypatch.setattr(contracts, 'source_inventory', lambda root: changed)
++    with pytest.raises(ValueError, match='undeclared'): verify_base(lock, d, fingerprint(lock))
++    d['source_changes'] = [{'path': path, 'before': lock['common_sources'][path], 'after': changed[path],
++                            'reason': 'candidate only', 'science_impact': 'requires independent review'}]
++    with pytest.raises(ValueError, match='candidate_fix'): verify_base(lock, d, fingerprint(lock))
++    d['source_changes'][0]['candidate_fix'] = True
++    verify_base(lock, d, fingerprint(lock))
++    changed['src/terl_mappo/batch01/extensions/n1.py'] = '2' * 64
++    with pytest.raises(ValueError, match='undeclared'): verify_base(lock, d, fingerprint(lock))
++    changed.pop(path)
++    with pytest.raises(ValueError, match='after hash'): verify_base(lock, d, fingerprint(lock))
++
++
++def test_config_scope_before_values_and_no_silent_unknown_keys():
++    lock = committed_lock(); d = delta(lock, 'P1')
++    d['config_changes'] = [{'path': 'ppo.actor_lr', 'before': 3e-5, 'after': 1e-5, 'reason': 'controlled PPO fork'}]
++    assert resolve_config(lock, d)['ppo']['actor_lr'] == 1e-5
++    d['line'] = 'T0'
++    with pytest.raises(ValueError, match='outside'): resolve_config(lock, d)
++    d['line'] = 'P1'; d['config_changes'][0]['before'] = 999
++    with pytest.raises(ValueError, match='before'): resolve_config(lock, d)
++    d = delta(lock); d['unused_setting'] = True
++    with pytest.raises(ValueError, match='unknown delta fields'): resolve_config(lock, d)
++
++
++def test_reward_identity_hook_preserves_all_rollout_fields_and_rng():
++    c = config()
++    expected = assemble(c); batch, episodes = expected.collect(4); rng = rng_state()
++    actual = assemble(c, hooks=Hooks(reward_transform=lambda reward, info: reward), line='R1')
++    changed, changed_episodes = actual.collect(4)
++    same(batch, changed); same(episodes, changed_episodes); same(rng, rng_state())
++    with pytest.raises(ValueError, match='outside'): Hooks(reward_transform=lambda r, i: r).validate_line('N1')
++
++
++def test_formal_256_8_4_fully_masked_no_target_forward_backward():
++    runtime = assemble(config())
++    local = tensor_tree(pack_local(runtime.adapter.observations), 'cpu')
++    local['masks'].zero_()
++    logits = runtime.trainer.actor(local)
++    distribution = runtime.trainer.actor.distribution(local)
++    assert torch.isfinite(logits).all() and torch.isfinite(distribution.entropy()).all()
++    assert not runtime.trainer.actor._last_target_weights.any()
++    logits.square().mean().backward()
++    assert all(torch.isfinite(p.grad).all() for p in runtime.trainer.actor.parameters() if p.grad is not None)
++
++
++def test_runtime_assertions_reject_unapplied_optimizer_and_dropout():
++    runtime = assemble(config())
++    runtime.trainer.actor_optimizer.param_groups[0]['lr'] = .01
++    with pytest.raises(ValueError, match='optimizer contract'): active_values(runtime)
++    runtime.trainer.actor_optimizer.param_groups[0]['lr'] = config()['ppo']['actor_lr']
++    runtime.trainer.actor.train()
++    with pytest.raises(ValueError, match='eval mode'): active_values(runtime)
++
++
++def test_c0_interface_rejects_continuous_coercion_and_requires_adapter():
++    categorical = ActionBackend()
++    categorical.validate(np.array([0, 4, 8]), 3)
++    with pytest.raises(ValueError, match='integer'): categorical.validate(np.zeros((3, 2)), 3)
++    with pytest.raises(ValueError, match='integer'): categorical.validate(np.array([0., 4., 8.]), 3)
++    continuous = ActionBackend('tanh_gaussian_aw', 'physical_differential_mc_nats',
++                               'tanh_and_scale_corrected_density', False)
++    continuous.validate(np.zeros((3, 2)), 3)
++    with pytest.raises(ValueError, match='physical action'):
++        assemble(config(), hooks=Hooks(backend=continuous), line='C0')
++    assert continuous.entropy_measure != categorical.entropy_measure
++
++
++@pytest.mark.parametrize('p,e,o,k', [(3, 1, 0, 4), (4, 1, 1, 6), (7, 2, 2, 8)])
++def test_multiscale_formal_actor_critic_observation_shapes(p, e, o, k):
++    schedule = stage1_schedule()
++    schedule.update(num_pursuers=[p], num_evaders=[e], num_obstacles=[o], num_cores=[k])
++    env = MarineEnv(seed=9, schedule=schedule)
++    (obs, _), _ = env.reset()
++    local = pack_local(obs)
++    assert local['self'].shape == (p, 4) and local['masks'].shape == (p, 19)
++    state = multiscale_state(env, max_cores=k)
++    if (p, e, o, k) == (3, 1, 0, 4): same(state, central_state(env))
++    from terl_mappo.model import TERLActor
++    actor = TERLActor(256, 8, 4)
++    critic = multiscale_critic(agents=p, evaders=e, obstacles=o, max_cores=k)
++    logits = actor(tensor_tree(local, 'cpu'))
++    value = critic(tensor_tree({key: v[None] for key, v in state.items()}, 'cpu'))
++    assert logits.shape == (p, 9) and value.shape == (1, p)
++    (logits.square().mean() + value.square().mean()).backward()
++    assert torch.isfinite(logits).all() and torch.isfinite(value).all()
++    assert all(torch.isfinite(v.grad).all() for v in list(actor.parameters()) + list(critic.parameters()) if v.grad is not None)
++
++
++def test_evaluation_domains_and_all_rng_restored_on_exception():
++    lock = committed_lock()
++    seeds = seed_manifest(config(), lock['evaluation_protocol'])
++    assert len(seeds['final']) == 50 and not set(seeds['screen']) & set(seeds['selection'])
++    state = rng_state()
++    with pytest.raises(RuntimeError):
++        with isolated_rng():
++            random.seed(123); np.random.seed(123); torch.manual_seed(123)
++            if torch.cuda.is_available(): torch.cuda.manual_seed_all(123)
++            raise RuntimeError('evaluator error')
++    same(state, rng_state())
++    protocol = copy.deepcopy(lock['evaluation_protocol']); protocol['final']['seed_base'] = protocol['selection']['seed_base']
++    with pytest.raises(ValueError, match='overlap'): seed_manifest(config(), protocol)
++
++
++def episode(mode='argmax', capture=True):
++    return {'mode': mode, 'capture': capture, 'normal_capture': capture, 'collision': not capture,
++            'ring2': True, 'ring3': capture, 'strict_geometry': capture, 'censored': not capture,
++            'capture_time': 10. if capture else None, 'action_entropy': 1., 'episode_reward': 2.,
++            'collision_types': [] if capture else ['pursuer_evader'], 'reward_components': {'time': -2., 'goal': 4.}}
++
++
++def test_metrics_scene_labels_time_censoring_entropy_and_best_last():
++    rows = [episode(), episode(capture=False)]
++    scene = {'pursuers': 3, 'evaders': 1, 'obstacles': 0, 'cores': 4, 'map': [120, 120],
++             'horizon_decisions': 3001, 'decision_seconds': .5}
++    r = summarize_scene(rows, scene, ActionBackend())
++    assert r['normal_capture_rate'] == .5 and r['success_n'] == r['censored_n'] == 1
++    assert r['collision_failure_n'] == 1 and r['time_limit_censored_n'] == 0
++    assert r['capture_time_fraction_of_horizon_mean'] == pytest.approx(10 / 1500.5)
++    with pytest.raises(ValueError, match='never silently pool'): summarize_scene([{**rows[0], 'scene': {'pursuers': 4}}], scene, ActionBackend())
++    point = lambda step, rate, domain='screen': {'steps': step, 'seed_domain': domain, 'checkpoint_sha256': str(step),
++        'modes': {m: {'normal_capture_rate': rate, 'collision_rate': 1-rate, 'strict_geometry_rate': rate, 'ring3_rate': rate}
++                  for m in ('argmax', 'sample')}}
++    screens = [point(0, 0), point(775000, .9), point(1000000, .3)]
++    selections = [point(775000, .85, 'selection')]; final = [point(775000, .9, 'final')]
++    report = performance_report(screens, selections, final)
++    assert report['best_screen']['steps'] == 775000 and report['last_screen']['steps'] == 1000000
++    assert report['late_stage']['last_minus_best'] == pytest.approx(-.6)
++    with pytest.raises(ValueError, match='held-out'): performance_report(screens, selections, [point(1000000, 1., 'final')])
++
++
++def test_retention_does_not_touch_other_runs_symlinks_pending_best_or_latest(tmp_path):
++    root = tmp_path / 'own'; directory = root / 'checkpoints'; directory.mkdir(parents=True)
++    foreign = tmp_path / 'other'; foreign.mkdir()
++    rows = [episode('argmax'), episode('sample')]
++    def point(path, step):
++        path.write_bytes(b'synthetic checkpoint for retention scope')
++        digest = file_hash(path)
++        path.with_suffix('.json').write_text(json.dumps({'steps': step, 'sha256': digest}))
++        return {'checkpoint': str(path), 'steps': step, 'checkpoint_sha256': digest, 'seed_domain': 'screen',
++                'episodes_per_mode': 1, 'episodes': rows, 'modes': {m: summarize([r for r in rows if r['mode'] == m]) for m in ('argmax', 'sample')}}
++    a = point(directory / 'step_000025000.pt', 25000)
++    b = point(foreign / 'step_000050000.pt', 50000)
++    c = point(directory / 'step_000075000.pt', 75000)
++    os.link(directory / 'step_000075000.pt', directory / 'best.pt')
++    (directory / 'step_000050000.pt').symlink_to(b['checkpoint'])
++    assert retention_plan(root, [a, b, c], keep_steps=set(), pending_steps={25000}) == []
++    plan = retention_plan(root, [a, b, c], keep_steps=set())
++    assert [x['steps'] for x in plan] == [25000]
++    assert all(Path(r['checkpoint']).exists() for r in [a, b, c])  # planner never removes files
++    bad = copy.deepcopy(a); bad['checkpoint_sha256'] = '0' * 64
++    with pytest.raises(ValueError, match='hash mismatch'): retention_plan(root, [bad], keep_steps=set())
++    bad = copy.deepcopy(a); bad['episodes'].pop()
++    with pytest.raises(ValueError, match='partial'): retention_plan(root, [bad], keep_steps=set())
++
++
++def test_resource_paths_and_gpu_assignment_fail_closed(monkeypatch):
++    with pytest.raises(ValueError, match='/home/yjq'): validate_resources('/tmp/run')
++    with pytest.raises(ValueError, match='resource limits'): validate_resources('/home/yjq/run', threads=128)
++    monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '0,1')
++    with pytest.raises(ValueError, match='single physical'): validate_resources('/home/yjq/run', device='cuda:0')
++    monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '1')
++    assert validate_resources('/home/yjq/run', device='cuda:0')['physical_gpu'] == '1'
++
++
++def test_shared_selected_checkpoint_strict_resume_readonly():
++    path = Path('/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt')
++    if not path.exists(): pytest.skip('shared original anchor not available on this host')
++    digest = '590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4'
++    runtime = assemble(config())
++    loaded = load_anchor(path, digest, runtime)
++    assert loaded['steps'] == 775000 and loaded['trainer']['update_count'] > 0
++    batch, _ = runtime.collect(4)
++    assert runtime.trainer.assert_behavior_log_probs(batch) < 1e-5
++    assert file_hash(path) == digest
+diff --git a/test/test_terl_mappo_batch01_qa_repairs_20261009.py b/test/test_terl_mappo_batch01_qa_repairs_20261009.py
+new file mode 100644
+index 0000000..51c04b9
+--- /dev/null
++++ b/test/test_terl_mappo_batch01_qa_repairs_20261009.py
+@@ -0,0 +1,294 @@
++"""QA B1/B2/B3/B4/Q1 regressions; all disposable data stays under /home/yjq."""
++import copy
++import importlib
++import json
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import sys
++from types import SimpleNamespace
++
++import numpy as np
++import pytest
++import torch
++
++from terl_mappo.batch01 import contracts
++from terl_mappo.batch01.source_guard import SourceGuard, SourceViolation
++from terl_mappo.batch01.interfaces import (Hooks, ActionBackend, ActionCapabilities,
++                                         Runtime, assemble, validate_adapter)
++from terl_mappo.batch01.evaluation import METRIC_DEFINITIONS, isolated_rng
++from terl_mappo.model import TERLActor
++from terl_mappo.native import NativeStage1, pack_local
++from terl_mappo.run import rng_state, file_hash
++from cocap_voradj.training.small_step_ac import compute_gae, explained_variance, tensor_tree
++from test_terl_mappo_batch01_base_20261009 import same, config, committed_lock
++
++BOX = 'cocap_voradj.models.continuous.' + 'box_actor'
++BOX_PATH = 'src/' + BOX.replace('.', '/') + '.py'
++
++
++def test_q1_production_lock_generator_stays_core_only(monkeypatch):
++    monkeypatch.setattr(contracts, 'git', lambda *args: 'audit/terl-mappo-batch01-base-qa-20261009')
++    with pytest.raises(ValueError, match='authorized Core branch'): contracts.create_lock()
++    lock = committed_lock()
++    assert lock['status'] == 'BATCH01_BASE_CANDIDATE_V2'
++
++
++@pytest.fixture
++def source_snapshot(tmp_path):
++    root = tmp_path / 'snapshot'
++    for relative in set(committed_lock()['common_sources']) | {contracts.LOCK_PATH, BOX_PATH}:
++        target = root / relative
++        target.parent.mkdir(parents=True, exist_ok=True)
++        shutil.copy2(contracts.ROOT / relative, target)
++    yield root
++    shutil.rmtree(root)
++
++
++_SOURCE_REPRO = r'''
++import copy, importlib, json, sys
++from pathlib import Path
++import numpy as np
++import torch
++from terl_mappo.batch01.contracts import ROOT, LOCK_PATH, ANCHOR_CONFIG, fingerprint, verify_base, declared_sources
++from terl_mappo.batch01.source_guard import SourceGuard, SourceViolation
++from terl_mappo.batch01.interfaces import Hooks, assemble
++from terl_mappo.batch01.checkpoints import save_bound, load_bound, assert_manifest_sources
++from terl_mappo.run import file_hash
++torch.set_num_threads(1)
++case = sys.argv[1]
++lock=json.loads((ROOT/LOCK_PATH).read_text())
++config=json.loads((ROOT/ANCHOR_CONFIG).read_text())
++box='cocap_voradj.models.continuous.'+'box_actor'
++box_path='src/'+box.replace('.','/')+'.py'
++original_box_path=box_path
++if case != 'original_qa_box_drift':
++    box=box.replace('box_actor','qa_dynamic_box')
++    box_path='src/'+box.replace('.','/')+'.py'
++    (ROOT/box_path).write_bytes((ROOT/original_box_path).read_bytes())
++extension=ROOT/'src/terl_mappo/batch01/extensions/qa_lazy_reward.py'
++extension.parent.mkdir(parents=True,exist_ok=True)
++literal = case == 'preflight'
++expression = repr(box) if literal else "parameters['module']"
++extension.write_text('import importlib\nfrom terl_mappo.batch01.interfaces import Hooks\n'
++    'def factory(parameters):\n    def transform(reward, info):\n'
++    '        module=importlib.import_module('+expression+')\n'
++    '        return reward+module.BoxActorConfig().a_max\n'
++    '    return Hooks(reward_transform=transform)\n')
++changes=[{'path':str(extension.relative_to(ROOT)), 'before':None,'after':file_hash(extension),
++          'reason':'QA R1 reproduction','science_impact':'diagnostic only'}]
++declared=case in {'legal','disk_drift','checkpoint_save','checkpoint_load','executed_drift'}
++if declared:
++    changes.append({'path':box_path,'before':lock['common_sources'].get(box_path),'after':file_hash(ROOT/box_path),
++                    'reason':'explicit dynamic dependency','science_impact':'diagnostic only'})
++delta={'schema':'terl.batch01.delta.v1','line':'R1',
++       'base':{'parent_sha':lock['parent_sha'],'candidate_sha':'a'*40,'lock_sha256':fingerprint(lock)},
++       'config_changes':[],'source_changes':changes,'extensions':{}}
++verify_base(lock,delta,fingerprint(lock))
++guard=SourceGuard(declared_sources(lock,delta))
++with guard.scope():
++    hooks=importlib.import_module('terl_mappo.batch01.extensions.qa_lazy_reward').factory({'module':box})
++def rejected(call):
++    try: call()
++    except SourceViolation as error: return str(error)
++    raise AssertionError('source escape accepted: '+case)
++if case == 'preflight':
++    result=rejected(lambda: assemble(config,hooks=hooks,line='R1',source_guard=guard))
++else:
++    runtime=assemble(config,hooks=hooks,line='R1',source_guard=guard)
++    manifest={'base':delta['base'],'common_source_hashes':dict(guard.expected)}
++    path=ROOT/'runs/probe.pt'
++    if case == 'original_qa_box_drift':
++        p=ROOT/box_path
++        p.write_text(p.read_text().replace('a_max: float = 0.4','a_max: float = 0.35'))
++        result=rejected(lambda:runtime.collect(2))
++        assert runtime.trainer.update_count == 0
++        rejected(lambda:save_bound(path,runtime,manifest,2,6,0))
++        rejected(lambda:load_bound(path,runtime,manifest))
++    elif case == 'optimizer_import':
++        from terl_mappo.run import collect
++        batch,_=collect(runtime.trainer,runtime.adapter,2)
++        original=runtime.trainer.actor.forward
++        def forward(obs):
++            importlib.import_module(box)
++            return original(obs)
++        runtime.trainer.actor.forward=forward
++        steps=[]
++        runtime.trainer.actor_optimizer.register_step_pre_hook(lambda *args:steps.append(True))
++        result=rejected(lambda:runtime.update(batch))
++        assert steps == [] and runtime.trainer.update_count == 0 and box not in sys.modules
++    elif case == 'foreign_origin':
++        foreign=ROOT.parent/'foreign.py'
++        foreign.write_text('EXECUTED=True\n')
++        spec=importlib.util.spec_from_file_location('qa_foreign',foreign)
++        def execute():
++            with guard.scope(): spec.loader.exec_module(importlib.util.module_from_spec(spec))
++        result=rejected(execute)
++    elif declared:
++        batch,_=runtime.collect(2)
++        if case == 'legal':
++            metrics=runtime.update(batch)
++            assert np.isfinite(list(metrics.values())).all()
++            save_bound(path,runtime,manifest,2,6,int(metrics['minibatch_updates']))
++            load_bound(path,runtime,manifest)
++            result='LEGAL_DECLARED_IMPORT_UPDATE_SAVE_LOAD_PASS'
++        else:
++            save_bound(path,runtime,manifest,2,6,0)
++            p=ROOT/box_path
++            before=p.read_text()
++            p.write_text(before.replace('a_max: float = 0.4','a_max: float = 0.35'))
++            if case == 'executed_drift':
++                expected=dict(guard.expected); expected[box_path]=file_hash(p)
++                guard=SourceGuard(expected)
++                runtime.source_guard=guard
++            operation={'disk_drift':lambda:runtime.update(batch),
++                       'executed_drift':lambda:runtime.update(batch),
++                       'checkpoint_save':lambda:save_bound(path,runtime,manifest,2,6,0),
++                       'checkpoint_load':lambda:load_bound(path,runtime,manifest)}[case]
++            result=rejected(operation)
++            assert runtime.trainer.update_count == 0
++    elif case == 'update_boundary':
++        importlib.import_module(box)
++        result=rejected(lambda:runtime.update({}))
++        assert runtime.trainer.update_count == 0
++    else:
++        if case == 'origin':
++            module=sys.modules['terl_mappo.model']
++            module.__file__=str(ROOT/'runs/fake_model.py')
++            result=rejected(lambda:runtime.collect(1))
++        elif case == 'symlink':
++            (ROOT/'src/escape.py').symlink_to('/usr/local/lib/escape.py')
++            result=rejected(lambda:guard.check_path(ROOT/'src/escape.py'))
++        else:
++            result=rejected(lambda:runtime.collect(2))
++            assert box not in sys.modules
++            assert runtime.trainer.update_count == 0
++            rejected(lambda:runtime.update({}))
++            rejected(lambda:save_bound(path,runtime,manifest,2,6,0))
++            rejected(lambda:load_bound(path,runtime,manifest))
++            assert not path.exists()
++if guard.failure is not None:
++    assert guard.failure_path.is_file()
++    assert json.loads(guard.failure_path.read_text())['status']=='RUN_FAILED_SOURCE_CONTRACT'
++print(json.dumps({'case':case,'result':result,'failure_latched':guard.failure is not None}))
++'''
++
++
++@pytest.mark.parametrize('case', ['preflight', 'lazy_import', 'legal', 'disk_drift',
++                                 'update_boundary', 'checkpoint_save', 'checkpoint_load',
++                                 'origin', 'symlink', 'executed_drift', 'optimizer_import',
++                                 'foreign_origin', 'original_qa_box_drift'])
++def test_b1_dynamic_source_guards_fail_closed_and_allow_explicit_delta(source_snapshot, case):
++    env = dict(os.environ, PYTHONPATH=str(source_snapshot / 'src') + ':' + str(source_snapshot) + ':' + os.environ.get('PYTHONPATH', ''),
++               CUDA_VISIBLE_DEVICES='', TMPDIR=str(source_snapshot / 'runs'))
++    (source_snapshot / 'runs').mkdir()
++    result = subprocess.run([sys.executable, '-c', _SOURCE_REPRO, case], cwd=source_snapshot,
++                            env=env, text=True, capture_output=True, timeout=60)
++    assert result.returncode == 0, result.stdout + result.stderr
++    record = json.loads(result.stdout.strip().splitlines()[-1])
++    assert record['failure_latched'] == (case != 'legal')
++    (source_snapshot.parent / 'result.json').write_text(json.dumps(record, indent=2) + '\n')
++
++
++def continuous_backend():
++    return ActionBackend('tanh_gaussian_aw', 'physical_differential_mc_nats',
++                         'tanh_and_scale_corrected_density', False)
++
++
++def test_b2_lambda_native_adapter_rejected_during_startup():
++    with pytest.raises(ValueError, match='actual adapter capabilities'):
++        assemble(config(), hooks=Hooks(env_factory=lambda seed: NativeStage1(seed),
++                                        backend=continuous_backend()), line='C0')
++
++
++class AdapterProbe:
++    """Test double for the capability seam; not a C0 environment implementation."""
++    def __init__(self):
++        self.observations = NativeStage1(9).observations
++        self.calls = 0
++    def action_capabilities(self):
++        return ActionCapabilities('tanh_gaussian_aw', 'physical_aw', ((-.4, .4), (-np.pi/6, np.pi/6)))
++    def validate_actions(self, actions):
++        return continuous_backend().validate(actions, 3)
++    def step(self, actions):
++        self.validate_actions(actions)
++        self.calls += 1
++        return None, np.zeros(3), np.zeros(3, bool), np.zeros(3, bool), False, {}
++
++
++class BadConsumerProbe(AdapterProbe):
++    def step(self, actions):
++        int(actions[0])
++
++
++def test_b2_actual_behavior_probe_checks_consumer_and_preserves_live_state():
++    guard = SourceGuard.committed()
++    adapter = AdapterProbe()
++    before = rng_state()
++    validate_adapter(adapter, continuous_backend(), guard)
++    same(before, rng_state())
++    assert adapter.calls == 0
++    with pytest.raises(ValueError, match='behavior probe'):
++        validate_adapter(BadConsumerProbe(), continuous_backend(), guard)
++    with pytest.raises(ValueError, match='actual adapter capabilities'):
++        validate_adapter(adapter, ActionBackend(), guard)
++
++
++class Features(TERLActor):
++    decision_feature_dim = 256
++    def forward(self, obs):
++        return self.layer_norm(torch.relu(self.hidden_layer(self.encode_entities(obs))))
++
++
++@pytest.mark.parametrize('device', ['cpu', 'cuda:0'])
++def test_b3_density_guard_preserves_all_rng_and_replays_exact_latent(device):
++    if device.startswith('cuda') and not torch.cuda.is_available(): pytest.skip('CUDA requires Master gate/available device')
++    expected = dict(committed_lock()['common_sources'])
++    expected[BOX_PATH] = file_hash(contracts.ROOT / BOX_PATH)
++    guard = SourceGuard(expected)
++    try:
++        with guard.scope(): box = importlib.import_module(BOX)
++        actor = box.SquashedGaussianAccelerationAngularVelocityActor(
++            Features(256, 8, 4), box.BoxActorConfig(hidden_dim=256)).to(device).eval()
++        local = tensor_tree(pack_local(NativeStage1(9).observations), device)
++        with torch.no_grad(): actions, logp, latent = actor.sample(local)
++        with isolated_rng(), torch.no_grad():
++            replay = actor.evaluate_latent(local, latent)[0]
++            density = actor.log_prob_from_latent(local, latent)
++        torch.testing.assert_close(replay, density, atol=0, rtol=0)
++        torch.testing.assert_close(torch.exp(replay-logp), torch.ones_like(logp), atol=1e-6, rtol=0)
++        batch = {'local_obs': {k: v.cpu().numpy()[None] for k, v in local.items()},
++                 'active_mask': np.ones((1, 3), bool), 'latent': latent.cpu().numpy()[None],
++                 'log_prob': logp.cpu().numpy()[None]}
++        before = rng_state()
++        def update(batch, categorical):
++            same(before, rng_state())
++            assert categorical is False
++            return {'entered_learner': 1.}
++        trainer = SimpleNamespace(actor=actor, device=torch.device(device), update=update)
++        runtime = Runtime(trainer, None, Hooks(backend=continuous_backend()), config(), guard)
++        assert runtime.update(batch)['entered_learner'] == 1.
++        same(before, rng_state())
++        bad = copy.deepcopy(batch); bad['log_prob'] += 1.
++        with pytest.raises(ValueError, match='behavior log-prob mismatch'): runtime.update(bad)
++        same(before, rng_state())
++    finally:
++        sys.modules.pop(BOX, None)
++
++
++def test_b4_ev_matches_post_update_denormalized_value_and_pre_update_targets():
++    assert 'post-update denormalized V' in METRIC_DEFINITIONS['critic_ev']
++    assert 'pre-update GAE raw return targets' in METRIC_DEFINITIONS['critic_ev']
++    runtime = assemble(config())
++    batch, _ = runtime.collect(16)
++    t = runtime.trainer
++    active = torch.as_tensor(batch['active_mask'], dtype=torch.bool)
++    _, returns = compute_gae(torch.as_tensor(batch['rewards'], dtype=torch.float32),
++        t._denormalize_values(torch.as_tensor(batch['values'])),
++        t._denormalize_values(torch.as_tensor(batch['next_values'])),
++        torch.as_tensor(batch['terminated']), active, gamma=t.config.gamma, gae_lambda=t.config.gae_lambda,
++        truncated=torch.as_tensor(batch['truncated']), episode_end=torch.as_tensor(batch['episode_end']))
++    metrics = runtime.update(batch)
++    with torch.no_grad(): prediction = t._denormalize_values(t.value(tensor_tree(batch['global_obs'], 'cpu')))
++    assert metrics['explained_variance'] == explained_variance(prediction[active], returns[active])
+diff --git a/tools/batch01_base_20261009.py b/tools/batch01_base_20261009.py
+new file mode 100644
+index 0000000..477745c
+--- /dev/null
++++ b/tools/batch01_base_20261009.py
+@@ -0,0 +1,125 @@
++#!/usr/bin/env python3
++"""Offline BASE engineering only: lock, verify, prepare, and recover evidence."""
++from __future__ import annotations
++
++import argparse
++import importlib
++import json
++from pathlib import Path
++
++import torch
++
++from terl_mappo.batch01.contracts import (ROOT, LOCK_PATH, PARENT_SHA, create_lock, fingerprint,
++    verify_base, verify_committed_pin, validate_resources)
++from terl_mappo.batch01.interfaces import Hooks, assemble
++from terl_mappo.batch01.provenance import runtime_manifest
++from terl_mappo.batch01.evaluation import performance_report, isolated_rng
++from terl_mappo.batch01.source_guard import SourceGuard
++from terl_mappo.run import atomic_json, file_hash, source_hash
++
++ORIGINAL = Path('/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008')
++SELECTED_HASH = '590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4'
++
++
++def read(path):
++    return json.loads(Path(path).read_text())
++
++
++def recover(output):
++    out = ORIGINAL / 'runs/terl_mappo_stage1_seed9_1m_continuation'
++    checkpoint = out / 'checkpoints/step_000775000.pt'
++    digest = file_hash(checkpoint)
++    if digest != SELECTED_HASH: raise ValueError('selected anchor hash mismatch')
++    ck = torch.load(checkpoint, map_location='cpu', weights_only=False)
++    manifest = read(out / 'manifest.json')
++    if ck['sources'] != source_hash() or ck['steps'] != 775000 or ck['config'] != manifest['config']:
++        raise ValueError('selected checkpoint source/config/counter mismatch')
++    if any(not torch.isfinite(v).all() for part in ('actor', 'value') for v in ck['trainer'][part].values()):
++        raise ValueError('selected actor/critic nonfinite')
++    evaluations = [read(p) for p in sorted((out / 'evaluations').glob('*.json'))
++                   if not p.name.endswith('.partial.json')]
++    by_domain = {d: [r for r in evaluations if r['seed_domain'] == d] for d in ('screen', 'selection', 'final')}
++    if len(by_domain['screen']) != 41 or len(by_domain['selection']) != 3 or len(by_domain['final']) != 1:
++        raise ValueError('incomplete original 1m evaluation evidence')
++    report = performance_report(by_domain['screen'], by_domain['selection'], by_domain['final'])
++    if report['selected_heldout']['checkpoint_sha256'] != digest:
++        raise ValueError('selected checkpoint/evaluation mismatch')
++    report = {k: {key: v for key, v in value.items() if key != 'episodes'}
++              if isinstance(value, dict) else value for k, value in report.items()}
++    # The archived closeout is preserved; no rewriting of the original report.
++    audit = ROOT / 'artifacts/2026-10-08_terl_mappo_1m/completion_audit_20261009.json'
++    result = {'schema': 'terl.batch01.recovery.v1', 'parent_sha': PARENT_SHA,
++              'checkpoint': str(checkpoint), 'checkpoint_sha256': digest,
++              'checkpoint_bytes': checkpoint.stat().st_size, 'checkpoint_steps': ck['steps'],
++              'terl_sha': ck['terl_sha'], 'source_hashes_verified': True,
++              'original_manifest_sha256': file_hash(out / 'manifest.json'),
++              'original_completion_audit': str(audit), 'original_completion_audit_sha256': file_hash(audit),
++              'original_completion_audit_passed': read(audit)['all_checks_passed'],
++              'original_full_state_resume_evidence': read(ROOT / 'artifacts/2026-10-08_terl_mappo_1m/exact_resume_validation.json')
++                  if (ROOT / 'artifacts/2026-10-08_terl_mappo_1m/exact_resume_validation.json').exists() else
++                  {'note': 'see original 1m final report and test evidence'},
++              'training_progress': read(out / 'progress.json'), 'performance': report,
++              'evaluation_counts': {d: {'checkpoints': len(rs), 'episodes': sum(len(r['episodes']) for r in rs)}
++                                    for d, rs in by_domain.items()},
++              'evaluation_file_hashes': {str(p): file_hash(p) for p in sorted((out / 'evaluations').glob('*.json'))
++                                         if not p.name.endswith('.partial.json')},
++              'storage': 'original verified file reused read-only; no model copies',
++              'science_status': 'original single-seed Stage1 result preserved; candidate requires independent QA'}
++    atomic_json(output, result)
++    print(json.dumps({k: v for k, v in result.items() if k not in ('performance', 'training_progress', 'original_full_state_resume_evidence', 'evaluation_file_hashes')}, ensure_ascii=False))
++
++
++def prepare(args):
++    lock, delta = read(args.lock), read(args.delta)
++    resolved = verify_base(lock, delta, args.pin)
++    verify_committed_pin(lock, delta)
++    resources = validate_resources(args.output, args.device, args.threads)
++    guard = SourceGuard.from_base(lock, delta, args.pin, diagnostics=Path(args.output).parent / 'source_failures')
++    torch.set_num_threads(args.threads)
++    extension = delta.get('extensions', {})
++    hooks = Hooks()
++    if extension:
++        entry = extension['entrypoint']
++        module, name = entry.split(':')
++        if not module.startswith('terl_mappo.batch01.extensions.'):
++            raise ValueError('extension entrypoint must be declared inside batch01/extensions')
++        with guard.scope():
++            factory = getattr(importlib.import_module(module), name)
++            guard.preflight([factory])
++            hooks = guard.call(factory, extension.get('parameters', {}))
++        if not isinstance(hooks, Hooks): raise ValueError('extension must return Hooks')
++    if delta['line'] != 'T0' and hooks == Hooks() and not any(
++        e['path'].split('.')[0] not in {'experiment', 'seed', 'actor_seed', 'budget', 'stage1_ceiling'}
++        for e in delta.get('config_changes', [])):
++        raise ValueError('experiment line has no implemented scientific delta')
++    with isolated_rng():
++        runtime = assemble(resolved, args.device, hooks, delta['line'], source_guard=guard)
++        manifest = runtime_manifest(lock, delta, resolved, runtime, resources)
++    output = Path(args.output)
++    if output.exists(): raise ValueError('refuse to overwrite a prepared manifest')
++    atomic_json(output, manifest)
++    print(json.dumps({'status': manifest['status'], 'output': str(output),
++                      'base': manifest['base'], 'manifest_fingerprint': fingerprint(manifest)}))
++
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__)
++    sub = p.add_subparsers(dest='command', required=True)
++    sub.add_parser('lock')
++    r = sub.add_parser('recover'); r.add_argument('--output', required=True)
++    v = sub.add_parser('prepare')
++    v.add_argument('--lock', default=str(ROOT / LOCK_PATH)); v.add_argument('--delta', required=True)
++    v.add_argument('--pin', required=True, help='canonical lock fingerprint explicitly frozen by the experiment')
++    v.add_argument('--output', required=True); v.add_argument('--device', default='cpu'); v.add_argument('--threads', type=int, default=1)
++    args = p.parse_args()
++    if args.command == 'lock':
++        output = ROOT / LOCK_PATH
++        if output.exists(): raise ValueError('refuse to refresh existing BASE lock')
++        lock = create_lock(); atomic_json(output, lock)
++        print(json.dumps({'lock': str(output), 'canonical_sha256': fingerprint(lock), 'status': lock['status']}))
++    elif args.command == 'recover':
++        validate_resources(args.output); torch.set_num_threads(1); recover(args.output)
++    else: prepare(args)
++
++
++if __name__ == '__main__': main()
