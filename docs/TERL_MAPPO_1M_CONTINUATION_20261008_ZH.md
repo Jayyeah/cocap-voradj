@@ -1,5 +1,7 @@
 # TERL-MAPPO：无视100k gate的累计1m自动续训
 
+**完成更新（2026-10-09）：自动线已从100k精确恢复，累计1m及所有隔离评估完成，controller/trainer已退出。最终分类 `TERL_MAPPO_STAGE1_LEARNABLE`；775k best在final两模式各90%正常捕获、10%碰撞。以下ARMED/PID记录是2026-10-08启动时的历史状态，不表示当前仍在等待或运行。最终结果见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`。**
+
 2026-10-08最新用户指令：若当前总步数只有100k，马上增加自动线，在100k结束时续训到1m，忽略gate；只有无法精确续训时才开完全一致的并行1m线。本次确认原预算100,000，采用**精确续训**。总目标为1,000,000 joint environment decisions，即parent 100k＋续训900k。该授权覆盖原报告的“不自动扩步”决定及旧CoCap路线中的long-extension限制。
 
 ## 已启用的自动线

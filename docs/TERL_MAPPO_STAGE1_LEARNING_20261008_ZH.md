@@ -1,5 +1,7 @@
 # TERL-MAPPO Stage1 学习验证
 
+历史范围说明（2026-10-09）：本文件只报告已完成的100k早期gate，PARTIAL及“不自动扩步”是当时结论。用户随后授权忽略gate精确续训至累计1m，现已完整完成；最终分类为 `TERL_MAPPO_STAGE1_LEARNABLE`，775k best的隔离final两模式各90%正常捕获。全checkpoint表见 `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`，诊断与后续决定见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`。
+
 更新时间：2026-10-08T23:58:32.928946+08:00（Asia/Shanghai）。
 状态：`COMPLETE_BOUNDED_GATE`；科学分类：`TERL_MAPPO_STAGE1_PARTIAL`。
 

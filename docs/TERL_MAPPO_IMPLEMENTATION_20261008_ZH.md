@@ -1,5 +1,7 @@
 # TERL-backbone MAPPO 实现与正确性验证
 
+最终实证更新（2026-10-09）：科学source全程未修改；100k精确续训至累计1m已完成，41点独立screen、heldout top3 selection与隔离final均完整。775k best最终argmax/sample各45/50正常捕获、5/50碰撞，分类 `TERL_MAPPO_STAGE1_LEARNABLE`；完整诊断见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`。
+
 原生任务与算法迁移已经实现；当前科学结果由独立Stage1评估决定，不能把 smoke 或训练reward上升写成capture成功。
 
 ## 实现

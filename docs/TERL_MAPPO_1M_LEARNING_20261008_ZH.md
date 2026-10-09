@@ -1,5 +1,7 @@
 # TERL-MAPPO 累计1m Stage1自动线
 
+独立最终审计已通过（2026-10-09）：全部41 checkpoints/1200局评估、源码和resume合同、计数、seed隔离、best hash均核对。最终诊断与后续决定见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`；1m末尾退化不能被best结果掩盖。
+
 更新时间：2026-10-09T10:21:33.590830+08:00。
 自动线状态：`COMPLETE_1M_AND_FINAL_TEST`；总目标1,000,000 joint environment decisions；已完成累计步数：1,000,000。
 科学分类：`TERL_MAPPO_STAGE1_LEARNABLE`。100k gate结果不控制续训。

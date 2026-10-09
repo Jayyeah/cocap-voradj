@@ -1,15 +1,15 @@
 # EXP-TERL-MAPPO-01：完整交付审查
 
-最新用户授权更新（2026-10-08）：已增加100k结束即精确续训至累计1m的自动线，忽略performance gate。此后Stage1科学终态以1m及隔离final为准；下表的100k进度是早期gate证据，不能据此结束完整学习结论。见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md`、`TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。
+最终更新（2026-10-09）：按用户授权忽略100k performance gate，已从100k精确续训至累计1m，全部独立筛选、selection和隔离final完成。最终分类 **`TERL_MAPPO_STAGE1_LEARNABLE`**，selected775k的argmax/sample各45/50正常捕获、5/50碰撞。以下清单已按实际完整证据更新；后半部早期0/25k记录仅保留为历史。见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`、`TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。
 
-本审查保留附件全文的原始目标：TERL原生合同上的random-init MAPPO迁移、正确性测试、有限Stage1学习验证及报告。**启动成功不是完成学习验证；当前goal不标记complete。** 用户明确允许训练健康、只剩等待时结束交互，训练与独立评估继续在tmux中执行。
+本审查保留附件全文的原始目标：TERL原生合同上的random-init MAPPO迁移、正确性测试、有限Stage1学习验证及报告。**本次完成判定依据实际1m预算和隔离final，而非启动成功。** 训练/evaluator/controller已退出，冻结科学source无变化；独立收尾审计全部通过。最终文档提交、push及remote HEAD核验完成后，goal可标记complete；未要求本轮解决的科学设计意图继续保留UNRESOLVED。
 
 ## 要求与证据
 
 | 附件要求 | 权威证据 | 当前判定 |
 |---|---|---|
 | §1 TERL远程HEAD、采用SHA、dirty本地隔离 | 固定143359b2；remote ls-remote一致；vendor字节与原Git对象逐文件测试；未使用dirty Evader/APF | 完成 |
-| §1 CoCap local/remote/worktrees/DAG与lineage恢复 | 80debae scratch parent；corrected25dd0f8 lineage；中央3940d87；ac-capability640a26d；本轮独立worktree和只读DAG | 完成；历史AC-CAP补审见下文 |
+| §1 CoCap local/remote/worktrees/DAG与lineage恢复 | 80debae scratch parent；corrected25dd0f8 lineage；中央初始3940d87、最终只读复核381b61d；ac-capability640a26d；本轮独立worktree和只读DAG | 完成；历史AC-CAP补审见下文 |
 | §1 三方合同及五类差异、编码前风险 | MIGRATION_CONTRACT首提交前已落盘，包含有效8/4 vs默认4/3、奖励/信息/算法/终止等逐项 | 完成 |
 | §2 仅一个新模型、原TERL前端、categorical AW9、random init/no teacher | model.py，manifest/config，actor原特征parity/删除cosine测试，输出9 logits | 完成 |
 | §2 CTDE/action-free central V、不泄漏、agent排列 | CentralValueNetwork复用；native central_state focal25+P/E/current/time；critic等变/actor隔离测试 | 完成 |
@@ -19,14 +19,24 @@
 | §6 环境合同测试 | upstream Git字节、3seed序列、capture/collision/timeout/boundary、AW9、per-agent done/joint reset | 完成 |
 | §6 actor测试 | shape、正常特征parity、padding反事实、target/no-target/全mask、argmax/sample、likelihood/entropy、共享参数/梯度 | 完成 |
 | §6 critic/PPO测试 | state shape/排列、GAE真实terminal与truncation、active loss、独立clipping计算、ValueNorm、CPU exact resume、CUDA RNG replay及finite | 完成；42-test suite+1独立pre-reset V测试 |
-| §6 实际网络CPU/CUDA smoke | 256/8/4 CPU/CUDA512，各2 PPO updates；1024 CUDA4 updates、24 paired minibatches、finite、allocated≈590MiB | 完成 |
-| §7 Stage1实质学习验证、强/部分/无可信信号分类 | 正式100k PID992932运行；0-step和25k各完成argmax20/sample20；后续50/75/100k及隔离final待完成 | **未完成，需已启动run/checkpoint评估结果** |
-| §8 独立并行screen、selection-heldout、final隔离 | evaluate.py两workers；screen2026100800、selection2036100800、final2046100800；预声明排序及四类规则 | 实现完成，后续evaluation执行待完成 |
-| §8 每checkpoint完整指标 | eval JSON逐episode capture/normal/time/ring2/3/strict/collision/type/censored/reward/entropy；相同步数PPO指标由只读audit工具关联；0-step optimizer指标不适用 | 0-step/25k完整；后续pending |
-| §9 独立资源与retention，不干扰Evidence | 共享GPU0，user授权忽略util门槛；1训练+2CPU评估线程；少量milestone/latest/best hardlink；不写旧run，磁盘>140GiB free | 完成；运行期持续遵循 |
+| §6 实际网络CPU/CUDA smoke与精确扩预算 | 256/8/4 CPU/CUDA512、1024 CUDA preflight finite；32步完整CUDA rollout/PPO/state/RNG逐位一致；真实CLI与非budget guard/retention预检；实际100k anchor恢复 | 完成 |
+| §7 Stage1实质学习验证、强/部分/无可信信号分类 | 累计1m、31个screen点重复normal positive；selected775k隔离final两模式90% normal、10% collision；初始化0%；最后1m screen30%如实保留 | **完成：TERL_MAPPO_STAGE1_LEARNABLE** |
+| §8 独立并行screen、selection-heldout、final隔离 | evaluate.py两CPU workers；41点screen共980局；3候选selection共120局；final100局；1m final2046101800与旧100k final2046100800及screen/selection均隔离 | 完成；1200局逐局审计通过 |
+| §8 每checkpoint完整指标 | eval JSON完整几何/时间mean median p90/碰撞类型/删失/奖励/entropy；同step PPO/EV/loss/KL/梯度/ratio关联；所有3920行finite；0-step optimizer不适用 | 完成；全41点表与completion_audit JSON |
+| §9 独立资源与retention，不干扰Evidence | 共享GPU0按用户授权训练，峰值allocated≈616MiB；2CPU evaluator；仅本线30个已完成screen/hash点按ledger清理；latest/best/milestones/top3保留，未删除parent或其它实验 | 完成；retention/hash/模型finite再核验通过 |
 | §10 后续三组扩展与跨任务差异 | 原IQN源码保留；本轮TERL actor/critic/runner分离；未实现CoCap-backbone组；三方表明确CR-MS/Z/NormSense/sensing差异 | 完成 |
-| §11 四类报告、central handoff、commit/push与remote HEAD | 本分支Migration/Implementation/Stage1/Handoff；启动c6ce039与健康快照62a3be7均push验证；中央不写 | 当前阶段完成；最终学习报告/分类待结果 |
-| §12 12项最终问题 | 原合同/迁移/理由/tests/source/sync有报告；checkpoint表已具备0-step结果；positive/best/后续决定不能在后续screen之前下结论 | 部分完成，科学终态仍pending |
+| §11 四类报告、central handoff、commit/push与remote HEAD | Migration/Implementation/全1m Learning/Final Follow-up及handoff；1m自动结果5eeb3c8已push核验；最终只读审计与收尾报告本轮提交；中央不写 | 科学交付完成；Git以最终提交后核验为准 |
+| §12 12项最终问题 | Final report完整覆盖合同/区别/迁移/必要修改/tests/训练/各checkpoint/positive/best hash/未解决项/同步/后续建议 | 完成；末尾退化、单训练seed与未测boundary计数均明示 |
+
+## 最终独立验证
+
+`tools/audit_terl_mappo_1m_completed_20261009.py` 实际执行通过，输出 `artifacts/2026-10-08_terl_mappo_1m/completion_audit_20261009.json`（`all_checks_passed=true`）。逐局重算1200局count/rate、normal与collision排斥、成功时间及删失、raw reward分量与clock、paired初态、各seed域隔离；重算screen前三与heldout best规则，best/final SHA256一致。
+
+3920条训练记录逐条核对25k保存切点与256 rollout、3000000 active transitions、22994 paired minibatches、有限指标；parent392行精确相同，首条续训100256/393/2358。仅budget变化，冻结source/runtime一致，100k anchor重新hash；保留checkpoint全部参数finite，删除点由完整screen、metadata与retention ledger互证。
+
+基础43项correctness tests、CPU/CUDA smoke、budget-only完整CUDA逐位恢复和CLI预检均已通过，科学source此后未变。收尾仅增加只读audit和文档/图，不再启动训练。所有实际训练与评估已完成，无failure/partial工件。best775k hash为 `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`；完整后续决定见Final report。
+
+## 历史gate证据（0/25k，以下时态对应当时）
 
 ## 补恢复的历史AC-CAP事实
 
@@ -47,7 +57,7 @@
 
 无成功，capture mean/median/p90为null。初始global reward均值约-14037.92/-6945.17（per-episode per-agent sum）；Stage1合作项只可能非负，故该负值主要来自原生反复boundary penalty。**boundary越界不属于本环境collision terminal**；未将边界强行算作碰撞，也不以低collision宣称初始策略安全/有效。该0-step结果仅是随机初始化基线，不是学习失败证据。
 
-当前不修改训练超参、reward、actor pooling、难度或科学source。后续checkpoint需检查capture/ring变化、entropy、boundary/global分量和critic/KL/ratio，再作bounded gate结论。即使100k无信号，也不能直接写“MAPPO不能围捕”；是否延长Stage1必须据此作独立后续决定。
+当时未修改训练超参、reward、actor pooling、难度或科学source，要求后续检查capture/ring/entropy/boundary/global/critic/KL/ratio后作bounded判断。100k无信号不能直接写“MAPPO不能围捕”；后续用户明确授权无视gate精确续训1m，现已完成。
 
 ## 每个checkpoint的证据关联
 

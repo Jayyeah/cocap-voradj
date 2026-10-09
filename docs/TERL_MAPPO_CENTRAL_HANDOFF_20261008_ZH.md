@@ -1,5 +1,7 @@
 # CENTRAL HANDOFF：EXP-TERL-MAPPO-01
 
+**最终handoff（2026-10-09）：`TERL_MAPPO_STAGE1_LEARNABLE`。** 累计1m已完成，100k→1m实际full-state resume且仅budget改变。41点screen980局、selection120局、隔离final100局完整；全部逐局/计数/hash/source/seed审计通过。best775k：argmax/sample normal45/50、collision5/50；SHA256 `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`；文件 `runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/best.pt`。实际总计3M active transitions、3920 PPO calls、22994 paired optimizer minibatches，训练与评估进程已退出。末尾1m screen仅30%/30% normal，性能稳定性仍需后续诊断；single training seed9，不宣称跨seed普遍成功。最终报告 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md` 与artifact `completion_audit_20261009.json`。中央当前HEAD381b61d只读/clean，建议owner根据本handoff更新节点；本agent不写中央DAG/state。以下ARMED/PENDING记录均为启动时历史。
+
 **最新预算授权：累计1m，100k gate不控制续训。** 自动线已ARMED，当前controller PID1040959/tmux `terl_mappo_1m_continue_20261008`；在parent trainer PID992932的100k完整checkpoint落盘并退出后立即续训，不等待旧gate evaluator/selection/final。新output `runs/terl_mappo_stage1_seed9_1m_continuation`，唯一config变化budget100k→1m；完整CUDA32步+PPO逐位resume验证通过。当前结果和操作依据见 `TERL_MAPPO_1M_CONTINUATION_20261008_ZH.md` / `TERL_MAPPO_1M_LEARNING_20261008_ZH.md`。以下旧“不自动扩步/100k后审查”记录作为原计划历史保留，当前用户授权优先；1m科学分类仍PENDING。
 
 该独立agent不写中央 `docs/ops/AC_MASTER_DAG_20260921_ZH.md` / `artifacts/2026-09-21_ac_master_dag/state.json`。本轮用户明确授权TERL-native scratch训练及直接push，并覆盖GPU高占用等待条件；历史CoCap路线限制不适用于此独立原生任务。

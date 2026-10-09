@@ -1,5 +1,7 @@
 # TERL-MAPPO Stage1 后续决定与诊断
 
+历史范围说明（2026-10-09）：本文件是100k gate的Follow-up，不再作为本轮最终决定。用户授权的100k→累计1m精确续训和隔离final已完成，最终为 `TERL_MAPPO_STAGE1_LEARNABLE`；完整证据、末尾退化与后续对照建议见 `TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md`。
+
 更新时间：2026-10-08T23:58:55.365574+08:00。
 当前分类：`TERL_MAPPO_STAGE1_PARTIAL`；实际预算进度：100,000/100,000。
 
