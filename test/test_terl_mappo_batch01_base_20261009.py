@@ -29,6 +29,10 @@ def config():
     return json.loads((contracts.ROOT / contracts.ANCHOR_CONFIG).read_text())
 
 
+def committed_lock():
+    return json.loads((contracts.ROOT / contracts.LOCK_PATH).read_text())
+
+
 def same(a, b):
     if isinstance(a, torch.Tensor):
         assert torch.equal(a.detach().cpu(), b.detach().cpu())
@@ -63,14 +67,14 @@ def test_formal_entry_t0_full_update_and_exact_resume(device, tmp_path):
     assert runtime.trainer.actor.transformer_encoder.layers[0].self_attn.num_heads == 8
     actor_state = copy.deepcopy(runtime.trainer.actor.state_dict())
     critic_state = copy.deepcopy(runtime.trainer.value.state_dict())
-    batch, episodes = runtime.collect(16)
+    batch, episodes = runtime.collect(256)
     runtime_rng = rng_state()
     metrics = runtime.update(batch)
     expected_after = copy.deepcopy(runtime.trainer.state_dict())
     expected_rng = rng_state()
     raw = build(c, device); adapter = NativeStage1(c['seed'])
     same(actor_state, raw.actor.state_dict()); same(critic_state, raw.value.state_dict())
-    reference_batch, reference_episodes = collect(raw, adapter, 16)
+    reference_batch, reference_episodes = collect(raw, adapter, 256)
     same(batch, reference_batch); same(episodes, reference_episodes)
     same(runtime_rng, rng_state())
     reference_metrics = raw.update(reference_batch, True)
@@ -82,7 +86,7 @@ def test_formal_entry_t0_full_update_and_exact_resume(device, tmp_path):
                 'common_source_hashes': contracts.source_inventory()}
     path = tmp_path / 'formal.pt'
     try:
-        save_bound(path, runtime, manifest, 16, 48, int(metrics['minibatch_updates']))
+        save_bound(path, runtime, manifest, 256, 768, int(metrics['minibatch_updates']))
         expected, expected_episodes = runtime.collect(8)
         expected_metrics = runtime.update(expected)
         after = copy.deepcopy(runtime.trainer.state_dict())
@@ -90,7 +94,7 @@ def test_formal_entry_t0_full_update_and_exact_resume(device, tmp_path):
         rng_after = rng_state()
         restored = assemble(c, device)
         loaded = load_bound(path, restored, manifest)
-        assert loaded['steps'] == 16 and loaded['agent_transitions'] == 48
+        assert loaded['steps'] == 256 and loaded['agent_transitions'] == 768
         actual, actual_episodes = restored.collect(8)
         actual_metrics = restored.update(actual)
         same(expected, actual); same(expected_episodes, actual_episodes); same(expected_metrics, actual_metrics)
@@ -113,7 +117,7 @@ def delta(lock, line='T0'):
 
 
 def test_real_source_lock_matches_anchor_and_rejects_wrong_pin():
-    lock = create_lock(); d = delta(lock)
+    lock = committed_lock(); d = delta(lock)
     assert verify_base(lock, d, fingerprint(lock)) == config()
     with pytest.raises(ValueError, match='pin mismatch'): verify_base(lock, d, '0' * 64)
     bad = copy.deepcopy(d); bad['base']['candidate_sha'] = 'HEAD'
@@ -122,14 +126,14 @@ def test_real_source_lock_matches_anchor_and_rejects_wrong_pin():
 
 def test_fresh_process_all_transitive_runtime_imports_are_locked():
     code = ('from terl_mappo.batch01.provenance import assert_loaded_sources_covered; '
-            'from terl_mappo.batch01.contracts import source_inventory; '
-            'assert_loaded_sources_covered(source_inventory())')
+            'from terl_mappo.batch01.source_guard import SourceGuard; '
+            'SourceGuard.committed().check()')
     result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
-    lock = create_lock(); d = delta(lock)
+    lock = committed_lock(); d = delta(lock)
     changed = dict(lock['common_sources'])
     path = 'src/terl_mappo/native.py'
     changed[path] = '1' * 64
@@ -147,7 +151,7 @@ def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
 
 
 def test_config_scope_before_values_and_no_silent_unknown_keys():
-    lock = create_lock(); d = delta(lock, 'P1')
+    lock = committed_lock(); d = delta(lock, 'P1')
     d['config_changes'] = [{'path': 'ppo.actor_lr', 'before': 3e-5, 'after': 1e-5, 'reason': 'controlled PPO fork'}]
     assert resolve_config(lock, d)['ppo']['actor_lr'] == 1e-5
     d['line'] = 'T0'
@@ -196,7 +200,8 @@ def test_c0_interface_rejects_continuous_coercion_and_requires_adapter():
     continuous = ActionBackend('tanh_gaussian_aw', 'physical_differential_mc_nats',
                                'tanh_and_scale_corrected_density', False)
     continuous.validate(np.zeros((3, 2)), 3)
-    with pytest.raises(ValueError, match='physical action'): Hooks(backend=continuous).validate_line('C0')
+    with pytest.raises(ValueError, match='physical action'):
+        assemble(config(), hooks=Hooks(backend=continuous), line='C0')
     assert continuous.entropy_measure != categorical.entropy_measure
 
 
@@ -222,7 +227,7 @@ def test_multiscale_formal_actor_critic_observation_shapes(p, e, o, k):
 
 
 def test_evaluation_domains_and_all_rng_restored_on_exception():
-    lock = create_lock()
+    lock = committed_lock()
     seeds = seed_manifest(config(), lock['evaluation_protocol'])
     assert len(seeds['final']) == 50 and not set(seeds['screen']) & set(seeds['selection'])
     state = rng_state()

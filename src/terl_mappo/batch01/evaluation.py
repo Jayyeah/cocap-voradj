@@ -19,7 +19,7 @@ METRIC_DEFINITIONS = {
     'collision_type': 'per-episode incidence of native end-of-decision collision categories',
     'capture_time': 'conditional on ANY native capture; decisions * decision_seconds',
     'censored': 'native T0 convention: all noncapture; collision failure reported separately',
-    'critic_ev': 'active raw returns vs pre-update raw V; 1-var(return-V)/var(return)',
+    'critic_ev': 'post-update denormalized V vs pre-update GAE raw return targets on active rows; 1-var(return-V)/var(return)',
     'ppo_kl': 'sample estimator mean((ratio-1)-log_ratio); minibatch and post-update separately',
     'ppo_ratio_clip': 'ratio=exp(new-old); clip fraction=mean(abs(ratio-1)>clip_param)',
     'entropy': 'backend-labelled measure; categorical and continuous raw values never pooled',

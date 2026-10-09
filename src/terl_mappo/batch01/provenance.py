@@ -4,11 +4,11 @@ from __future__ import annotations
 from dataclasses import asdict
 import os
 from pathlib import Path
-import sys
 
 import torch
 
-from .contracts import ROOT, environment_versions, fingerprint, source_inventory, git
+from .contracts import ROOT, environment_versions, fingerprint, declared_sources, git
+from .source_guard import SourceGuard
 from .evaluation import METRIC_DEFINITIONS, seed_manifest, scene_label
 from ..native import NativeStage1
 from ..model import TERLActor
@@ -59,17 +59,14 @@ def active_values(runtime):
 
 
 def assert_loaded_sources_covered(declared_sources):
-    for module in list(sys.modules.values()):
-        name = getattr(module, '__file__', None)
-        if not name or not name.endswith('.py'): continue
-        p = Path(name).resolve()
-        if any(p.is_relative_to(ROOT / directory) for directory in ('src', 'vendor/terl')):
-            relative = p.relative_to(ROOT).as_posix()
-            if relative not in declared_sources:
-                raise ValueError('loaded local dependency absent from lock/delta: ' + relative)
+    SourceGuard(declared_sources).check()
 
 
 def runtime_manifest(lock, delta, resolved, runtime, resources):
+    sources = declared_sources(lock, delta)
+    if sources != runtime.source_guard.expected:
+        runtime.source_guard.fail('runtime source guard differs from pinned BASE/delta')
+    runtime.source_guard.check()
     active = active_values(runtime)
     if resources['device'] == 'cuda:0' and torch.cuda.max_memory_allocated() / 1024**2 > resources['max_gpu_allocated_mib']:
         raise ValueError('GPU allocated memory exceeds declared limit')
@@ -81,11 +78,10 @@ def runtime_manifest(lock, delta, resolved, runtime, resources):
     action = {'backend': active['action_backend'],
               'physics': {k: v for k, v in raw_env.items() if k in
                           {'dt', 'integration_substeps', 'aw9', 'pursuer_max_speed', 'evader_max_speed'}}}
-    sources = source_inventory()
-    assert_loaded_sources_covered(sources)
     return {'schema': 'terl.batch01.runtime.v1', 'status': 'OFFLINE_PREPARED_NO_TRAINING',
             'base': delta['base'], 'line': delta['line'], 'resolved_config': resolved,
             'delta_manifest': delta, 'common_source_hashes': sources,
+            'generated_runtime_source_hashes': dict(runtime.source_guard.generated_sources),
             'seed_manifest': seed_manifest(resolved, lock['evaluation_protocol']),
             'evaluation_protocol': lock['evaluation_protocol'], 'metric_definitions': METRIC_DEFINITIONS,
             'active_runtime_values': active, 'environment_fingerprint': fingerprint(raw_env),

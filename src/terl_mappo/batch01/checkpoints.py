@@ -5,19 +5,37 @@ import json
 from pathlib import Path
 
 from ..run import save_checkpoint, load_checkpoint, atomic_json, file_hash
-from .contracts import fingerprint, validate_resources, source_inventory
+from .contracts import fingerprint, validate_resources
+from .source_guard import SourceGuard
 
 
-def assert_manifest_sources(manifest):
-    if manifest.get('common_source_hashes') != source_inventory():
+def assert_manifest_sources(manifest, runtime=None):
+    guard = runtime.source_guard if runtime is not None else SourceGuard.committed()
+    if manifest.get('common_source_hashes') != guard.expected:
         raise ValueError('checkpoint runtime manifest has stale/undeclared common sources')
+    if manifest.get('generated_runtime_source_hashes', dict(guard.generated_sources)) != dict(guard.generated_sources):
+        raise ValueError('checkpoint runtime manifest has stale generated runtime sources')
+    guard.check()
 
 
 def save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps):
-    assert_manifest_sources(manifest)
+    with runtime.source_guard.scope():
+        return _save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps)
+
+
+def _save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps):
+    assert_manifest_sources(manifest, runtime)
     validate_resources(path, str(runtime.trainer.device))
-    digest = save_checkpoint(path, runtime.trainer, runtime.adapter, runtime.config,
-                             steps, agent_steps, optimizer_steps)
+    path = Path(path)
+    pending = path.with_name(path.name + '.pending')
+    try:
+        digest = save_checkpoint(pending, runtime.trainer, runtime.adapter, runtime.config,
+                                 steps, agent_steps, optimizer_steps)
+        runtime.source_guard.check()
+        pending.replace(path)
+    finally:
+        pending.unlink(missing_ok=True)
+        pending.with_suffix('.pt.tmp').unlink(missing_ok=True)
     atomic_json(Path(path).with_suffix('.batch01.json'),
                 {'schema': 'terl.batch01.checkpoint.v1', 'checkpoint_sha256': digest,
                  'steps': steps, 'manifest_fingerprint': fingerprint(manifest), 'base': manifest['base']})
@@ -25,7 +43,11 @@ def save_bound(path, runtime, manifest, steps, agent_steps, optimizer_steps):
 
 
 def load_bound(path, runtime, manifest):
-    assert_manifest_sources(manifest)
+    with runtime.source_guard.scope(): return _load_bound(path, runtime, manifest)
+
+
+def _load_bound(path, runtime, manifest):
+    assert_manifest_sources(manifest, runtime)
     side = json.loads(Path(path).with_suffix('.batch01.json').read_text())
     if (side['checkpoint_sha256'] != file_hash(path) or side['base'] != manifest['base'] or
             side['manifest_fingerprint'] != fingerprint(manifest)):
@@ -35,6 +57,10 @@ def load_bound(path, runtime, manifest):
 
 
 def load_anchor(path, expected_sha256, runtime):
+    with runtime.source_guard.scope(): return _load_anchor(path, expected_sha256, runtime)
+
+
+def _load_anchor(path, expected_sha256, runtime):
     """Explicit import of the original full-state anchor, never strict=False."""
     if runtime.hooks != type(runtime.hooks)():
         raise ValueError('historical exact resume requires T0 hooks')

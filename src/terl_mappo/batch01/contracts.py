@@ -17,6 +17,13 @@ PARENT_SHA = 'bb794ca8435f06b9fa5693c0fed98f567320decf'
 ANCHOR_CONFIG = 'configs/experiments/terl_mappo_20261008/stage1_1m.json'
 LOCK_PATH = 'configs/experiments/terl_mappo_batch01_20261009/base_lock.json'
 PROTOCOL_PATH = 'configs/experiments/terl_mappo_batch01_20261009/evaluation.json'
+REGRESSION_SOURCES = (
+    'test/test_terl_native_mappo_20261008.py',
+    'test/test_small_step_ac_migration_contract.py',
+    'test/test_mappo_terminal_rows_20260923.py',
+    'test/test_terl_mappo_batch01_base_20261009.py',
+    'test/test_terl_mappo_batch01_qa_repairs_20261009.py',
+)
 COMMON_DEPENDENCIES = (
     'src/cocap_voradj/training/small_step_ac.py',
     'src/cocap_voradj/models/small_step_ac.py',
@@ -62,19 +69,21 @@ def source_inventory(root=ROOT):
                 files.add(p.relative_to(root).as_posix())
     files.update({ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json',
                   PROTOCOL_PATH, 'tools/batch01_base_20261009.py'})
+    files.update(REGRESSION_SOURCES)
     # Package __init__ files import historical trainer/dynamics/logging modules
     # even when only the MAPPO learner is requested. Freeze their import closure
     # without rewriting those packages or accepting unverified live dependencies.
-    pending = [p for p in files if p.startswith('src/') and p.endswith('.py')]
+    pending = [p for p in files if p.endswith('.py')]
     visited = set()
 
     def include_module(name):
-        if not name.startswith(('cocap_voradj', 'terl_mappo')):
+        if not name.startswith(('cocap_voradj', 'terl_mappo', 'tools')):
             return
         parts = name.split('.')
         for length in range(1, len(parts) + 1):
             prefix = '/'.join(parts[:length])
-            for candidate in (f'src/{prefix}.py', f'src/{prefix}/__init__.py'):
+            base = '' if parts[0] == 'tools' else 'src/'
+            for candidate in (f'{base}{prefix}.py', f'{base}{prefix}/__init__.py'):
                 if (root / candidate).is_file() and candidate not in files:
                     files.add(candidate); pending.append(candidate)
 
@@ -82,7 +91,7 @@ def source_inventory(root=ROOT):
         path = pending.pop()
         if path in visited: continue
         visited.add(path)
-        parts = Path(path).relative_to('src').with_suffix('').parts
+        parts = (Path(path).relative_to('src') if path.startswith('src/') else Path(path)).with_suffix('').parts
         package = parts[:-1]
         for node in ast.walk(ast.parse((root / path).read_text())):
             if isinstance(node, ast.Import):
@@ -110,11 +119,26 @@ def create_lock():
         raw = subprocess.check_output(['git', '-C', str(ROOT), 'show', f'{PARENT_SHA}:{path}'])
         if hashlib.sha256(raw).hexdigest() != digest:
             raise ValueError('T0 anchor source changed: ' + path)
-    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE',
+    return {'schema': 'terl.batch01.base.v1', 'status': 'BATCH01_BASE_CANDIDATE_V2',
             'parent_sha': PARENT_SHA, 'terl_sha': TERL_SHA, 'anchor_config': config,
             'common_sources': source_inventory(),
+            'generated_runtime_sources': torch_generated_sources(),
             'evaluation_protocol': json.loads((ROOT / PROTOCOL_PATH).read_text()),
             'scientific_delta_from_t0': [], 'independent_qa': 'PENDING_MASTER_QA'}
+
+
+def torch_generated_sources():
+    """Explicit content pin for Torch's Adam-import temporary Python template.
+
+    Its per-process filename changes with TMPDIR. It is a framework dependency,
+    never permission for ARM-generated code or arbitrary runtime modules.
+    """
+    from torch.distributed.nn.jit.instantiator import get_remote_module_template
+    text = get_remote_module_template(True).format(
+        assign_module_interface_cls='module_interface_cls = None', args='*args', kwargs='**kwargs',
+        arg_types='*args, **kwargs', arrow_and_return_type='', arrow_and_future_return_type='',
+        jit_script_decorator='')
+    return {'torch.distributed.nn.non_scriptable_remote_template': hashlib.sha256(text.encode()).hexdigest()}
 
 
 def resolve_config(lock, delta):
@@ -167,6 +191,13 @@ def verify_base(lock, delta, expected_lock_sha256, root=ROOT):
             raise ValueError('source delta requires unique path, reason and science_impact')
         if entry.get('before') != lock['common_sources'].get(path):
             raise ValueError('source delta before hash mismatch')
+        # Dynamic ARM dependencies outside the static closure need an explicit
+        # declaration too. Never grow the trusted set from live sys.modules.
+        if path not in actual and entry.get('after') is not None:
+            source = Path(root) / path
+            if not source.resolve().is_relative_to(Path(root).resolve()):
+                raise ValueError('source delta escapes project realpath')
+            if source.is_file(): actual[path] = file_hash(source)
         if entry.get('after') != actual.get(path):
             raise ValueError('source delta after hash mismatch')
         if path in lock['common_sources'] and not entry.get('candidate_fix'):
@@ -177,6 +208,15 @@ def verify_base(lock, delta, expected_lock_sha256, root=ROOT):
     if changed != set(declared):
         raise ValueError('undeclared/stale common source delta: ' + ', '.join(sorted(changed ^ set(declared))))
     return resolve_config(lock, delta)
+
+
+def declared_sources(lock, delta):
+    """Use only after verify_base; immutable BASE plus the exact ARM delta."""
+    result = dict(lock['common_sources'])
+    for entry in delta.get('source_changes', []):
+        if entry['after'] is None: result.pop(entry['path'], None)
+        else: result[entry['path']] = entry['after']
+    return result
 
 
 def verify_committed_pin(lock, delta):

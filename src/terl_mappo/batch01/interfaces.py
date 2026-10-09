@@ -13,6 +13,8 @@ from ..model import TERLActor, make_critic
 from ..run import build, collect
 from cocap_voradj.models.small_step_ac import CentralValueNetwork
 from cocap_voradj.training.small_step_ac import MAPPOConfig, MAPPOTrainer, tensor_tree
+from .source_guard import SourceGuard
+from .evaluation import isolated_rng
 
 
 class ContinuousPolicy(Protocol):
@@ -38,6 +40,58 @@ class EnvironmentAdapter(Protocol):
     def state_dict(self): ...
     def load_state_dict(self, state): ...
     def fingerprint(self): ...
+    def action_capabilities(self): ...  # ActionCapabilities, actual consumer
+    def validate_actions(self, actions): ...  # shape/dtype/bounds, no coercion
+
+
+@dataclass(frozen=True)
+class ActionCapabilities:
+    family: str
+    representation: str  # integer_indices or physical_aw
+    bounds: tuple | None = None  # ((min_a,max_a),(min_w,max_w)) for physical AW
+
+
+def validate_adapter(adapter, backend, guard):
+    """Validate the instantiated consumer, including an isolated behavior probe.
+
+    NativeStage1's unchanged step implementation defines its AW9 capability.
+    Other adapters declare capabilities and supply a strict action validator.
+    Probing a copy preserves the live environment and every training RNG.
+    """
+    native_step = getattr(adapter.step, '__func__', None) is NativeStage1.step
+    if native_step:
+        capability = ActionCapabilities('categorical_aw9', 'integer_indices')
+    else:
+        if not callable(getattr(adapter, 'action_capabilities', None)) or not callable(getattr(adapter, 'validate_actions', None)):
+            raise ValueError('adapter must declare actual action capabilities and validation')
+        capability = guard.call(adapter.action_capabilities)
+    representation = 'integer_indices' if backend.categorical else 'physical_aw'
+    if not isinstance(capability, ActionCapabilities) or (capability.family, capability.representation) != (backend.family, representation):
+        raise ValueError('physical action/backend incompatible with actual adapter capabilities')
+    if native_step: return capability
+    with isolated_rng():
+        probe = copy.deepcopy(adapter)
+        agents = len(pack_local(probe.observations)['self'])
+        if backend.categorical:
+            valid = np.full(agents, 4, np.int64)
+            invalid = np.zeros((agents, 2))
+        else:
+            bounds = np.asarray(capability.bounds, dtype=float)
+            if bounds.shape != (2, 2) or not np.isfinite(bounds).all() or np.any(bounds[:, 0] >= bounds[:, 1]):
+                raise ValueError('physical action adapter requires finite AW bounds')
+            # Nonzero off-grid AW detects integer coercion in a wrapper consumer.
+            valid = np.broadcast_to(bounds[:, 0] + .371 * (bounds[:, 1] - bounds[:, 0]), (agents, 2)).copy()
+            invalid = np.zeros(agents, dtype=np.int64)
+        guard.call(probe.validate_actions, valid)
+        try: guard.call(probe.validate_actions, invalid)
+        except (ValueError, TypeError): pass
+        else: raise ValueError('adapter validator accepts incompatible action representation')
+        try: row = guard.call(probe.step, valid)
+        except (ValueError, TypeError) as error:
+            raise ValueError('actual adapter rejects physical action behavior probe') from error
+        if not isinstance(row, tuple) or len(row) != 6 or np.asarray(row[1]).shape != (agents,) or not np.isfinite(row[1]).all():
+            raise ValueError('action adapter reset/step behavior contract mismatch')
+    return capability
 
 
 @dataclass(frozen=True)
@@ -83,7 +137,7 @@ class Hooks:
         if changed - allowed[line]:
             raise ValueError('hooks outside experiment line: ' + ','.join(sorted(changed)))
         if not self.backend.categorical:
-            if line != 'C0' or self.env_factory is NativeStage1:
+            if line != 'C0':
                 raise ValueError('continuous C0 requires a physical action environment adapter')
             if self.backend.entropy_measure == 'categorical_shannon_nats':
                 raise ValueError('continuous entropy must declare its own measure')
@@ -95,8 +149,12 @@ class Runtime:
     adapter: EnvironmentAdapter
     hooks: Hooks
     config: dict
+    source_guard: SourceGuard
 
     def collect(self, length):
+        with self.source_guard.scope(): return self._collect(length)
+
+    def _collect(self, length):
         if length <= 0:
             raise ValueError('positive on-policy rollout length required')
         if self.hooks == Hooks():
@@ -106,16 +164,16 @@ class Runtime:
         rows, episodes = [], []
         for _ in range(length):
             local = pack_local(self.adapter.observations)
-            state = self.hooks.state_encoder(self.adapter.env)
+            state = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
             actions, logp, latent, value = self.trainer.act(local, {k: v[None] for k, v in state.items()})
             self.hooks.backend.validate(actions, len(local['self']))
-            _, raw, term, trunc, end, info = self.adapter.step(actions)
+            _, raw, term, trunc, end, info = self.source_guard.call(self.adapter.step, actions)
             reward = np.asarray(raw).copy()
             if self.hooks.reward_transform is not None:
-                reward = np.asarray(self.hooks.reward_transform(reward.copy(), copy.deepcopy(info)))
+                reward = np.asarray(self.source_guard.call(self.hooks.reward_transform, reward.copy(), copy.deepcopy(info)))
             if reward.shape != np.asarray(raw).shape or not np.isfinite(reward).all():
                 raise ValueError('reward adapter must preserve finite per-agent shape')
-            following = self.hooks.state_encoder(self.adapter.env)
+            following = self.source_guard.call(self.hooks.state_encoder, self.adapter.env)
             with torch.no_grad():
                 nv = self.trainer.value(tensor_tree({k: v[None] for k, v in following.items()}, self.trainer.device)).cpu().numpy()[0]
             rows.append({'local_obs': local, 'global_obs': state, 'actions': actions, 'latent': latent,
@@ -124,12 +182,15 @@ class Runtime:
                          'episode_end': np.full(len(raw), end), 'active_mask': info['active']})
             if end:
                 episodes.append({k: v for k, v in info.items() if k not in ('active', 'native_infos')})
-                self.adapter.reset()
+                self.source_guard.call(self.adapter.reset)
         return {k: {j: np.stack([r[k][j] for r in rows]) for j in rows[0][k]}
                 if isinstance(rows[0][k], dict) else np.stack([r[k] for r in rows])
                 for k in rows[0]}, episodes
 
     def update(self, batch):
+        with self.source_guard.scope(): return self._update(batch)
+
+    def _update(self, batch):
         if not self.hooks.backend.categorical and np.asarray(batch['active_mask']).any():
             # The historical continuous learner lacks the categorical zero-update
             # check. Require the corresponding latent-density check before PPO.
@@ -137,7 +198,7 @@ class Runtime:
             local, _ = flatten_local(tensor_tree(batch['local_obs'], self.trainer.device))
             active = torch.as_tensor(batch['active_mask'], device=self.trainer.device).bool().reshape(-1)
             latent = torch.as_tensor(batch['latent'], device=self.trainer.device).reshape(-1, 2)
-            with torch.no_grad():
+            with isolated_rng(), torch.no_grad():
                 new = self.trainer.actor.evaluate_latent({k: v[active] for k, v in local.items()}, latent[active])[0]
                 old = torch.as_tensor(batch['log_prob'], device=self.trainer.device).reshape(-1)[active]
                 if not torch.isfinite(new).all() or not torch.allclose(new, old, atol=1e-4, rtol=0):
@@ -145,9 +206,17 @@ class Runtime:
         return self.trainer.update(batch, categorical=self.hooks.backend.categorical)
 
 
-def assemble(config, device='cpu', hooks=None, line='T0'):
+def assemble(config, device='cpu', hooks=None, line='T0', source_guard=None):
+    guard = source_guard or SourceGuard.committed()
+    with guard.scope():
+        return _assemble(config, device, hooks, line, guard)
+
+
+def _assemble(config, device, hooks, line, guard):
     hooks = hooks or Hooks()
     hooks.validate_line(line)
+    guard.preflight([hooks.env_factory, hooks.state_encoder, hooks.actor_factory,
+                     hooks.critic_factory, hooks.reward_transform])
     # Native build owns seed/init order. Replacement factories are used only
     # after an explicitly declared line change; T0 remains bit exact.
     if hooks.actor_factory is TERLActor and hooks.critic_factory is make_critic:
@@ -161,7 +230,13 @@ def assemble(config, device='cpu', hooks=None, line='T0'):
         value = hooks.critic_factory(config['hidden_dim'], config['num_heads'], config['num_layers'])
         trainer = MAPPOTrainer(actor, value, MAPPOConfig(**config['ppo']), device)
         trainer.value.eval()
-    return Runtime(trainer, hooks.env_factory(config['seed']), hooks, config)
+    adapter = guard.call(hooks.env_factory, config['seed'])
+    validate_adapter(adapter, hooks.backend, guard)
+    # Guard before each optimizer mutation too. Keep the learner and numerical
+    # operations intact; the hooks neither sample RNG nor alter gradients.
+    for optimizer in (trainer.actor_optimizer, trainer.value_optimizer):
+        optimizer.register_step_pre_hook(lambda *args: guard.check())
+    return Runtime(trainer, adapter, hooks, config, guard)
 
 
 def multiscale_state(env, *, max_cores, map_scale=120., horizon_scale=3000.):

@@ -14,6 +14,7 @@ from terl_mappo.batch01.contracts import (ROOT, LOCK_PATH, PARENT_SHA, create_lo
 from terl_mappo.batch01.interfaces import Hooks, assemble
 from terl_mappo.batch01.provenance import runtime_manifest
 from terl_mappo.batch01.evaluation import performance_report, isolated_rng
+from terl_mappo.batch01.source_guard import SourceGuard
 from terl_mappo.run import atomic_json, file_hash, source_hash
 
 ORIGINAL = Path('/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008')
@@ -73,6 +74,7 @@ def prepare(args):
     resolved = verify_base(lock, delta, args.pin)
     verify_committed_pin(lock, delta)
     resources = validate_resources(args.output, args.device, args.threads)
+    guard = SourceGuard.from_base(lock, delta, args.pin, diagnostics=Path(args.output).parent / 'source_failures')
     torch.set_num_threads(args.threads)
     extension = delta.get('extensions', {})
     hooks = Hooks()
@@ -81,14 +83,17 @@ def prepare(args):
         module, name = entry.split(':')
         if not module.startswith('terl_mappo.batch01.extensions.'):
             raise ValueError('extension entrypoint must be declared inside batch01/extensions')
-        hooks = getattr(importlib.import_module(module), name)(extension.get('parameters', {}))
+        with guard.scope():
+            factory = getattr(importlib.import_module(module), name)
+            guard.preflight([factory])
+            hooks = guard.call(factory, extension.get('parameters', {}))
         if not isinstance(hooks, Hooks): raise ValueError('extension must return Hooks')
     if delta['line'] != 'T0' and hooks == Hooks() and not any(
         e['path'].split('.')[0] not in {'experiment', 'seed', 'actor_seed', 'budget', 'stage1_ceiling'}
         for e in delta.get('config_changes', [])):
         raise ValueError('experiment line has no implemented scientific delta')
     with isolated_rng():
-        runtime = assemble(resolved, args.device, hooks, delta['line'])
+        runtime = assemble(resolved, args.device, hooks, delta['line'], source_guard=guard)
         manifest = runtime_manifest(lock, delta, resolved, runtime, resources)
     output = Path(args.output)
     if output.exists(): raise ValueError('refuse to overwrite a prepared manifest')
