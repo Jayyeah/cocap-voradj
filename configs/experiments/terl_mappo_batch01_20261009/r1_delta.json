@@ -1,0 +1,73 @@
+{
+  "schema": "terl.batch01.delta.v1",
+  "line": "R1",
+  "base": {
+    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+    "candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
+    "lock_sha256": "384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab"
+  },
+  "config_changes": [
+    {
+      "path": "experiment",
+      "before": "EXP-TERL-MAPPO-01",
+      "after": "BATCH01-r1-V3R2",
+      "reason": "distance-only bridge scratch1M"
+    }
+  ],
+  "source_changes": [
+    {
+      "path": "src/terl_mappo/batch01/arms/__init__.py",
+      "before": null,
+      "after": "93c0606fee90604fe37ded2f77d2deaff88c0e3f41e5a1e4f3d7e443e61f9319",
+      "reason": "ARM implementation/runner/evaluator and correctness preflight",
+      "science_impact": "replace native distance dense only; pre-step nearest active target, fixed pre-step annulus goal, post-step recipient progress; all event/done and remaining reward components unchanged"
+    },
+    {
+      "path": "src/terl_mappo/batch01/arms/evaluator.py",
+      "before": null,
+      "after": "81fe88ce3fa07a6636f5b2212828d0c24d42ba531286c0503752ef4a6b65c3b1",
+      "reason": "ARM implementation/runner/evaluator and correctness preflight",
+      "science_impact": "replace native distance dense only; pre-step nearest active target, fixed pre-step annulus goal, post-step recipient progress; all event/done and remaining reward components unchanged"
+    },
+    {
+      "path": "src/terl_mappo/batch01/arms/preflight.py",
+      "before": null,
+      "after": "a33f10f33e1a5eec9ad8277b36b62b296ebff2fbb5ace303abfebe9ae2109884",
+      "reason": "ARM implementation/runner/evaluator and correctness preflight",
+      "science_impact": "replace native distance dense only; pre-step nearest active target, fixed pre-step annulus goal, post-step recipient progress; all event/done and remaining reward components unchanged"
+    },
+    {
+      "path": "src/terl_mappo/batch01/arms/r1.py",
+      "before": null,
+      "after": "1369d7caa18751d82734ee0321455b4d9113af8f0289ad60a1947b7577b6b6aa",
+      "reason": "ARM implementation/runner/evaluator and correctness preflight",
+      "science_impact": "replace native distance dense only; pre-step nearest active target, fixed pre-step annulus goal, post-step recipient progress; all event/done and remaining reward components unchanged"
+    },
+    {
+      "path": "src/terl_mappo/batch01/arms/runner.py",
+      "before": null,
+      "after": "ef6924180fe21617327d915b3cd274b728938c3b12a817357005157db4ea5719",
+      "reason": "ARM implementation/runner/evaluator and correctness preflight",
+      "science_impact": "replace native distance dense only; pre-step nearest active target, fixed pre-step annulus goal, post-step recipient progress; all event/done and remaining reward components unchanged"
+    }
+  ],
+  "extensions": {
+    "entrypoint": "terl_mappo.batch01.arms.r1:factory",
+    "parameters": {
+      "coefficient": 2.0,
+      "progress_clip": 3.0,
+      "inner_surface": 4.5,
+      "preferred_center": 8.0,
+      "outer_center": 10.5,
+      "cell": 1.5,
+      "radial_sigma": 2.0,
+      "phase_width": 0.5235987755982988,
+      "phase_radial_margin": 4.0,
+      "angle_alpha": 0.25,
+      "velocity_static": 0.3,
+      "velocity_full": 1.0,
+      "obstacle_margin": 2.0,
+      "boundary_margin": 0.5
+    }
+  }
+}

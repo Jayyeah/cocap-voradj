@@ -1,0 +1,1 @@
+V3r2 source-first parent 9cc2d47c532c76239a61a0f6a19c8603358c92bf / canonical 384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab。科学ARM实现继承已自测V3r1，重新验证启动、CPU/CUDA、源码delta、evaluator、full-state resume与资源门禁。旧V3r1 pilot隔离；新pilot从原775k锚点（P1/T1）或scratch（R1/N1/C0）开始，每run最多25k，不作正式证据。独立QA仍PENDING，BASE未冻结。
