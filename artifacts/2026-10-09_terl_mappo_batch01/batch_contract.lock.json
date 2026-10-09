@@ -365,7 +365,7 @@
   "core_v1_status": "CORE_V1_QA_BLOCKED",
   "base_freeze_status": "BASE_FREEZE_BLOCKED",
   "qa_verdict": "PENDING",
-  "core_candidate_status": "CORE_V3_SELFTEST_PASS",
+  "core_candidate_status": "CORE_V3_BOOTSTRAP_BLOCK",
   "next_core_candidate_sha": null,
   "next_core_candidate_lock_sha256": null,
   "qa_block_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
@@ -384,5 +384,17 @@
     "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
   },
   "qa_block_receipt_historical_only": true,
-  "batch_status": "WAITING_QA_V3"
+  "batch_status": "WAITING_QA_V3",
+  "launch_gates": {
+    "CORE_CANDIDATE": "CORE_V3_BOOTSTRAP_BLOCK",
+    "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
+    "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
+    "ARM_DELTA_REVIEW": "PREVIOUS_PILOTS_QUARANTINED_V3R2_GATES_REQUIRED",
+    "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
+    "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_AND_SECONDARY2_PASS",
+    "GPU_LEASE": "FORMAL_NOT_GRANTED_PROVISIONAL_GPU1_ONLY",
+    "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "V3_CORE_AND_ARMS_SELFTEST_PASS_PENDING_QA",
+    "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
+  }
 }

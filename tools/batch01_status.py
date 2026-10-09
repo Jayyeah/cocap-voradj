@@ -50,6 +50,8 @@ def inspect_runs():
      if log.exists():evaluation['last_exception']='\n'.join(log.read_text(errors='replace').splitlines()[-15:])
    if row['status']=='PROVISIONAL_COMPLETE_PENDING_SCREEN' and row.get('evaluation') and all(e['status']=='PROVISIONAL_SCREEN' for e in row['evaluation']):row['status']='PROVISIONAL_COMPLETE'
   else:row['alive']=False
+  if row.get('scientific_quarantine'):
+   row['pre_quarantine_status']=row['status'];row['status']='QUARANTINED_PROVISIONAL';row['formal_evidence']=False
   rows.append(row)
  return registry,rows
 
@@ -67,9 +69,10 @@ def main():
   central['batch01']['provisional_training_launched']=launched;central['batch01']['pilot_gpu_leases']=state['pilot_gpu_leases'];central['batch01']['pilot_runs']=[{'run_id':r['run_id'],'status':r['status'],'pid':r.get('pid'),'step':r.get('step'),'checkpoint':r.get('checkpoint')} for r in rows]
   central['updated_at']=now
   write(DIRECTORY/'batch_state.json',state);write(ROOT/'artifacts/2026-09-21_ac_master_dag/state.json',central)
- if args.json:print(json.dumps({'time':now,'BASE_FROZEN':False,'QA':'QA_PENDING','runs':rows},ensure_ascii=False,indent=2))
+ state=read(DIRECTORY/'batch_state.json')
+ if args.json:print(json.dumps({'time':now,'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','QA':state['qa']['status'],'core_status':state['core']['status'],'runs':rows},ensure_ascii=False,indent=2))
  else:
-  print('BASE: UNFROZEN | CORE_V3_SELFTEST_PASS | QA_PENDING')
+  print('BASE:',state['base_freeze_status'],'|',state['core']['status'],'|',state['qa']['status'])
   for r in rows:
    cp=r.get('checkpoint') or {};print(r['run_id'],r['status'],'PID',r.get('pid'),'GPU',r.get('physical_gpu'),'step',r.get('step',r['start_step']),'update',r.get('update'),'checkpoint',cp.get('path'),'alive',r['alive'])
 if __name__=='__main__':main()

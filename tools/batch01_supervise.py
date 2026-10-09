@@ -42,11 +42,13 @@ def supervise(cache):
    if row.get('disk_bytes',0)>8*1024**3:reason='run output above8GiB'
    if row.get('torch_peak_allocated_mib',0)>2048:reason='GPU lease above2GiB'
    if ram['MemAvailable']<8*1024**3:reason='RAM reserve below8GiB'
+   if row.get('scientific_quarantine'):reason='scientific provenance quarantined'
    if row.get('last_exception') or row.get('status','').startswith('FAILED'):reason='failed contract must stop'
    lease=leases.get(row['lease_id'])
    if not lease or datetime.fromisoformat(lease['expires_at'])<datetime.now(timezone.utc):reason='GPU lease missing/expired'
    for line in compute.splitlines():
-    if row['gpu_uuid'] in line and int(line.split(',')[0]) not in own:reason='new external process on leased GPU; yield own training'
+    if row['gpu_uuid'] in line and int(line.split(',')[0]) not in own and not (lease and lease.get('external_sharing_authorized')):reason='new external process on exclusive leased GPU; yield own training'
+   if lease and lease.get('external_sharing_authorized') and sum(1 for r in rows if r.get('alive') and r.get('gpu_uuid')==row['gpu_uuid'])>2:reason='shared GPU exceeds user maximum2 own lines'
    if reason and alive(row['pid'],row['run_id']):
     os.kill(row['pid'],signal.SIGTERM)
     events.append({'time':now(),'run_id':row['run_id'],'pid':row['pid'],'action':'SIGTERM_OWN_RUN','reason':reason})
@@ -60,6 +62,7 @@ def supervise(cache):
   write(DIRECTORY/'run_registry.json',registry)
   with (RUNTIME/'supervisor_events.jsonl').open('a') as f:
    for event in events:f.write(json.dumps(event)+'\n')
+  fcntl.flock(fd,fcntl.LOCK_UN);fd.close()
  subprocess.run([sys.executable,str(ROOT/'tools/batch01_status.py'),'--write'],check=True,stdout=subprocess.DEVNULL)
  _,rows=inspect_runs();snapshot={'time':now(),'pid':os.getpid(),'status':'MONITORING','automatic_restart':False,'automatic_budget_extension':False,
    'independent_QA':state['QA_SAME_SHA'],'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','disk_free_bytes':free,'memory':ram,

@@ -2,17 +2,17 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T14:05:08.721010+00:00",
+  "updated_at": "2026-10-09T14:33:18.534427+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
   "base_contract": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
   "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
   "gates": {
-    "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+    "CORE_CANDIDATE": "CORE_V3_BOOTSTRAP_BLOCK",
     "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
     "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "ALL_ARMS_V3_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
+    "ARM_DELTA_REVIEW": "PREVIOUS_PILOTS_QUARANTINED_V3R2_GATES_REQUIRED",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
     "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_AND_SECONDARY2_PASS",
     "GPU_LEASE": "FORMAL_NOT_GRANTED_PROVISIONAL_GPU1_ONLY",
@@ -39,7 +39,7 @@
     "trigger": "T1 failure -> Master review need for multiple seeds; no automatic launch"
   },
   "core": {
-    "status": "CORE_V3_SELFTEST_PASS",
+    "status": "CORE_V3_BOOTSTRAP_BLOCK",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009",
     "observed_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
     "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
@@ -403,7 +403,7 @@
       "handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md"
     }
   ],
-  "next_wake_up": "Receive independent review/signature on V3 exact candidate0b2686a+canonical9ca6c24; retain BASE_FREEZE_BLOCKED until accepted. Supervise bounded25k pilots and pending screen; no budget extension, final consumption or retrospective formal promotion. Stage3 formal additionally requires qualified Stage2 selection and Stage1 retention.",
+  "next_wake_up": "Complete source-first V3r2 selftests and all fresh ARM source/resource gates; independent same-SHA QA still required to freeze.",
   "QA_SAME_SHA": "PENDING",
   "qa_smoke_leases": [],
   "qa_smoke_gates": {
@@ -708,22 +708,52 @@
     "all_line_specific_science_resource_resume_smokes_required": true
   },
   "pilot_arm_states": {
-    "p1-control": "PROVISIONAL_COMPLETE",
-    "p1-treatment": "PROVISIONAL_COMPLETE",
-    "r1": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
-    "n1": "PROVISIONAL_COMPLETE_PENDING_SCREEN",
-    "t1": "PROVISIONAL_RUNNING",
-    "c0": "PROVISIONAL_RUNNING"
+    "p1-control": "QUARANTINED_PROVISIONAL",
+    "p1-treatment": "QUARANTINED_PROVISIONAL",
+    "r1": "QUARANTINED_PROVISIONAL",
+    "n1": "QUARANTINED_PROVISIONAL",
+    "t1": "QUARANTINED_PROVISIONAL",
+    "c0": "QUARANTINED_PROVISIONAL"
   },
   "supervision": {
-    "status": "MONITORING",
+    "status": "STOPPED_LOCK_WAIT_FIXED_PENDING_RESTART",
     "tmux": "batch01_commander_v3_supervisor",
-    "pid": 1626849,
+    "pid": null,
     "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
     "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
     "tool": "tools/batch01_supervise.py",
     "interval_seconds": 30,
     "automatic_restart": false,
     "automatic_budget_extension": false
+  },
+  "new_run_hold": "V3_BOOTSTRAP_CODE_PROVENANCE_BLOCK",
+  "resource_policy_user_20261009": "prefer fully idle GPU if one exists; if both GPUs have external tasks, maximum2 own lines perGPU; measured capacity still required",
+  "historical_v3r1_snapshot": {
+    "status": "CORE_V3_SELFTEST_PASS",
+    "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009",
+    "observed_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+    "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+    "delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+    "branch": "experiment/terl-mappo-batch01-v3-20261009",
+    "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+    "common_source_count": 100,
+    "verification": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/core_v3_verification.json",
+    "core_test_report": {
+      "CPU_passed": 83,
+      "CPU_CUDA_skipped": 3,
+      "CUDA_passed": 3,
+      "failed": 0,
+      "A3_script_selftest_probes_passed": 12,
+      "independent_qa": false
+    },
+    "v1_status": "CORE_V1_QA_BLOCKED",
+    "v1_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+    "v1_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+    "v2_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+    "v2_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+    "fix_task_status": "V3_DELIVERED_SELFTEST_PASS_INDEPENDENT_QA_PENDING",
+    "requirements": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
+    "repair_report": "https://github.com/Jayyeah/cocap-voradj/blob/5ecb8774612f2002576b66f9a8a6cba46dad09a6/docs/TERL_MAPPO_BATCH01_BASE_V3_20261009_ZH.md",
+    "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
   }
 }

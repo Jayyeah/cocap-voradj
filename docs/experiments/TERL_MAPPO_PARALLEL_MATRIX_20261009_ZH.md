@@ -1,3 +1,5 @@
+> 2026-10-09 更新：V3r1 自身 SourceGuard 可命中同 size/mtime 旧V2缓存，启动来源门禁不完整。全部六条旧pilot已隔离，不作正式证据；V3r2源码启动修复候选5b6224f正在回归。QA_PENDING、BASE未冻结。监督器registry锁等待已修复，重启前保持停止。两GPU目前均有其他用户任务，之后每卡最多两条自己的线。
+
 ## Commander 六路pilot交付状态（覆盖下方历史启动快照）
 
 P1-control/treatment均已完成775k→800k，R1/N1均已完成scratch25k，并按硬上限停止；T1 Stage2 PID1621721与C0 PID1623197已真实PPO update后登记PROVISIONAL_RUNNING，均限定25k。所有训练使用GPU1，GPU0外部任务受保护。T1三规模mask/current/partial生命周期与Stage2/Stage3完整恢复、C0九点原生物理parity/连续概率合同/完整恢复、CPU/CUDA256/8/4与新seed evaluator均SELFTEST_PASS。正式RUNNING=0，QA_PENDING，BASE未冻结；Stage3正式另需Stage2 selection与Stage1 retention条件。P1已生成两条pilot screen保持曲线与best-observed/last/collision，不能作为正式比较结论。
