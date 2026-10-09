@@ -1,7 +1,7 @@
 {
   "schema": "terl-mappo-run-registry-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
-  "updated_at": "2026-10-09T17:38:31.228981+08:00",
+  "updated_at": "2026-10-09T13:10:04.913690+00:00",
   "owner": "MASTER",
   "BATCH01_BASE_SHA": null,
   "runs": [
@@ -143,7 +143,7 @@
       "arm": "T1",
       "role": "EXPERIMENT_ARM",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Can selected Stage1 policy transfer quickly to native4P1E and7P2E curriculum?",
       "primary_delta": {
         "Environment": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
@@ -211,43 +211,37 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "critic current/agent capacity and weight/Adam/ValueNorm migration",
         "multi-target native reward repetition and cooperation count semantics",
         "stage promotion thresholds/budget freeze"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     },
     {
       "run_id": "BATCH01-N1",
       "arm": "N1",
       "role": "EXPERIMENT_ARM",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Does CoCap-style actor structure learn under identical native task and information?",
       "primary_delta": {
         "Network": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
@@ -309,42 +303,36 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "exact CoCap actor adapter/pooling implementation and information equality",
         "matched fresh initialization and parameter-count reporting"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     },
     {
       "run_id": "BATCH01-R1",
       "arm": "R1",
       "role": "EXPERIMENT_ARM",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Does CR-MS-class dense capture shaping improve learning with native environment/network/info unchanged?",
       "primary_delta": {
         "Reward": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
@@ -405,42 +393,36 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "exact shaping formula/coefficients/clock/target aggregation",
         "native retained positive global residence incentive is not removed by definition"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     },
     {
       "run_id": "BATCH01-P1",
       "arm": "P1",
       "role": "EXPERIMENT_ARM",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Does lowering only target_kl preserve late capture from identical775k full state?",
       "primary_delta": {
         "Algorithm": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
@@ -501,42 +483,36 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "full775k cross-BASE strict resume proof",
         "P1-control authorization and paired fork reproducibility"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     },
     {
       "run_id": "BATCH01-C0",
       "arm": "C0",
       "role": "EXPERIMENT_ARM",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Can bounded continuous a/w MAPPO learn in nativeTERL without changing physics/task/information?",
       "primary_delta": {
         "Network": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
@@ -599,42 +575,36 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "continuous native action dispatch and Jacobian proof",
         "initial std/entropy estimator deterministic action definition"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     },
     {
       "run_id": "BATCH01-P1-control",
       "arm": "P1",
       "role": "PAIRED_ZERO_DELTA_CONTROL",
       "status": "WAITING_BASE",
-      "implementation_status": "PROPOSED",
+      "implementation_status": "IMPLEMENTING_V3",
       "scientific_question": "Paired control from identical775k full state at target_kl.02",
       "primary_delta": {},
       "proposed_ppo_target_kl": 0.02,
@@ -691,51 +661,43 @@
       "formal_results": null,
       "classification": "NO_SCIENTIFIC_RESULT",
       "gates": {
-        "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-        "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+        "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+        "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
         "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW": "WAITING_BASE",
+        "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
         "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-        "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+        "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
         "GPU_LEASE": "NOT_REQUESTED",
-        "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+        "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
         "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-        "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+        "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
       },
       "blockers": [
-        "WAITING_QA_V2",
-        "BASE_FREEZE_BLOCKED",
-        "ARM_DELTA_REVIEW_PENDING",
-        "EVALUATION_SEED_RECONCILIATION_PENDING",
-        "STORAGE_DYNAMIC_RECHECK_REQUIRED",
-        "BENCHMARK_NOT_EXECUTED",
-        "FORMAL_GPU_LEASE_NOT_GRANTED",
-        "NO_RUN_AUTHORIZATION"
+        "BASE_INDEPENDENT_QA_PENDING",
+        "ARM_SELFTEST_AND_RESOURCE_GATES"
       ],
       "unresolved": [
         "full775k cross-BASE strict resume proof",
         "P1-control authorization and paired fork reproducibility"
       ],
-      "next_gate": "A3 exact V2 SHA/lock independent QA -> later Master review; explicit future ARM seed freeze + arm/formal gates remain",
+      "next_gate": "bounded provisional<=25k only after per-arm source/science/CPU/CUDA/resume/resource gate; formal requires independent frozen BASE",
       "storage_launch_gate": "DYNAMIC_RECHECK_REQUIRED",
-      "candidate_sha_for_review_only": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-      "candidate_review_status": "WAITING_QA_V2"
+      "candidate_sha_for_review_only": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "candidate_review_status": "QA_PENDING"
     }
   ],
-  "core_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-  "core_delivery_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
-  "core_candidate_canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+  "core_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+  "core_delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+  "core_candidate_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
   "QA_SAME_SHA": "PENDING",
   "qa_smoke_registry": "artifacts/2026-10-09_terl_mappo_batch01/master04/qa_smoke_lease.json",
   "qa_smoke_is_not_formal_run": true,
-  "batch_status": "WAITING_QA_V2",
+  "batch_status": "WAITING_QA_V3",
   "core_v1_status": "CORE_V1_QA_BLOCKED",
   "base_freeze_status": "BASE_FREEZE_BLOCKED",
   "qa_report_head": null,
   "qa_block_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
-  "active_qa_smoke_leases": [
-    "B01-QA-CUDA-V2-863a0cf-20261009T173831"
-  ],
+  "active_qa_smoke_leases": [],
   "historical_qa_smoke_registry": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_smoke_lease.json",
   "historical_v1_review": {
     "verdict": "BASE_QA_BLOCK",
@@ -746,5 +708,8 @@
     "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
     "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
   },
-  "qa_block_receipt_historical_only": true
+  "qa_block_receipt_historical_only": true,
+  "status": "WAITING_QA_V3",
+  "qa_tested_candidate_sha": null,
+  "pilot_runs": []
 }

@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-09T17:46:58.277123+08:00",
+  "updated_at": "2026-10-09T13:10:04.913690+00:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
@@ -2687,7 +2687,7 @@
     },
     {
       "task_id": "BATCH01-CORE-V2",
-      "status": "CORE_V2_DELIVERED",
+      "status": "CORE_V2_QA_BLOCKED",
       "dependencies": [
         "BATCH01-QA-BASE"
       ],
@@ -2698,7 +2698,8 @@
       "next_gate": "A3 independent exact V2 SHA/lock review; Core self-tests are not acceptance",
       "updated_at": "2026-10-09T17:38:31.228981+08:00",
       "delivery_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
-      "evidence": "artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json"
+      "evidence": "artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json",
+      "qa_report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d"
     },
     {
       "task_id": "BATCH01-BASE-FREEZE",
@@ -2718,7 +2719,7 @@
     {
       "task_id": "BATCH01-QA-V2",
       "task_name": "A3 independent Core V2 same-SHA acceptance",
-      "status": "WAITING_QA_V2",
+      "status": "BASE_QA_BLOCK",
       "dependencies": [
         "BATCH01-CORE-V2"
       ],
@@ -2732,7 +2733,21 @@
       "cpu_static_qa_blocked_by_gpu": false,
       "formal_training_authorized": false,
       "next_gate": "Return pinned independent verdict and CUDA lease evidence/release or WAIT; seed reconciliation remains explicit",
-      "updated_at": "2026-10-09T17:38:31.228981+08:00"
+      "updated_at": "2026-10-09T17:38:31.228981+08:00",
+      "report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d"
+    },
+    {
+      "task_id": "BATCH01-CORE-V3",
+      "status": "CORE_V3_SELFTEST_PASS",
+      "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19"
+    },
+    {
+      "task_id": "BATCH01-QA-V3",
+      "status": "QA_PENDING",
+      "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+      "independent_signature": false
     }
   ],
   "current_snapshot": {
@@ -3295,6 +3310,10 @@
       "status": "WAITING_QA_V2",
       "QA_SAME_SHA": "PENDING",
       "BATCH01_BASE_SHA": null
+    },
+    {
+      "time": "2026-10-09T13:10:04.913690+00:00",
+      "event": "Commander V3 candidate selftests pass; independent QA pending, BASE unfrozen; user explicitly authorizes qualified bounded25k provisional pilots"
     }
   ],
   "server_recovery": {
@@ -23606,7 +23625,7 @@
     "latest_reconciliation_note": "2026-10-09 Batch01 planning snapshot supersedes historical live TERL/Evidence claims; verified old PIDs exited; protected external GPU job; authoritative Batch01 still WAITING_BASE."
   },
   "batch01": {
-    "status": "WAITING_QA_V2",
+    "status": "WAITING_QA_V3",
     "BATCH01_BASE_SHA": null,
     "batch_state": "artifacts/2026-10-09_terl_mappo_batch01/batch_state.json",
     "contract_lock": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
@@ -23615,25 +23634,25 @@
     "changelog": "docs/experiments/BATCH01_SCIENTIFIC_CHANGELOG.md",
     "handoff": "docs/experiments/BATCH01_HANDOFF_TEMPLATE_20261009_ZH.md",
     "gates": {
-      "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-      "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+      "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+      "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
       "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-      "ARM_DELTA_REVIEW": "WAITING_BASE",
+      "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
       "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-      "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+      "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
       "GPU_LEASE": "NOT_REQUESTED",
-      "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+      "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
       "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-      "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+      "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
     },
     "new_training_launched": false,
     "new_gpu_leases": [],
     "new_subagents_created": false,
     "next_wake_up": "User forwards A3 pushed independent report on exact V2 863a0cf55aca0ace8a0aaab36d9166aa4c97268f + lock 885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4, B1-B4/Q1/T0/full-resume evidence, CUDA lease usage/release or explicit WAIT, and seed reconciliation. Later Master review only; no automatic BASE freeze or launch. CUDA preflight failure/expiry/cap breach also wakes Master for recheck, never reuse V1 lease.",
     "QA_SAME_SHA": "PENDING",
-    "core_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-    "core_delivery_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
-    "core_candidate_canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+    "core_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+    "core_delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+    "core_candidate_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
     "delivery_receipts": {
       "A0": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
       "A2": "artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json",
@@ -23642,9 +23661,7 @@
     },
     "storage_status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
     "qa_status": "WAITING_QA_V2",
-    "qa_smoke_leases": [
-      "B01-QA-CUDA-V2-863a0cf-20261009T173831"
-    ],
+    "qa_smoke_leases": [],
     "qa_smoke_lease_ref": "artifacts/2026-10-09_terl_mappo_batch01/master04/qa_smoke_lease.json",
     "qa_handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
     "core_v1_status": "CORE_V1_QA_BLOCKED",
@@ -23669,6 +23686,8 @@
     },
     "qa_block_receipt_historical_only": true,
     "latest_storage_recheck": "artifacts/2026-10-09_terl_mappo_batch01/master04/storage_recheck.json",
-    "remote_sync_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master04/remote_verification.json"
+    "remote_sync_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master04/remote_verification.json",
+    "pilot_gpu_leases": [],
+    "provisional_training_launched": false
   }
 }

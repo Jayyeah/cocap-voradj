@@ -2,23 +2,23 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T17:38:31.228981+08:00",
-  "status": "WAITING_QA_V2",
+  "updated_at": "2026-10-09T13:10:04.913690+00:00",
+  "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
   "base_contract": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
   "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
   "gates": {
-    "CORE_CANDIDATE": "CORE_V2_DELIVERED",
-    "INDEPENDENT_QA_SAME_SHA": "WAITING_QA_V2",
+    "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
+    "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
     "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "WAITING_BASE",
+    "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+    "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
     "GPU_LEASE": "NOT_REQUESTED",
-    "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+    "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
     "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
-    "EVALUATION_CONTRACT": "SEED_DOMAIN_RECONCILIATION_PENDING"
+    "EVALUATION_CONTRACT": "NEW_ARM_PROTOCOL_SELFTEST_PASS_PENDING_QA"
   },
   "training_launched": false,
   "benchmark_executed": false,
@@ -39,15 +39,15 @@
     "trigger": "T1 failure -> Master review need for multiple seeds; no automatic launch"
   },
   "core": {
-    "status": "CORE_V2_DELIVERED",
-    "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009",
-    "observed_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
-    "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-    "delivery_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
-    "branch": "experiment/terl-mappo-batch01-base-20261009",
-    "canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
-    "common_source_count": 96,
-    "verification": "artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json",
+    "status": "CORE_V3_SELFTEST_PASS",
+    "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009",
+    "observed_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+    "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+    "delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+    "branch": "experiment/terl-mappo-batch01-v3-20261009",
+    "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+    "common_source_count": 100,
+    "verification": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/core_v3_verification.json",
     "core_test_report": {
       "passed": 77,
       "cuda_skipped": 3,
@@ -65,14 +65,14 @@
     "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
   },
   "qa": {
-    "status": "WAITING_QA_V2",
+    "status": "QA_PENDING",
     "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
     "observed_head": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
     "tested_candidate_sha": null,
     "report_head": null,
     "observed_branch": "audit/terl-mappo-batch01-v2-recheck-20261009",
-    "requested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-    "requested_canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+    "requested_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+    "requested_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
     "QA_SAME_SHA": "PENDING",
     "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
     "cuda_smoke_lease_id": "B01-QA-CUDA-V2-863a0cf-20261009T173831",
@@ -82,8 +82,8 @@
     "report_sha256": null,
     "receipt": null,
     "v2_retest_status": "WAITING_QA_V2",
-    "v2_tested_candidate_sha": null,
-    "v2_report_head": null,
+    "v2_tested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+    "v2_report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
     "v2_handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
     "historical_v1_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
     "historical_cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
@@ -97,7 +97,9 @@
       "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
     },
     "observed_worktree_status": "?? artifacts/2026-10-09_batch01_v2_independent_qa/",
-    "uncommitted_activity_is_not_acceptance": true
+    "uncommitted_activity_is_not_acceptance": true,
+    "a3_independent_signature": false,
+    "v2_verdict": "BASE_QA_BLOCK"
   },
   "storage": {
     "status": "CAPACITY_AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
@@ -401,9 +403,7 @@
   ],
   "next_wake_up": "User forwards A3 pushed independent report on exact V2 863a0cf55aca0ace8a0aaab36d9166aa4c97268f + lock 885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4, B1-B4/Q1/T0/full-resume evidence, CUDA lease usage/release or explicit WAIT, and seed reconciliation. Later Master review only; no automatic BASE freeze or launch. CUDA preflight failure/expiry/cap breach also wakes Master for recheck, never reuse V1 lease.",
   "QA_SAME_SHA": "PENDING",
-  "qa_smoke_leases": [
-    "B01-QA-CUDA-V2-863a0cf-20261009T173831"
-  ],
+  "qa_smoke_leases": [],
   "qa_smoke_gates": {
     "A0_AUDIT_RECEIVED": "PASS",
     "MASTER_RESOURCE_SAMPLE": "PASS_BOUNDED_V2_SMOKE_ONLY",
@@ -412,22 +412,102 @@
     "CUDA_TEST_EXECUTION": "NOT_EXECUTED_BY_MASTER_PENDING_A3"
   },
   "evaluation_protocol_open_issue": {
-    "core_candidate_domains": {
-      "screen": 2026100800,
-      "selection": 2036100800,
-      "final": 2046101800
+    "status": "NEW_PROTOCOL_BOUND_SELFTEST_PASS_PENDING_INDEPENDENT_QA",
+    "legacy_t0_protocol_unchanged": true,
+    "new_arm_protocol": {
+      "schema": "terl.batch01.arm_evaluation.v1",
+      "checkpoint_interval": 25000,
+      "sample_torch_offset": 100000,
+      "screen": {
+        "seed_base": 2056100900,
+        "max_episodes_per_mode": 20,
+        "regular_episodes_per_mode": 10
+      },
+      "screen_milestones": [
+        0,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        750000,
+        1000000
+      ],
+      "selection": {
+        "seed_base": 2066100900,
+        "max_episodes_per_mode": 20,
+        "top_screen_candidates": 3
+      },
+      "final": {
+        "seed_base": 2076100900,
+        "max_episodes_per_mode": 50
+      },
+      "modes": [
+        "argmax",
+        "sample"
+      ],
+      "selection_order": [
+        "mean_normal_capture_rate",
+        "negative_mean_collision_rate",
+        "mean_strict_geometry_rate",
+        "mean_ring3_rate",
+        "negative_step"
+      ],
+      "late_stage_window_checkpoints": 5,
+      "entropy_comparison": "within declared probability measure only",
+      "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
+      "protocol_id": "batch01-new-paired-20261009",
+      "scene_offsets": {
+        "3P1E0O4C": 0,
+        "4P1E1O6C": 1000,
+        "7P2E2O8C": 2000
+      },
+      "reserved_historical_protocol": {
+        "schema": "terl.batch01.evaluation.v1",
+        "checkpoint_interval": 25000,
+        "sample_torch_offset": 100000,
+        "screen": {
+          "seed_base": 2026100800,
+          "max_episodes_per_mode": 20,
+          "regular_episodes_per_mode": 10
+        },
+        "screen_milestones": [
+          0,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          750000,
+          1000000
+        ],
+        "selection": {
+          "seed_base": 2036100800,
+          "max_episodes_per_mode": 20,
+          "top_screen_candidates": 3
+        },
+        "final": {
+          "seed_base": 2046101800,
+          "max_episodes_per_mode": 50
+        },
+        "modes": [
+          "argmax",
+          "sample"
+        ],
+        "selection_order": [
+          "mean_normal_capture_rate",
+          "negative_mean_collision_rate",
+          "mean_strict_geometry_rate",
+          "mean_ring3_rate",
+          "negative_step"
+        ],
+        "late_stage_window_checkpoints": 5,
+        "entropy_comparison": "within declared probability measure only",
+        "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
+      },
+      "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
     },
-    "central_batch01_proposed_domains": {
-      "screen": 2056100900,
-      "selection": 2066100900,
-      "final": 2076100900
-    },
-    "assessment": "Candidate intentionally preserves T0 historical domains; fresh Batch01 held-out domains were proposed centrally. QA must audit historical-vs-new-run separation and return reconciliation before Master freezes a training contract; do not mutate pinned candidate/lock.",
-    "verified_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
-    "verified_at": "2026-10-09T17:38:31.228981+08:00",
-    "status": "ARM_SEED_CONTRACT_PROPOSED_NOT_FROZEN",
-    "no_observed_t0_final_reuse": true,
-    "required_qa": "Materialize actual screen/selection/final seed lists for each future ARM/scene, prove cross-domain and T0-observed-final disjointness plus paired-physical/action-RNG separation; Master explicitly freezes before any ARM run"
+    "actual_historical_and_new_seed_audit": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/new_seed_contract.json"
   },
   "core_v1_status": "CORE_V1_QA_BLOCKED",
   "base_freeze_status": "BASE_FREEZE_BLOCKED",
@@ -506,5 +586,88 @@
     "R1": "geometry/recipient/target and event parity; explicit raw/native/shaping/shaped telemetry",
     "P1": "controlled full-state 775k fork; live optimizer overrides; single-variable changes",
     "C0": "B2/B3 fixes; actual physical continuous AW/AW9 parity; latent/Jacobian/density/PPO/evaluator"
+  },
+  "historical_v2_snapshot": {
+    "core": {
+      "status": "CORE_V3_SELFTEST_PASS",
+      "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-v3-20261009",
+      "observed_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+      "candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "delivery_head": "5ecb8774612f2002576b66f9a8a6cba46dad09a6",
+      "branch": "experiment/terl-mappo-batch01-v3-20261009",
+      "canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+      "common_source_count": 100,
+      "verification": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/core_v3_verification.json",
+      "core_test_report": {
+        "passed": 77,
+        "cuda_skipped": 3,
+        "failed": 0,
+        "independent_qa": false
+      },
+      "v1_status": "CORE_V1_QA_BLOCKED",
+      "v1_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+      "v1_qa_report_head": "974cdd171898a261b7c862622463537cdc31a487",
+      "v2_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "v2_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+      "fix_task_status": "DELIVERED_REPORTED_FIXED_PENDING_INDEPENDENT_A3",
+      "requirements": "artifacts/2026-10-09_terl_mappo_batch01/master03/core_v2_reqa_requirements.json",
+      "repair_report": "docs/TERL_MAPPO_BATCH01_BASE_QA_REPAIR_V2_20261009_ZH.md",
+      "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
+    },
+    "qa": {
+      "status": "QA_PENDING",
+      "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
+      "observed_head": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "tested_candidate_sha": null,
+      "report_head": null,
+      "observed_branch": "audit/terl-mappo-batch01-v2-recheck-20261009",
+      "requested_candidate_sha": "0b2686a06e900a090a34fd3be4e0143ba3f794f0",
+      "requested_canonical_lock_sha256": "9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19",
+      "QA_SAME_SHA": "PENDING",
+      "interim_observation": "artifacts/2026-10-09_terl_mappo_batch01/master02/qa_interim_observation.json",
+      "cuda_smoke_lease_id": "B01-QA-CUDA-V2-863a0cf-20261009T173831",
+      "cuda_smoke_status": "GRANTED_CONDITIONAL_PREFLIGHT_NOT_EXECUTED_BY_MASTER",
+      "handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+      "verdict": "PENDING",
+      "report_sha256": null,
+      "receipt": null,
+      "v2_retest_status": "WAITING_QA_V2",
+      "v2_tested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "v2_report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
+      "v2_handoff": "docs/experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+      "historical_v1_handoff": "docs/experiments/BATCH01_BASE_INDEPENDENT_QA_HANDOFF_20261009_ZH.md",
+      "historical_cuda_smoke_lease_id": "B01-QA-CUDA-40bd91b-20261009T151855",
+      "historical_v1_review": {
+        "verdict": "BASE_QA_BLOCK",
+        "tested_candidate_sha": "40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a",
+        "report_head": "974cdd171898a261b7c862622463537cdc31a487",
+        "report_sha256": "72f29ce45f50379f1179d32188aca2c02a230ad90fefc8b48fe118089e7f36b3",
+        "receipt": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_block_receipt.json",
+        "observed_branch": "audit/terl-mappo-batch01-base-qa-20261009",
+        "cuda_smoke_status": "NOT_EXECUTED_QA_CPU_ONLY_LEASE_CLOSED"
+      },
+      "observed_worktree_status": "?? artifacts/2026-10-09_batch01_v2_independent_qa/",
+      "uncommitted_activity_is_not_acceptance": true,
+      "a3_independent_signature": false,
+      "v2_verdict": "BASE_QA_BLOCK"
+    },
+    "received_independent_qa": {
+      "report_head": "c20b632841485cd6fa1de4a2d0ef0e3dce96364d",
+      "verdict": "BASE_QA_BLOCK",
+      "tested_candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+      "lock": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
+    }
+  },
+  "provisional_training_launched": false,
+  "engineering_benchmark_executed": false,
+  "pilot_gpu_leases": [],
+  "pilot_authorization": {
+    "source": "user CoCap Batch01 Commander V2",
+    "maximum_additional_joint_decisions_per_run": 25000,
+    "independent_qa_pending": true,
+    "formal_evidence": false,
+    "automatic_extension": false,
+    "retroactive_promotion": false,
+    "all_line_specific_science_resource_resume_smokes_required": true
   }
 }

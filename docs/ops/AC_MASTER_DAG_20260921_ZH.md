@@ -1,3 +1,11 @@
+# 2026-10-09 Commander V3 当前状态（覆盖以下历史快照）
+
+**CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED**。科学candidate `0b2686a06e900a090a34fd3be4e0143ba3f794f0`，canonical lock `9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19`；交付HEAD `5ecb8774612f2002576b66f9a8a6cba46dad09a6`。最终CPU83 passed+CUDA3 passed；A3原脚本12探针由同一Commander执行，不能冒充独立签字。V2独立报告c20b632的BASE_QA_BLOCK完整保留。BASE共同正式parent仍为空。
+
+用户Commander V2授权一个Agent实施所有ARM，并在对应科学/资源门禁通过后运行最多25k additional joint decisions的明确PROVISIONAL pilot。正式运行仍要求独立V3 QA及冻结；pilot不可自动扩预算、使用final或追认为正式证据。中央run_registry的`pilot_runs`与正式`runs`区分。新ARM协议绑定2056100900/2066100900/2076100900，sample offset100000、scene offsets0/1000/2000，与历史实际种子不重叠；T0历史final不变。最新进程/门禁读取run registry及各run progress.json。
+
+---
+
 # AC MASTER DAG（2026-09-21）
 
 ## 2026-10-09 A1-MASTER-04 Core V2接收与独立QA授权（覆盖下方历史快照）

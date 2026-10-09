@@ -21,7 +21,50 @@ def load(path):
     return json.loads(path.read_text())
 
 
+def validate_v3(require_ready=False):
+    state=load(DIRECTORY/'batch_state.json');lock=load(DIRECTORY/'batch_contract.lock.json');registry=load(DIRECTORY/'run_registry.json')
+    central=load(ROOT/'artifacts/2026-09-21_ac_master_dag/state.json');errors=[]
+    def check(condition,message):
+        if not condition:errors.append(message)
+    check(state['BATCH01_BASE_SHA'] is None and lock['BATCH01_BASE_SHA'] is None and registry['BATCH01_BASE_SHA'] is None and central['batch01']['BATCH01_BASE_SHA'] is None,'unreviewed V3 cannot be frozen')
+    check(state['status']==lock['status']==central['batch01']['status']=='WAITING_QA_V3','V3 central status inconsistent')
+    check(state['QA_SAME_SHA']==lock['QA_SAME_SHA']==registry['QA_SAME_SHA']==central['batch01']['QA_SAME_SHA']=='PENDING','independent V3 QA cannot be self-signed')
+    check(state['core']['status']=='CORE_V3_SELFTEST_PASS' and state['qa']['status']=='QA_PENDING','selftest and independent QA statuses conflated')
+    check(not state['qa'].get('a3_independent_signature') and state['qa']['report_head'] is None and state['qa']['tested_candidate_sha'] is None,'fabricated V3 independent signature')
+    check(state['base_freeze_status']==lock['base_freeze_status']==registry['base_freeze_status']==central['batch01']['base_freeze_status']=='BASE_FREEZE_BLOCKED','freeze gate silently removed')
+    check(state['historical_v2_snapshot']['received_independent_qa']['verdict']=='BASE_QA_BLOCK','V2 QA evidence lost')
+    check(state['gates']==lock['gates']==central['batch01']['gates'],'launch gates inconsistent')
+    receipt=load(ROOT/lock['core_verification_ref']);candidate_lock=load(ROOT/lock['candidate_lock_ref'])
+    digest=hashlib.sha256(json.dumps(candidate_lock,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
+    check(receipt['candidate_sha']==lock['core_candidate_sha']==state['core']['candidate_sha']==registry['core_candidate_sha']==central['batch01']['core_candidate_sha'],'V3 candidate pins inconsistent')
+    check(receipt['delivery_head']==lock['core_delivery_head']==state['core']['delivery_head']==registry['core_delivery_head']==central['batch01']['core_delivery_head'],'V3 delivery pins inconsistent')
+    check(digest==receipt['canonical_lock_sha256']==lock['core_candidate_canonical_lock_sha256']==state['core']['canonical_lock_sha256']==registry['core_candidate_canonical_lock_sha256'],'V3 lock pin inconsistent')
+    check(receipt['core_selftests']=='CORE_V3_SELFTEST_PASS' and not receipt['independent_qa'] and not receipt['base_frozen'],'selftest receipt misclassified')
+    check(lock['candidate_common_source_hashes']==candidate_lock['common_sources'],'candidate source hashes inconsistent')
+    for path,d in receipt['source_hash_checks'].items():check(set(d.values())=={candidate_lock['common_sources'][path]},'candidate/delivery/worktree drift: '+path)
+    check(set(receipt['source_hash_checks'])==set(candidate_lock['common_sources']),'source verification incomplete')
+    check(not state['training_launched'] and not state['leases'],'formal training or leases present before freeze')
+    check(state['storage']['personal_quota']=='UNKNOWN' and not state['storage']['shared_space_is_exclusive_quota'] and not state['storage']['cleanup_authorized'],'storage scope drift')
+    check(state['pilot_authorization']['maximum_additional_joint_decisions_per_run']==25000 and not state['pilot_authorization']['automatic_extension'] and not state['pilot_authorization']['retroactive_promotion'],'pilot authorization broadened')
+    ids=[r['run_id'] for r in registry['runs']+registry.get('pilot_runs',[])]
+    check(len(ids)==len(set(ids)),'duplicate run id')
+    for run in registry['runs']:
+        if run.get('historical_evidence_only'):check(run['status']=='COMPLETE','T0 historical status changed');continue
+        check(run['status']=='WAITING_BASE' and run['base_sha'] is None and run['formal_results'] is None,'formal ARM unlocked before independent QA')
+    for run in registry.get('pilot_runs',[]):
+        check(run['execution_mode']=='PROVISIONAL' and run['max_additional_joint_decisions']<=25000,'unbounded or mislabeled pilot')
+        check(not run.get('formal_evidence') and not run.get('retroactive_promotion'),'pilot treated as formal evidence')
+        check(run['source_candidate_sha']==receipt['candidate_sha'] and run['source_lock_sha256']==digest,'pilot source pin drift')
+        check(run['authorized_end_step']-run['start_step']<=25000,'pilot endpoint exceeds cap')
+        if run.get('status')=='PROVISIONAL_RUNNING':
+            check(run.get('pid') and run.get('gpu_uuid') and run.get('step',run['start_step'])>run['start_step'] and run.get('update',0)>run.get('start_update',0),'RUNNING without actual PPO update evidence')
+    if require_ready:errors.append('QA_PENDING: independent V3 signature and final BASE freeze are required for formal readiness')
+    return {'schema':'terl-mappo-batch-metadata-validation-v3','passed':not errors,'errors':errors,'batch_status':state['status'],'BATCH01_BASE_SHA':None,'core_candidate_sha':receipt['candidate_sha'],'QA_SAME_SHA':'PENDING','independent_qa':False,'execution_performed':False,'readiness_requested':require_ready}
+
+
 def validate(require_ready=False):
+    if load(DIRECTORY / "batch_state.json").get("status") == "WAITING_QA_V3":
+        return validate_v3(require_ready)
     lock = load(DIRECTORY / 'batch_contract.lock.json')
     state = load(DIRECTORY / 'batch_state.json')
     registry = load(DIRECTORY / 'run_registry.json')

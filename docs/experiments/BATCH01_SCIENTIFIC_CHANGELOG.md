@@ -50,3 +50,9 @@ A0所有原件hash复核一致，容量审计/保护清单继续有效；共享�
 ## B01-014 — 2026-10-09T17:38:31.228981+08:00 评估seed差异重核与A3 handoff
 
 Core V2 T0历史2026100800/2036100800/2046101800保持；未来ARM提案2056100900/2066100900/2076100900仍不同、未冻结。必须显式实际集合冻结与QA disjoint/paired-physical/action-RNG核查，禁止把观察过T0 final当新held-out。未更改九轴矩阵/预算/初始化。A3接口：[V2 handoff](BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)，CPU/static立即可行；用户交同SHA独立结论及lease收尾后唤醒Master，后续评审才能决定冻结。
+
+
+## Commander V3 2026-10-09
+
+- V2→V3：实际code/source编译比对、startup execution witness、fail-closed缓存负测、新ARM protocol绑定；不修改T0环境/actor/critic/PPO/reward/动力学。candidate0b2686a，lock9ca6c24e…cdf19。
+- CORE_V3_SELFTEST_PASS不等于A3独立验收。BASE未冻结；用户只允许合格且最多25k的PROVISIONAL pilots，不能追认。P1配对control和treatment保留完整775k状态，只有target_kl .02/.01差异。
