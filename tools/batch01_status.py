@@ -66,6 +66,11 @@ def main():
   state=read(DIRECTORY/'batch_state.json');central=read(ROOT/'artifacts/2026-09-21_ac_master_dag/state.json')
   launched=any(r.get('step',r['start_step'])>r['start_step'] for r in rows)
   state['provisional_training_launched']=launched;state['pilot_arm_states']={r['variant']:r['status'] for r in rows};state['updated_at']=now
+  for row in rows:
+   if row.get('scientific_quarantine') or row['source_candidate_sha']!=state['core']['candidate_sha']:continue
+   key='P1-'+row['variant'].split('-')[1] if row['variant'].startswith('p1-') else row['variant'].upper()
+   state.setdefault('engineering_arm_states',{})[key]=row['status']
+  central['batch01']['engineering_arm_states']=state.get('engineering_arm_states',{})
   central['batch01']['provisional_training_launched']=launched;central['batch01']['pilot_gpu_leases']=state['pilot_gpu_leases'];central['batch01']['pilot_runs']=[{'run_id':r['run_id'],'status':r['status'],'pid':r.get('pid'),'step':r.get('step'),'checkpoint':r.get('checkpoint')} for r in rows]
   central['updated_at']=now
   write(DIRECTORY/'batch_state.json',state);write(ROOT/'artifacts/2026-09-21_ac_master_dag/state.json',central)

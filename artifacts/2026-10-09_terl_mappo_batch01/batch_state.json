@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T14:52:38.826800+00:00",
+  "updated_at": "2026-10-09T15:00:15.119232+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -125,7 +125,7 @@
     "central_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
     "home_allocated_gib_at_audit_closing": 261.6022758483887,
     "shared_available_gib_at_audit_closing": 136.7727279663086,
-    "current_shared_available_gib": 130.6648941040039,
+    "current_shared_available_gib": 125.53423690795898,
     "personal_quota": "UNKNOWN",
     "shared_space_is_exclusive_quota": false,
     "five_arm_budget_gib": 74,
@@ -136,7 +136,7 @@
     "archive_authorized": false,
     "actual_reclaimed_bytes": 0,
     "formal_launch_requires_dynamic_output_mount_quota_retention_and_capacity_recheck": true,
-    "latest_recheck_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
+    "latest_recheck_ref": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/resource_snapshot_latest.json",
     "latest_resource_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/commander_v3/resource_snapshot_latest.json",
     "current_resource_observed_at": "2026-10-09T14:03:33.344923+00:00"
   },
@@ -763,9 +763,9 @@
     "c0": "QUARANTINED_PROVISIONAL"
   },
   "supervision": {
-    "status": "STOPPED_LOCK_WAIT_FIXED_PENDING_RESTART",
-    "tmux": "batch01_commander_v3_supervisor",
-    "pid": null,
+    "status": "MONITORING",
+    "tmux": "batch01_commander_v3r2_supervisor",
+    "pid": 1680038,
     "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
     "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
     "tool": "tools/batch01_supervise.py",
@@ -802,5 +802,24 @@
     "requirements": "docs/experiments/BATCH01_V3_QA_HANDOFF_20261009_ZH.md",
     "repair_report": "https://github.com/Jayyeah/cocap-voradj/blob/5ecb8774612f2002576b66f9a8a6cba46dad09a6/docs/TERL_MAPPO_BATCH01_BASE_V3_20261009_ZH.md",
     "historical_v1_delivery_head": "bdbd502ff2f071b0cac07a0d0d956a2f35015ea1"
+  },
+  "secondary_queue": {
+    "status": "WAITING_SHARED_GPU_SLOT",
+    "pid": 1680043,
+    "tmux": "batch01_commander_v3r2_queue",
+    "snapshot": "/home/yjq/rl/CoCap1/batch01-commander-runtime/v3r2_secondary_queue.json",
+    "tool": "tools/batch01_v3r2_queue.py",
+    "max_decisions_per_run": 25000,
+    "formal_training": false,
+    "automatic_restart": false,
+    "automatic_budget_extension": false
+  },
+  "engineering_arm_states": {
+    "P1-control": "PROVISIONAL_RUNNING",
+    "P1-treatment": "PROVISIONAL_RUNNING",
+    "R1": "PROVISIONAL_RUNNING",
+    "N1": "PROVISIONAL_RUNNING",
+    "T1": "V3R2_CPU_PASS_WAIT_GPU_CUDA_BENCHMARK_EVALUATOR",
+    "C0": "V3R2_CPU_PASS_WAIT_GPU_CUDA_BENCHMARK_EVALUATOR"
   }
 }
