@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-09T13:10:04.913690+00:00",
+  "updated_at": "2026-10-09T13:20:51.320047+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -12,9 +12,9 @@
     "CORE_CANDIDATE": "CORE_V3_SELFTEST_PASS",
     "INDEPENDENT_QA_SAME_SHA": "QA_PENDING",
     "BASE_FREEZE": "BASE_FREEZE_BLOCKED",
-    "ARM_DELTA_REVIEW": "ARM_SELFTEST_REQUIRED",
+    "ARM_DELTA_REVIEW": "P1_R1_N1_SELFTEST_PASS_T1_C0_IMPLEMENTING",
     "STORAGE_CAPACITY": "AUDIT_COMPLETE_DYNAMIC_RECHECK_REQUIRED",
-    "CONCURRENCY_BENCHMARK": "PROVISIONAL_PAIR_BENCHMARK_PENDING",
+    "CONCURRENCY_BENCHMARK": "FORMAL_PENDING_PROVISIONAL_GPU1_4WAY_PASS",
     "GPU_LEASE": "NOT_REQUESTED",
     "RUN_AUTHORIZATION": "FORMAL_BLOCKED_PROVISIONAL_MAX25K_USER_AUTHORIZED",
     "RUNTIME_SEMANTIC_ASSERTIONS": "CORE_V2_REPORTED_FIXED_PENDING_A3",
@@ -658,9 +658,27 @@
       "lock": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4"
     }
   },
-  "provisional_training_launched": false,
-  "engineering_benchmark_executed": false,
-  "pilot_gpu_leases": [],
+  "provisional_training_launched": true,
+  "engineering_benchmark_executed": true,
+  "pilot_gpu_leases": [
+    {
+      "id": "B01-COMMANDER-V3-GPU1-4WAY-PROVISIONAL",
+      "gpu": 1,
+      "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+      "runs": [
+        "B01-P1-CONTROL-PROV-V3-20261009",
+        "B01-P1-TREATMENT-PROV-V3-20261009",
+        "B01-R1-PROV-V3-20261009",
+        "B01-N1-PROV-V3-20261009"
+      ],
+      "maximum_compute_processes": 4,
+      "maximum_additional_decisions_per_run": 25000,
+      "expires_at": "2026-10-09T21:19:24.693809+00:00",
+      "formal": false,
+      "keep_reserve_gib": 30,
+      "max_output_gib_per_run": 8
+    }
+  ],
   "pilot_authorization": {
     "source": "user CoCap Batch01 Commander V2",
     "maximum_additional_joint_decisions_per_run": 25000,
@@ -669,5 +687,11 @@
     "automatic_extension": false,
     "retroactive_promotion": false,
     "all_line_specific_science_resource_resume_smokes_required": true
+  },
+  "pilot_arm_states": {
+    "p1-control": "PROVISIONAL_RUNNING",
+    "p1-treatment": "PROVISIONAL_RUNNING",
+    "r1": "PROVISIONAL_RUNNING",
+    "n1": "PROVISIONAL_RUNNING"
   }
 }

@@ -1,3 +1,7 @@
+## Commander 首批pilot实际启动
+
+GPU1四路并发门禁通过：P1-control PID1598749、P1-treatment PID1598755、R1 PID1598763、N1 PID1598768，均真实PPO update后登记PROVISIONAL_RUNNING。各自最多追加25k，分别停于800k/800k/25k/25k，禁止自动扩展。GPU0被hl训练PID1592050占用，未操作该任务；曾误起的短预检已结束且完整记录资源门禁事件，所有pilot只使用GPU1。实时进程/heartbeat/checkpoint/evaluation通过`python tools/batch01_status.py --json`读取，CLI断连不影响tmux及run registry恢复。BASE独立QA仍待签字，正式RUNNING=0。
+
 # 2026-10-09 Commander V3 当前状态（覆盖以下历史快照）
 
 **CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED**。科学candidate `0b2686a06e900a090a34fd3be4e0143ba3f794f0`，canonical lock `9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19`；交付HEAD `5ecb8774612f2002576b66f9a8a6cba46dad09a6`。最终CPU83 passed+CUDA3 passed；A3原脚本12探针由同一Commander执行，不能冒充独立签字。V2独立报告c20b632的BASE_QA_BLOCK完整保留。BASE共同正式parent仍为空。
