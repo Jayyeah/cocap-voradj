@@ -151,3 +151,5 @@ evaluator初始每run最多2 CPU workers，**全机Batch初始总额4 workers**�
 ## 9. 交付与复核
 
 中央登记校验工具：[validate_terl_mappo_batch01.py](../../tools/validate_terl_mappo_batch01.py)，仅验证元数据一致性、不启动环境或模型。正常commit/push中央branch，push后fetch并直接ls-remote核验；最终交付HEAD由Git/final handoff给出，避免把包含自身的commit SHA写进本commit。当前附件中的HEAD字段明确是恢复或核验快照，不能冒充未来交付SHA。
+
+交付核验：metadata consistency PASS，readiness按预期FAIL（BASE/Core/QA/Storage/benchmark/lease/授权尚未完成）。规划commit `a5d5072c16e0cb0e1f38c2dfc4f1eb3ad95921ff` 已完成正常push/fetch并核验local=origin=GitHub；[remote_verification.json](../../artifacts/2026-10-09_terl_mappo_batch01/remote_verification.json)保存该核验点。最终回执commit独立push/fetch/ls-remote核验；最终HEAD见Git与本轮handoff。

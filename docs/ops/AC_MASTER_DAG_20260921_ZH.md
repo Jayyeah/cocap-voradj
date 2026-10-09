@@ -14,6 +14,7 @@
 - **EXP-PERSIST-01 STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE** 保持；strict service9/20、13/20、14/20，relaxed三波capture均20/20、service13/20、13/20、14/20。联合N0继续，第二批E1/R2/N2/V1/M1/M2仅PREREGISTERED_LOCKED，无实现或训练授权。
 - 原TERL/Evidence列出的trainer/controller/evaluator PID已退出；其它用户PID1335255同时使用两卡，受保护。当前快照与source核验：[recovery_snapshot.json](../../artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json)。历史gpu lease和下方“仍运行”段落不能作当前可用性依据。
 - **NEXT WAKE-UP**：用户转交Core candidate、同SHA独立QA、Storage审计与五线提案。无time-based无限GPU轮询；本轮完成后commit/push/fetch/ls-remote核验并结束。
+- 元数据一致性PASS；`--require-ready`按预期拒绝未冻结BASE和未通过运行门禁。规划交付 `a5d5072c16e0cb0e1f38c2dfc4f1eb3ad95921ff` 已正常push，完成fetch后local=origin=GitHub ls-remote；[同步回执](../../artifacts/2026-10-09_terl_mappo_batch01/remote_verification.json)记录其自身commit之前的核验点，最终回执commit另经push/fetch核验并在handoff给出。
 
 ## 2026-10-08 当前集成状态（覆盖下方历史运行快照）
 
