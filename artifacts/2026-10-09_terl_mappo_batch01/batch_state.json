@@ -1,0 +1,204 @@
+{
+  "schema": "terl-mappo-batch-state-v1",
+  "batch_id": "TERL-MAPPO-BATCH01",
+  "owner": "MASTER",
+  "updated_at": "2026-10-09T14:17:26.660225+08:00",
+  "status": "WAITING_BASE",
+  "BATCH01_BASE_SHA": null,
+  "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
+  "base_contract": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
+  "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+  "gates": {
+    "CORE_CANDIDATE": "WAITING_CORE",
+    "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+    "BASE_FREEZE": "WAITING_BASE",
+    "ARM_DELTA_REVIEW": "WAITING_BASE",
+    "STORAGE_CAPACITY": "WAITING_STORAGE",
+    "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+    "GPU_LEASE": "NOT_REQUESTED",
+    "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
+    "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+  },
+  "training_launched": false,
+  "benchmark_executed": false,
+  "leases": [],
+  "arm_states": {
+    "T1": "WAITING_BASE",
+    "N1": "WAITING_BASE",
+    "R1": "WAITING_BASE",
+    "P1": "WAITING_BASE",
+    "C0": "WAITING_BASE"
+  },
+  "historical_anchor": {
+    "T0": "COMPLETE",
+    "batch_base_binding": "WAITING_BASE"
+  },
+  "T2": {
+    "status": "DEFERRED",
+    "trigger": "T1 failure -> Master review need for multiple seeds; no automatic launch"
+  },
+  "core": {
+    "status": "WAITING_CORE",
+    "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-base-20261009",
+    "observed_head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+    "candidate_sha": null
+  },
+  "qa": {
+    "status": "WAITING_QA",
+    "observed_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
+    "observed_head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+    "tested_candidate_sha": null,
+    "report_head": null
+  },
+  "storage": {
+    "status": "WAITING_STORAGE",
+    "audit_id": null,
+    "snapshot_available_gib": 136.77510452270508,
+    "snapshot_is_not_capacity_pass": true
+  },
+  "concurrency_proposal": {
+    "target_per_gpu": [
+      3,
+      4
+    ],
+    "permitted_reduction_per_gpu": [
+      1,
+      2
+    ],
+    "ladder": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "repeats_per_level": 3,
+    "warmup_decisions": 256,
+    "measured_decisions_per_run": 2048,
+    "window_wall_seconds_cap": 300,
+    "global_initial_evaluator_workers": 4,
+    "per_run_initial_evaluator_workers_cap": 2,
+    "primary_metric": "sum valid completed joint decisions / common measurement wall time; report active transitions and PPO updates separately",
+    "required_metrics": [
+      "per_scene_throughput",
+      "per_run_throughput",
+      "total_effective_throughput",
+      "CPU_per_core_load_and_threads",
+      "RAM_RSS_and_swap_growth",
+      "VRAM_peak_and_headroom",
+      "GPU_util_temperature",
+      "evaluator_pending_oldest_age_rate_and_drain_ETA",
+      "disk_write_bytes_s_iowait_save_fsync_p95",
+      "protected_job_heartbeat"
+    ],
+    "acceptance_proposal": {
+      "incremental_total_throughput_ratio_min": 1.1,
+      "per_run_vs_solo_ratio_min": 0.5,
+      "available_cpu_headroom_fraction_min": 0.25,
+      "iowait_p95_percent_max": 10,
+      "ram_headroom_gib_min": 16,
+      "ram_headroom_fraction_min": 0.2,
+      "vram_headroom_gib_min": 8,
+      "vram_headroom_fraction_min": 0.2,
+      "checkpoint_p95_vs_solo_max": 2,
+      "storage_safety_margin_gib_min": 15,
+      "no_oom_nonfinite_stall_or_sustained_swap_growth": true,
+      "evaluator_backlog_drain_within_checkpoint_period": true
+    },
+    "order": [
+      "CORE_QA_FREEZE",
+      "STORAGE_PASS",
+      "BOUNDED_SINGLE_AND_MIXED_BENCHMARK_LEASE",
+      "T1_GPU0_AND_P1_PAIRED_GPU1_CAPACITY_DEPENDENT",
+      "N1",
+      "R1",
+      "C0_AFTER_ACTION_QA"
+    ],
+    "status": "DESIGNED_NOT_EXECUTED_NOT_AUTHORIZED"
+  },
+  "batch02_preregistration": [
+    {
+      "task_id": "BATCH02-E1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "T1_SCALE_REVIEW",
+        "T0_P1_STATE_COMPATIBILITY",
+        "CORE_QA_RUNTIME_ASSERTIONS"
+      ],
+      "expected_contract_delta": "MarineEnv->VorAdj Forward-FinalV2 environment/physics/current/APF/spawn/collision/boundary/terminal bridge",
+      "parallel_cpu_preparation": "CPU source delta and paired transitions fixture design",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-R2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "R1_DIAGNOSTIC",
+        "E1_PASS",
+        "REPRESENTATION_REWARD_NON_NULL_GATES"
+      ],
+      "expected_contract_delta": "Full Final Capture CR-MS/support/goal/safety/clock and credit/event semantics",
+      "parallel_cpu_preparation": "Reward/component/event ledger",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-N2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "N1_STRUCTURE_INFORMATION_ISOLATION_PASS",
+        "E1_PASS"
+      ],
+      "expected_contract_delta": "Full CoCap self9/22slot/NormSenseV2/detector/ordering/role/VorAdj observation; no automaticZ/local-friendlyV3",
+      "parallel_cpu_preparation": "Information and mask mapping",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-V1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "E1_PASS",
+        "COVERAGE_REWARD_INFORMATION_NON_NULL_GATES"
+      ],
+      "expected_contract_delta": "Pure Coverage no enemy, CE/PBRS/hold/safety and coverage terminal/time",
+      "parallel_cpu_preparation": "Positive-control and evaluator audit",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-M1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "E1_PASS",
+        "R2_PASS",
+        "N2_PASS",
+        "V1_PASS",
+        "CAPTURE_RECOVERY_RETENTION_GATE",
+        "EXPLICIT_FULL_TASK_PPO_GATE_REVIEW"
+      ],
+      "expected_contract_delta": "Mixed phase/reward clock/post-capture recovery/CE/terminal service",
+      "parallel_cpu_preparation": "Phase-state machine and held-out manifest",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-M2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "N2_READY",
+        "M1_READY",
+        "EVIDENCE_CORRECTED_FINAL_AUDIT_PASS",
+        "PERSISTENT_N0_JOINT_REVIEW"
+      ],
+      "expected_contract_delta": "Evidence/Z local-vs-global information propagation/slot/TTL/update, global oracle separately labelled",
+      "parallel_cpu_preparation": "Handoff and no-leakage/propagation diagnostics",
+      "implementation_authorized": false,
+      "training_authorized": false
+    }
+  ],
+  "version_migrations": [],
+  "incidents": [],
+  "next_wake_up": "User forwards Core candidate, independent QA same-SHA report, and Storage capacity audit; no time-based GPU polling"
+}

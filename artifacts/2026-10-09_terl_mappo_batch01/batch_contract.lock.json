@@ -1,0 +1,187 @@
+{
+  "schema": "terl-mappo-batch-contract-lock-v1",
+  "batch_id": "TERL-MAPPO-BATCH01",
+  "updated_at": "2026-10-09T14:17:26.660225+08:00",
+  "owner": "MASTER",
+  "status": "WAITING_BASE",
+  "base_version": null,
+  "BATCH01_BASE_SHA": null,
+  "base_lock_sha256": null,
+  "core_candidate_sha": null,
+  "core_manifest_sha256": null,
+  "qa_tested_candidate_sha": null,
+  "qa_report_head": null,
+  "qa_report_sha256": null,
+  "common_source_hashes": {},
+  "dependency_lock_sha256": null,
+  "evaluator_sha256": null,
+  "scientific_manifest_sha256": null,
+  "candidate_seed_source_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+  "candidate_seed_source_is_not_frozen_base": true,
+  "freeze_requires": [
+    "CORE_PUSHED_CANDIDATE_AND_MANIFEST",
+    "INDEPENDENT_QA_SAME_CANDIDATE_PASS",
+    "MASTER_REVIEW_AND_REAL_SHA_LOCK"
+  ],
+  "lock_digest_algorithm": "sha256 canonical JSON UTF8 sorted keys separators comma/colon excluding base_lock_sha256; pending until freeze",
+  "common_code_policy": "Common PPO/native environment/evaluator/dependencies identical hash in all arms; only explicitly reviewed arm plugin/config deltas allowed",
+  "process_code_policy": "Fixed clean immutable scientific source tree per run; no hot replacement; full import consumers and vendor/dependencies hashed before launch and resume",
+  "authorization_scope": "PLANNING_REGISTRATION_OFFLINE_FACT_RECOVERY_ONLY",
+  "long_training_authorized": false,
+  "gpu_benchmark_executed": false,
+  "gpu_leases_granted": [],
+  "t0_runtime_reference": {
+    "counts": [
+      3,
+      1,
+      0,
+      4
+    ],
+    "map": [
+      120.0,
+      120.0
+    ],
+    "spawn_min_pe": 10.0,
+    "dt": 0.05,
+    "integration_substeps": 10,
+    "decision_seconds": 0.5,
+    "pursuer_max_speed": 3.0,
+    "evader_max_speed": 3.5,
+    "aw9": [
+      [
+        -0.4,
+        -0.5235987755982988
+      ],
+      [
+        -0.4,
+        0.0
+      ],
+      [
+        -0.4,
+        0.5235987755982988
+      ],
+      [
+        0.0,
+        -0.5235987755982988
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.5235987755982988
+      ],
+      [
+        0.4,
+        -0.5235987755982988
+      ],
+      [
+        0.4,
+        0.0
+      ],
+      [
+        0.4,
+        0.5235987755982988
+      ]
+    ],
+    "capture_distance": 8.0,
+    "related_distance": 18.0,
+    "goal_reward": 120.0,
+    "distance_reward": 5.0,
+    "timestep_penalty": -1.0,
+    "emergency_penalty": -5.0,
+    "collision_penalty": -80.0,
+    "boundary_penalty": -5.0,
+    "decay_factor": -0.05,
+    "evenly_distributed_reward": 5.0,
+    "unevenly_distributed_reward": -10.0,
+    "perception_range": 20.0,
+    "token_count": 19,
+    "horizon_decisions": 3001,
+    "episode_reset_min_active": 3,
+    "collision_semantics": "native_end_of_decision",
+    "enemy_distance_filter": false
+  },
+  "t0_ppo_reference": {
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_param": 0.2,
+    "ppo_epochs": 3,
+    "minibatches": 2,
+    "actor_lr": 3e-05,
+    "critic_lr": 0.0001,
+    "entropy_coef": 0.01,
+    "value_coef": 1.0,
+    "max_grad_norm": 0.5,
+    "target_kl": 0.02,
+    "value_norm": true,
+    "value_norm_beta": 0.99999,
+    "value_norm_epsilon": 1e-05,
+    "rollout_length": 256,
+    "adam_epsilon": 1e-05
+  },
+  "evaluation_proposal": {
+    "status": "PROPOSED_NOT_FROZEN",
+    "screen_seed_base": 2056100900,
+    "selection_seed_base": 2066100900,
+    "final_seed_base": 2076100900,
+    "scene_seed_offset": 100000,
+    "physical_seeds_paired_within_scene": true,
+    "action_sampling_rng_isolated": true,
+    "old_seed_domains_and_actual_manifest_disjoint_check_required": true,
+    "screen_regular_per_mode": 10,
+    "screen_milestone_per_mode": 20,
+    "selection_top_screen_candidates": 3,
+    "selection_per_mode": 20,
+    "final_per_mode": 50,
+    "selection_rule": "pooled normal, lower collision, strict, ring3, earliest step; never use final for selection",
+    "discrete_modes": [
+      "argmax",
+      "sample"
+    ],
+    "continuous_modes": [
+      "deterministic_mean",
+      "sample"
+    ],
+    "parameter_updates": 0,
+    "horizon_and_spawn": "full training scene semantics, not original built-in1501/>20m evaluator"
+  },
+  "gates": {
+    "CORE_CANDIDATE": "WAITING_CORE",
+    "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+    "BASE_FREEZE": "WAITING_BASE",
+    "ARM_DELTA_REVIEW": "WAITING_BASE",
+    "STORAGE_CAPACITY": "WAITING_STORAGE",
+    "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+    "GPU_LEASE": "NOT_REQUESTED",
+    "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+    "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
+    "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+  },
+  "dynamic_repair_protocol": {
+    "states": [
+      "BASE-v1_FROZEN",
+      "ARM_DELTA_BRANCHES",
+      "COMMON_BUG_REGISTERED",
+      "CORE_FIX",
+      "QA_VERIFIED",
+      "BASE-v2_RELEASED",
+      "PER_RUN_IMPACT_REVIEW",
+      "RETRAIN_OR_CONTROLLED_MIGRATION"
+    ],
+    "no_hot_replace": true,
+    "old_base_and_artifacts_retained": true,
+    "semantic_change_axes_require_retrain_review": [
+      "reward",
+      "PPO",
+      "observation",
+      "terminal",
+      "physics",
+      "policy_likelihood"
+    ],
+    "paired_comparators_retraining_review_required": true
+  },
+  "immutable_base_archive_pattern": "artifacts/2026-10-09_terl_mappo_batch01/bases/BASE-v{version}/",
+  "qa_cuda_dependency_policy": "Candidate CPU storage audit may run before freeze; QA CUDA requires candidate Storage PASS and dedicated bounded smoke lease plus later authorization; all arms remain WAITING_BASE until QA and Master freeze"
+}

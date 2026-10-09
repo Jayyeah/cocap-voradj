@@ -2,6 +2,19 @@
 
 本文件与 `artifacts/2026-09-21_ac_master_dag/state.json` 是跨 session 的唯一中央状态。只有 MASTER 可以写这两个文件；child 只能在各自 branch/worktree/rundir 工作，并以结构化 handoff 返回结果。禁止 nested subagents。
 
+## 2026-10-09 TERL-MAPPO Batch01 中央规划（覆盖下方历史快照）
+
+- 本轮只恢复事实、规划与中央登记；没有新训练、benchmark、GPU lease或子Agent。恢复起点local=origin=GitHub `381b61dba6c94478ed23b712d39018fc70e2341f`，中央clean；最终交付HEAD由Git及handoff核验，不自引用。
+- **BATCH01-T0 COMPLETE**：TERL交付 `bb794ca8435f06b9fa5693c0fed98f567320decf`，seed9原生3P1E0obs4cores累计1M，selected775k。实际best/selected SHA256 `590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4`；逐局重算argmax/sample normal均45/50、collision均5/50，50个物理初态配对。1M末点normal均6/20，collision10/20与12/20；late degradation未作因果归因。
+- **BATCH01-T1/N1/R1/P1/C0与P1-control全部WAITING_BASE**。`BATCH01_BASE_SHA=null`，BASE-v1尚未冻结。Core交真实candidate并push、独立QA验证同SHA、Master审后才填BASE；T0交付SHA不能替代新BASE。T2 deferred，T1失败仅触发多seed需求评审。
+- 完整矩阵与四参照九轴差异：[TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)。机器状态/锁/run registry/迁移账本：[Batch01目录](../../artifacts/2026-10-09_terl_mappo_batch01/)。科学changelog：[BATCH01_SCIENTIFIC_CHANGELOG.md](../experiments/BATCH01_SCIENTIFIC_CHANGELOG.md)；五线统一接口：[BATCH01_HANDOFF_TEMPLATE_20261009_ZH.md](../experiments/BATCH01_HANDOFF_TEMPLATE_20261009_ZH.md)。中央附件只由Master写，与本文件/state有冲突时fail closed。
+- T1计划短程原生4P1E1obs6cores/>13m→7P2E2obs8cores/>15m；N1仅actor结构，原生信息不变；R1仅CR-MS类distance dense shaping；P1仅target_kl .02→.01，从775k完整状态分叉并登记zero-delta control；C0原生连续a/w及必要概率计算，物理边界/动力学保留。预算与阈值是提案，不是训练授权。
+- Storage容量审计未收到；Master磁盘/CPU/GPU快照不构成PASS。Storage PASS先于任何GPU lease；3–4/GPU是benchmark目标，允许1–2/GPU。benchmark需测总有效吞吐、CPU/RAM/VRAM、eval backlog和disk save/fsync，低GPU util不构成并发资格。进程科学source hash固定；common bug统一Core修、QA审、BASE-v2登记，禁止hot patch。
+- **EXP-EVIDENCE-01 TRAINING_COMPLETE / SELECTION_REPORTED_PENDING_AUDIT / LEGACY_FINAL_PRESENT / CORRECTED_FINAL_PENDING**：旧supervisor的本地未提交报告声称complete、Local S3 selected600k，但三臂来自旧final_heldout_50且Coverage时间n=0，corrected目录缺失。原selection快照保留为历史；等待Evidence owner核验fresh corrected final-only handoff，不启动训练、不提交其动态原件。
+- **EXP-PERSIST-01 STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE** 保持；strict service9/20、13/20、14/20，relaxed三波capture均20/20、service13/20、13/20、14/20。联合N0继续，第二批E1/R2/N2/V1/M1/M2仅PREREGISTERED_LOCKED，无实现或训练授权。
+- 原TERL/Evidence列出的trainer/controller/evaluator PID已退出；其它用户PID1335255同时使用两卡，受保护。当前快照与source核验：[recovery_snapshot.json](../../artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json)。历史gpu lease和下方“仍运行”段落不能作当前可用性依据。
+- **NEXT WAKE-UP**：用户转交Core candidate、同SHA独立QA、Storage审计与五线提案。无time-based无限GPU轮询；本轮完成后commit/push/fetch/ls-remote核验并结束。
+
 ## 2026-10-08 当前集成状态（覆盖下方历史运行快照）
 
 - 当前中文阶段总结：[COCAP_EXPERIMENT_STATUS_20261008_ZH.md](../COCAP_EXPERIMENT_STATUS_20261008_ZH.md)。完整 checkpoint、120局Persistent artifact、GIF、branch/worktree/GPU/process/disk 核验：[verification.json](../../artifacts/2026-10-08_experiment_integration/verification.json)。

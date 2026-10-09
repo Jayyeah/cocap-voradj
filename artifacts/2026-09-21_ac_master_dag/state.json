@@ -1,29 +1,30 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-08T23:26:49.226380+08:00",
+  "updated_at": "2026-10-09T14:17:26.660225+08:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
     "branch": "ops/ac-master-dag-20260921",
     "worktree": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
-    "head": "132960a34eae0a47d97385f3982204131943def7",
-    "remote_head": "132960a34eae0a47d97385f3982204131943def7",
+    "head": "381b61dba6c94478ed23b712d39018fc70e2341f",
+    "remote_head": "381b61dba6c94478ed23b712d39018fc70e2341f",
     "central_write_authority": true,
     "nested_subagents_forbidden": true,
     "child_parallelism_policy": "DYNAMIC_BY_SCIENTIFIC_DEPENDENCY_AND_REAL_RESOURCE_CAPACITY; NO_STATIC_CHILD_COUNT_LIMIT; MASTER_TO_CHILD_ONLY",
     "git_proxy": "127.0.0.1:17892",
     "max_push_attempts_per_blocked_upload": 2,
     "normal_pushes_allowed": true,
-    "last_reconciled_commit": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
-    "last_remote_fetch_at": "2026-10-08T23:18:42.735153+08:00",
+    "last_reconciled_commit": "381b61dba6c94478ed23b712d39018fc70e2341f",
+    "last_remote_fetch_at": "2026-10-09T14:17:26.660225+08:00",
     "last_push_at": "2026-10-08T23:26:49.226380+08:00",
-    "remote_sync_status": "PUSHED_SYNCED_VERIFIED",
-    "remote_sync_reason": "Four reviewed refs verified equal via post-push fetch and direct GitHub ls-remote. This state records the pre-receipt commit point; receipt commit is independently verified again in the final handoff.",
-    "reconciliation_base_head": "3940d87e3a12f8c3d51e8c68aa720e2370f7c1c0",
+    "remote_sync_status": "DELIVERY_PENDING_PUSH",
+    "remote_sync_reason": "Recovery refs verified; Batch01 planning delivery will be committed/pushed then verified independently. Snapshot HEAD is pre-delivery, not self-referential.",
+    "reconciliation_base_head": "381b61dba6c94478ed23b712d39018fc70e2341f",
     "last_push_verified_at": "2026-10-08T23:26:49.226380+08:00",
     "head_at_push_verification": "132960a34eae0a47d97385f3982204131943def7",
     "remote_head_at_push_verification": "132960a34eae0a47d97385f3982204131943def7",
-    "head_semantics": "HEAD at integration snapshot before the current delivery commit; current repository HEAD is authoritative."
+    "head_semantics": "HEAD at integration snapshot before the current delivery commit; current repository HEAD is authoritative.",
+    "session_scope": "Batch01 planning/central registration only; no new training/lease/subagents"
   },
   "repo": {
     "remote": "https://github.com/Jayyeah/cocap-voradj.git",
@@ -33,18 +34,26 @@
     "live_ac_head": "9e9a43281b204b31e6b80bd3228b2126bb6f7c60",
     "live_iqn_worktree": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919",
     "root_disk": {
-      "observed_at": "2026-10-08T23:18:42.735153+08:00",
+      "observed_at": "2026-10-09T14:17:26.660225+08:00",
+      "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
       "total_bytes": 982240026624,
-      "used_bytes": 781438484480,
-      "free_bytes": 150831026176,
-      "free_gib": 140.47233963012695,
-      "used_percent": 79.55677464762219
+      "available_bytes": 146861150208,
+      "free_bytes": 146861150208,
+      "available_gib": 136.77510452270508,
+      "inodes_total": 60981248,
+      "inodes_available": 57701757,
+      "filesystem_free_bytes": 196831666176,
+      "free_gib": 136.77510452270508,
+      "used_bytes": 785408360448,
+      "used_percent": 84.24692124655458,
+      "free_bytes_semantics": "Available to non-root; filesystem_free_bytes includes reserved blocks. Retain historical free_gib consumer as available_gib."
     }
   },
   "central_files": {
     "markdown": "docs/ops/AC_MASTER_DAG_20260921_ZH.md",
     "state": "artifacts/2026-09-21_ac_master_dag/state.json",
-    "only_master_may_write": true
+    "only_master_may_write": true,
+    "batch01_directory": "artifacts/2026-10-09_terl_mappo_batch01"
   },
   "fact_sources": {
     "training_sync": "docs/ops/TRAINING_PERFORMANCE_SYNC_20260921_ZH.md",
@@ -64,7 +73,14 @@
     ],
     "resume_continuity": "artifacts/2026-09-21_training_performance_sync/resume_continuity_summary.json",
     "current_experiment_integration": "artifacts/2026-10-08_experiment_integration/verification.json",
-    "current_stage_summary": "docs/COCAP_EXPERIMENT_STATUS_20261008_ZH.md"
+    "current_stage_summary": "docs/experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md",
+    "terl_mappo_final": {
+      "branch": "experiment/terl-backbone-mappo-20261008",
+      "head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+      "report": "docs/TERL_MAPPO_STAGE1_FINAL_20261009_ZH.md",
+      "recovery_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json"
+    },
+    "previous_stage_summary": "docs/COCAP_EXPERIMENT_STATUS_20261008_ZH.md"
   },
   "gpu_leases": {
     "sampling_contract": "10 samples at 1 second interval before each new GPU job and again after launch",
@@ -362,6 +378,13 @@
       "new_lease_requested": false,
       "gpus_busy_with_other_tasks": true,
       "source": "artifacts/2026-10-08_experiment_integration/verification.json"
+    },
+    "latest_current_observation": {
+      "observed_at": "2026-10-09T14:17:26.660225+08:00",
+      "snapshot": "artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json",
+      "batch01_leases": [],
+      "historical_gpu0_gpu1_fields_are_not_current_availability": true,
+      "protected_external_gpu_pid": 1335255
     }
   },
   "runtime_reconciliation": {
@@ -782,6 +805,68 @@
       },
       "persistent_processes_alive": false,
       "other_cocap_training": "Existing TERL-MAPPO PID992932 and its supervisor/evaluator remain untouched."
+    },
+    "batch01_20261009": {
+      "previous_cocap_pids": {
+        "14306": {
+          "proc_exists": false
+        },
+        "992900": {
+          "proc_exists": false
+        },
+        "992932": {
+          "proc_exists": false
+        },
+        "1040959": {
+          "proc_exists": false
+        },
+        "1045822": {
+          "proc_exists": false
+        },
+        "1001961": {
+          "proc_exists": false
+        },
+        "1001974": {
+          "proc_exists": false
+        },
+        "1001975": {
+          "proc_exists": false
+        }
+      },
+      "gpu_snapshot": {
+        "exit_code": 0,
+        "output": "index, uuid, name, utilization.gpu [%], memory.used [MiB], memory.free [MiB], temperature.gpu\n0, GPU-fb584eaf-0dbe-5487-d539-695f9124efb0, NVIDIA RTX A6000, 13 %, 3015 MiB, 45525 MiB, 65\n1, GPU-71b66566-de04-56b5-4331-8c12d4967672, NVIDIA RTX A6000, 14 %, 2524 MiB, 46017 MiB, 74",
+        "error": ""
+      },
+      "compute_processes": {
+        "exit_code": 0,
+        "output": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-fb584eaf-0dbe-5487-d539-695f9124efb0, 1335255, /data/disk2/home/hl/isaacsim-5.1.0/kit/python/bin/python3, 2950 MiB\nGPU-71b66566-de04-56b5-4331-8c12d4967672, 1335255, /data/disk2/home/hl/isaacsim-5.1.0/kit/python/bin/python3, 2473 MiB",
+        "error": ""
+      },
+      "cpu_count": 128,
+      "load_average": [
+        13.06591796875,
+        12.42333984375,
+        11.84228515625
+      ],
+      "memory": {
+        "exit_code": 0,
+        "output": "total        used        free      shared  buff/cache   available\nMem:           125Gi        29Gi        13Gi       100Mi        83Gi        95Gi\nSwap:          8.0Gi       2.3Gi       5.7Gi",
+        "error": ""
+      },
+      "disk": {
+        "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
+        "total_bytes": 982240026624,
+        "available_bytes": 146861150208,
+        "free_bytes": 196831666176,
+        "available_gib": 136.77510452270508,
+        "inodes_total": 60981248,
+        "inodes_available": 57701757
+      },
+      "storage_agent_capacity_audit": "NOT_RECEIVED",
+      "batch_gpu_lease": "NOT_REQUESTED",
+      "training_launched_this_turn": false,
+      "protected_external_gpu_pid": 1335255
     }
   },
   "tasks": [
@@ -1590,7 +1675,7 @@
     {
       "task_id": "EXP-EVIDENCE-01",
       "task_name": "LOCAL-BINARY-VS-Z05-VS-GLOBAL-ORACLE-PHASE-A",
-      "status": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING",
+      "status": "TRAINING_COMPLETE / SELECTION_REPORTED_PENDING_AUDIT / LEGACY_FINAL_PRESENT / CORRECTED_FINAL_PENDING",
       "dependencies": [
         "Z05_FORMAL_CONTRACT_FROZEN",
         "STATIC_RUNTIME_CHECKPOINT_TRAINING_PREFLIGHT_PASS"
@@ -1608,8 +1693,8 @@
         "current_gpu_use": "Other existing tasks remain active; no new lease requested"
       },
       "run_dir": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime",
-      "tmux": "iqn_evidence_phasea_20261006",
-      "pid": 14306,
+      "tmux": null,
+      "pid": null,
       "current_step": {
         "local_binary": {
           "stage1": 2000000,
@@ -1706,14 +1791,14 @@
         "formal_launch_snapshot_commit": "56a8b0a",
         "global_diagnostic_correction": "PASS: occupancy denominator and per-observation token shortfall; test and immutable Z05 evaluator smoke passed."
       },
-      "latest_formal": "Six training stages verified at 2M/700k/700k per representation. Local last 700k screening remains live; missing selection. Corrected paired 50-episode/scene final reports absent for all three arms.",
+      "latest_formal": "Six training stages completed. Old supervisor has exited and uncommitted Local S3 selection600k plus legacy three-arm final reports exist; selection/hash audit pending, corrected final directory absent, legacy Coverage success time n=0. Not a corrected-final COMPLETE gate.",
       "result_classification": "INCOMPLETE_FINAL_EVIDENCE_NO_SCIENTIFIC_ORDERING",
-      "next_gate": "Existing Local Stage3 screening -> balanced_floor selection + hash -> fresh current --final-only corrected paired 50/scene evaluation -> verify actual manifests, fingerprints, success timing and diagnostics. Do not invoke training --launch; no extra training/ablation. Old supervisor final output is not evidence of corrected diagnostics.",
+      "next_gate": "Fresh corrected final-only readiness and selection/hash/runtime/evaluator/timing/fingerprint audit by Evidence owner; user supplies handoff; no training",
       "user_approval_required": false,
-      "updated_at": "2026-10-08T23:18:42.735153+08:00",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00",
       "training_status": "TRAINING_COMPLETE",
-      "selection_status": "LOCAL_S1_S2_COMPLETE / LOCAL_S3_PENDING / GLOBAL_S1_S2_S3_COMPLETE",
-      "final_heldout_status": "FINAL_EVAL_PENDING",
+      "selection_status": "REPORTED_ALL_STAGES_SELECTED_PENDING_ARTIFACT_AUDIT",
+      "final_heldout_status": "LEGACY_FINAL_PRESENT / CORRECTED_FINAL_PENDING",
       "selected_checkpoints": [
         {
           "variant": "local_binary",
@@ -1918,7 +2003,136 @@
         "Do not queue a screening candidate while it is already running; current old process not hot-reloaded.",
         "Capture first strict CE success transition instead of absent episode_record field; exclude failed times.",
         "Add final-only/readiness entry points that do not call run_stage, trainer or training resource gate."
-      ]
+      ],
+      "local_uncommitted_completion_observation": {
+        "remote_report_status": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING at last committed audit",
+        "local_uncommitted_report_generated_at": "2026-10-09T01:25:40+0800",
+        "local_coordinator_status": "complete",
+        "local_coordinator_updated_at": "2026-10-09T01:25:40+0800",
+        "local_report_sha256": "d357ad28b2cdd13d69543f456f7f18d7bd4ed022802336af08203b88db4254d7",
+        "reported_stage_selection": [
+          {
+            "variant": "z05",
+            "stage": "stage1",
+            "selected_step": 1300000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage1/training/checkpoints/step_1300000.pt",
+            "checkpoint_sha256": "d35b7984d8ca03fa7b536811794578ff402e9b8ad48589e3318f2cb1077d702b",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": false
+          },
+          {
+            "variant": "z05",
+            "stage": "stage2",
+            "selected_step": 100000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage2/training/checkpoints/step_100000.pt",
+            "checkpoint_sha256": "f137f4fcd302c5ff8b7282609344a02e4c1702c84d15cefff9deda7c23d56f8c",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": false
+          },
+          {
+            "variant": "z05",
+            "stage": "stage3",
+            "selected_step": 600000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-z-unified-decay-dual-curriculum-20260919-runtime/z05/stages/stage3/training/checkpoints/step_600000.pt",
+            "checkpoint_sha256": "8ee5c162c32883984f72aa4be4b86e82338ae1e8d8c912011d181987a476d095",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": false
+          },
+          {
+            "variant": "local_binary",
+            "stage": "stage1",
+            "selected_step": 1500000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage1/training/checkpoints/step_1500000.pt",
+            "checkpoint_sha256": "18de0e289efc0fb07bd4b890c505c21da92f4092f6d2be155faa4265ffa938c6",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          },
+          {
+            "variant": "local_binary",
+            "stage": "stage2",
+            "selected_step": 300000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage2/training/checkpoints/step_300000.pt",
+            "checkpoint_sha256": "f6e0cf2172fc66e43a18bd1a77d6559a6c3ce6797c296f533703c3717e1ead5c",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          },
+          {
+            "variant": "local_binary",
+            "stage": "stage3",
+            "selected_step": 600000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/local_binary/stages/stage3/training/checkpoints/step_600000.pt",
+            "checkpoint_sha256": "86d6e30aa9d6e615df9da4d4a255550464b0ca8feb5ed64de9fc805e6b6f0a4d",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          },
+          {
+            "variant": "global_oracle",
+            "stage": "stage1",
+            "selected_step": 1700000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage1/training/checkpoints/step_1700000.pt",
+            "checkpoint_sha256": "f16b90fedd377e496f6a02e43e7eb6068d48446f6dc84af67845184107d74640",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          },
+          {
+            "variant": "global_oracle",
+            "stage": "stage2",
+            "selected_step": 700000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage2/training/checkpoints/step_700000.pt",
+            "checkpoint_sha256": "97e5561b0938b71c4698be3d7dff701fd332a3f2caa5e5da5cfd030e71309ca4",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          },
+          {
+            "variant": "global_oracle",
+            "stage": "stage3",
+            "selected_step": 300000,
+            "selected_checkpoint": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/global_oracle/stages/stage3/training/checkpoints/step_300000.pt",
+            "checkpoint_sha256": "b4e6566c4ac7860cdd802320f28c103b36b083e2651e1e335527c2782e16fbe0",
+            "selection_rule": "balanced_floor",
+            "retrained_in_phase_a": true
+          }
+        ],
+        "legacy_final_reports": [
+          {
+            "variant": "global_oracle",
+            "report_path": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/final_heldout_50/global_oracle/report.json",
+            "report_exists": true,
+            "coverage_time": {
+              "n": 0,
+              "mean": null,
+              "median": null,
+              "p90": null
+            }
+          },
+          {
+            "variant": "z05",
+            "report_path": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/final_heldout_50/z05/report.json",
+            "report_exists": true,
+            "coverage_time": {
+              "n": 0,
+              "mean": null,
+              "median": null,
+              "p90": null
+            }
+          },
+          {
+            "variant": "local_binary",
+            "report_path": "/home/yjq/rl/CoCap1/iqn-evidence-comparison-20261006-runtime/final_heldout_50/local_binary/report.json",
+            "report_exists": true,
+            "coverage_time": {
+              "n": 0,
+              "mean": null,
+              "median": null,
+              "p90": null
+            }
+          }
+        ],
+        "corrected_final_directory_exists": false,
+        "classification": "TRAINING_COMPLETE / SELECTION_REPORTED_PENDING_AUDIT / LEGACY_FINAL_PRESENT / CORRECTED_FINAL_PENDING",
+        "next_gate": "Fresh corrected final-only readiness and selection/hash/runtime/evaluator/timing/fingerprint audit by Evidence owner; user supplies handoff; no training"
+      },
+      "last_committed_selection_snapshot_is_historical": true
     },
     {
       "task_id": "EXP-PERSIST-01",
@@ -2094,29 +2308,323 @@
       "user_approval_required": false,
       "updated_at": "2026-10-08T23:18:42.735153+08:00",
       "artifact_verification": "artifacts/2026-10-08_experiment_integration/verification.json:persistent"
+    },
+    {
+      "task_id": "BATCH01-T0",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-T0-HISTORICAL",
+      "status": "COMPLETE",
+      "historical_evidence_only": true,
+      "dependencies": [],
+      "branch": "experiment/terl-backbone-mappo-20261008",
+      "head": "bb794ca8435f06b9fa5693c0fed98f567320decf",
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-T0-HISTORICAL",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": 1000000,
+      "selected_checkpoint_sha256": "590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4",
+      "classification": "TERL_MAPPO_STAGE1_LEARNABLE",
+      "next_gate": "Preserve verified anchor; no automatic resume",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-T1",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-T1",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-T1",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-N1",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-N1",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-N1",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-R1",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-R1",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-R1",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-P1",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-P1",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-P1",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-C0",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-C0",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-C0",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-P1-control",
+      "task_name": "TERL-MAPPO Batch01 BATCH01-P1-control",
+      "status": "WAITING_BASE",
+      "historical_evidence_only": false,
+      "dependencies": [
+        "BATCH01_BASE_FREEZE",
+        "BATCH01_STORAGE_PASS",
+        "BATCH01_ARM_QA",
+        "BATCH01_BENCHMARK",
+        "GPU_LEASE",
+        "LATER_RUN_AUTHORIZATION"
+      ],
+      "branch": null,
+      "head": null,
+      "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+      "run_id": "BATCH01-P1-control",
+      "BATCH01_BASE_SHA": null,
+      "pid": null,
+      "gpu_lease": "NOT_REQUESTED",
+      "current_step": null,
+      "selected_checkpoint_sha256": null,
+      "classification": "NO_SCIENTIFIC_RESULT",
+      "next_gate": "Core candidate -> independent QA same SHA -> Master freeze; then arm/storage/benchmark/lease/authorization gates",
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH01-T2",
+      "status": "DEFERRED",
+      "next_gate": "T1 failure -> Master review need for multiple seeds; no automatic launch",
+      "training_authorized": false,
+      "updated_at": "2026-10-09T14:17:26.660225+08:00"
+    },
+    {
+      "task_id": "BATCH02-E1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "T1_SCALE_REVIEW",
+        "T0_P1_STATE_COMPATIBILITY",
+        "CORE_QA_RUNTIME_ASSERTIONS"
+      ],
+      "expected_contract_delta": "MarineEnv->VorAdj Forward-FinalV2 environment/physics/current/APF/spawn/collision/boundary/terminal bridge",
+      "parallel_cpu_preparation": "CPU source delta and paired transitions fixture design",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-R2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "R1_DIAGNOSTIC",
+        "E1_PASS",
+        "REPRESENTATION_REWARD_NON_NULL_GATES"
+      ],
+      "expected_contract_delta": "Full Final Capture CR-MS/support/goal/safety/clock and credit/event semantics",
+      "parallel_cpu_preparation": "Reward/component/event ledger",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-N2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "N1_STRUCTURE_INFORMATION_ISOLATION_PASS",
+        "E1_PASS"
+      ],
+      "expected_contract_delta": "Full CoCap self9/22slot/NormSenseV2/detector/ordering/role/VorAdj observation; no automaticZ/local-friendlyV3",
+      "parallel_cpu_preparation": "Information and mask mapping",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-V1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "E1_PASS",
+        "COVERAGE_REWARD_INFORMATION_NON_NULL_GATES"
+      ],
+      "expected_contract_delta": "Pure Coverage no enemy, CE/PBRS/hold/safety and coverage terminal/time",
+      "parallel_cpu_preparation": "Positive-control and evaluator audit",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-M1",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "E1_PASS",
+        "R2_PASS",
+        "N2_PASS",
+        "V1_PASS",
+        "CAPTURE_RECOVERY_RETENTION_GATE",
+        "EXPLICIT_FULL_TASK_PPO_GATE_REVIEW"
+      ],
+      "expected_contract_delta": "Mixed phase/reward clock/post-capture recovery/CE/terminal service",
+      "parallel_cpu_preparation": "Phase-state machine and held-out manifest",
+      "implementation_authorized": false,
+      "training_authorized": false
+    },
+    {
+      "task_id": "BATCH02-M2",
+      "status": "PREREGISTERED_LOCKED",
+      "dependencies": [
+        "N2_READY",
+        "M1_READY",
+        "EVIDENCE_CORRECTED_FINAL_AUDIT_PASS",
+        "PERSISTENT_N0_JOINT_REVIEW"
+      ],
+      "expected_contract_delta": "Evidence/Z local-vs-global information propagation/slot/TTL/update, global oracle separately labelled",
+      "parallel_cpu_preparation": "Handoff and no-leakage/propagation diagnostics",
+      "implementation_authorized": false,
+      "training_authorized": false
     }
   ],
   "current_snapshot": {
-    "observed_at": "2026-10-08T23:18:42.735153+08:00",
-    "dag_lines": {
-      "EXP-EVIDENCE-01": "TRAINING_COMPLETE / SELECTION_PENDING / FINAL_EVAL_PENDING",
-      "EXP-PERSIST-01": "STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE"
+    "observed_at": "2026-10-09T14:17:26.660225+08:00",
+    "scope": "TERL-MAPPO Batch01 planning; previous integration snapshot retained in version history",
+    "other_user_gpu_job": {
+      "pid": 1335255,
+      "physical_gpus": [
+        0,
+        1
+      ],
+      "ownership": "hl; protected external, no lease claim"
     },
-    "iqn_z_lines": "Z05 frozen selected600k hash verified; no retraining.",
+    "prior_cocap_training_pids_live": [],
+    "batch01_gpu_lease": "NOT_REQUESTED",
+    "new_training_launched": false,
+    "joint_evidence_persistent_decision": "N0 / NO_EXTRA_TRAINING_YET",
+    "disk_snapshot_only": {
+      "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921",
+      "total_bytes": 982240026624,
+      "available_bytes": 146861150208,
+      "free_bytes": 196831666176,
+      "available_gib": 136.77510452270508,
+      "inodes_total": 60981248,
+      "inodes_available": 57701757
+    },
+    "dag_lines": {
+      "BATCH01-T0": "COMPLETE",
+      "BATCH01-T1": "WAITING_BASE",
+      "BATCH01-N1": "WAITING_BASE",
+      "BATCH01-R1": "WAITING_BASE",
+      "BATCH01-P1": "WAITING_BASE",
+      "BATCH01-C0": "WAITING_BASE",
+      "EXP-EVIDENCE-01": "TRAINING_COMPLETE / SELECTION_REPORTED_PENDING_AUDIT / LEGACY_FINAL_PRESENT / CORRECTED_FINAL_PENDING",
+      "EXP-PERSIST-01": "STRICT_FORMAL_COMPLETE / RELAXED_DIAGNOSTIC_COMPLETE",
+      "BATCH01-P1-control": "WAITING_BASE",
+      "BATCH01-T2": "DEFERRED"
+    },
+    "iqn_z_lines": "Z05 frozen selected600k retained; no retraining",
     "resources": {
-      "disk_free_gib": 140.47233963012695,
+      "disk_free_gib": 136.77510452270508,
+      "disk_status": "SNAPSHOT_ONLY_STORAGE_AUDIT_PENDING",
       "evidence_training": "none",
-      "evidence_screening": "running",
-      "other_training": "TERL-MAPPO running",
+      "evidence_screening": "old observed PIDs exited",
+      "other_training": "old TERL PIDs exited; protected external GPU process active",
       "new_training_launched": false
     },
     "decision_gate": {
       "category": "N0",
       "gate": "NO_EXTRA_TRAINING_YET",
-      "reason": "Corrected paired Evidence final held-out absent; preserve Persistent T0 until contract closeout."
+      "reason": "Corrected Evidence final pending; Batch01 planning does not unlock Evidence/Persistent or Batch02 training"
     },
-    "artifact": "artifacts/2026-10-08_experiment_integration/verification.json",
-    "remote_sync_receipt": "artifacts/2026-10-08_experiment_integration/remote_verification.json"
+    "artifact": "artifacts/2026-10-09_terl_mappo_batch01/recovery_snapshot.json",
+    "previous_integration_artifact": "artifacts/2026-10-08_experiment_integration/verification.json",
+    "remote_sync_receipt": null
   },
   "event_log": [
     {
@@ -2528,6 +3036,11 @@
       ],
       "method": "post_push_fetch_plus_ls_remote",
       "receipt": "artifacts/2026-10-08_experiment_integration/remote_verification.json"
+    },
+    {
+      "at": "2026-10-09T14:17:26.660225+08:00",
+      "event": "BATCH01_PLANNED_WAITING_BASE",
+      "detail": "Verified T0 completion and775k hash/final; registered five arms and paired P1-control with unfrozen null BASE, Core/QA/Storage gates, concurrency benchmark design, dynamic version migration and Batch02 preregistration. No training, lease or subagents. Evidence legacy complete output is not corrected-final gate."
     }
   ],
   "server_recovery": {
@@ -22835,7 +23348,33 @@
       "central_head_at_verification": "974185ddc345c61910d0cd04d82ae9a8c30a3c3b",
       "force_push_used": false
     },
-    "latest_reconciliation_at": "2026-10-06T19:51:35+08:00",
-    "latest_reconciliation_note": "EXP-EVIDENCE-01 live at Stage1 24k/25k; evaluator audit corrected Global token occupancy and shortfall diagnostics without restarting training; new evidence branch HEAD pushed."
+    "latest_reconciliation_at": "2026-10-09T14:17:26.660225+08:00",
+    "latest_reconciliation_note": "2026-10-09 Batch01 planning snapshot supersedes historical live TERL/Evidence claims; verified old PIDs exited; protected external GPU job; authoritative Batch01 still WAITING_BASE."
+  },
+  "batch01": {
+    "status": "WAITING_BASE",
+    "BATCH01_BASE_SHA": null,
+    "batch_state": "artifacts/2026-10-09_terl_mappo_batch01/batch_state.json",
+    "contract_lock": "artifacts/2026-10-09_terl_mappo_batch01/batch_contract.lock.json",
+    "run_registry": "artifacts/2026-10-09_terl_mappo_batch01/run_registry.json",
+    "matrix": "docs/experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md",
+    "changelog": "docs/experiments/BATCH01_SCIENTIFIC_CHANGELOG.md",
+    "handoff": "docs/experiments/BATCH01_HANDOFF_TEMPLATE_20261009_ZH.md",
+    "gates": {
+      "CORE_CANDIDATE": "WAITING_CORE",
+      "INDEPENDENT_QA_SAME_SHA": "WAITING_QA",
+      "BASE_FREEZE": "WAITING_BASE",
+      "ARM_DELTA_REVIEW": "WAITING_BASE",
+      "STORAGE_CAPACITY": "WAITING_STORAGE",
+      "CONCURRENCY_BENCHMARK": "DESIGNED_NOT_EXECUTED",
+      "GPU_LEASE": "NOT_REQUESTED",
+      "RUN_AUTHORIZATION": "NOT_AUTHORIZED_THIS_TURN",
+      "RUNTIME_SEMANTIC_ASSERTIONS": "PENDING_IMPLEMENTATION_AND_QA",
+      "EVALUATION_CONTRACT": "PROPOSED_PENDING_QA_AND_FREEZE"
+    },
+    "new_training_launched": false,
+    "new_gpu_leases": [],
+    "new_subagents_created": false,
+    "next_wake_up": "User forwards Core candidate, independent QA same-SHA report, and Storage capacity audit; no time-based GPU polling"
   }
 }

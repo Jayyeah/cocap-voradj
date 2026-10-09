@@ -1,0 +1,1546 @@
+{
+  "schema": "terl-mappo-cross-arm-delta-v1",
+  "updated_at": "2026-10-09T14:17:26.660225+08:00",
+  "axes": [
+    "Environment",
+    "Network",
+    "Reward",
+    "Information",
+    "Task",
+    "Action",
+    "Algorithm",
+    "Curriculum",
+    "Initialization"
+  ],
+  "reference_profiles": {
+    "TERL_IQN_ORIGINAL": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+      "Curriculum": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+      "Initialization": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state"
+    },
+    "T0_TERL_MAPPO": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+      "Curriculum": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+      "Initialization": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M"
+    },
+    "HISTORICAL_COCAP_MAPPO": {
+      "Environment": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+      "Network": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+      "Reward": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+      "Information": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+      "Task": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+      "Action": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+      "Curriculum": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+      "Initialization": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start"
+    },
+    "NEXT_COCAP_MAPPO_TARGET": {
+      "Environment": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+      "Network": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+      "Reward": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+      "Information": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+      "Task": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+      "Action": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+      "Algorithm": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+      "Curriculum": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+      "Initialization": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import"
+    }
+  },
+  "effective_profiles": {
+    "T0": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+      "Curriculum": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+      "Initialization": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M"
+    },
+    "T1": {
+      "Environment": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+      "Network": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+      "Reward": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+      "Information": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+      "Task": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+      "Curriculum": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+      "Initialization": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume"
+    },
+    "N1": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash"
+    },
+    "R1": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+      "Reward": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation"
+    },
+    "P1": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+      "Algorithm": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+      "Curriculum": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+      "Initialization": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA"
+    },
+    "C0": {
+      "Environment": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+      "Network": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+      "Reward": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+      "Information": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+      "Task": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+      "Action": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+      "Algorithm": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start"
+    }
+  },
+  "comparisons": {
+    "T0": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "INHERITED_SAME_CONTRACT"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_status": "VERIFIED_HISTORICAL",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    },
+    "T1": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    },
+    "N1": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REQUIRED_INFORMATION_EQUIVALENCE_PENDING_QA"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    },
+    "R1": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    },
+    "P1": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_SINGLE_PPO_VARIABLE"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_SINGLE_PPO_VARIABLE"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    },
+    "C0": {
+      "TERL_IQN_ORIGINAL": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL encoder256/8/4 effective entry, self+unmasked-max/Target Selection/fusion; quantile/cosine IQN Q backend; no central V; original empty-target/all-mask hazard",
+          "effective_contract": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ACTION_DELTA_ALGORITHM_REQUIRED_COMPANION"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Native capture/active<3/horizon3001 actual trainer lifecycle; raw env done not sufficient; built-in eval horizon1501/spawn PE>20 differs from Batch full-episode protocol",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Original off-policy IQN: replay/epsilon/target Q; act eval and learning train dropout; no PPO/GAE/ValueNorm",
+          "effective_contract": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ALGORITHM_REQUIRED_AND_REGISTERED_ARM_DELTA"
+        },
+        "Curriculum": {
+          "reference_contract": "Native7M schedule boundaries0/2M/4M/5M/6M; counts3P1E0obs4cores,4P1E1obs6cores,7P2E2obs8cores,11P3E4obs8cores,15P4E6obs8cores; spawn10/13/15/20/20m",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Random IQN seed9; original curriculum continuation; no BC/teacher; not the775k MAPPO full state",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "T0_TERL_MAPPO": {
+        "Environment": {
+          "reference_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Network": {
+          "reference_contract": "TERL entity/type Transformer actual256/8/4, self+unmasked-max/Target Selection/fusion; categorical9; action-free central V256/8/4 with current/time; finite empty-mask fix",
+          "effective_contract": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ACTION_DELTA_ALGORITHM_REQUIRED_COMPANION"
+        },
+        "Reward": {
+          "reference_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Information": {
+          "reference_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Task": {
+          "reference_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "INHERITED_SAME_CONTRACT"
+        },
+        "Action": {
+          "reference_contract": "Native a-major categorical AW9: a[-.4,0,.4], w[-pi/6,0,pi/6]; dt.05x10=.5s; P vmax3/E3.5",
+          "effective_contract": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses; independent Adam actor3e-5/V1e-4 eps1e-5; rollout256, gamma.99, lambda.95, clip.2, epochs3/minibatches2, entropy.01, target_kl.02; eval-mode autograd",
+          "effective_contract": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ACTION_DELTA_ALGORITHM_REQUIRED_COMPANION"
+        },
+        "Curriculum": {
+          "reference_contract": "Only Stage1 cumulative1M, selected775k; no complete7M curriculum",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "seed9/actor109 random-origin actor/V/Adam/ValueNorm, no teacher/BC; exact full-state continuation100k->1M",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "HISTORICAL_COCAP_MAPPO": {
+        "Environment": {
+          "reference_contract": "VorAdjEnv Forward-Final V2 120x120, synchronized_swept_v1, boundary/safety consumers; Capture4P1E1obs",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Network": {
+          "reference_contract": "LegacyVorAdjFeatureBackbone256/8/4 categoricalAW9; self9/friend8/enemy8/obs5=22slots; central action-free V geometry-only; fully-masked fallback",
+          "effective_contract": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ACTION_DELTA_ALGORITHM_REQUIRED_COMPANION"
+        },
+        "Reward": {
+          "reference_contract": "Final ring_importance_ms_v0/CR-MS capture support normalized1, CE0; canonical collision/boundary/safety and clock offset2M; no post-capture CE",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Information": {
+          "reference_contract": "CoCap self9/22slots; NormSense V2 enemy surface clearance R52.2173245m via resolver; neighbor_visible/approach_only; historical global-friendly VorAdj; no Z; Coverage control separately legacyR20",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Task": {
+          "reference_contract": "Pure Capture4P1E1obs, capture terminal/no recovery, min_active4, horizon3000; nativeTERL event/credit differs",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Action": {
+          "reference_contract": "Canonical categoricalAW9 CoCap physics/action-mask consumer; physical boundaries require runtime comparison with TERL rather than infer from AW9 label",
+          "effective_contract": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Algorithm": {
+          "reference_contract": "Corrected PPO/GAE/ValueNorm/active losses, same nominal canonical hyperparameters asT0; environment/central-state consumers differ",
+          "effective_contract": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "ACTION_DELTA_ALGORITHM_REQUIRED_COMPANION"
+        },
+        "Curriculum": {
+          "reference_contract": "Independent scratch M-CAP500k and separate100k reproduction; M-COV200k is background, not matching Capture sensing",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "EXPERIMENTAL_OR_TASK_CONTRACT_DIFFERENCE"
+        },
+        "Initialization": {
+          "reference_contract": "Fresh random actor/V/Adam/ValueNorm seed2026091501; no teacher/BC/IQN/warm-start",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "REGISTERED_INITIALIZATION_DIFFERENCE"
+        }
+      },
+      "NEXT_COCAP_MAPPO_TARGET": {
+        "Environment": {
+          "reference_contract": "PROPOSED E1 bridge to VorAdj/Forward-Final V2; physics/APF/current/spawn/collision/boundary/terminal individually gated",
+          "effective_contract": "MarineEnv 120x120; native APF/current; end-of-decision collision; boundary penalty only; Stage1 3P1E0obs4cores, spawn PE>10m",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Network": {
+          "reference_contract": "PROPOSED CoCap actor plus QA-qualified bridge-compatible central V; full observation change in N2, not N1",
+          "effective_contract": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Reward": {
+          "reference_contract": "PROPOSED R2 complete Final CoCap Capture CR-MS/support/goal/safety/clock; Coverage and Mixed independently frozen later",
+          "effective_contract": "Native time/distance/global/emergency/collision/goal unchanged and reconstructed; dense residence reward and native goal credit; no CR-MS/CE/reward scaling",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Information": {
+          "reference_contract": "PROPOSED N2 canonical CoCap self9/22tokens/NormSenseV2/detector/role/VorAdj; M2 independently reviews evidence/Z; historical global-friendly retained, local-friendlyV3 deferred",
+          "effective_contract": "Native self4, friend5x7, enemy8x7, obstacle5x5=19tokens; enemy no distance filtering; friend/obstacle native finite range; no Z/VorAdj/CoCap detector; actor no central input",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Task": {
+          "reference_contract": "PROPOSED full CoCap Capture after E1/R2/N2; V1 Pure Coverage, M1 Mixed recovery/CE later with independent gates",
+          "effective_contract": "Stage1 native geometric capture >=3 at8m/related18m; capture or active<3 true terminal; timeout3001 truncation; pre-reset V bootstrap",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Action": {
+          "reference_contract": "UNFROZEN; preserve categorical AW9 target until explicit review; C0 native continuous a/w does not silently change target",
+          "effective_contract": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Algorithm": {
+          "reference_contract": "PROPOSED common QA-verified MAPPO/PPO; changes separately registered, no assumed long extension or Full-Task PPO authorization",
+          "effective_contract": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Curriculum": {
+          "reference_contract": "UNFROZEN based on Batch01/T1 results; no automatic7M or Batch02",
+          "effective_contract": "PROPOSED Stage1 fresh1M at25k cadence",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        },
+        "Initialization": {
+          "reference_contract": "UNFROZEN per-arm transfer and exact/functional/fresh classification; no blanket775k state import",
+          "effective_contract": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start",
+          "effective_status": "PROPOSED_NOT_IMPLEMENTED_OR_RUN_BY_MASTER",
+          "classification": "TARGET_UNFROZEN_REMAINING_BRIDGE"
+        }
+      }
+    }
+  },
+  "primary_deltas": {
+    "T1": {
+      "Environment": "Native Stage2 4P1E1obs6cores/spawn>13m then Stage3 7P2E2obs8cores/spawn>15m; native physics/collision/APF retained",
+      "Network": "Same TERL actor and centralV family; variable-agent/current critic shape/weight/optimizer compatibility must be delivered by Core; no silent capacity truncation",
+      "Reward": "Same native formula; population cooperation branches and multi-target repeated dense credit actually change with schedule; unresolved upstream semantics preserved and reported",
+      "Information": "Same native availability/filter/schema rules; more P/E/current slots and token truncation/capacity must be audited; no Z/CoCap detector",
+      "Task": "Native scale/curriculum transfer to4P1E then7P2E; includes obstacles/currents/spawn companion task changes",
+      "Curriculum": "PROPOSED100k additional decisions/stage; reviews25k/50k; stage3 waits completed-stage2 scientific gate; max200k new decisions",
+      "Initialization": "PROPOSED selected775k compatible actor/V warm-start; env reset at scene change; explicit Adam/ValueNorm/current-dimension migration/reset pending; functional transfer, not exact cross-scene resume"
+    },
+    "N1": {
+      "Network": "PROPOSED CoCap-style actor structural substitution256/8/4, categorical9 head fixed; centralV T0 unchanged; deterministic raw native->actor adapter and pooling count as structure delta",
+      "Information": "Native19token availability/order/masks unchanged; self4 mapped to self9 using supplied values/constants only; no added sensing/VorAdj/role/Z/global state; adapter information preservation needs QA",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence, same full episode task",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no incompatible775k actor transplant; same origin-seed design, not same actor parameter hash"
+    },
+    "R1": {
+      "Reward": "PROPOSED replace only native distance dense component with CR-MS-class capture dense shaping; preserve time/global/emergency/collision/goal and native capture credit/terminal; exact coefficients/clock/target aggregation pending proposal",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no old reward-calibrated state transplantation"
+    },
+    "P1": {
+      "Algorithm": "Only PPO target_kl .02->.01; all other canonicalT0 optimizer/PPO/GAE/ValueNorm/dropout settings unchanged; guard does not stop total training budget",
+      "Curriculum": "PROPOSED Stage1 full-state775k->cumulative1M, additional225k; endpoint/retention primary, selected result secondary",
+      "Initialization": "Exact full775k actor/V/Adam/ValueNorm/env/Python/NumPy/CPU/CUDA RNG/counters restore, strict explicit config allowlist for target_kl and run/budget metadata; cross-BASE compatibility pending Core/QA"
+    },
+    "C0": {
+      "Network": "Same TERL encoder and T0 centralV; replace9logit head with continuous mean/logstd head; initial std/head values pending fixed arm contract",
+      "Action": "Continuous a=.4*tanh(u_a), w=(pi/6)*tanh(u_w), same native dynamics/dt/speed limits; no AW9 rounding; new common validated float-action consumer",
+      "Algorithm": "Same PPO/GAE/ValueNorm; continuous density/logprob includes tanh and affine Jacobians; registered entropy estimator and deterministic mean/sample evaluator modes required; no free entropy coefficient/LR/clip tuning",
+      "Curriculum": "PROPOSED Stage1 fresh1M at25k cadence",
+      "Initialization": "PROPOSED fresh seed9/actor109 actor/V/Adam/ValueNorm; no discrete head warm-start"
+    }
+  },
+  "unresolved_by_arm": {
+    "T1": [
+      "critic current/agent capacity and weight/Adam/ValueNorm migration",
+      "multi-target native reward repetition and cooperation count semantics",
+      "stage promotion thresholds/budget freeze"
+    ],
+    "N1": [
+      "exact CoCap actor adapter/pooling implementation and information equality",
+      "matched fresh initialization and parameter-count reporting"
+    ],
+    "R1": [
+      "exact shaping formula/coefficients/clock/target aggregation",
+      "native retained positive global residence incentive is not removed by definition"
+    ],
+    "P1": [
+      "full775k cross-BASE strict resume proof",
+      "P1-control authorization and paired fork reproducibility"
+    ],
+    "C0": [
+      "continuous native action dispatch and Jacobian proof",
+      "initial std/entropy estimator deterministic action definition"
+    ]
+  },
+  "information_is_distinct_from_network_structure": true,
+  "historical_cocap_reference_scope": "Corrected scratch Capture80debae; M-COV legacyR20 is separate background"
+}
