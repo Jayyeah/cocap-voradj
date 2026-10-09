@@ -38,3 +38,15 @@ Master-only、append-only。科学源码版本与中央文档提交分别登记�
 | B01-011 | RESULT_CLASSIFICATION | 保留T0 COMPLETE成功与late degradation；A0审计和四参照九轴/预算/初始化提案继续有效，无重新规划；五线及P1-control仍WAITING_BASE | 无新正式实验结果 |
 
 Core/QA实际科学修复由对应owner在各自branch提交；Master本轮只接收结论、登记复验要求与关闭旧权限，不修改共同PPO/env/reward/observation/terminal代码。
+
+## B01-012 — 2026-10-09T17:38:31.228981+08:00 Core V2交付登记（尚未QA验收）
+
+科学candidate `863a0cf55aca0ace8a0aaab36d9166aa4c97268f`，canonical lock `885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4`；Core证据HEAD `d49cabbbb514b65c2bd28a1b14cf834eea614a20`另列。Master96文件/lineage/diff/证据hash核验通过；T0科学语义保持，V1 B1/B2/B3/B4/Q1修复仅记Core报告已修、待A3。Core77/3skip不是独立QA。状态CORE_V2_DELIVERED / WAITING_QA_V2 / BASE_FREEZE_BLOCKED，QA_SAME_SHA=PENDING、BASE=null；V1阻断历史保留，五线与P1-control WAITING_BASE。无BASE release/migration或训练。
+
+## B01-013 — 2026-10-09T17:38:31.228981+08:00 V2限定QA CUDA lease与A0动态复核
+
+A0所有原件hash复核一致，容量审计/保护清单继续有效；共享可用136.73GiB、RAM available103.58GiB、两卡采样无compute/util0，quota UNKNOWN，无清理/归档授权。新lease `B01-QA-CUDA-V2-863a0cf-20261009T173831`仅V2 GPU0/cuda:0，正式256/8/4，1进程/1线程，300s CUDA/600s active/1024 joint decisions/8 PPO，2GiB Torch/4GiB自身driver/8GiB RSS/2GiB新输出，至`2026-10-09T19:38:31.228981+08:00`且fresh preflight。原V1未使用lease仍关闭，不复用。真实V2 pin checkpoint/source/RNG补充为必验；Master未执行CUDA/benchmark，正式lease与训练门禁不变。
+
+## B01-014 — 2026-10-09T17:38:31.228981+08:00 评估seed差异重核与A3 handoff
+
+Core V2 T0历史2026100800/2036100800/2046101800保持；未来ARM提案2056100900/2066100900/2076100900仍不同、未冻结。必须显式实际集合冻结与QA disjoint/paired-physical/action-RNG核查，禁止把观察过T0 final当新held-out。未更改九轴矩阵/预算/初始化。A3接口：[V2 handoff](BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)，CPU/static立即可行；用户交同SHA独立结论及lease收尾后唤醒Master，后续评审才能决定冻结。

@@ -1,0 +1,134 @@
+{
+  "schema": "terl-mappo-qa-bounded-smoke-lease-v2",
+  "owner": "MASTER",
+  "lease_id": "B01-QA-CUDA-V2-863a0cf-20261009T173831",
+  "status": "GRANTED_CONDITIONAL_PREFLIGHT_NOT_EXECUTED_BY_MASTER",
+  "purpose": "INDEPENDENT_QA_CUDA_CORRECTNESS_ONLY",
+  "issued_at": "2026-10-09T17:38:31.228981+08:00",
+  "expires_at": "2026-10-09T19:38:31.228981+08:00",
+  "activation_rule": "Start only after fresh preflight with at least 10 minutes left before expiry; otherwise WAITING_LEASE_REISSUE. No automatic renewal.",
+  "authorized_agent_role": "BATCH01_INDEPENDENT_QA",
+  "authorized_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch01-qa-20261009",
+  "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+  "core_delivery_head": "d49cabbbb514b65c2bd28a1b14cf834eea614a20",
+  "canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+  "physical_gpu": 0,
+  "gpu_uuid": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+  "CUDA_VISIBLE_DEVICES": "0",
+  "process_local_device": "cuda:0",
+  "max_compute_processes": 1,
+  "max_attempts": 1,
+  "parallel_gpu_jobs": 0,
+  "allowed_pytest_nodes": [
+    "test/test_terl_mappo_batch01_base_20261009.py::test_formal_entry_t0_full_update_and_exact_resume[cuda:0]",
+    "test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cuda:0]"
+  ],
+  "execution_caps": {
+    "cuda_test_total_wall_seconds": 300,
+    "lease_active_wall_seconds": 600,
+    "total_joint_environment_decisions": 1024,
+    "total_rollout_ppo_calls": 8,
+    "torch_peak_allocated_mib": 2048,
+    "own_driver_vram_mib": 4096,
+    "cpu_threads": 1,
+    "evaluator_workers": 0,
+    "own_ram_rss_gib": 8,
+    "new_output_growth_gib": 2
+  },
+  "expected_test_work": {
+    "full_width_network": [
+      256,
+      8,
+      4
+    ],
+    "existing_nodes_joint_decisions": 528,
+    "existing_nodes_actual_rollout_ppo_calls": 4,
+    "supplemental_joint_decisions_max": 32,
+    "supplemental_actual_rollout_ppo_calls_max": 2,
+    "combined_expected_joint_decisions_max": 560,
+    "counting_rule": "Count all joint environment decisions including reference/restored continuations; report per-agent transitions and minibatch optimizer steps separately. Density mock calls are not real PPO.",
+    "no_budget_extension": true
+  },
+  "preflight": {
+    "sample_count": 10,
+    "sample_interval_seconds": 1,
+    "candidate_head_must_equal": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+    "tracked_scientific_sources_clean": true,
+    "candidate_lock_and_common_sources_reverified": true,
+    "physical_gpu_uuid_must_match": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+    "gpu0_foreign_compute_processes_max": 0,
+    "gpu0_average_util_percent_max_exclusive": 60,
+    "gpu0_peak_util_percent_max_exclusive": 90,
+    "gpu0_free_vram_gib_min": 12,
+    "cpu_load1_vs_logical_cpus_max_fraction": 0.5,
+    "available_ram_gib_min": 24,
+    "shared_available_disk_gib_min": 32,
+    "new_own_output_directory_write_fsync_check": true,
+    "personal_quota": "UNKNOWN; never substitute shared df for private quota",
+    "unknown_quota_limits_approval_to_smoke_only": true,
+    "quota_if_queryable_requires_2gib_smoke_headroom": true,
+    "head_rule": "Scientific tested SHA C; if evidence-only commits exist, prove all 96 common hashes and lock unchanged and report tested SHA separately from report HEAD",
+    "source_guard_from_committed_lock_required": true
+  },
+  "monitoring": {
+    "interval_seconds": 1,
+    "record_own_pid_and_driver_vram": true,
+    "record_cpu_rss_disk_before_after": true,
+    "record_post_smoke_gpu_samples": 10,
+    "on_oom_nonfinite_exceeded_caps_timeout_or_external_job": "Terminate only the QA-owned smoke process, preserve evidence, release lease and return WAIT/FAIL; never stop or modify other processes",
+    "automatic_retry_or_formal_extension": false,
+    "record_torch_peak_allocation": true,
+    "record_source_guard_and_rng": true,
+    "record_real_rollout_and_update_counts": true
+  },
+  "write_policy": "Fresh QA-owned output/tmp only; keep scientific candidate unchanged. Tests may unlink only their own newly created fixtures. Storage candidate deletion/archival not authorized.",
+  "source_snapshot": "artifacts/2026-10-09_terl_mappo_batch01/master04/resource_snapshot.json",
+  "storage_receipt": "artifacts/2026-10-09_terl_mappo_batch01/master02/storage_a0_receipt.json",
+  "formal_training_authorized": false,
+  "benchmark_authorized": false,
+  "arms_authorized": [],
+  "exclusive_device_or_quota_reservation": false,
+  "executed_by_master": false,
+  "pid": null,
+  "cpu_static_qa_policy": "Proceed independently with CUDA hidden; GPU WAIT never blocks CPU/static QA",
+  "authorized_branch": "audit/terl-mappo-batch01-v2-recheck-20261009",
+  "storage_recheck": "artifacts/2026-10-09_terl_mappo_batch01/master04/storage_recheck.json",
+  "old_lease_reuse_forbidden": true,
+  "historical_v1_closeout": "artifacts/2026-10-09_terl_mappo_batch01/master03/qa_lease_closeout.json",
+  "real_candidate_checkpoint_guard_supplement": {
+    "required": true,
+    "reason": "Existing formal-entry test uses placeholder a*40/b*64 manifest; it proves engineering replay, not actual V2 checkpoint identity",
+    "candidate_sha": "863a0cf55aca0ace8a0aaab36d9166aa4c97268f",
+    "canonical_lock_sha256": "885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4",
+    "network": [
+      256,
+      8,
+      4
+    ],
+    "requirements": [
+      "Use SourceGuard.from_base from committed V2 lock with actual pinned manifest",
+      "Real CUDA rollout/update + save/load + continuation equality, including optimizer, ValueNorm, env/counters and Python/NumPy/Torch CPU/CUDA RNG",
+      "Wrong source/pin and lazy/runtime dependency rejection before optimizer/state/checkpoint promotion; latch blocks collect/update/save/load",
+      "Keep candidate common sources immutable; fault injection only in QA-owned disposable fixture or copied snapshot, never original Core/QA source or T0 anchor"
+    ],
+    "harness_policy": "Extra QA-owned diagnostic evidence/harness must record exact test-only hashes/delta separately and preserve immutable candidate trust. Do not relax guard, trust live inventory, or change pinned common code."
+  },
+  "timeout_policy": {
+    "cuda_suite_and_supplement_combined_seconds": 300,
+    "active_seconds": 600,
+    "signal": "SIGTERM to own smoke process group, SIGKILL only that group after 10s grace",
+    "exceeded_caps": "Stop own process, retain partial logs, release grant and report FAIL/WAIT; no automatic retries or extensions",
+    "expired_window": "WAITING_LEASE_REISSUE; CPU/static QA may continue"
+  },
+  "excluded_cuda_nodes": {
+    "test/test_terl_native_mappo_20261008.py::test_cuda_finite_update_and_rng_resume": "Uses 32/4/1 small_config; excluded by user formal-256/8/4 CUDA restriction. Core skip remains recorded, not a required V2 CUDA gate."
+  },
+  "execution_scope": "Two full-256/8/4 nodes plus bounded real-pin CUDA diagnostic supplement only; small-network native CUDA node not authorized",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "0",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "torch_thread_policy": "torch.set_num_threads(1), set_num_interop_threads(1) before parallel work; verify effective values; no dataloader/evaluator children"
+}

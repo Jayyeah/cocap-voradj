@@ -1,6 +1,18 @@
 # TERL-MAPPO Batch01 并行迁移矩阵与中央管理合同
 
-日期：2026-10-09，Asia/Shanghai。中央唯一写入者Master。A3正式BASE_QA_BLOCK已接收；当前WAITING_CORE_V2、BASE_FREEZE_BLOCKED。T0成功、A0审计和既有科学矩阵继续有效。本轮只登记门禁，不冻结BASE、发放新lease或启动实验。
+日期：2026-10-09，Asia/Shanghai。中央唯一写入者Master。当前CORE_V2_DELIVERED / WAITING_QA_V2 / BASE_FREEZE_BLOCKED；T0成功、A0审计和原科学矩阵继续有效。仅授权V2专用conditional CUDA correctness，不冻结BASE或启动实验。
+
+## A1-MASTER-04：Core V2接收，等待A3同SHA复验（覆盖下方历史快照）
+
+登记`2026-10-09T17:38:31.228981+08:00`。科学candidate **`863a0cf55aca0ace8a0aaab36d9166aa4c97268f`**，canonical lock **`885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4`**，Core交付HEAD **`d49cabbbb514b65c2bd28a1b14cf834eea614a20`**另列。Master核验96共同文件candidate/delivery/worktree一致、T0原科学源/配置不变、candidate→delivery只有14个报告/证据文件增量。Core77 passed/3 CUDA skipped/0 failed只记自测，五项V1问题为CORE_V2_REPORTED_FIXED_PENDING_A3。V1 QA_BLOCK历史及旧lease closeout保留，released BASE/migrations仍空。
+
+`BATCH01_BASE_SHA=null`、`QA_SAME_SHA=PENDING`；T1/N1/R1/P1/C0/P1-control继续WAITING_BASE。当前只发V2 QA lease **`B01-QA-CUDA-V2-863a0cf-20261009T173831`**：物理GPU0/进程内cuda:0，单进程/CPU线程1，正式256/8/4、两个CUDA节点加真实pin source/RNG/full-state补充，总CUDA≤300s/active≤600s/1024 joint decisions/8真实PPO，Torch≤2GiB、自身driver≤4GiB、RSS≤8GiB、新输出≤2GiB。有效至`2026-10-09T19:38:31.228981+08:00`，激活须fresh preflight且剩余≥10分钟；Master未执行CUDA。正式GPU_LEASE仍NOT_REQUESTED。
+
+A0报告/TSV/保护清单重新hash匹配，本轮资源样本`2026-10-09T17:38:21.419399+08:00`–`2026-10-09T17:38:31.226733+08:00`，共享可用136.73GiB、RAM available103.58GiB、两卡util0且未见compute PID；其它用户CPU任务受保护。quota UNKNOWN，正式启动前动态容量/IO/retention gate未解除，无清理授权。
+
+**evaluation seed proposal仍与Core当前T0不同**：T0历史screen/selection/final为2026100800/2036100800/2046101800；未来ARM提案2056100900/2066100900/2076100900未冻结。保持T0历史，未来ARM实际seed集合须显式冻结并经QA核查，禁止复用已观察T0 final。本轮只更新交付与门禁，不改九轴/预算/初始化提案。
+
+直接转交[A3 V2独立QA handoff](BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)，对应[机器lease](../../artifacts/2026-10-09_terl_mappo_batch01/master04/qa_smoke_lease.json)与[Core核验回执](../../artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json)。现有formal test占位manifest必须补充真实V2 pin checkpoint guard；CPU/static可先行。NEXT WAKE-UP为用户转交同SHA/lock的A3正式报告、CUDA lease收尾/WAIT与seed reconciliation；后续Master才可能评审冻结，不自动推进。
 
 ## A1-MASTER-03：A3正式阻断，等待Core V2（覆盖下方历史快照）
 
@@ -44,7 +56,7 @@ QA工作树观察HEAD `40bd91b56cd199e527f7a2bb2317b2c1c5b61e4a`，branch `audit
 
 唯一中央状态：[AC_MASTER_DAG](../ops/AC_MASTER_DAG_20260921_ZH.md) 与 [state.json](../../artifacts/2026-09-21_ac_master_dag/state.json)。本目录文档和 Batch01 JSON 是中央登记的附件；发生不一致时 fail closed，不能自行挑选较宽松的状态。
 
-初次规划恢复快照：local=origin=GitHub HEAD为`381b61dba6c94478ed23b712d39018fc70e2341f`，当时中央clean。TERL交付为`bb794ca8435f06b9fa5693c0fed98f567320decf`；Core/QA当时均在该提交，Core clean、QA detached clean。**该提交是已验证T0交付来源，不是BATCH01_BASE_SHA。** 当前Core/QA状态见顶部A1-MASTER-02登记；不合并或修改其它worktree科学代码。
+初次规划恢复快照：local=origin=GitHub HEAD为`381b61dba6c94478ed23b712d39018fc70e2341f`，当时中央clean。TERL交付为`bb794ca8435f06b9fa5693c0fed98f567320decf`；Core/QA当时均在该提交，Core clean、QA detached clean。**该提交是已验证T0交付来源，不是BATCH01_BASE_SHA。** 当前Core/QA状态见顶部A1-MASTER-04登记；不合并或修改其它worktree科学代码。
 
 固定事实来源（按提交读取，旧启动段落不能覆盖最终结论）：
 

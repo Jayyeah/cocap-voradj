@@ -1,0 +1,92 @@
+{
+  "schema": "batch01-master04-control-validation-v1",
+  "metadata_consistency": "PASS",
+  "launch_readiness": "EXPECTED_FAIL_CLOSED",
+  "negative_controls": {
+    "wrong_v2_lock_pin": {
+      "rejected": true,
+      "errors": [
+        "Candidate canonical lock mismatch",
+        "QA lease tests a different candidate/lock"
+      ]
+    },
+    "reuse_closed_v1_lease": {
+      "rejected": true,
+      "errors": [
+        "QA lease registry mismatch",
+        "QA lease tests a different candidate/lock",
+        "V2 reused V1 lease",
+        "V2 smoke lacks formal network or real-pin resume/source guard",
+        "V2 CUDA lease includes a non-formal network or unreviewed node"
+      ]
+    },
+    "core_self_test_promoted_to_qa_pass": {
+      "rejected": true,
+      "errors": [
+        "Unfrozen candidate QA state inconsistent"
+      ]
+    },
+    "formal_lease_before_base_freeze": {
+      "rejected": true,
+      "errors": [
+        "Formal execution/lease present before BASE freeze"
+      ]
+    },
+    "small_network_cuda_node": {
+      "rejected": true,
+      "errors": [
+        "V2 CUDA lease includes a non-formal network or unreviewed node"
+      ]
+    }
+  },
+  "unchanged_batch_fields": {
+    "historical_anchor": true,
+    "arm_states": true,
+    "T2": true,
+    "batch02_preregistration": true,
+    "concurrency_proposal": true,
+    "version_migrations": true,
+    "leases": true,
+    "closed_qa_smoke_leases": true,
+    "qa_arm_gate_requirements": true
+  },
+  "unrelated_central_tasks_unchanged": {
+    "A0": true,
+    "A1": true,
+    "B1": true,
+    "B2": true,
+    "A2": true,
+    "A3": true,
+    "M-COV": true,
+    "M-CAP": true,
+    "B3": true,
+    "B4": true,
+    "OLD-MIX-CLOSEOUT": true,
+    "OLD-CAP-CLOSEOUT": true,
+    "IQN-METRIC-AUGMENT": true,
+    "IQN-Z05-INDEPENDENT-EVIDENCE": true,
+    "A4": true,
+    "EXP-EVIDENCE-01": true,
+    "EXP-PERSIST-01": true,
+    "BATCH02-E1": true,
+    "BATCH02-R2": true,
+    "BATCH02-N2": true,
+    "BATCH02-V1": true,
+    "BATCH02-M1": true,
+    "BATCH02-M2": true
+  },
+  "run_science_budget_init_and_execution_unchanged": {
+    "BATCH01-T0-HISTORICAL": true,
+    "BATCH01-T1": true,
+    "BATCH01-N1": true,
+    "BATCH01-R1": true,
+    "BATCH01-P1": true,
+    "BATCH01-C0": true,
+    "BATCH01-P1-control": true
+  },
+  "historical_v1_ledger_unchanged": true,
+  "cross_arm_delta_matrix_changed": false,
+  "CUDA_executed": false,
+  "formal_training_executed": false,
+  "independent_qa_verdict_assigned": false
+}

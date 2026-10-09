@@ -1,5 +1,7 @@
 # Batch01 Core V2 定向修复与 A3 独立复验合同
 
+> Master04更新：Core V2已接收，当前CORE_V2_DELIVERED / WAITING_QA_V2；下方是Master03历史修复要求。新的固定SHA/lock与专用CUDA窗口以[V2 A3 handoff](BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)为准，不能把下方“无新lease/等待Core”当当前事实。
+
 日期：2026-10-09。中央Master已接收A3第二轮正式 `BASE_QA_BLOCK`；Core修复任务由用户确认已分配，本文件登记后续交付/复验条件，不再次派发Agent，不实现修复，不重新规划实验。
 
 ## 当前权威状态

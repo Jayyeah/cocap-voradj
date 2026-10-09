@@ -76,12 +76,13 @@ def validate(require_ready=False):
         else:
             check(r['common_source_hashes'] == lock['common_source_hashes'], f'{r["run_id"]}: common code hash drift')
     if base is None:
-        check(lock['status'] == state['status'] and state['status'] in {'WAITING_BASE', 'WAITING_CORE_V2'}, 'Unfrozen batch must wait for BASE or revised Core candidate')
+        check(lock['status'] == state['status'] and state['status'] in {'WAITING_BASE', 'WAITING_CORE_V2', 'WAITING_QA_V2'}, 'Unfrozen batch must wait for BASE, revised Core or independent QA')
         check(all(v == 'WAITING_BASE' for v in state['arm_states'].values()), 'Arm unlocked before BASE freeze')
         check(not state['training_launched'] and not state['benchmark_executed'] and not state['leases'], 'Formal execution/lease present before BASE freeze')
     else:
         check(bool(SHA.fullmatch(base)), 'BASE must be a real full SHA')
         check(base == lock['core_candidate_sha'] == lock['qa_tested_candidate_sha'], 'QA did not test frozen Core candidate')
+        check(lock.get('QA_SAME_SHA') in {'PASS', 'BASE_QA_PASS', 'BASE_QA_PASS_WITH_ARM_GATES'}, 'Frozen BASE lacks explicit independent same-SHA acceptance')
         check(bool(lock['qa_report_head'] and SHA.fullmatch(lock['qa_report_head'])), 'QA report HEAD missing')
         check(bool(lock['common_source_hashes']), 'Common source manifest missing')
         check(all(HASH.fullmatch(v) for v in lock['common_source_hashes'].values()), 'Invalid common source hash')
@@ -90,8 +91,8 @@ def validate(require_ready=False):
         check(lock['base_lock_sha256'] == actual_lock_hash, 'Frozen lock digest mismatch')
     candidate = lock.get('core_candidate_sha')
     if candidate:
-        receipt = load(DIRECTORY / 'master02/core_candidate_verification.json')
-        candidate_lock = load(DIRECTORY / 'master02/received_core_candidate_lock.json')
+        receipt = load(ROOT / lock.get('core_verification_ref', 'artifacts/2026-10-09_terl_mappo_batch01/master02/core_candidate_verification.json'))
+        candidate_lock = load(ROOT / lock.get('candidate_lock_ref', 'artifacts/2026-10-09_terl_mappo_batch01/master02/received_core_candidate_lock.json'))
         check(bool(SHA.fullmatch(candidate)), 'Core candidate must be a full scientific SHA')
         check(candidate != lock.get('core_delivery_head'), 'Document HEAD incorrectly used as scientific candidate')
         check(candidate == state['core']['candidate_sha'] == registry['core_candidate_sha'] == central['batch01']['core_candidate_sha'] == receipt['candidate_sha'], 'Candidate receipt mismatch')
@@ -133,17 +134,45 @@ def validate(require_ready=False):
         check(state['storage']['personal_quota'] == 'UNKNOWN' and not state['storage']['shared_space_is_exclusive_quota'], 'Shared available disk incorrectly treated as private quota')
         check(not storage['deletion_authorized'] and not storage['archive_authorized'] and storage['actual_reclaimed_bytes_this_task'] == 0, 'Unauthorized Storage cleanup registered')
         check(not state['storage']['cleanup_authorized'] and not state['storage']['archive_authorized'], 'Storage cleanup scope changed')
+        if state['status'] == 'WAITING_QA_V2':
+            old = load(DIRECTORY / 'master03/qa_block_receipt.json')
+            history = state['qa']['historical_v1_review']
+            check(history['verdict'] == 'BASE_QA_BLOCK' and history['tested_candidate_sha'] == old['tested_candidate_sha'] and history['report_head'] == old['qa_report_head'], 'V1 independent QA block history lost')
+            check(candidate != old['tested_candidate_sha'] and digest != old['canonical_lock_sha256'], 'V2 reuses rejected V1 pins')
+            check(lock['core_v1_status'] == state['core_v1_status'] == registry['core_v1_status'] == central['batch01']['core_v1_status'] == 'CORE_V1_QA_BLOCKED', 'V1 status changed after V2 delivery')
+            check(state['core']['status'] == lock['core_candidate_status'] == tasks['BATCH01-CORE-V2']['status'] == 'CORE_V2_DELIVERED', 'V2 delivery status mismatch')
+            check(state['qa']['status'] == tasks['BATCH01-QA-V2']['status'] == state['gates']['INDEPENDENT_QA_SAME_SHA'] == 'WAITING_QA_V2', 'V2 QA wait status mismatch')
+            check(state['qa']['requested_candidate_sha'] == tasks['BATCH01-QA-V2']['candidate_sha'] == candidate and state['qa']['requested_canonical_lock_sha256'] == tasks['BATCH01-QA-V2']['canonical_lock_sha256'] == digest, 'V2 QA request not pinned to current candidate')
+            check(state['gates']['BASE_FREEZE'] == tasks['BATCH01-BASE-FREEZE']['status'] == 'BASE_FREEZE_BLOCKED', 'V2 delivery automatically unlocked freeze')
+            check(tasks['BATCH01-CORE-A2']['status'] == 'CORE_V1_QA_BLOCKED' and tasks['BATCH01-QA-BASE']['status'] == 'BASE_QA_BLOCK', 'Historical V1 tasks changed')
+            check(not migrations['versions'] and not migrations['migrations'], 'Unfrozen V2 fabricated a BASE release/migration')
+            check({f['id'] for f in state['qa_fix_requirements']} == {'B1', 'B2', 'B3', 'B4', 'Q1'} and all(f['status'] == 'CORE_V2_REPORTED_FIXED_PENDING_A3' for f in state['qa_fix_requirements']), 'Core repair claims mistaken for independent closure')
+            recheck = load(ROOT / state['storage']['latest_recheck_ref'])
+            check(recheck['A0_audit_still_valid'] and all(x['matches_received_a0'] for x in recheck['original_file_hash_checks'].values()) and not recheck['cleanup_authorized'], 'A0 integrity or cleanup scope changed')
+            proposal = lock['evaluation_proposal']
+            domains = state['evaluation_protocol_open_issue']
+            check(proposal['status'] == 'PROPOSED_NOT_FROZEN', 'Future ARM seed proposal silently frozen')
+            check(domains['core_candidate_domains'] != domains['central_batch01_proposed_domains'] and domains['no_observed_t0_final_reuse'], 'T0 historical and future ARM seed domains conflated')
     qa_lease_ids = state.get('qa_smoke_leases', [])
     if qa_lease_ids:
-        lease = load(DIRECTORY / 'master02/qa_smoke_lease.json')
-        check(qa_lease_ids == central['batch01']['qa_smoke_leases'] == [lease['lease_id']], 'QA lease registry mismatch')
+        lease = load(ROOT / lock['qa_smoke_lease_ref'])
+        check(qa_lease_ids == central['batch01']['qa_smoke_leases'] == registry['active_qa_smoke_leases'] == lock['active_qa_smoke_leases'] == [lease['lease_id']], 'QA lease registry mismatch')
         check(lease['purpose'] == 'INDEPENDENT_QA_CUDA_CORRECTNESS_ONLY' and not lease['formal_training_authorized'] and not lease['benchmark_authorized'] and not lease['arms_authorized'], 'QA lease authorizes formal work')
         check(lease['candidate_sha'] == candidate and lease['canonical_lock_sha256'] == lock['core_candidate_canonical_lock_sha256'], 'QA lease tests a different candidate/lock')
         check(lease['physical_gpu'] == 0 and lease['CUDA_VISIBLE_DEVICES'] == '0' and lease['process_local_device'] == 'cuda:0', 'QA GPU mapping mismatch')
         check(lease['max_compute_processes'] == lease['max_attempts'] == 1 and lease['parallel_gpu_jobs'] == 0, 'QA lease concurrency/retry broadened')
         caps = lease['execution_caps']
-        for key, maximum in {'cuda_test_total_wall_seconds': 300, 'lease_active_wall_seconds': 600, 'total_joint_environment_decisions': 128, 'total_rollout_ppo_calls': 8, 'torch_peak_allocated_mib': 2048, 'own_driver_vram_mib': 4096, 'cpu_threads': 1, 'own_ram_rss_gib': 8, 'new_output_growth_gib': 1}.items():
+        v2 = state['status'] == 'WAITING_QA_V2'
+        for key, maximum in {'cuda_test_total_wall_seconds': 300, 'lease_active_wall_seconds': 600, 'total_joint_environment_decisions': 1024 if v2 else 128, 'total_rollout_ppo_calls': 8, 'torch_peak_allocated_mib': 2048, 'own_driver_vram_mib': 4096, 'cpu_threads': 1, 'own_ram_rss_gib': 8, 'new_output_growth_gib': 2 if v2 else 1}.items():
             check(0 < caps[key] <= maximum, f'QA lease exceeds {key}')
+        if v2:
+            closeout = load(DIRECTORY / 'master03/qa_lease_closeout.json')
+            check(lease['lease_id'] != closeout['lease_id'] and closeout['status'] == 'CLOSED_UNUSED_CORE_V1_QA_BLOCKED', 'V2 reused V1 lease')
+            check(lease['expected_test_work']['full_width_network'] == [256, 8, 4] and lease.get('real_candidate_checkpoint_guard_supplement', {}).get('required'), 'V2 smoke lacks formal network or real-pin resume/source guard')
+            check(set(lease['allowed_pytest_nodes']) == {
+                'test/test_terl_mappo_batch01_base_20261009.py::test_formal_entry_t0_full_update_and_exact_resume[cuda:0]',
+                'test/test_terl_mappo_batch01_qa_repairs_20261009.py::test_b3_density_guard_preserves_all_rng_and_replays_exact_latent[cuda:0]',
+            }, 'V2 CUDA lease includes a non-formal network or unreviewed node')
         check(caps['evaluator_workers'] == 0, 'QA lease creates evaluator backlog')
         window = (dt.datetime.fromisoformat(lease['expires_at']) - dt.datetime.fromisoformat(lease['issued_at'])).total_seconds()
         check(0 < window <= 7200, 'QA smoke grant window exceeds two hours')

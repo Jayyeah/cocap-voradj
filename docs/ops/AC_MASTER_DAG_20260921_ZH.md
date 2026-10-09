@@ -1,5 +1,14 @@
 # AC MASTER DAG（2026-09-21）
 
+## 2026-10-09 A1-MASTER-04 Core V2接收与独立QA授权（覆盖下方历史快照）
+
+- 远程恢复中央起点`74518967d3efc6de923a282c4cdd5cfc0593e585`；Core科学candidate **`863a0cf55aca0ace8a0aaab36d9166aa4c97268f`**，canonical lock **`885ec7b8617cf88e2537b08ebf041e1d8bfc41f120b7ec4aef1708c4a513a8a4`**；交付报告HEAD`d49cabbbb514b65c2bd28a1b14cf834eea614a20`单列。96个共同文件逐一hash一致，T0 parent/原源码配置不变，交付仅报告/证据增量。Core77 passed/3 CUDA skipped/0 failed不是A3 PASS。[V2回执](../../artifacts/2026-10-09_terl_mappo_batch01/master04/core_v2_verification.json)。
+- **CORE_V2_DELIVERED / WAITING_QA_V2 / BASE_FREEZE_BLOCKED**，`QA_SAME_SHA=PENDING`、`BATCH01_BASE_SHA=null`。V1 `CORE_V1_QA_BLOCKED`与A3报告974cdd1完整保留。T0 COMPLETE、五线与P1-control WAITING_BASE，T2/Batch02/Evidence/Persistent原门禁不变，无正式训练lease/launch/源码修改/子Agent。
+- A0原件/TSV/保护清单重新匹配，容量审计继续有效、正式启动前仍须动态复核；最新共享可用136.73GiB、RAM available103.58GiB、128CPU load1=3.34。两卡10×1s均util0、未见compute PID，其它用户CPU任务受保护。quota UNKNOWN，非独占共享容量，无删除归档授权。[资源](../../artifacts/2026-10-09_terl_mappo_batch01/master04/resource_snapshot.json)、[A0复核](../../artifacts/2026-10-09_terl_mappo_batch01/master04/storage_recheck.json)。
+- 新V2 QA-only lease **`B01-QA-CUDA-V2-863a0cf-20261009T173831`**，物理GPU0/进程内cuda:0、单compute进程/CPU线程1、正式256/8/4。CUDA总≤300s、active≤600s、≤1024 joint decisions/≤8真实PPO、Torch≤2GiB/自身driver≤4GiB/RSS≤8GiB/新输出≤2GiB；有效至`2026-10-09T19:38:31.228981+08:00`，激活须fresh preflight、留≥10分钟。旧V1 grant已关闭不能复用；Master未执行CUDA。超时/外部GPU作业/上限只停止自有QA，交证据释放，CPU/static可先行。[机器lease](../../artifacts/2026-10-09_terl_mappo_batch01/master04/qa_smoke_lease.json)。
+- A3需独立复验B1–B4/Q1、正式T0 parity、775k只读strict load、真实V2 pin的source/RNG/full-state resume；现有占位manifest测试须补充实际SHA/lock绑定。T0历史seed域保持，未来ARM新域提案仍不同且未冻结，须实际seed列表disjoint/RNG证据与明确Master冻结。[可直接转交A3 handoff](../experiments/BATCH01_V2_INDEPENDENT_QA_HANDOFF_20261009_ZH.md)。
+- **NEXT WAKE-UP**：用户转交同V2 SHA/lock的A3已push验收报告、CUDA实际使用/release或WAIT及seed reconciliation，或lease preflight失败/到期/超限请求复核。A3明确同SHA通过之后才进入后续Master冻结评审；本轮止于等待QA。共同BASE发布/迁移账本仍空，不把candidate V2记成released BASE-v2。
+
 本文件与 `artifacts/2026-09-21_ac_master_dag/state.json` 是跨 session 的唯一中央状态。只有 MASTER 可以写这两个文件；child 只能在各自 branch/worktree/rundir 工作，并以结构化 handoff 返回结果。禁止 nested subagents。
 
 ## 2026-10-09 A1-MASTER-03：Core V1 QA阻断、等待Core V2（当前权威状态）
