@@ -169,3 +169,5 @@ evaluator初始每run最多2 CPU workers，**全机Batch初始总额4 workers**�
 中央登记校验工具：[validate_terl_mappo_batch01.py](../../tools/validate_terl_mappo_batch01.py)，仅验证元数据一致性、不启动环境或模型。正常commit/push中央branch，push后fetch并直接ls-remote核验；最终交付HEAD由Git/final handoff给出，避免把包含自身的commit SHA写进本commit。当前附件中的HEAD字段明确是恢复或核验快照，不能冒充未来交付SHA。
 
 交付核验：中央metadata consistency PASS，4项内存注入负检查均拒绝（文档HEAD冒充candidate、冻结前正式lease、QA lease扩大为正式工作、共享空间冒充独占quota）；readiness按预期FAIL（QA/BASE/arm/Storage动态复核/seed/benchmark/正式lease/授权未完成）。此前规划commit `a5d5072c16e0cb0e1f38c2dfc4f1eb3ad95921ff` 的[旧同步回执](../../artifacts/2026-10-09_terl_mappo_batch01/remote_verification.json)保留为历史。A1-MASTER-02交付另行正常push/fetch/ls-remote核验；当前交付HEAD见Git与本轮handoff，不自引用。
+
+A1-MASTER-02登记交付 `a2e8de0fe5964bdfa325206ef1e6e13e52ab7434` 已正常push，完成fetch且local=origin=GitHub ls-remote。见[本轮同步回执](../../artifacts/2026-10-09_terl_mappo_batch01/master02/remote_verification.json)。回执commit另行推送核验，最终HEAD以Git和handoff为准；BASE仍null，QA_SAME_SHA仍PENDING。
