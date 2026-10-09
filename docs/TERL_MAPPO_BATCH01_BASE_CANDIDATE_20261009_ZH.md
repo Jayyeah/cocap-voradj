@@ -6,7 +6,7 @@
 
 工作分支：`experiment/terl-mappo-batch01-base-20261009`。
 
-科学 parent：`bb794ca8435f06b9fa5693c0fed98f567320decf`，来自 `experiment/terl-backbone-mappo-20261008`；开始工作时实际 remote HEAD 已核验相同。原 TERL 为 `143359b2722d49c29b4fecc0ad1fd8d46326e45a`。候选版本是首次包含本文件、共同子包和 `base_lock.json` 的提交。后续仅补充交付证据的 HEAD 与该 candidate SHA 分开记录；各实验必须显式固定 candidate SHA 与 canonical lock SHA256，不跟随 Core HEAD。
+科学 parent：`bb794ca8435f06b9fa5693c0fed98f567320decf`，来自 `experiment/terl-backbone-mappo-20261008`；开始工作时实际 remote HEAD 已核验相同。原 TERL 为 `143359b2722d49c29b4fecc0ad1fd8d46326e45a`。候选版本以最终交付证据的 candidate SHA 为准。第一次工程提交 `9a97d39` 被自身 startup gate 拦截，因为历史包初始化的日志等传递依赖尚未完整纳入 source lock；修订补充静态 import closure 和全新进程覆盖回归，原始科学模块未改。后续仅补充交付证据的 HEAD 与最终 candidate SHA 分开记录；各实验必须显式固定 candidate SHA 与 canonical lock SHA256，不跟随 Core HEAD。
 
 Selected checkpoint 为原始服务器文件：
 
@@ -102,7 +102,7 @@ Checkpoint sidecar schema `terl.batch01.checkpoint.v1` 含 checkpoint_sha256、s
 
 ## 7. 测试与独立 QA
 
-修改前先重跑原有基础 suite：43 passed、4 warnings。首次运行仅因 runs 父目录不存在造成5个 fixture setup error，补齐目录后完整重跑通过，没有修改科学实现。新增17项与原43项最终联合运行：**60 passed、4 warnings、48.31秒**，无 skip。[JUnit 证据](../artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml)。
+修改前先重跑原有基础 suite：43 passed、4 warnings。首次运行仅因 runs 父目录不存在造成5个 fixture setup error，补齐目录后完整重跑通过，没有修改科学实现。第一轮联合回归为60 passed；其后的 fresh-process startup 发现 source lock 传递依赖覆盖遗漏，补充第18项测试。修订候选最终联合回归：**61 passed、4 warnings、53.92秒、无 skip**，见 [JUnit 证据](../artifacts/2026-10-09_terl_mappo_batch01_base/tests.xml)。
 
 覆盖原源字节、Stage1 action/reward/event parity、terminal/truncation/pre-reset bootstrap、PPO/GAE/ValueNorm、no-target/fully-masked、on-policy ratio、optimizer隔离、seed隔离、实际256/8/4 CPU/CUDA完整 update/resume、三场景正式shape前后向、continuous物理动作接口拒绝整数误路由、BASE/source/config漂移、checkpoint sidecar与跨实验 retention。正式resume测试比较16-step更新后保存再8-step续接，科学值逐位一致，不把缩小网络 smoke 当作正式入口。
 

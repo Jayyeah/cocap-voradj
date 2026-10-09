@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import ast
 import hashlib
 import json
 import os
@@ -61,6 +62,37 @@ def source_inventory(root=ROOT):
                 files.add(p.relative_to(root).as_posix())
     files.update({ANCHOR_CONFIG, 'configs/experiments/terl_mappo_20261008/stage1.json',
                   PROTOCOL_PATH, 'tools/batch01_base_20261009.py'})
+    # Package __init__ files import historical trainer/dynamics/logging modules
+    # even when only the MAPPO learner is requested. Freeze their import closure
+    # without rewriting those packages or accepting unverified live dependencies.
+    pending = [p for p in files if p.startswith('src/') and p.endswith('.py')]
+    visited = set()
+
+    def include_module(name):
+        if not name.startswith(('cocap_voradj', 'terl_mappo')):
+            return
+        parts = name.split('.')
+        for length in range(1, len(parts) + 1):
+            prefix = '/'.join(parts[:length])
+            for candidate in (f'src/{prefix}.py', f'src/{prefix}/__init__.py'):
+                if (root / candidate).is_file() and candidate not in files:
+                    files.add(candidate); pending.append(candidate)
+
+    while pending:
+        path = pending.pop()
+        if path in visited: continue
+        visited.add(path)
+        parts = Path(path).relative_to('src').with_suffix('').parts
+        package = parts[:-1]
+        for node in ast.walk(ast.parse((root / path).read_text())):
+            if isinstance(node, ast.Import):
+                for alias in node.names: include_module(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                prefix = list(package[:len(package) - node.level + 1]) if node.level else []
+                module = '.'.join(prefix + (node.module.split('.') if node.module else []))
+                include_module(module)
+                for alias in node.names:
+                    if alias.name != '*': include_module(module + '.' + alias.name)
     return {p: file_hash(root / p) for p in sorted(files)}
 
 

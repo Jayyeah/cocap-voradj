@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import random
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -116,6 +118,14 @@ def test_real_source_lock_matches_anchor_and_rejects_wrong_pin():
     with pytest.raises(ValueError, match='pin mismatch'): verify_base(lock, d, '0' * 64)
     bad = copy.deepcopy(d); bad['base']['candidate_sha'] = 'HEAD'
     with pytest.raises(ValueError, match='explicit full'): verify_base(lock, bad, fingerprint(lock))
+
+
+def test_fresh_process_all_transitive_runtime_imports_are_locked():
+    code = ('from terl_mappo.batch01.provenance import assert_loaded_sources_covered; '
+            'from terl_mappo.batch01.contracts import source_inventory; '
+            'assert_loaded_sources_covered(source_inventory())')
+    result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_added_removed_and_changed_source_require_exact_delta(monkeypatch):
