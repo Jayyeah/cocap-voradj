@@ -25,6 +25,9 @@ def digest(path):
 def supervise(cache):
  registry,rows=inspect_runs();state=read(DIRECTORY/'batch_state.json');leases={l['id']:l for l in state.get('pilot_gpu_leases',[])}
  compute=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True).strip()
+ free_gpu={}
+ for line in subprocess.check_output(['nvidia-smi','--query-gpu=uuid,memory.free','--format=csv,noheader,nounits'],text=True).splitlines():
+  uuid,amount=line.split(',');free_gpu[uuid.strip()]=float(amount)
  stat=os.statvfs('/home/yjq');free=stat.f_bavail*stat.f_frsize;ram=memory();events=[];own={r.get('pid') for r in rows if r.get('alive')}
  for row in rows:
   if row.get('mode',row.get('execution_mode'))!='PROVISIONAL':continue
@@ -41,6 +44,7 @@ def supervise(cache):
    if free<30*1024**3:reason='disk reserve below30GiB'
    if row.get('disk_bytes',0)>8*1024**3:reason='run output above8GiB'
    if row.get('torch_peak_allocated_mib',0)>2048:reason='GPU lease above2GiB'
+   if free_gpu.get(row.get('gpu_uuid'),0)<4096:reason='GPU dynamic free headroom below4GiB'
    if ram['MemAvailable']<8*1024**3:reason='RAM reserve below8GiB'
    if row.get('scientific_quarantine'):reason='scientific provenance quarantined'
    if row.get('last_exception') or row.get('status','').startswith('FAILED'):reason='failed contract must stop'

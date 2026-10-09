@@ -33,6 +33,11 @@ def gate_gpu(gpu,adding=1):
  if idle and gpu not in idle:raise ValueError('idle GPU available; user preference requires it')
  active=[r for r in rows if r['uuid']==uuids[gpu] and r['uid']==os.getuid()]
  maximum=2 if all(external.values()) or external[gpu] else 4
+ # A measured lease remains a cap after an external task exits.
+ state=read(D/'batch_state.json');registry=read(D/'run_registry.json');active_ids={r['run_id'] for r in registry.get('pilot_runs',[]) if r.get('pid') in {x['pid'] for x in active}}
+ for lease in state.get('pilot_gpu_leases',[]):
+  if lease.get('gpu_uuid')==uuids[gpu] and active_ids.intersection(lease.get('runs',[])):
+   maximum=min(maximum,lease.get('maximum_compute_processes',maximum))
  if len(active)+adding>maximum:raise ValueError('GPU own-line cap exceeded')
  if free[gpu]<4096+2048*adding:raise ValueError('GPU measured headroom insufficient')
  st=os.statvfs('/home/yjq');reserve=st.f_bavail*st.f_frsize
