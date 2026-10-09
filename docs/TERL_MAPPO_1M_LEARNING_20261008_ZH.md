@@ -1,7 +1,7 @@
 # TERL-MAPPO 累计1m Stage1自动线
 
-更新时间：2026-10-09T09:36:50.169669+08:00。
-自动线状态：`RUNNING_TO_1M`；总目标1,000,000 joint environment decisions；已完成累计步数：859,728。
+更新时间：2026-10-09T09:44:00.581770+08:00。
+自动线状态：`RUNNING_TO_1M`；总目标1,000,000 joint environment decisions；已完成累计步数：889,080。
 科学分类：`PENDING`。100k gate结果不控制续训。
 
 100k原run为精确续训parent；从100k checkpoint恢复actor/critic、Adam、ValueNorm、环境、全部RNG与计数。只改变累计budget：100k→1m；原native Stage1、256/8/4 backbone、seed9/109、PPO超参及25k保存切点全部保持。
@@ -78,13 +78,15 @@
 | 825000 | screen | sample | 7/7/10 | 10/10/7 | 0/10 | 636.50/467.50/1191.90 | 3 |
 | 850000 | screen | argmax | 8/8/10 | 8/8/8 | 2/10 | 489.94/389.50/906.25 | 2 |
 | 850000 | screen | sample | 4/4/10 | 8/6/4 | 4/10 | 1300.88/1287.75/1467.30 | 6 |
+| 875000 | screen | argmax | 2/2/10 | 8/6/2 | 2/10 | 24.25/24.25/28.05 | 8 |
+| 875000 | screen | sample | 3/3/10 | 9/9/3 | 4/10 | 790.67/1127.50/1187.50 | 7 |
 
 原100k的screen结果复用且记录来源，后续每25k regular各10局，100/250/500/750/1000k各20局。screen/selection seed沿用原配置；最终独立seed2046101800起，各50局，与原100k final隔离。
 最终selection候选为screen预声明排序的前三个checkpoint，held-out各20局，再按normal、低collision、strict、ring3、较早step排序。保留latest、固定milestones、当前前三候选和待评估点，其余仅在完整screen/hash验证后删除本自动线文件。
 
 best checkpoint/hash：`PENDING` / `PENDING`。
 最新数值健康：`True`；training PID：`1045822`。
-最新PPO指标：`{"steps": 859728, "agent_transitions": 2579184, "optimizer_steps": 19789, "reward_mean": 8.43998858095209, "reward_min": 3.0051772704817203, "reward_max": 9.0, "actor_loss": -0.007500251444677512, "value_loss": 0.0004967840698858103, "entropy": 1.162176529566447, "clip_fraction": 0.08289930783212185, "approx_kl": 0.006293440858523051, "actor_grad_norm": 4.090981582800548, "value_grad_norm": 0.0638995726282398, "explained_variance": -0.08591771125793457, "value_norm_mean": 518.5028076171875, "value_norm_std": 372.6190185546875, "kl_early_stop": 0.0, "ppo_epochs_completed": 3.0, "minibatch_updates": 6.0, "actor_update_l2": 0.05190169532629986, "actor_update_relative_l2": 0.0005453631960416444, "approx_kl_max": 0.012051599100232124, "update_count": 3370.0, "post_update_ratio_mean": 1.0061115026474, "post_update_ratio_min": 0.2625322639942169, "post_update_ratio_max": 2.2929768562316895, "post_update_clip_fraction": 0.2356770932674408, "post_update_kl": 0.023611709475517273, "episodes": 0, "training_capture": 0, "training_collision": 0}`。
+最新PPO指标：`{"steps": 889080, "agent_transitions": 2667240, "optimizer_steps": 20453, "reward_mean": 8.293207046905964, "reward_min": 1.8679216089498478, "reward_max": 9.0, "actor_loss": -0.0133078225577871, "value_loss": 0.0028172741876915097, "entropy": 1.0738980571428935, "clip_fraction": 0.03819444589316845, "approx_kl": 0.0032191449491721, "actor_grad_norm": 1.418820967276891, "value_grad_norm": 0.07308676900962989, "explained_variance": -0.1320117712020874, "value_norm_mean": 528.2367553710938, "value_norm_std": 370.66741943359375, "kl_early_stop": 0.0, "ppo_epochs_completed": 3.0, "minibatch_updates": 6.0, "actor_update_l2": 0.06975804042577975, "actor_update_relative_l2": 0.0007328957688098037, "approx_kl_max": 0.008405267260968685, "update_count": 3485.0, "post_update_ratio_mean": 1.0078438520431519, "post_update_ratio_min": 0.19700981676578522, "post_update_ratio_max": 1.9474221467971802, "post_update_clip_fraction": 0.1106770858168602, "post_update_kl": 0.010388098657131195, "episodes": 0, "training_capture": 0, "training_collision": 0}`。
 
 每checkpoint完整reward/entropy/type/time统计及相同步数PPO指标见artifact summary/evaluation JSON。低collision不等于低boundary；训练episode ring仅是终止时刻，学习判断使用独立整局visitation。
 
