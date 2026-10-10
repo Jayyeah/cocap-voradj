@@ -64,7 +64,7 @@ def main():
         selection=out.parent/'selected.json'
         if not selection.exists() or read(selection).get('checkpoint_sha256')!=file_hash(a.checkpoint):
             raise ValueError('final requires frozen selection receipt')
-        if manifest['execution_mode']=='PROVISIONAL':raise ValueError('pilot cannot consume final holdout')
+        if manifest['execution_mode'] in {'PROVISIONAL','PROVISIONAL_LONG'}:raise ValueError('pilot cannot consume final holdout')
     lockdir=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime/evaluator_leases');lockdir.mkdir(parents=True,exist_ok=True)
     lease=None
     while lease is None:
@@ -93,7 +93,7 @@ def main():
     result={'checkpoint':a.checkpoint,'checkpoint_sha256':digest,'steps':ck['steps'],'seed_domain':a.domain,
             'seed_base':seeds[0],'episodes_per_mode':n,'duration_seconds':time.monotonic()-start,
             'scene':label,'evaluation_protocol':protocol,'execution_mode':manifest['execution_mode'],
-            'status':'SMOKE_NOT_FORMAL_EVIDENCE' if a.domain=='smoke' else 'PROVISIONAL_SCREEN' if manifest['execution_mode']=='PROVISIONAL' else 'COMPLETE',
+            'status':'SMOKE_NOT_FORMAL_EVIDENCE' if a.domain=='smoke' else 'PROVISIONAL_SCREEN' if manifest['execution_mode'] in {'PROVISIONAL','PROVISIONAL_LONG'} else 'COMPLETE',
             'modes':{mode:summarize([r for r in rows if r['mode']==mode]) for mode in ('argmax','sample')},'episodes':rows}
     atomic_json(out,result);out.with_suffix('.partial.json').unlink(missing_ok=True);print(json.dumps({k:v for k,v in result.items() if k!='episodes'}),flush=True)
 
