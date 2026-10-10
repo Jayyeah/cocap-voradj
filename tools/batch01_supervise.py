@@ -79,6 +79,12 @@ def supervise(cache):
  _,rows=inspect_runs();snapshot={'time':now(),'pid':os.getpid(),'status':'MONITORING','automatic_restart':False,'automatic_budget_extension':False,
    'independent_QA':state['QA_SAME_SHA'],'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','disk_free_bytes':free,'memory':ram,
    'GPU_processes':compute,'events':events,'attention_required':[{'run_id':r['run_id'],'status':r['status']} for r in rows if not r.get('scientific_quarantine') and (r.get('status','').startswith(('FAILED','STOPPED','PROVISIONAL_LONG_STARTING')) or any(e.get('status','').startswith('EVALUATION_') for e in r.get('evaluation',[])))],'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
+ queue_path=RUNTIME/'v3r2_long_queue.json'
+ if queue_path.exists():
+  queue=read(queue_path);snapshot['long_queue']=queue
+  for label,item in queue.get('items',{}).items():
+   if item.get('attention_required'):snapshot['attention_required'].append({'variant':label,'queue_status':item['status'],'last_exception':item.get('last_exception')})
+  if queue.get('status')!='QUEUE_FINISHED' and (datetime.now(timezone.utc)-datetime.fromisoformat(queue['heartbeat'])).total_seconds()>90:snapshot['attention_required'].append({'queue_status':'HEARTBEAT_STALE','last_heartbeat':queue['heartbeat']})
  write(RUNTIME/'supervisor.json',snapshot);return snapshot
 
 def main():

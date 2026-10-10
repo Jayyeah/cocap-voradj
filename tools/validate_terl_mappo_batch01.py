@@ -46,7 +46,7 @@ def validate_v3(require_ready=False):
     check(not state['training_launched'] and not state['leases'],'formal training or leases present before freeze')
     check(state['storage']['personal_quota']=='UNKNOWN' and not state['storage']['shared_space_is_exclusive_quota'] and not state['storage']['cleanup_authorized'],'storage scope drift')
     check(state['pilot_authorization']['maximum_additional_joint_decisions_per_run']==25000 and not state['pilot_authorization']['automatic_extension'] and not state['pilot_authorization']['retroactive_promotion'],'pilot authorization broadened')
-    ids=[r['run_id'] for r in registry['runs']+registry.get('pilot_runs',[])]
+    ids=[r['run_id'] for r in registry['runs']+registry.get('pilot_runs',[])+registry.get('pending_provisional_long_runs',[])]
     check(len(ids)==len(set(ids)),'duplicate run id')
     for run in registry['runs']:
         if run.get('historical_evidence_only'):check(run['status']=='COMPLETE','T0 historical status changed');continue

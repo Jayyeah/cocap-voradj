@@ -56,7 +56,7 @@ def inspect_runs():
  return registry,rows
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--write',action='store_true');p.add_argument('--json',action='store_true');args=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--write',action='store_true');p.add_argument('--json',action='store_true');p.add_argument('--current',action='store_true');args=p.parse_args()
  if args.write:
   lockdir=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime');lockdir.mkdir(parents=True,exist_ok=True)
   descriptor=(lockdir/'registry.lock').open('w');fcntl.flock(descriptor,fcntl.LOCK_EX)
@@ -70,6 +70,12 @@ def main():
    if row.get('scientific_quarantine') or row['source_candidate_sha']!=state['core']['candidate_sha']:continue
    key='P1-'+row['variant'].split('-')[1] if row['variant'].startswith('p1-') else row['variant'].upper()
    state.setdefault('engineering_arm_states',{})[key]=row['status']
+  queue_path=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime/v3r2_long_queue.json')
+  if queue_path.exists():
+   queue=read(queue_path);state['provisional_long_queue']=queue
+   for label,item in queue.get('items',{}).items():
+    if not any(r['variant']==label and r.get('execution_mode')=='PROVISIONAL_LONG' for r in rows):state['engineering_arm_states'][label.upper()]=item['status']
+   central['batch01']['provisional_long_queue']=queue
   central['batch01']['engineering_arm_states']=state.get('engineering_arm_states',{})
   central['batch01']['provisional_training_launched']=launched;central['batch01']['pilot_gpu_leases']=state['pilot_gpu_leases'];central['batch01']['pilot_runs']=[{'run_id':r['run_id'],'status':r['status'],'pid':r.get('pid'),'step':r.get('step'),'checkpoint':r.get('checkpoint')} for r in rows]
   central['updated_at']=now
@@ -78,6 +84,15 @@ def main():
  if args.json:print(json.dumps({'time':now,'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','QA':state['qa']['status'],'core_status':state['core']['status'],'runs':rows},ensure_ascii=False,indent=2))
  else:
   print('BASE:',state['base_freeze_status'],'|',state['core']['status'],'|',state['qa']['status'])
+  if args.current:
+   latest={}
+   for r in rows:
+    if r['source_candidate_sha']==state['core']['candidate_sha'] and not r.get('scientific_quarantine'):latest[r['variant']]=r
+   queued={k for k,v in state.get('provisional_long_queue',{}).get('items',{}).items() if v['status']!='PROVISIONAL_LONG_LAUNCHED'}
+   rows=[r for r in latest.values() if r['variant'] not in queued or r.get('execution_mode')=='PROVISIONAL_LONG']
   for r in rows:
    cp=r.get('checkpoint') or {};print(r['run_id'],r['status'],'PID',r.get('pid'),'GPU',r.get('physical_gpu'),'step',r.get('step',r['start_step']),'update',r.get('update'),'checkpoint',cp.get('path'),'alive',r['alive'])
+  if args.current:
+   for label,item in state.get('provisional_long_queue',{}).get('items',{}).items():
+    if not any(r['variant']==label and r.get('execution_mode')=='PROVISIONAL_LONG' for r in rows):print(label.upper(),'LONG',item['status'],'PID None; previous pilot status is historical')
 if __name__=='__main__':main()

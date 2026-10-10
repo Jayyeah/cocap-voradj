@@ -24,7 +24,7 @@ def main():
   try:
    item.update(status='CUDA_GATE_ACTIVE',gpu=gpu);state(doc)
    if not (m.art(label)/'cuda/contract.json').exists():m.preflight([label],'cuda:0',gpu)
-   m.evaluators(label)
+   if not (m.art(label)/'evaluator_gate.json').exists():m.evaluators(label)
    if not (m.art(label)/'gate_summary.json').exists():m.qualify(label)
    item['status']='GATES_PASS_WAITING_SLOT';state(doc)
    # Capacity is rechecked after preflight and remote delivery.

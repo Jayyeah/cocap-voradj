@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-10T01:01:01.800015+00:00",
+  "updated_at": "2026-10-10T01:09:07.646908+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -744,6 +744,70 @@
       "external_sharing_authorized": true,
       "max_output_gib_per_run": 8,
       "keep_reserve_gib": 30
+    },
+    {
+      "id": "B01-LONG-R1-20261010-GPU1",
+      "gpu": 1,
+      "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+      "runs": [
+        "B01-R1-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 975000,
+      "expires_at": "2026-10-12T01:01:51.930880+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+    },
+    {
+      "id": "B01-LONG-P1-CONTROL-20261010-GPU0",
+      "gpu": 0,
+      "gpu_uuid": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+      "runs": [
+        "B01-P1-CONTROL-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 200000,
+      "expires_at": "2026-10-12T01:02:10.670458+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+    },
+    {
+      "id": "B01-LONG-N1-20261010-GPU1",
+      "gpu": 1,
+      "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+      "runs": [
+        "B01-N1-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 975000,
+      "expires_at": "2026-10-12T01:02:21.239243+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+    },
+    {
+      "id": "B01-LONG-P1-TREATMENT-20261010-GPU0",
+      "gpu": 0,
+      "gpu_uuid": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+      "runs": [
+        "B01-P1-TREATMENT-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 200000,
+      "expires_at": "2026-10-12T01:02:32.933690+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
     }
   ],
   "pilot_authorization": {
@@ -756,10 +820,10 @@
     "all_line_specific_science_resource_resume_smokes_required": true
   },
   "pilot_arm_states": {
-    "p1-control": "PROVISIONAL_COMPLETE",
-    "p1-treatment": "PROVISIONAL_COMPLETE",
-    "r1": "PROVISIONAL_COMPLETE",
-    "n1": "PROVISIONAL_COMPLETE",
+    "p1-control": "PROVISIONAL_LONG_RUNNING",
+    "p1-treatment": "PROVISIONAL_LONG_RUNNING",
+    "r1": "PROVISIONAL_LONG_RUNNING",
+    "n1": "PROVISIONAL_LONG_RUNNING",
     "t1": "QUARANTINED_PROVISIONAL",
     "c0": "PROVISIONAL_COMPLETE"
   },
@@ -816,27 +880,42 @@
     "automatic_budget_extension": false
   },
   "engineering_arm_states": {
-    "P1-control": "PROVISIONAL_COMPLETE",
-    "P1-treatment": "PROVISIONAL_COMPLETE",
-    "R1": "PROVISIONAL_COMPLETE",
-    "N1": "PROVISIONAL_COMPLETE",
-    "T1": "LONG_CPU_PASS_CUDA_WAITING_SHARED_GPU_SLOT",
-    "C0": "PROVISIONAL_COMPLETE"
+    "P1-control": "PROVISIONAL_LONG_RUNNING",
+    "P1-treatment": "PROVISIONAL_LONG_RUNNING",
+    "R1": "PROVISIONAL_LONG_RUNNING",
+    "N1": "PROVISIONAL_LONG_RUNNING",
+    "T1": "WAITING_SHARED_GPU_SLOT",
+    "C0": "WAITING_SHARED_GPU_SLOT"
   },
   "provisional_long_authorization": {
-    "id": "USER-PROVISIONAL-LONG-20261010",
     "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/provisional_long_authorization_20261010.json",
     "sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
-    "explicit_user_authorized": true,
+    "id": "USER-PROVISIONAL-LONG-20261010",
     "automatic_extension": false,
-    "formal_evidence": false,
-    "retroactive_promotion": false,
-    "final_domain_allowed": false,
-    "stage3_training_authorized": false
+    "formal_evidence": false
   },
   "secondary_queue_incident": {
     "T1": "EVALUATOR_CLI_FIXED_THREE_SCENE_SMOKE_PASS",
     "historical_queue": "FINISHED_C0_COMPLETE_T1_NOT_LAUNCHED",
     "retry": "NEW_RUN_EXPLICIT_LONG_BUDGET"
+  },
+  "provisional_long_queue": {
+    "status": "QUEUE_MONITORING",
+    "automatic_budget_extension": false,
+    "automatic_restart_failed_runs": false,
+    "independent_QA": "QA_PENDING",
+    "BASE_FROZEN": false,
+    "formal_evidence": false,
+    "items": {
+      "t1": {
+        "status": "WAITING_SHARED_GPU_SLOT",
+        "reason": "both GPUs occupied; shared GPU maximum2 own compute lines"
+      },
+      "c0": {
+        "status": "WAITING_SHARED_GPU_SLOT"
+      }
+    },
+    "heartbeat": "2026-10-10T01:09:01.416003+00:00",
+    "pid": 2171510
   }
 }
