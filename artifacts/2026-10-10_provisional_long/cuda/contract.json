@@ -1,0 +1,203 @@
+{
+  "status": "LONG_OPERATIONAL_PREFLIGHT_PASS",
+  "device": "cuda:0",
+  "length": 256,
+  "delta_hash": "4b886ef39fe45194e17c2be76069c38397cb1aa56c7098870061dc635a025ec9",
+  "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+  "checks": {
+    "authorization_pinned": true,
+    "old_pilot_caps_preserved": true,
+    "strict_full_state_parent": true,
+    "scratch_or_stage_transfer": false,
+    "config_and_science_sources_unchanged": true,
+    "new_bound_full_state_resume_exact": true,
+    "parent_next_rollout_update_exact": true
+  },
+  "receipt": {
+    "type": "STRICT_FULL_STATE_OPERATIONAL_CONTINUATION",
+    "parent_run_id": "B01-N1-PROV-V3R2-20261009",
+    "parent_head": "54f2467f0ea213b2ff1f0bd99d3db54e3c6b8f3c",
+    "checkpoint": "/home/yjq/rl/CoCap1/batch01-n1-v3r2-20261009/runs/B01-N1-PROV-V3R2-20261009/checkpoints/step_000025000.pt",
+    "checkpoint_sha256": "1f50acf36a8c63d424987aa548af3912a03809378eb83c31d7848d5643c89594",
+    "parent_manifest_sha256": "0901bebfa42190559ed04385221a54ccbe1e85efd13c4fa76f20ee0833ed1272",
+    "steps": 25000,
+    "strict_load": true,
+    "config_unchanged": true,
+    "science_sources_unchanged": true,
+    "declared_operational_source_changes": [
+      "src/terl_mappo/batch01/arms/evaluator.py",
+      "src/terl_mappo/batch01/arms/long_budget.py",
+      "src/terl_mappo/batch01/arms/long_preflight.py",
+      "src/terl_mappo/batch01/arms/runner.py"
+    ],
+    "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+    "formal_evidence": false,
+    "retroactive_promotion": false
+  },
+  "warm_start_receipt": null,
+  "active_values": {
+    "environment": {
+      "counts": [
+        3,
+        1,
+        0,
+        4
+      ],
+      "map": [
+        120.0,
+        120.0
+      ],
+      "spawn_min_pe": 10.0,
+      "dt": 0.05,
+      "integration_substeps": 10,
+      "decision_seconds": 0.5,
+      "pursuer_max_speed": 3.0,
+      "evader_max_speed": 3.5,
+      "aw9": [
+        [
+          -0.4,
+          -0.5235987755982988
+        ],
+        [
+          -0.4,
+          0.0
+        ],
+        [
+          -0.4,
+          0.5235987755982988
+        ],
+        [
+          0.0,
+          -0.5235987755982988
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.5235987755982988
+        ],
+        [
+          0.4,
+          -0.5235987755982988
+        ],
+        [
+          0.4,
+          0.0
+        ],
+        [
+          0.4,
+          0.5235987755982988
+        ]
+      ],
+      "capture_distance": 8.0,
+      "related_distance": 18.0,
+      "goal_reward": 120.0,
+      "distance_reward": 5.0,
+      "timestep_penalty": -1.0,
+      "emergency_penalty": -5.0,
+      "collision_penalty": -80.0,
+      "boundary_penalty": -5.0,
+      "decay_factor": -0.05,
+      "evenly_distributed_reward": 5.0,
+      "unevenly_distributed_reward": -10.0,
+      "perception_range": 20.0,
+      "token_count": 19,
+      "horizon_decisions": 3001,
+      "episode_reset_min_active": 3,
+      "collision_semantics": "native_end_of_decision",
+      "enemy_distance_filter": false
+    },
+    "scene": {
+      "pursuers": 3,
+      "evaders": 1,
+      "obstacles": 0,
+      "cores": 4,
+      "map": [
+        120.0,
+        120.0
+      ],
+      "horizon_decisions": 3001,
+      "decision_seconds": 0.5
+    },
+    "action_backend": {
+      "family": "categorical_aw9",
+      "entropy_measure": "categorical_shannon_nats",
+      "logprob_measure": "discrete_probability_mass",
+      "categorical": true
+    },
+    "ppo": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_param": 0.2,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "actor_lr": 3e-05,
+      "critic_lr": 0.0001,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 1e-05
+    },
+    "architecture": {
+      "critic": {
+        "class": "CentralValueNetwork",
+        "layers": 4,
+        "heads": 8,
+        "hidden_dim": 256,
+        "self_feature_dim": 25,
+        "max_agents": 3,
+        "max_evaders": 1,
+        "max_obstacles": 1
+      }
+    },
+    "actor_mode": "eval",
+    "critic_mode": "eval",
+    "actor_parameters": 3898393,
+    "critic_parameters": 3240961,
+    "actor_optimizer": {
+      "class": "Adam",
+      "lr": 3e-05,
+      "eps": 1e-05
+    },
+    "critic_optimizer": {
+      "class": "Adam",
+      "lr": 0.0001,
+      "eps": 1e-05
+    },
+    "value_norm_state": {
+      "beta": 0.99999,
+      "epsilon": 1e-05
+    },
+    "device": "cuda:0"
+  },
+  "metrics": {
+    "actor_loss": -0.023961628166337807,
+    "value_loss": 0.0038395133160520345,
+    "entropy": 2.188683191935221,
+    "clip_fraction": 0.0,
+    "approx_kl": 0.0001885816460950688,
+    "actor_grad_norm": 0.5707448025544485,
+    "value_grad_norm": 1.0507300606307883,
+    "explained_variance": 0.5927685499191284,
+    "value_norm_mean": -266.42364501953125,
+    "value_norm_std": 130.20431518554688,
+    "kl_early_stop": 0.0,
+    "ppo_epochs_completed": 3.0,
+    "minibatch_updates": 6.0,
+    "actor_update_l2": 0.1335482531488609,
+    "actor_update_relative_l2": 0.0013206319061986381,
+    "approx_kl_max": 0.0005416823551058769,
+    "update_count": 99.0
+  },
+  "duration_seconds": 36.99728474300355,
+  "torch_peak_allocated_mib": 626.05224609375,
+  "checkpoint": {
+    "path": "/home/yjq/rl/CoCap1/batch01-n1-long-v3r2-20261010/artifacts/2026-10-10_provisional_long/cuda/bound_cuda_0.pt"
+  },
+  "formal_evidence": false
+}
