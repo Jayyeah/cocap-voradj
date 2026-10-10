@@ -1,0 +1,253 @@
+{
+  "status": "LONG_OPERATIONAL_PREFLIGHT_PASS",
+  "device": "cpu",
+  "length": 8,
+  "delta_hash": "6da583fe388771fce53657e632eaf67a5664964f94fefbae674149da6e9c74b1",
+  "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+  "checks": {
+    "authorization_pinned": true,
+    "old_pilot_caps_preserved": true,
+    "strict_full_state_parent": true,
+    "scratch_or_stage_transfer": false,
+    "config_and_science_sources_unchanged": true,
+    "new_bound_full_state_resume_exact": true,
+    "parent_next_rollout_update_exact": true
+  },
+  "receipt": {
+    "type": "STRICT_FULL_STATE_OPERATIONAL_CONTINUATION",
+    "parent_run_id": "B01-C0-PROV-V3R2-20261009",
+    "parent_head": "c29e670e3283a6b723e2f1ab899f1e072a8e1777",
+    "checkpoint": "/home/yjq/rl/CoCap1/batch01-c0-v3r2-20261009/runs/B01-C0-PROV-V3R2-20261009/checkpoints/step_000025000.pt",
+    "checkpoint_sha256": "afe7cc21db2c9c89a4700e161263dc7bf53360aa0396b7ecb42eea9c7f36060c",
+    "parent_manifest_sha256": "15640a38773b2488f16b2a7b2cec67d42dc9a38ee125fd0d5757d8f5b48572e0",
+    "steps": 25000,
+    "strict_load": true,
+    "config_unchanged": true,
+    "science_sources_unchanged": true,
+    "declared_operational_source_changes": [
+      "src/terl_mappo/batch01/arms/evaluator.py",
+      "src/terl_mappo/batch01/arms/long_budget.py",
+      "src/terl_mappo/batch01/arms/long_preflight.py",
+      "src/terl_mappo/batch01/arms/runner.py"
+    ],
+    "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+    "formal_evidence": false,
+    "retroactive_promotion": false
+  },
+  "warm_start_receipt": null,
+  "active_values": {
+    "environment": {
+      "counts": [
+        3,
+        1,
+        0,
+        4
+      ],
+      "map": [
+        120.0,
+        120.0
+      ],
+      "spawn_min_pe": 10.0,
+      "dt": 0.05,
+      "integration_substeps": 10,
+      "decision_seconds": 0.5,
+      "pursuer_max_speed": 3.0,
+      "evader_max_speed": 3.5,
+      "aw9": [
+        [
+          -0.4,
+          -0.5235987755982988
+        ],
+        [
+          -0.4,
+          0.0
+        ],
+        [
+          -0.4,
+          0.5235987755982988
+        ],
+        [
+          0.0,
+          -0.5235987755982988
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.5235987755982988
+        ],
+        [
+          0.4,
+          -0.5235987755982988
+        ],
+        [
+          0.4,
+          0.0
+        ],
+        [
+          0.4,
+          0.5235987755982988
+        ]
+      ],
+      "capture_distance": 8.0,
+      "related_distance": 18.0,
+      "goal_reward": 120.0,
+      "distance_reward": 5.0,
+      "timestep_penalty": -1.0,
+      "emergency_penalty": -5.0,
+      "collision_penalty": -80.0,
+      "boundary_penalty": -5.0,
+      "decay_factor": -0.05,
+      "evenly_distributed_reward": 5.0,
+      "unevenly_distributed_reward": -10.0,
+      "perception_range": 20.0,
+      "token_count": 19,
+      "horizon_decisions": 3001,
+      "episode_reset_min_active": 3,
+      "collision_semantics": "native_end_of_decision",
+      "enemy_distance_filter": false,
+      "action_family": "physical_continuous_aw",
+      "physical_bounds": [
+        [
+          -0.4,
+          0.4
+        ],
+        [
+          -0.5235987755982988,
+          0.5235987755982988
+        ]
+      ],
+      "integration_dispatch": "native Robot.update_state action_list[physical_command] passthrough",
+      "quantization": false
+    },
+    "scene": {
+      "pursuers": 3,
+      "evaders": 1,
+      "obstacles": 0,
+      "cores": 4,
+      "map": [
+        120.0,
+        120.0
+      ],
+      "horizon_decisions": 3001,
+      "decision_seconds": 0.5
+    },
+    "action_backend": {
+      "family": "tanh_gaussian_aw",
+      "entropy_measure": "physical_differential_mc_nats",
+      "logprob_measure": "physical_aw_joint_density",
+      "categorical": false
+    },
+    "ppo": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_param": 0.2,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "actor_lr": 3e-05,
+      "critic_lr": 0.0001,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 1e-05
+    },
+    "architecture": {
+      "actor": {
+        "class": "ContinuousTERLActor",
+        "layers": 4,
+        "heads": 8,
+        "hidden_dim": 256
+      },
+      "critic": {
+        "class": "CentralValueNetwork",
+        "layers": 4,
+        "heads": 8,
+        "hidden_dim": 256,
+        "self_feature_dim": 25,
+        "max_agents": 3,
+        "max_evaders": 1,
+        "max_obstacles": 1
+      }
+    },
+    "actor_mode": "eval",
+    "critic_mode": "eval",
+    "actor_parameters": 3565572,
+    "critic_parameters": 3240961,
+    "actor_optimizer": {
+      "class": "Adam",
+      "lr": 3e-05,
+      "eps": 1e-05
+    },
+    "critic_optimizer": {
+      "class": "Adam",
+      "lr": 0.0001,
+      "eps": 1e-05
+    },
+    "value_norm_state": {
+      "beta": 0.99999,
+      "epsilon": 1e-05
+    },
+    "device": "cpu"
+  },
+  "metrics": {
+    "actor_loss": -0.0025848479320605597,
+    "value_loss": 7.427462120782972e-05,
+    "entropy": -0.34884780397017795,
+    "clip_fraction": 0.0,
+    "approx_kl": 0.00020796640046683024,
+    "actor_grad_norm": 12.704237699508667,
+    "value_grad_norm": 0.09569647473593552,
+    "gaussian_mean_a": 0.047213576113184295,
+    "gaussian_mean_w": -0.18408694366614023,
+    "pre_tanh_mean_a": 0.047213576113184295,
+    "pre_tanh_mean_w": -0.18408694366614023,
+    "pre_tanh_mean_abs_a": 0.047213576113184295,
+    "pre_tanh_mean_abs_w": 0.18408694366614023,
+    "pre_tanh_mean_abs_max": 0.21270041167736053,
+    "sampled_latent_abs_mean": 0.49460474650065106,
+    "sampled_latent_abs_max": 1.564180612564087,
+    "log_std_a_mean": -0.43408242364724475,
+    "log_std_w_mean": -0.38986588021119434,
+    "log_std_min": -0.44698721170425415,
+    "log_std_max": -0.3840736746788025,
+    "gaussian_std_a": 0.6478783984978994,
+    "gaussian_std_w": 0.6771492958068848,
+    "std_a_mean": 0.6478783984978994,
+    "std_w_mean": 0.6771492958068848,
+    "entropy_base_gaussian": 2.0139288107554116,
+    "entropy_squashed_physical_mc": -0.34884780397017795,
+    "post_tanh_saturation_ratio": 0.0,
+    "post_tanh_saturation_any_ratio": 0.0,
+    "post_tanh_saturation_a_ratio": 0.0,
+    "post_tanh_saturation_w_ratio": 0.0,
+    "action_abs_a_mean": 0.13058665270606676,
+    "action_abs_w_mean": 0.25236185640096664,
+    "action_magnitude_mean": 0.31055501600106555,
+    "action_magnitude_max": 0.5350509881973267,
+    "action_log_prob_mean": 0.37066642691691715,
+    "action_log_prob_min": -0.7025465965270996,
+    "action_log_prob_max": 0.7064039707183838,
+    "critic_grad_norm": 0.09569647473593552,
+    "explained_variance": 0.3553341031074524,
+    "value_norm_mean": -135.49693298339844,
+    "value_norm_std": 90.68699645996094,
+    "kl_early_stop": 0.0,
+    "ppo_epochs_completed": 3.0,
+    "minibatch_updates": 6.0,
+    "actor_update_l2": 0.02439800673435372,
+    "actor_update_relative_l2": 0.00025721121925312805,
+    "approx_kl_max": 0.0008970350027084351,
+    "update_count": 99.0
+  },
+  "duration_seconds": 23.799161597155035,
+  "torch_peak_allocated_mib": 0,
+  "checkpoint": {
+    "path": "/home/yjq/rl/CoCap1/batch01-c0-long-v3r2-20261010/artifacts/2026-10-10_provisional_long/cpu/bound_cpu.pt"
+  },
+  "formal_evidence": false
+}
