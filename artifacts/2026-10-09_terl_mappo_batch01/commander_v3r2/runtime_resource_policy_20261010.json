@@ -1,0 +1,30 @@
+{
+  "schema": "batch01.runtime_resource_policy.v2",
+  "time": "2026-10-10T03:23:07.337350+00:00",
+  "source": "explicit user instruction 2026-10-10",
+  "user_instruction": "资源监督器是我们自己开启的吗？若是则关闭或修改，后续已经开启后的线不受资源约束而中断训练",
+  "supervisor_owned_by_us": true,
+  "prior_stop_trigger": "RAM reserve below8GiB",
+  "supervisor_runtime_resource_stop_enabled": false,
+  "runtime_resource_observations_action": "RESOURCE_ALERT_ONLY",
+  "startup_and_queue_resource_gates_enabled": true,
+  "startup_GPU_policy": "prefer entirely idle GPU; if both have external jobs, maximum2 own lines perGPU at launch",
+  "scientific_source_checkpoint_and_explicit_budget_stop_gates_unchanged": true,
+  "QA_status": "QA_PENDING",
+  "BASE_FROZEN": false,
+  "formal_evidence": false,
+  "source_locked_runner_hot_modified": false,
+  "source_locked_runner_remaining_runtime_limits": {
+    "GPU_peak_allocated_MiB": 2048,
+    "output_GiB_per_run": 8,
+    "disk_reserve_GiB": 30,
+    "scope": "runner.py already loaded under source lock; currently not triggered"
+  },
+  "tests": {
+    "file": "tests/test_batch01_supervise_resource_override.py",
+    "passed": 9,
+    "failed": 0
+  },
+  "supersedes_supervisor_resource_stop_rule_in": "commander_v3r2/resource_stop_recovery_20261010.json",
+  "authorization_sha256_unchanged": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+}

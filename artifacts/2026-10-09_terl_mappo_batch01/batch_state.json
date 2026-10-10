@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-10T03:12:36.132954+00:00",
+  "updated_at": "2026-10-10T03:23:07.533930+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -860,15 +860,17 @@
     "c0": "STOPPED_BY_SUPERVISOR"
   },
   "supervision": {
-    "status": "MONITORING",
-    "tmux": "batch01_commander_v3r2_supervisor",
-    "pid": 1680038,
+    "status": "STOPPED_FOR_USER_POLICY_UPDATE",
+    "tmux": "batch01_commander_v3r2_long_supervisor",
+    "pid": null,
     "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
     "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
     "tool": "tools/batch01_supervise.py",
     "interval_seconds": 30,
     "automatic_restart": false,
-    "automatic_budget_extension": false
+    "automatic_budget_extension": false,
+    "runtime_resource_stop_enabled": false,
+    "startup_resource_gates_enabled": true
   },
   "new_run_hold": null,
   "resource_policy_user_20261009": "prefer fully idle GPU if one exists; if both GPUs have external tasks, maximum2 own lines perGPU; measured capacity still required",
@@ -916,8 +918,8 @@
     "P1-treatment": "PROVISIONAL_LONG_RUNNING",
     "R1": "PROVISIONAL_LONG_RUNNING",
     "N1": "PROVISIONAL_LONG_RUNNING",
-    "T1": "STOPPED_BY_SUPERVISOR",
-    "C0": "STOPPED_BY_SUPERVISOR"
+    "T1": "WAITING_RESOURCE_RECOVERY_SLOT",
+    "C0": "WAITING_RESOURCE_RECOVERY_SLOT"
   },
   "provisional_long_authorization": {
     "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/provisional_long_authorization_20261010.json",
@@ -959,13 +961,108 @@
     "existing_authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
     "minimum_RAM_available_GiB": 24,
     "stable_30second_samples": 3,
-    "stop_RAM_reserve_GiB": 8,
     "minimum_resource_stop_cooldown_seconds": 90,
     "maximum_resource_restarts_per_run_per_hour": 3,
     "shared_GPU_maximum_own_lines": 2,
     "scientific_failure_auto_restart": false,
     "automatic_budget_extension": false,
     "source_delta_mutation": false,
-    "formal_evidence": false
-  }
+    "formal_evidence": false,
+    "supervisor_runtime_resource_stop_enabled": false,
+    "resource_observations_after_launch": "ALERT_ONLY",
+    "minimum_RAM_available_GiB_applies_to": "launch and queue only"
+  },
+  "resource_recovery_queue": {
+    "schema": "batch01.resource_only_recovery.v1",
+    "items": {
+      "p1-control": {
+        "status": "PROVISIONAL_LONG_RUNNING",
+        "PID": 2362944,
+        "GPU": "0",
+        "step": 920480
+      },
+      "p1-treatment": {
+        "status": "PROVISIONAL_LONG_RUNNING",
+        "PID": 2363231,
+        "GPU": "0",
+        "step": 920224
+      },
+      "r1": {
+        "status": "PROVISIONAL_LONG_RUNNING",
+        "PID": 2363030,
+        "GPU": "1",
+        "step": 85752
+      },
+      "n1": {
+        "status": "PROVISIONAL_LONG_RUNNING",
+        "PID": 2363528,
+        "GPU": "1",
+        "step": 113568
+      },
+      "t1": {
+        "status": "WAITING_RESOURCE_RECOVERY_SLOT",
+        "restore_checkpoint_step": 256,
+        "reason": "RAM needs24GiB sustained headroom; shared GPU maximum2 own lines"
+      },
+      "c0": {
+        "status": "WAITING_RESOURCE_RECOVERY_SLOT",
+        "restore_checkpoint_step": 25256,
+        "reason": "RAM needs24GiB sustained headroom; shared GPU maximum2 own lines"
+      }
+    },
+    "scientific_failure_restart": false,
+    "budget_extension": false,
+    "formal_evidence": false,
+    "minimum_RAM_available_bytes": 25769803776,
+    "required_stable_samples": 3,
+    "minimum_seconds_after_resource_stop": 90,
+    "pid": 2370226,
+    "heartbeat": "2026-10-10T03:22:41.884917+00:00",
+    "status": "RESOURCE_ONLY_MONITORING",
+    "RAM_available_bytes": 113104642048,
+    "stable_RAM_samples": 19
+  },
+  "runtime_resource_policy": {
+    "schema": "batch01.runtime_resource_policy.v2",
+    "time": "2026-10-10T03:23:07.337350+00:00",
+    "source": "explicit user instruction 2026-10-10",
+    "user_instruction": "资源监督器是我们自己开启的吗？若是则关闭或修改，后续已经开启后的线不受资源约束而中断训练",
+    "supervisor_owned_by_us": true,
+    "prior_stop_trigger": "RAM reserve below8GiB",
+    "supervisor_runtime_resource_stop_enabled": false,
+    "runtime_resource_observations_action": "RESOURCE_ALERT_ONLY",
+    "startup_and_queue_resource_gates_enabled": true,
+    "startup_GPU_policy": "prefer entirely idle GPU; if both have external jobs, maximum2 own lines perGPU at launch",
+    "scientific_source_checkpoint_and_explicit_budget_stop_gates_unchanged": true,
+    "QA_status": "QA_PENDING",
+    "BASE_FROZEN": false,
+    "formal_evidence": false,
+    "source_locked_runner_hot_modified": false,
+    "source_locked_runner_remaining_runtime_limits": {
+      "GPU_peak_allocated_MiB": 2048,
+      "output_GiB_per_run": 8,
+      "disk_reserve_GiB": 30,
+      "scope": "runner.py already loaded under source lock; currently not triggered"
+    },
+    "tests": {
+      "file": "tests/test_batch01_supervise_resource_override.py",
+      "passed": 9,
+      "failed": 0
+    },
+    "supersedes_supervisor_resource_stop_rule_in": "commander_v3r2/resource_stop_recovery_20261010.json",
+    "authorization_sha256_unchanged": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+  },
+  "historical_supervision": [
+    {
+      "status": "MONITORING",
+      "tmux": "batch01_commander_v3r2_supervisor",
+      "pid": 1680038,
+      "heartbeat_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor.json",
+      "events_path": "/home/yjq/rl/CoCap1/batch01-commander-runtime/supervisor_events.jsonl",
+      "tool": "tools/batch01_supervise.py",
+      "interval_seconds": 30,
+      "automatic_restart": false,
+      "automatic_budget_extension": false
+    }
+  ]
 }

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Persistent bounded-run supervision. No launch, restart or budget extension."""
+"""Science/budget supervision; running-job resources are telemetry only.
+
+User override 2026-10-10: resource gates apply before launch, never as a
+supervisor reason to terminate an already running training process.
+No launch, restart, budget extension or mutation of source-locked runners.
+"""
 import argparse
 from datetime import datetime,timezone
 import fcntl
@@ -13,6 +18,7 @@ import sys
 import time
 from batch01_status import ROOT,DIRECTORY,read,write,inspect_runs,alive
 RUNTIME=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime')
+RUNTIME_RESOURCE_STOP_ENABLED=False
 
 def now():return datetime.now(timezone.utc).isoformat()
 def memory():
@@ -26,13 +32,31 @@ def process_rss(pid):
  try:
   return next(int(line.split()[1])*1024 for line in Path(f'/proc/{pid}/status').read_text().splitlines() if line.startswith('VmRSS:'))
  except (OSError,StopIteration):return None
+def resource_alerts(row,rows,leases,free,ram,free_gpu,compute,own):
+ """Resource observations cannot enter the scientific stop-reason path."""
+ alerts=[]
+ if free<30*1024**3:alerts.append('disk reserve below30GiB')
+ if row.get('disk_bytes',0)>8*1024**3:alerts.append('run output above8GiB')
+ if row.get('torch_peak_allocated_mib',0)>2048:alerts.append('GPU lease above2GiB')
+ if free_gpu.get(row.get('gpu_uuid'),0)<4096:alerts.append('GPU dynamic free headroom below4GiB')
+ if ram['MemAvailable']<8*1024**3:alerts.append('RAM reserve below8GiB')
+ lease=leases.get(row.get('lease_id'))
+ try:
+  expired=not lease or datetime.fromisoformat(lease['expires_at'])<datetime.now(timezone.utc)
+ except (KeyError,ValueError,TypeError):expired=True
+ if expired:alerts.append('GPU lease missing/expired')
+ if any(row.get('gpu_uuid') and row['gpu_uuid'] in line and int(line.split(',')[0]) not in own for line in compute.splitlines()) and not (lease and lease.get('external_sharing_authorized')):
+  alerts.append('external process on originally exclusive leased GPU')
+ if lease and lease.get('external_sharing_authorized') and sum(1 for r in rows if r.get('alive') and r.get('gpu_uuid')==row.get('gpu_uuid'))>2:
+  alerts.append('shared GPU above startup maximum2 own lines')
+ return alerts
 def supervise(cache):
  registry,rows=inspect_runs();state=read(DIRECTORY/'batch_state.json');leases={l['id']:l for l in state.get('pilot_gpu_leases',[])}
  compute=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True).strip()
  free_gpu={}
  for line in subprocess.check_output(['nvidia-smi','--query-gpu=uuid,memory.free','--format=csv,noheader,nounits'],text=True).splitlines():
   uuid,amount=line.split(',');free_gpu[uuid.strip()]=float(amount)
- stat=os.statvfs('/home/yjq');free=stat.f_bavail*stat.f_frsize;ram=memory();events=[];own={r.get('pid') for r in rows if r.get('alive')}
+ stat=os.statvfs('/home/yjq');free=stat.f_bavail*stat.f_frsize;ram=memory();events=[];alerts=[];own={r.get('pid') for r in rows if r.get('alive')}
  for row in rows:
   if row.get('mode',row.get('execution_mode')) not in {'PROVISIONAL','PROVISIONAL_LONG'}:continue
   reason=None;cp=row.get('checkpoint')
@@ -53,18 +77,10 @@ def supervise(cache):
      cap=grant['authorized_end_step']-grant['start_step']
     except (OSError,KeyError,ValueError) as error:reason='invalid explicit long authorization: '+str(error)
    if row['step']>row['authorized_end_step'] or row['authorized_end_step']-row['start_step']>cap:reason='provisional budget exceeded'
-   if free<30*1024**3:reason='disk reserve below30GiB'
-   if row.get('disk_bytes',0)>8*1024**3:reason='run output above8GiB'
-   if row.get('torch_peak_allocated_mib',0)>2048:reason='GPU lease above2GiB'
-   if free_gpu.get(row.get('gpu_uuid'),0)<4096:reason='GPU dynamic free headroom below4GiB'
-   if ram['MemAvailable']<8*1024**3:reason='RAM reserve below8GiB'
+   observed=resource_alerts(row,rows,leases,free,ram,free_gpu,compute,own)
+   if observed:alerts.append({'time':now(),'run_id':row['run_id'],'pid':row['pid'],'action':'RESOURCE_ALERT_ONLY','reasons':observed})
    if row.get('scientific_quarantine'):reason='scientific provenance quarantined'
    if row.get('last_exception') or row.get('status','').startswith('FAILED'):reason='failed contract must stop'
-   lease=leases.get(row['lease_id'])
-   if not lease or datetime.fromisoformat(lease['expires_at'])<datetime.now(timezone.utc):reason='GPU lease missing/expired'
-   for line in compute.splitlines():
-    if row['gpu_uuid'] in line and int(line.split(',')[0]) not in own and not (lease and lease.get('external_sharing_authorized')):reason='new external process on exclusive leased GPU; yield own training'
-   if lease and lease.get('external_sharing_authorized') and sum(1 for r in rows if r.get('alive') and r.get('gpu_uuid')==row['gpu_uuid'])>2:reason='shared GPU exceeds user maximum2 own lines'
    if reason and alive(row['pid'],row['run_id']):
     os.kill(row['pid'],signal.SIGTERM)
     events.append({'time':now(),'run_id':row['run_id'],'pid':row['pid'],'action':'SIGTERM_OWN_RUN','reason':reason,'observed_RAM':ram,'own_process_RSS_bytes':{str(p):process_rss(p) for p in own},'disk_free_bytes':free,'GPU_free_MiB':free_gpu})
@@ -81,6 +97,7 @@ def supervise(cache):
   fcntl.flock(fd,fcntl.LOCK_UN);fd.close()
  subprocess.run([sys.executable,str(ROOT/'tools/batch01_status.py'),'--write'],check=True,stdout=subprocess.DEVNULL)
  _,rows=inspect_runs();snapshot={'time':now(),'pid':os.getpid(),'status':'MONITORING','automatic_restart':False,'automatic_budget_extension':False,
+   'runtime_resource_stop_enabled':RUNTIME_RESOURCE_STOP_ENABLED,'startup_resource_gates_enabled':True,'resource_alerts':alerts,
    'independent_QA':state['QA_SAME_SHA'],'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','disk_free_bytes':free,'memory':ram,
    'GPU_processes':compute,'events':events,'own_process_RSS_bytes':{str(p):process_rss(p) for p in own},'attention_required':[{'run_id':r['run_id'],'status':r['status']} for r in rows if not r.get('scientific_quarantine') and (r.get('status','').startswith(('FAILED','STOPPED','PROVISIONAL_LONG_STARTING')) or any(e.get('status','').startswith('EVALUATION_') for e in r.get('evaluation',[])))],'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
  queue_path=RUNTIME/'v3r2_long_queue.json'
@@ -95,7 +112,7 @@ def supervise(cache):
   for label,item in recovery.get('items',{}).items():
    if item.get('manual_review_required'):snapshot['attention_required'].append({'variant':label,'resource_recovery':item})
   if (datetime.now(timezone.utc)-datetime.fromisoformat(recovery['heartbeat'])).total_seconds()>90:snapshot['attention_required'].append({'resource_recovery':'HEARTBEAT_STALE'})
- with (RUNTIME/'resource_samples_20261010.jsonl').open('a') as f:f.write(json.dumps({k:snapshot[k] for k in ['time','memory','own_process_RSS_bytes','disk_free_bytes','events']})+'\n')
+ with (RUNTIME/'resource_samples_20261010.jsonl').open('a') as f:f.write(json.dumps({k:snapshot[k] for k in ['time','memory','own_process_RSS_bytes','disk_free_bytes','events','runtime_resource_stop_enabled','resource_alerts']})+'\n')
  write(RUNTIME/'supervisor.json',snapshot);return snapshot
 
 def main():
