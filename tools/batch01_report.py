@@ -17,9 +17,10 @@ from batch01_status import DIRECTORY, ROOT, inspect_runs, read
 from batch01_v3r2_commander import fp, hf, write
 
 LABELS = ("p1-control", "p1-treatment", "r1", "n1", "t1", "c0")
-OUT = DIRECTORY / "commander_v3r2/status_20261010"
-REPORT = ROOT / "docs/experiments/BATCH01_STATUS_20261010_ZH.md"
 TZ = ZoneInfo("Asia/Shanghai")
+REPORT_DATE = datetime.now(TZ).strftime("%Y%m%d")
+OUT = DIRECTORY / f"commander_v3r2/status_{REPORT_DATE}"
+REPORT = ROOT / f"docs/experiments/BATCH01_STATUS_{REPORT_DATE}_ZH.md"
 
 
 def git_receipt(item):
@@ -130,6 +131,8 @@ def snapshot():
     doc = {"schema": "batch01.provisional_status_snapshot.v1", "time_Asia_Shanghai": timestamp.isoformat(), "source_candidate_sha": state["core"]["candidate_sha"], "canonical_lock_sha256": state["core"]["canonical_lock_sha256"], "core_status": state["core"]["status"], "QA_status": state["qa"]["status"], "base_freeze_status": state["base_freeze_status"], "BASE_FROZEN": state["base_freeze_status"] == "BASE_FROZEN", "formal_RUNNING": 0, "retroactive_promotion": False, "final_consumed_by_report": False, "paired_screen_initial_states_verified": True, "best_screen_rule": "descriptive maximum normal_capture_rate; then minimum collision; then earliest step; no selection receipt or promotion", "ready_pending_authorized_runs": [], "blocked_next_runs": {"T1_Stage3": ["qualified Stage2 selection and Stage1 retention absent", "no Stage3 provisional budget registered"]}, "remotes": remotes, "resources": resource, "runs": summaries}
     if not doc["BASE_FROZEN"]:
         doc["blocked_next_runs"]["T1_Stage3"].insert(0, "independent same-candidate QA pending; BASE unfrozen")
+    for summary in summaries:
+        summary["evaluation"] = current[summary["variant"]].get("evaluation", [])
     write(OUT / "snapshot.json", doc)
     with (OUT / "screen_curves.csv").open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(curves[0]), lineterminator="\n")
@@ -168,7 +171,10 @@ def render(doc):
     rows = doc["runs"]
     complete = sum(r["status"] == "PROVISIONAL_LONG_COMPLETE" for r in rows)
     running = sum(r["alive"] for r in rows)
+    pending = sum(r["status"] == "PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN" for r in rows)
     lines = ["# Batch01 运行状态与结果快照", "", f"快照：{doc['time_Asia_Shanghai']}（Asia/Shanghai）。{complete}条线完成授权预算与screen，{running}条训练进程仍在运行；全部属于`PROVISIONAL_LONG`。没有合格且尚未启动的已登记预算。", "", f"科学candidate：`{doc['source_candidate_sha']}`；canonical lock：`{doc['canonical_lock_sha256']}`。`{doc['core_status']} / {doc['QA_status']} / {doc['base_freeze_status']}`。同一Commander执行A3独立编写的测试，不等于独立审核签字；正式RUNNING=0，不能追认为正式证据。", "", "## 当前运行与checkpoint", "", "| 线 | 状态 | 当前PID / GPU | step / 授权终点 | update | 最新checkpoint step |", "|---|---|---|---|---:|---:|"]
+    if pending:
+        lines[2] += f"另有{pending}条线已完成训练预算，末点screen尚待完成。"
     for r in rows:
         pid = f"{r['pid']} / {r['physical_gpu']}" if r["alive"] else "已退出"
         status = "PROVISIONAL运行" if r["alive"] else "PROVISIONAL预算与screen完成" if r["status"] == "PROVISIONAL_LONG_COMPLETE" else r["status"]
@@ -185,6 +191,8 @@ def render(doc):
         for mode, p in r["best_screen_observed"].items():
             lines.append(f"| {r['variant']} | {mode} | {p['step']:,} | {p['episodes']} | {p['normal_capture_rate']*100:.0f}% | {p['collision_rate']*100:.0f}% |")
     lines += ["", "P1两个分支已从同一775k完整状态配对到1M，live target KL分别0.02/0.01；末点treatment的normal capture高于control，属于本次单状态分叉的描述性结果。已覆盖775k之后全部25k screen点，同时保留best-observed与last，未创建selected/best promotion。", "", f"![P1配对screen保持曲线]({link}/p1_screen_curves.png)", "", f"[全部六线screen曲线CSV]({link}/screen_curves.csv)；[完整screen原件]({link}/screens/)按字节归档，机器快照列出每线总评估量。逐episode物理初态及sample seed offset已验证配对一致。", "", "## 启动与升级门禁", "", "T1 Stage2 100k已经完成首个review窗口，不把100k解释为必然失败。末点screen sample normal55%、collision40%，尚低于升级目标normal≥80%、collision≤20%；正式升级还须selection域每模式20局的Stage2资格及Stage1 retention，并须独立QA/冻结BASE。现在缺少上述合格报告，且尚无Stage3 PROVISIONAL预算，因此不启动Stage3，也不自动扩Stage2到200k。其它五线按各自已授权终点处理，未新增同名run。", "", "最终2076100900域保持盲态；screen2056100900、selection2066100900、sample offset100000、scene offsets0/1000/2000保持绑定，历史T0 final不变。", "", "资源检查只在启动/排队时决定是否可开启新任务；监督器运行期RAM/GPU/磁盘/租约阈值均为告警，不杀停已启动训练。源码、checkpoint、预算、QA门禁继续保留。训练器自身锁定源码中的2GiB allocation/8GiB输出/30GiB磁盘检查未热改，当前未触发。两卡仍有受保护的外部任务；没有停止或修改外部PID。", "", "## 云端与恢复入口", "", "Core、QA及六ARM的本地HEAD与远程HEAD逐一一致；完整分支与SHA见机器快照。中央文档、原始screen证据、曲线、资源恢复回执与DAG/run registry随本轮commit推送GitHub。checkpoint权重保留在服务器，仅同步路径/hash，不将大体积权重伪称已上传云端。", "", "```bash", "cd /home/yjq/rl/CoCap1/ac-master-dag-20260921", "python tools/batch01_status.py --current", "python tools/batch01_status.py --write --json", "python tools/batch01_report.py", "```", "", "持久监督器tmux：`batch01_commander_v3r2_long_supervisor`；恢复队列：`batch01_commander_resource_recovery`。CLI断连后可从中央registry、每run progress/manifest及runtime heartbeat恢复。NEXT WAKE-UP：R1后续25k checkpoint/screen与1M完成，或独立同SHA/lock QA签字到达；完成预算的线不自动续训。", ""]
+    wakeup = "R1后续25k checkpoint/screen与1M完成" if active["alive"] else "R1末点screen完成" if pending else "新的明确预算授权"
+    lines = [line.replace("R1后续25k checkpoint/screen与1M完成", wakeup) for line in lines]
     REPORT.write_text("\n".join(lines))
 
 

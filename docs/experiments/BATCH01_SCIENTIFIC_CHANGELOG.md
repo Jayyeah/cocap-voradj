@@ -72,3 +72,7 @@ Core V2 T0历史2026100800/2036100800/2046101800保持；未来ARM提案20561009
 - RESULT_CLASSIFICATION：同协议原始screen按字节归档，整理全部曲线及P1 775k→1M paired normal/collision保持图；best-observed与last同时报告，仅描述性PROVISIONAL结果，不生成selection或追认。
 - CONTRACT_COORDINATION：用户要求运行中资源约束不再由监督器强停；监督器RAM/GPU/磁盘/租约改为告警，源码/checkpoint/预算/QA门禁保留。锁定训练源码未热修改。
 - FACT_RECOVERY：旧矩阵/DAG全文保留为历史，当前入口统一至BATCH01_STATUS_20261010_ZH.md；六任务的工程状态从实际registry刷新，正式WAITING_BASE状态保留。证据与文档同步GitHub，checkpoint权重仍保留服务器、同步路径/hash。
+
+## 云端同步核验 2026-10-11
+
+补充10月11日实时状态：六条线均完成获授权训练预算，R1已保存1M checkpoint、末点screen仍在执行；补充R1新增screen与checkpoint路径/hash；Core、QA、六ARM远程HEAD核对一致，当前科学SHA/lock不变。旧10月10日快照及QA交接原件保留，最新文档入口更新至BATCH01_STATUS_20261011_ZH.md；仍为PROVISIONAL、QA_PENDING、BASE未冻结，权重保留服务器。

@@ -1,6 +1,6 @@
 # TERL-MAPPO Batch01 实验矩阵与运行入口
 
-当前运行快照、best/last、collision及曲线统一见[2026-10-10状态文档](BATCH01_STATUS_20261010_ZH.md)。实时状态使用`python tools/batch01_status.py --current`，中央事实源为[batch_state](../../artifacts/2026-10-09_terl_mappo_batch01/batch_state.json)与[run registry](../../artifacts/2026-10-09_terl_mappo_batch01/run_registry.json)。旧启动PID、25k上限及V1/V2状态已移至[完整历史记录](TERL_MAPPO_PARALLEL_MATRIX_HISTORY_20261010_ZH.md)，不覆盖当前状态。
+当前运行快照、best/last、collision及曲线统一见[2026-10-11状态文档](BATCH01_STATUS_20261011_ZH.md)。实时状态使用`python tools/batch01_status.py --current`，中央事实源为[batch_state](../../artifacts/2026-10-09_terl_mappo_batch01/batch_state.json)与[run registry](../../artifacts/2026-10-09_terl_mappo_batch01/run_registry.json)。旧启动PID、25k上限及V1/V2状态已移至[完整历史记录](TERL_MAPPO_PARALLEL_MATRIX_HISTORY_20261010_ZH.md)，不覆盖当前状态。
 
 ## BASE与执行分类
 
@@ -56,6 +56,6 @@ P1报告775k之后每25k保持曲线及best-observed、last和collision；新con
 - [完整历史矩阵及V1/V2协调证据](TERL_MAPPO_PARALLEL_MATRIX_HISTORY_20261010_ZH.md)
 - [既有V3r2独立QA交接原件](BATCH01_V3R2_QA_HANDOFF_20261009_ZH.md)，保持原文；其中25k是历史初始授权，新预算以本页及授权JSON为准。
 - [Scientific Changelog](BATCH01_SCIENTIFIC_CHANGELOG.md)
-- [当前状态、原始screen、曲线与云端SHA](BATCH01_STATUS_20261010_ZH.md)
+- [当前状态、原始screen、曲线与云端SHA](BATCH01_STATUS_20261011_ZH.md)
 
 Batch02/T2、Evidence/Persistent及其它旧实验继续保持原门禁。此文档整理不批准新科学delta、额外预算或正式训练。
