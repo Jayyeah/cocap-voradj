@@ -30,7 +30,7 @@ def supervise(cache):
   uuid,amount=line.split(',');free_gpu[uuid.strip()]=float(amount)
  stat=os.statvfs('/home/yjq');free=stat.f_bavail*stat.f_frsize;ram=memory();events=[];own={r.get('pid') for r in rows if r.get('alive')}
  for row in rows:
-  if row.get('mode',row.get('execution_mode'))!='PROVISIONAL':continue
+  if row.get('mode',row.get('execution_mode')) not in {'PROVISIONAL','PROVISIONAL_LONG'}:continue
   reason=None;cp=row.get('checkpoint')
   if cp:
    try:
@@ -40,7 +40,15 @@ def supervise(cache):
     if not reason and cache[key]!=cp['sha256']:reason='checkpoint hash mismatch; isolate run, no promotion'
    except OSError as error:reason='checkpoint unavailable; isolate this run: '+str(error)
   if row.get('alive'):
-   if row['step']>row['authorized_end_step'] or row['authorized_end_step']-row['start_step']>25000:reason='provisional budget exceeded'
+   cap=25000
+   if row.get('execution_mode')=='PROVISIONAL_LONG':
+    try:
+     auth=RUNTIME.parent/'ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/provisional_long_authorization_20261010.json'
+     grant=read(auth)['runs'][row['variant']]
+     if digest(auth)!=row['authorization_sha256'] or grant['run_id']!=row['run_id'] or grant['authorized_end_step']!=row['authorized_end_step'] or grant['start_step']!=row['start_step']:raise ValueError('long authorization pin mismatch')
+     cap=grant['authorized_end_step']-grant['start_step']
+    except (OSError,KeyError,ValueError) as error:reason='invalid explicit long authorization: '+str(error)
+   if row['step']>row['authorized_end_step'] or row['authorized_end_step']-row['start_step']>cap:reason='provisional budget exceeded'
    if free<30*1024**3:reason='disk reserve below30GiB'
    if row.get('disk_bytes',0)>8*1024**3:reason='run output above8GiB'
    if row.get('torch_peak_allocated_mib',0)>2048:reason='GPU lease above2GiB'
@@ -70,7 +78,7 @@ def supervise(cache):
  subprocess.run([sys.executable,str(ROOT/'tools/batch01_status.py'),'--write'],check=True,stdout=subprocess.DEVNULL)
  _,rows=inspect_runs();snapshot={'time':now(),'pid':os.getpid(),'status':'MONITORING','automatic_restart':False,'automatic_budget_extension':False,
    'independent_QA':state['QA_SAME_SHA'],'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','disk_free_bytes':free,'memory':ram,
-   'GPU_processes':compute,'events':events,'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
+   'GPU_processes':compute,'events':events,'attention_required':[{'run_id':r['run_id'],'status':r['status']} for r in rows if not r.get('scientific_quarantine') and (r.get('status','').startswith(('FAILED','STOPPED','PROVISIONAL_LONG_STARTING')) or any(e.get('status','').startswith('EVALUATION_') for e in r.get('evaluation',[])))],'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
  write(RUNTIME/'supervisor.json',snapshot);return snapshot
 
 def main():

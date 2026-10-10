@@ -52,15 +52,23 @@ def validate_v3(require_ready=False):
         if run.get('historical_evidence_only'):check(run['status']=='COMPLETE','T0 historical status changed');continue
         check(run['status']=='WAITING_BASE' and run['base_sha'] is None and run['formal_results'] is None,'formal ARM unlocked before independent QA')
     for run in registry.get('pilot_runs',[]):
-        check(run['execution_mode']=='PROVISIONAL' and run['max_additional_joint_decisions']<=25000,'unbounded or mislabeled pilot')
+        cap=25000
+        if run['execution_mode']=='PROVISIONAL_LONG':
+            auth_path=DIRECTORY/'commander_v3r2/provisional_long_authorization_20261010.json'
+            auth=load(auth_path);grant=auth['runs'][run['variant']]
+            check(hashlib.sha256(auth_path.read_bytes()).hexdigest()==run['authorization_sha256'],'long authorization hash mismatch')
+            check(grant['run_id']==run['run_id'] and grant['start_step']==run['start_step'] and grant['authorized_end_step']==run['authorized_end_step'],'long run differs from explicit grant')
+            check(not auth['formal_evidence'] and not auth['retroactive_promotion'] and not auth['automatic_budget_extension'] and not auth['final_domain_allowed'] and not auth['stage3_training_authorized'],'long provisional scientific gate removed')
+            cap=grant['authorized_end_step']-grant['start_step']
+        check(run['execution_mode'] in {'PROVISIONAL','PROVISIONAL_LONG'} and run['max_additional_joint_decisions']<=cap,'unbounded or mislabeled provisional run')
         check(not run.get('formal_evidence') and not run.get('retroactive_promotion'),'pilot treated as formal evidence')
         if run.get('scientific_quarantine'):
             old=state['historical_v3r1_snapshot']
             check(run['status']=='QUARANTINED_PROVISIONAL' and run['source_candidate_sha']==old['candidate_sha'] and run['source_lock_sha256']==old['canonical_lock_sha256'],'historical quarantined pilot pin/status mismatch')
         else:
             check(run['source_candidate_sha']==receipt['candidate_sha'] and run['source_lock_sha256']==digest,'pilot source pin drift')
-        check(run['authorized_end_step']-run['start_step']<=25000,'pilot endpoint exceeds cap')
-        if run.get('status')=='PROVISIONAL_RUNNING':
+        check(run['authorized_end_step']-run['start_step']<=cap,'provisional endpoint exceeds explicit cap')
+        if run.get('status') in {'PROVISIONAL_RUNNING','PROVISIONAL_LONG_RUNNING'}:
             check(run.get('pid') and run.get('gpu_uuid') and run.get('step',run['start_step'])>run['start_step'] and run.get('update',0)>run.get('start_update',0),'RUNNING without actual PPO update evidence')
     if require_ready:errors.append('QA_PENDING: independent V3 signature and final BASE freeze are required for formal readiness')
     return {'schema':'terl-mappo-batch-metadata-validation-v3','passed':not errors,'errors':errors,'batch_status':state['status'],'BATCH01_BASE_SHA':None,'core_candidate_sha':receipt['candidate_sha'],'QA_SAME_SHA':'PENDING','independent_qa':False,'execution_performed':bool(state.get('provisional_training_launched') or state.get('engineering_benchmark_executed')),'formal_execution_performed':False,'readiness_requested':require_ready}

@@ -36,8 +36,8 @@ def inspect_runs():
    row.update({k:v for k,v in live.items() if k not in ('base','branch','head','delta_hash','run_id')})
    row['evaluation']=list({e['output']:dict(e) for e in prior_evaluations+live.get('evaluation',[])}.values())
    row['actual_process_head']=live['head'];row['alive']=alive(row.get('pid'),row['run_id'])
-   if row['status'] in {'PROVISIONAL_RUNNING','STARTING'} and not row['alive']:row['status']='STOPPED_BY_SUPERVISOR' if row.get('supervisor_event') else 'STOPPED_UNEXPECTEDLY'
-   if row['status']=='PROVISIONAL_RUNNING' and (row['step']<=row['start_step'] or row['update']<=row['start_update']):raise ValueError('unverified RUNNING')
+   if row['status'] in {'PROVISIONAL_RUNNING','PROVISIONAL_LONG_RUNNING','STARTING','PROVISIONAL_LONG_STARTING'} and not row['alive']:row['status']='STOPPED_BY_SUPERVISOR' if row.get('supervisor_event') else 'STOPPED_UNEXPECTEDLY'
+   if row['status'] in {'PROVISIONAL_RUNNING','PROVISIONAL_LONG_RUNNING'} and (row['step']<=row['start_step'] or row['update']<=row['start_update']):raise ValueError('unverified RUNNING')
    for evaluation in row.get('evaluation',[]):
     p=Path(evaluation['output'])
     if p.exists():
@@ -48,7 +48,7 @@ def inspect_runs():
      evaluation['status']='EVALUATION_FAILED_PARTIAL' if p.with_suffix('.partial.json').exists() else 'EVALUATION_STOPPED'
      log=out/'logs'/f"eval_screen_{evaluation['step']:09d}.log"
      if log.exists():evaluation['last_exception']='\n'.join(log.read_text(errors='replace').splitlines()[-15:])
-   if row['status']=='PROVISIONAL_COMPLETE_PENDING_SCREEN' and row.get('evaluation') and all(e['status']=='PROVISIONAL_SCREEN' for e in row['evaluation']):row['status']='PROVISIONAL_COMPLETE'
+   if row['status'] in {'PROVISIONAL_COMPLETE_PENDING_SCREEN','PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN'} and row.get('evaluation') and all(e['status']=='PROVISIONAL_SCREEN' for e in row['evaluation']):row['status']='PROVISIONAL_LONG_COMPLETE' if row.get('execution_mode')=='PROVISIONAL_LONG' else 'PROVISIONAL_COMPLETE'
   else:row['alive']=False
   if row.get('scientific_quarantine'):
    row['pre_quarantine_status']=row['status'];row['status']='QUARANTINED_PROVISIONAL';row['formal_evidence']=False

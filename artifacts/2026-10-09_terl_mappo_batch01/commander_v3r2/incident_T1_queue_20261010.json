@@ -1,0 +1,13 @@
+{
+  "detected_at": "2026-10-10T00:50:09.989346+00:00",
+  "incident": "T1_EVALUATOR_CLI_GATE_FAILED_UNREPORTED",
+  "first_failure": "2026-10-09T15:13:20.768434+00:00",
+  "queue_error": "Traceback (most recent call last):\n  File \"/home/yjq/rl/CoCap1/ac-master-dag-20260921/tools/batch01_v3r2_queue.py\", line 50, in main\n    doc['arms'][label]['status']='EVALUATOR_SMOKE';snapshot(doc);m.evaluator_smoke(label)\n                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/yjq/rl/CoCap1/ac-master-dag-20260921/tools/batch01_v3r2_commander.py\", line 77, in evaluator_smoke\n    run(label,'terl_mappo.batch01.arms.evaluator',args,log=art(label)/f'evaluator_{scene}.txt')\n  File \"/home/yjq/rl/CoCap1/ac-master-dag-20260921/tools/batch01_v3r2_commander.py\", line 53, in run\n    with Path(log).open('w') as f:subprocess.run(command(label,module,args),cwd=root(label),env=env(label,gpu),stdout=f,stderr=subprocess.STDOUT,check=True,timeout=300)\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/anaconda3/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/usr/local/anaconda3/bin/python', '-S', '/home/yjq/rl/CoCap1/batch01-t1-v3r2-20261009/tools/batch01_python.py', '--lock-sha', '384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab', '--delta', '/home/yjq/rl/CoCap1/batch01-t1-v3r2-20261009/configs/experiments/terl_mappo_batch01_20261009/t1_delta.json', '--python-args', '-m', 'terl_mappo.batch01.arms.evaluator', '--manifest', '/home/yjq/rl/CoCap1/batch01-t1-v3r2-20261009/runs/preflight/v3r2_shared_benchmark/manifest.json', '--checkpoint', '/home/yjq/rl/CoCap1/batch01-t1-v3r2-20261009/runs/preflight/v3r2_shared_benchmark/checkpoints/step_000000512.pt', '--output', '/home/yjq/rl/CoCap1/batch01-t1-v3r2-20261009/artifacts/2026-10-09_arm_preflight/evaluator_stage1_smoke.json', '--domain', 'smoke', '--horizon-cap', '8', '--scene', 'stage1']' returned non-zero exit status 2.\n",
+  "root_cause": "commander used --scene stage1; actual interface --scene-stage integer1/2/3",
+  "training_semantics_changed": false,
+  "candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
+  "canonical_lock_sha256": "384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab",
+  "remediation": "correct scheduler arguments, preserve failed logs, validate all3 scene evaluator outputs, new per-run fresh lease, launch still-unused first25k T1 pilot",
+  "other5_runs": "normal budget completion; no unauthorized extension",
+  "independent_QA": "PENDING"
+}

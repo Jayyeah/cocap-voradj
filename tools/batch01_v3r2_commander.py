@@ -73,7 +73,7 @@ def evaluator_smoke(label):
  for scene in scenes:
   target=art(label)/f'evaluator_{scene}_smoke.json'
   args=['--manifest',str(out/'manifest.json'),'--checkpoint',cp,'--output',str(target),'--domain','smoke','--horizon-cap','8']
-  if label=='t1':args+=['--scene',scene]
+  if label=='t1':args+=['--scene-stage',str({'stage1':1,'stage2':2,'stage3':3}[scene])]
   run(label,'terl_mappo.batch01.arms.evaluator',args,log=art(label)/f'evaluator_{scene}.txt')
   r=read(target);offset={'stage1':0,'continuous':0,'stage2':1000,'stage3':2000}[scene]
   assert r['seed_domain']=='smoke' and r['seed_base']==2056100900+offset and len(r['episodes'])==2
@@ -104,7 +104,7 @@ def launch(label,gpu):
   assert state['core']['status']=='CORE_V3_SELFTEST_PASS' and state['core']['candidate_sha']==CANDIDATE and state.get('new_run_hold') is None
   assert state['base_freeze_status']=='BASE_FREEZE_BLOCKED' and state['QA_SAME_SHA']=='PENDING'
   if run_id in {r['run_id'] for r in registry.get('pilot_runs',[])} or (out/'progress.json').exists() or subprocess.run(['tmux','has-session','-t',session],capture_output=True).returncode==0:raise ValueError('duplicate run')
-  resource=gate_gpu(gpu);start=775000 if label.startswith('p1-') else 0;lease_id=f'B01-V3R2-GPU{gpu}-SHARED-PROVISIONAL'
+  resource=gate_gpu(gpu);start=775000 if label.startswith('p1-') else 0;lease_id=f'B01-V3R2-{label.upper()}-GPU{gpu}-SHARED-PROVISIONAL'
   row={'run_id':run_id,'arm':d['line'],'variant':label,'execution_mode':'PROVISIONAL','status':'PROVISIONAL_STARTING','source_candidate_sha':CANDIDATE,'source_lock_sha256':PIN,'branch':branch,'head':head,'worktree':str(root(label)),'delta_path':str(delta(label)),'delta_hash':fp(d),'resolved_config':read(art(label)/'cpu_contract.json')['active_values']['ppo'],'output_root':str(out),'tmux':session,'physical_gpu':str(gpu),'gpu_uuid':resource['uuid'],'pid':None,'lease_id':lease_id,'start_step':start,'start_update':read(root(label)/'runs/preflight/v3r2_shared_benchmark/progress.json')['update']-2,'authorized_end_step':start+25000,'max_additional_joint_decisions':25000,'formal_evidence':False,'retroactive_promotion':False,'checkpoint':None,'evaluation':[],'gates':gates,'registered_at':now(),'replaces_quarantined_run':'B01-'+label.upper()+'-PROV-V3-20261009','previous_weights_reused':False}
   registry.setdefault('pilot_runs',[]).append(row)
   lease=next((l for l in state['pilot_gpu_leases'] if l['id']==lease_id),None)
