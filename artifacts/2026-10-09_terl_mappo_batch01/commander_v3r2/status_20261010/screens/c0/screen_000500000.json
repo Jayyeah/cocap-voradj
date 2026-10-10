@@ -1,0 +1,1318 @@
+{
+  "checkpoint": "/home/yjq/rl/CoCap1/batch01-c0-long-v3r2-20261010/runs/B01-C0-PROVLONG-V3R2-20261010/checkpoints/step_000500000.pt",
+  "checkpoint_sha256": "56379391d1e56829cbc04965607ca741fbdf2c40915abc99b85ee6c5c0fcbfff",
+  "steps": 500000,
+  "seed_domain": "screen",
+  "seed_base": 2056100900,
+  "episodes_per_mode": 20,
+  "duration_seconds": 931.9699208219536,
+  "scene": "3P1E0O4C",
+  "evaluation_protocol": {
+    "schema": "terl.batch01.arm_evaluation.v1",
+    "checkpoint_interval": 25000,
+    "sample_torch_offset": 100000,
+    "screen": {
+      "seed_base": 2056100900,
+      "max_episodes_per_mode": 20,
+      "regular_episodes_per_mode": 10
+    },
+    "screen_milestones": [
+      0,
+      25000,
+      50000,
+      100000,
+      250000,
+      500000,
+      750000,
+      1000000
+    ],
+    "selection": {
+      "seed_base": 2066100900,
+      "max_episodes_per_mode": 20,
+      "top_screen_candidates": 3
+    },
+    "final": {
+      "seed_base": 2076100900,
+      "max_episodes_per_mode": 50
+    },
+    "modes": [
+      "argmax",
+      "sample"
+    ],
+    "selection_order": [
+      "mean_normal_capture_rate",
+      "negative_mean_collision_rate",
+      "mean_strict_geometry_rate",
+      "mean_ring3_rate",
+      "negative_step"
+    ],
+    "late_stage_window_checkpoints": 5,
+    "entropy_comparison": "within declared probability measure only",
+    "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels",
+    "protocol_id": "batch01-new-paired-20261009",
+    "scene_offsets": {
+      "3P1E0O4C": 0,
+      "4P1E1O6C": 1000,
+      "7P2E2O8C": 2000
+    },
+    "reserved_historical_protocol": {
+      "schema": "terl.batch01.evaluation.v1",
+      "checkpoint_interval": 25000,
+      "sample_torch_offset": 100000,
+      "screen": {
+        "seed_base": 2026100800,
+        "max_episodes_per_mode": 20,
+        "regular_episodes_per_mode": 10
+      },
+      "screen_milestones": [
+        0,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        750000,
+        1000000
+      ],
+      "selection": {
+        "seed_base": 2036100800,
+        "max_episodes_per_mode": 20,
+        "top_screen_candidates": 3
+      },
+      "final": {
+        "seed_base": 2046101800,
+        "max_episodes_per_mode": 50
+      },
+      "modes": [
+        "argmax",
+        "sample"
+      ],
+      "selection_order": [
+        "mean_normal_capture_rate",
+        "negative_mean_collision_rate",
+        "mean_strict_geometry_rate",
+        "mean_ring3_rate",
+        "negative_step"
+      ],
+      "late_stage_window_checkpoints": 5,
+      "entropy_comparison": "within declared probability measure only",
+      "multiscale_reporting": "per-scene rates, raw seconds, fraction of scene horizon; preserve scene labels"
+    },
+    "final_policy": "never train, tune, screen or select on final; shared paired physical seeds across future arms"
+  },
+  "execution_mode": "PROVISIONAL_LONG",
+  "status": "PROVISIONAL_SCREEN",
+  "modes": {
+    "mean": {
+      "capture_count": 5,
+      "normal_capture_count": 5,
+      "collision_count": 10,
+      "ring2_count": 10,
+      "ring3_count": 5,
+      "strict_geometry_count": 5,
+      "censored_count": 15,
+      "capture_rate": 0.25,
+      "normal_capture_rate": 0.25,
+      "collision_rate": 0.5,
+      "ring2_rate": 0.5,
+      "ring3_rate": 0.25,
+      "strict_geometry_rate": 0.25,
+      "censored_rate": 0.75,
+      "episodes": 20,
+      "success_n": 5,
+      "censored_n": 15,
+      "capture_time_mean": 397.7,
+      "capture_time_median": 272.5,
+      "capture_time_p90": 715.8000000000001,
+      "action_entropy": -0.8078579843253516,
+      "episode_reward_mean": 6018.84009642147,
+      "collision_types": {
+        "pursuer_evader": 10
+      },
+      "reward_components": {
+        "time": -1079.6,
+        "distance": 4312.787284954025,
+        "global": 2808.1666666666647,
+        "emergency": -75.66666666666683,
+        "collision": -13.333333333333334,
+        "goal": 66.48614480077649
+      }
+    },
+    "sample": {
+      "capture_count": 3,
+      "normal_capture_count": 3,
+      "collision_count": 16,
+      "ring2_count": 8,
+      "ring3_count": 3,
+      "strict_geometry_count": 3,
+      "censored_count": 17,
+      "capture_rate": 0.15,
+      "normal_capture_rate": 0.15,
+      "collision_rate": 0.8,
+      "ring2_rate": 0.4,
+      "ring3_rate": 0.15,
+      "strict_geometry_rate": 0.15,
+      "censored_rate": 0.85,
+      "episodes": 20,
+      "success_n": 3,
+      "censored_n": 17,
+      "capture_time_mean": 240.66666666666666,
+      "capture_time_median": 255.0,
+      "capture_time_p90": 318.6,
+      "action_entropy": -0.9689242942181255,
+      "episode_reward_mean": 2394.2942943830412,
+      "collision_types": {
+        "pursuer_evader": 12,
+        "pursuer_pursuer": 4
+      },
+      "reward_components": {
+        "time": -589.0,
+        "distance": 2139.1291459796216,
+        "global": 925.9999999999989,
+        "emergency": -93.6666666666667,
+        "collision": -26.666666666666668,
+        "goal": 38.498481736753114
+      }
+    }
+  },
+  "action_backend": {
+    "family": "tanh_gaussian_aw",
+    "entropy_measure": "physical_differential_mc_nats",
+    "logprob_measure": "physical_aw_joint_density",
+    "categorical": false
+  },
+  "episodes": [
+    {
+      "seed": 2056100900,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "2cd17783ddecf78936678ad3458cc74a4843dc280ac13dcccb35ea69066ca5cf",
+      "steps": 142,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 71.0,
+      "censored": false,
+      "reward_components": {
+        "time": -142.0,
+        "distance": 444.4468044223447,
+        "global": 255.0,
+        "emergency": -10.0,
+        "collision": 0.0,
+        "goal": 266.20598460851755
+      },
+      "episode_reward": 813.6527890308623,
+      "native_episode_reward": 813.6527890308624,
+      "action_entropy": -1.0003575100104365
+    },
+    {
+      "seed": 2056100901,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "ed2ef4036788e6fabb1e82a499ab42d658c5867360bd4bca23fbd4f6ec2aa6e7",
+      "steps": 1614,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 807.0,
+      "censored": false,
+      "reward_components": {
+        "time": -1614.0,
+        "distance": 6474.769736709321,
+        "global": 2350.0,
+        "emergency": -28.33333333333334,
+        "collision": 0.0,
+        "goal": 304.1526781387875
+      },
+      "episode_reward": 7486.589081514773,
+      "native_episode_reward": 7486.589081514782,
+      "action_entropy": -0.41607153217521436
+    },
+    {
+      "seed": 2056100902,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "27283bc18f2e38c673bae39f02c1af07c3121f2ae14dc2f7e5e9925e09ec8088",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 11370.475671853135,
+        "global": 5670.0,
+        "emergency": -8.333333333333334,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 14031.142338519809,
+      "native_episode_reward": 14031.14233851982,
+      "action_entropy": -0.26935117272210146
+    },
+    {
+      "seed": 2056100903,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "3c06e552a93cd8c657e33c1b168e3187646f463db42ef5a2830d5f75eb499c1c",
+      "steps": 62,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -62.0,
+        "distance": 94.5014379226119,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 0.834771255945224,
+      "native_episode_reward": 0.8347712559452157,
+      "action_entropy": -1.3441243892715824
+    },
+    {
+      "seed": 2056100904,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "71365edcb6bef3314cde455a1e565b86433309d6824df349f7c6e42e7098c7d0",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 11145.343532852077,
+        "global": 7455.0,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 15599.34353285208,
+      "native_episode_reward": 15599.343532852063,
+      "action_entropy": 0.14175448871442528
+    },
+    {
+      "seed": 2056100905,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "3974524e2f5b492182f2080602c6a94ec4c32b28abcbde0fa27d26ac0323f74e",
+      "steps": 545,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 272.5,
+      "censored": false,
+      "reward_components": {
+        "time": -545.0,
+        "distance": 2301.7183438685643,
+        "global": 2223.3333333333335,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 240.2428117624096
+      },
+      "episode_reward": 4220.294488964308,
+      "native_episode_reward": 4220.294488964306,
+      "action_entropy": -0.5374835859743853
+    },
+    {
+      "seed": 2056100906,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "f468a01b71b5e96bd129220e8ef09fff382f997a7ccbecac8a4274a5e47d356e",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 13194.673368013988,
+        "global": 12055.0,
+        "emergency": -578.3333333333342,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 21670.34003468066,
+      "native_episode_reward": 21670.340034680656,
+      "action_entropy": -0.4246720142827159
+    },
+    {
+      "seed": 2056100907,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "b784005e7d440cfd486aa7f40e1a937c03a6d015f8aec345e39482d27c3ffc81",
+      "steps": 38,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -38.0,
+        "distance": 44.47469876098783,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -25.19196790567884,
+      "native_episode_reward": -25.191967905678837,
+      "action_entropy": -2.5091750370828727
+    },
+    {
+      "seed": 2056100908,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "d37413ea210507de9135c2cada63352f3b05c49e0a84934d1e7af6b82ea3df68",
+      "steps": 518,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 259.0,
+      "censored": false,
+      "reward_components": {
+        "time": -518.0,
+        "distance": 2039.5885026180688,
+        "global": 1905.0,
+        "emergency": -6.666666666666667,
+        "collision": 0.0,
+        "goal": 292.0260597449678
+      },
+      "episode_reward": 3711.947895696371,
+      "native_episode_reward": 3711.947895696371,
+      "action_entropy": 0.14594986833610418
+    },
+    {
+      "seed": 2056100909,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "4b8b59dcfc7e89c5ff1aab81cb15cf6cac640d86748e9492580c71cf207d8f79",
+      "steps": 38,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -38.0,
+        "distance": 77.25311845351013,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 7.586451786843465,
+      "native_episode_reward": 7.586451786843454,
+      "action_entropy": -0.5312706157565117
+    },
+    {
+      "seed": 2056100910,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "50fffe46e06707813f57a04efc30d1ac0467038fc836baff428e328c789d475d",
+      "steps": 1158,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 579.0,
+      "censored": false,
+      "reward_components": {
+        "time": -1158.0,
+        "distance": 5179.834533041032,
+        "global": 5340.0,
+        "emergency": -85.00000000000003,
+        "collision": 0.0,
+        "goal": 227.09536176084734
+      },
+      "episode_reward": 9503.929894801906,
+      "native_episode_reward": 9503.92989480189,
+      "action_entropy": -0.042696904130774635
+    },
+    {
+      "seed": 2056100911,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "11dc580b7b6afb140244a680655438079f4ad1d995e3deb9b8f6f8fa03bef1b3",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 11657.69634346362,
+        "global": 7331.666666666667,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 15988.363010130275,
+      "native_episode_reward": 15988.363010130277,
+      "action_entropy": -0.7118589242761076
+    },
+    {
+      "seed": 2056100912,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "cf40801e6b4899afa216db25aa8b0640fef5dc59415bd564fa4dcd3c13302ede",
+      "steps": 34,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -34.0,
+        "distance": 62.01431247159614,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -3.6523541950705365,
+      "native_episode_reward": -3.6523541950705294,
+      "action_entropy": -1.6624171628671534
+    },
+    {
+      "seed": 2056100913,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "be22a137b9ffb16b169a7161d93f53bed1a4cce921622aa980c585e40dca1b30",
+      "steps": 42,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -42.0,
+        "distance": 64.91774354042643,
+        "global": -11.666666666666666,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -20.41558979290691,
+      "native_episode_reward": -20.415589792906907,
+      "action_entropy": -1.6863678296407063
+    },
+    {
+      "seed": 2056100914,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "7f2b1b9cf81791e5700b1a800f95c7b4e106daf5910fd9651da1761f8f1c1e60",
+      "steps": 2261,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -2261.0,
+        "distance": 10068.417925067333,
+        "global": 6754.999999999956,
+        "emergency": -505.0000000000023,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 14030.751258400673,
+      "native_episode_reward": 14030.751258400662,
+      "action_entropy": -0.8060825610183647
+    },
+    {
+      "seed": 2056100915,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "abb6afd01723adc5dcb41702276721681de928206b035ce3db745421980c194d",
+      "steps": 42,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -42.0,
+        "distance": 82.46805306137873,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 8.801386394712072,
+      "native_episode_reward": 8.801386394712074,
+      "action_entropy": -0.5160291895070779
+    },
+    {
+      "seed": 2056100916,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "e4887b1408c3d5f17c82798463acde5ae54724df2481c903f8d93cfe15a0ba8f",
+      "steps": 31,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -31.0,
+        "distance": 61.22724148817388,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -1.4394251784927867,
+      "native_episode_reward": -1.4394251784927938,
+      "action_entropy": -0.5024816922603115
+    },
+    {
+      "seed": 2056100917,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "45ffa61e6da7c89caac88b4444d76de0fa3fc0b6de3da11e34388831acd34273",
+      "steps": 24,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -24.0,
+        "distance": 44.46787238692243,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -11.198794279744241,
+      "native_episode_reward": -11.198794279744241,
+      "action_entropy": -1.5259312391281128
+    },
+    {
+      "seed": 2056100918,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "31a17d05226eaed7a2242fadded4b60b047275a45685db9487208039e5c98a80",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 11789.471780989075,
+        "global": 4835.0,
+        "emergency": -246.66666666666694,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 13376.805114322402,
+      "native_episode_reward": 13376.805114322413,
+      "action_entropy": -0.30300277756874333
+    },
+    {
+      "seed": 2056100919,
+      "sample_action_seed": null,
+      "mode": "mean",
+      "initial_fingerprint": "cebc91eee7a66c22b351d330f28c4dc6caec5b3c88cc218dc819f526b5a89b08",
+      "steps": 38,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -38.0,
+        "distance": 57.98467809633036,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -11.681988570336296,
+      "native_episode_reward": -11.681988570336294,
+      "action_entropy": -1.6554899058843915
+    },
+    {
+      "seed": 2056100900,
+      "sample_action_seed": 2056200900,
+      "mode": "sample",
+      "initial_fingerprint": "2cd17783ddecf78936678ad3458cc74a4843dc280ac13dcccb35ea69066ca5cf",
+      "steps": 570,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -570.0,
+        "distance": 1868.6302771589794,
+        "global": 603.3333333333333,
+        "emergency": -91.66666666666671,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 1783.6302771589799,
+      "native_episode_reward": 1783.6302771589799,
+      "action_entropy": -0.7505142498012886
+    },
+    {
+      "seed": 2056100901,
+      "sample_action_seed": 2056200901,
+      "mode": "sample",
+      "initial_fingerprint": "ed2ef4036788e6fabb1e82a499ab42d658c5867360bd4bca23fbd4f6ec2aa6e7",
+      "steps": 700,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_pursuer"
+      ],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -700.0,
+        "distance": 2540.1345025787414,
+        "global": 985.0,
+        "emergency": -143.33333333333331,
+        "collision": -53.333333333333336,
+        "goal": 0.0
+      },
+      "episode_reward": 2628.4678359120753,
+      "native_episode_reward": 2628.4678359120735,
+      "action_entropy": -0.7357276075153745
+    },
+    {
+      "seed": 2056100902,
+      "sample_action_seed": 2056200902,
+      "mode": "sample",
+      "initial_fingerprint": "27283bc18f2e38c673bae39f02c1af07c3121f2ae14dc2f7e5e9925e09ec8088",
+      "steps": 3001,
+      "capture": false,
+      "normal_capture": false,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -3001.0,
+        "distance": 11510.475471873177,
+        "global": 5601.666666666644,
+        "emergency": -471.6666666666682,
+        "collision": 0.0,
+        "goal": 0.0
+      },
+      "episode_reward": 13639.47547187318,
+      "native_episode_reward": 13639.475471873177,
+      "action_entropy": -0.6545057233107042
+    },
+    {
+      "seed": 2056100903,
+      "sample_action_seed": 2056200903,
+      "mode": "sample",
+      "initial_fingerprint": "3c06e552a93cd8c657e33c1b168e3187646f463db42ef5a2830d5f75eb499c1c",
+      "steps": 79,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -79.0,
+        "distance": 117.87726400420051,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 7.2105973375338515,
+      "native_episode_reward": 7.2105973375338515,
+      "action_entropy": -1.0645636520053767
+    },
+    {
+      "seed": 2056100904,
+      "sample_action_seed": 2056200904,
+      "mode": "sample",
+      "initial_fingerprint": "71365edcb6bef3314cde455a1e565b86433309d6824df349f7c6e42e7098c7d0",
+      "steps": 2867,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_pursuer"
+      ],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -2867.0,
+        "distance": 10451.600927340569,
+        "global": 3600.0,
+        "emergency": -516.6666666666656,
+        "collision": -53.333333333333336,
+        "goal": 0.0
+      },
+      "episode_reward": 10614.600927340569,
+      "native_episode_reward": 10614.60092734056,
+      "action_entropy": -0.6849895134164964
+    },
+    {
+      "seed": 2056100905,
+      "sample_action_seed": 2056200905,
+      "mode": "sample",
+      "initial_fingerprint": "3974524e2f5b492182f2080602c6a94ec4c32b28abcbde0fa27d26ac0323f74e",
+      "steps": 162,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -162.0,
+        "distance": 355.98308540022015,
+        "global": 0.0,
+        "emergency": -64.99999999999997,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 102.31641873355356,
+      "native_episode_reward": 102.31641873355356,
+      "action_entropy": -0.9416227219856264
+    },
+    {
+      "seed": 2056100906,
+      "sample_action_seed": 2056200906,
+      "mode": "sample",
+      "initial_fingerprint": "f468a01b71b5e96bd129220e8ef09fff382f997a7ccbecac8a4274a5e47d356e",
+      "steps": 860,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -860.0,
+        "distance": 3082.4006780831814,
+        "global": 840.0,
+        "emergency": -323.3333333333333,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 2712.4006780831796,
+      "native_episode_reward": 2712.4006780831783,
+      "action_entropy": -0.7191157527332909
+    },
+    {
+      "seed": 2056100907,
+      "sample_action_seed": 2056200907,
+      "mode": "sample",
+      "initial_fingerprint": "b784005e7d440cfd486aa7f40e1a937c03a6d015f8aec345e39482d27c3ffc81",
+      "steps": 43,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -43.0,
+        "distance": 51.830256684762794,
+        "global": 0.0,
+        "emergency": -6.666666666666667,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -24.50307664857054,
+      "native_episode_reward": -24.503076648570538,
+      "action_entropy": -1.3117858715528665
+    },
+    {
+      "seed": 2056100908,
+      "sample_action_seed": 2056200908,
+      "mode": "sample",
+      "initial_fingerprint": "d37413ea210507de9135c2cada63352f3b05c49e0a84934d1e7af6b82ea3df68",
+      "steps": 232,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_pursuer"
+      ],
+      "ring2": true,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -232.0,
+        "distance": 745.7024659126192,
+        "global": 600.0,
+        "emergency": -80.0,
+        "collision": -53.333333333333336,
+        "goal": 0.0
+      },
+      "episode_reward": 980.3691325792859,
+      "native_episode_reward": 980.3691325792857,
+      "action_entropy": -0.766215490341861
+    },
+    {
+      "seed": 2056100909,
+      "sample_action_seed": 2056200909,
+      "mode": "sample",
+      "initial_fingerprint": "4b8b59dcfc7e89c5ff1aab81cb15cf6cac640d86748e9492580c71cf207d8f79",
+      "steps": 42,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -42.0,
+        "distance": 80.25932094010854,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 6.592654273441855,
+      "native_episode_reward": 6.5926542734418545,
+      "action_entropy": -1.3139180548134304
+    },
+    {
+      "seed": 2056100910,
+      "sample_action_seed": 2056200910,
+      "mode": "sample",
+      "initial_fingerprint": "50fffe46e06707813f57a04efc30d1ac0467038fc836baff428e328c789d475d",
+      "steps": 669,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 334.5,
+      "censored": false,
+      "reward_components": {
+        "time": -669.0,
+        "distance": 2855.116769434882,
+        "global": 2309.9999999999995,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 277.3174189999677
+      },
+      "episode_reward": 4773.434188434849,
+      "native_episode_reward": 4773.434188434853,
+      "action_entropy": -0.6028055999710284
+    },
+    {
+      "seed": 2056100911,
+      "sample_action_seed": 2056200911,
+      "mode": "sample",
+      "initial_fingerprint": "11dc580b7b6afb140244a680655438079f4ad1d995e3deb9b8f6f8fa03bef1b3",
+      "steps": 510,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 255.0,
+      "censored": false,
+      "reward_components": {
+        "time": -510.0,
+        "distance": 2114.8452843339405,
+        "global": 1718.3333333333333,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 255.6096018397517
+      },
+      "episode_reward": 3578.788219507024,
+      "native_episode_reward": 3578.788219507025,
+      "action_entropy": -0.6458018516814085
+    },
+    {
+      "seed": 2056100912,
+      "sample_action_seed": 2056200912,
+      "mode": "sample",
+      "initial_fingerprint": "cf40801e6b4899afa216db25aa8b0640fef5dc59415bd564fa4dcd3c13302ede",
+      "steps": 38,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -38.0,
+        "distance": 69.50541343417572,
+        "global": 0.0,
+        "emergency": -6.666666666666667,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -1.8279198991576102,
+      "native_episode_reward": -1.8279198991576209,
+      "action_entropy": -1.4250252060592175
+    },
+    {
+      "seed": 2056100913,
+      "sample_action_seed": 2056200913,
+      "mode": "sample",
+      "initial_fingerprint": "be22a137b9ffb16b169a7161d93f53bed1a4cce921622aa980c585e40dca1b30",
+      "steps": 51,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -51.0,
+        "distance": 77.88943611420746,
+        "global": -13.333333333333332,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -18.11056388579255,
+      "native_episode_reward": -18.11056388579256,
+      "action_entropy": -1.3563194492941393
+    },
+    {
+      "seed": 2056100914,
+      "sample_action_seed": 2056200914,
+      "mode": "sample",
+      "initial_fingerprint": "7f2b1b9cf81791e5700b1a800f95c7b4e106daf5910fd9651da1761f8f1c1e60",
+      "steps": 484,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_pursuer"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -484.0,
+        "distance": 1761.2669685846945,
+        "global": 435.0,
+        "emergency": -133.3333333333333,
+        "collision": -53.333333333333336,
+        "goal": 0.0
+      },
+      "episode_reward": 1525.6003019180284,
+      "native_episode_reward": 1525.600301918026,
+      "action_entropy": -0.7710702453801516
+    },
+    {
+      "seed": 2056100915,
+      "sample_action_seed": 2056200915,
+      "mode": "sample",
+      "initial_fingerprint": "abb6afd01723adc5dcb41702276721681de928206b035ce3db745421980c194d",
+      "steps": 46,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -46.0,
+        "distance": 88.26584752201406,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 10.599180855347402,
+      "native_episode_reward": 10.599180855347385,
+      "action_entropy": -1.2689557676001086
+    },
+    {
+      "seed": 2056100916,
+      "sample_action_seed": 2056200916,
+      "mode": "sample",
+      "initial_fingerprint": "e4887b1408c3d5f17c82798463acde5ae54724df2481c903f8d93cfe15a0ba8f",
+      "steps": 265,
+      "capture": true,
+      "normal_capture": true,
+      "collision": false,
+      "collision_types": [],
+      "ring2": true,
+      "ring3": true,
+      "strict_geometry": true,
+      "capture_time": 132.5,
+      "censored": false,
+      "reward_components": {
+        "time": -265.0,
+        "distance": 1041.702484961701,
+        "global": 755.0,
+        "emergency": 0.0,
+        "collision": 0.0,
+        "goal": 237.0426138953429
+      },
+      "episode_reward": 1768.7450988570436,
+      "native_episode_reward": 1768.7450988570438,
+      "action_entropy": -0.6789976499957155
+    },
+    {
+      "seed": 2056100917,
+      "sample_action_seed": 2056200917,
+      "mode": "sample",
+      "initial_fingerprint": "45ffa61e6da7c89caac88b4444d76de0fa3fc0b6de3da11e34388831acd34273",
+      "steps": 28,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -28.0,
+        "distance": 51.80406149524089,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": -7.86260517142577,
+      "native_episode_reward": -7.8626051714257725,
+      "action_entropy": -1.5733817404668247
+    },
+    {
+      "seed": 2056100918,
+      "sample_action_seed": 2056200918,
+      "mode": "sample",
+      "initial_fingerprint": "31a17d05226eaed7a2242fadded4b60b047275a45685db9487208039e5c98a80",
+      "steps": 1077,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -1077.0,
+        "distance": 3823.3113224877816,
+        "global": 1085.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 3799.6446558211137,
+      "native_episode_reward": 3799.6446558211155,
+      "action_entropy": -0.7252135517034124
+    },
+    {
+      "seed": 2056100919,
+      "sample_action_seed": 2056200919,
+      "mode": "sample",
+      "initial_fingerprint": "cebc91eee7a66c22b351d330f28c4dc6caec5b3c88cc218dc819f526b5a89b08",
+      "steps": 56,
+      "capture": false,
+      "normal_capture": false,
+      "collision": true,
+      "collision_types": [
+        "pursuer_evader"
+      ],
+      "ring2": false,
+      "ring3": false,
+      "strict_geometry": false,
+      "capture_time": null,
+      "censored": true,
+      "reward_components": {
+        "time": -56.0,
+        "distance": 93.9810812472363,
+        "global": 0.0,
+        "emergency": -5.0,
+        "collision": -26.666666666666668,
+        "goal": 0.0
+      },
+      "episode_reward": 6.31441458056965,
+      "native_episode_reward": 6.31441458056963,
+      "action_entropy": -1.3879561847341912
+    }
+  ]
+}

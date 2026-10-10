@@ -64,3 +64,11 @@ Core V2 T0历史2026100800/2036100800/2046101800保持；未来ARM提案20561009
 - T1：selected775k actor严格warm，新fixed7P2E2O8C critic/Adam/ValueNorm及Stage2场景；包含全部currents、partial agent、多目标native reward和terminal；Stage2/3同规模完整恢复自测通过。跨规模不是exact resume。原升级阈值率.8/.2用于selection20/模式的Stage2与Stage1 retention，final保持盲态；Stage3仅接受绑定hash的正式promotion bundle，禁止pilot升级。
 - C0：双维tanh Gaussian含scale/tanh joint Jacobian、pre-tanh latent；连续物理AW直接传入未改原生积分、不AW9量化；九点parity/zero-update概率/full-resume通过，独立mean/sample evaluator。
 - 全部CPU/CUDA/source/delta/consumer/checkpoint/new-seed与GPU1并发门禁SELFTEST_PASS；T1/C0各25k pilot真实update后启动。无独立V3签字，所有pilot不自动扩预算、不消费final、不追认为正式。BASE SHA仍null。单Agent执行，无嵌套Agent。
+
+## Commander 状态同步 2026-10-10
+
+- FACT_RECOVERY：V3r2 candidate9cc2d47c、lock384b9ba5及Core交付d6e2010；QA_PENDING、BASE未冻结。Core/QA/六个长线ARM远程HEAD与本地逐一一致，原独立QA证据及交接文档不修改。
+- RUN_REGISTERED：用户明确授权的长线PROVISIONAL中，P1-control/treatment、N1/C0完成1M，T1 Stage2完成100k，R1继续到1M；T1/C0由资源恢复队列在槽位释放后真实严格恢复、PPO update验证后运行并已完成。预算未扩大，Stage3未启动，正式RUNNING=0。
+- RESULT_CLASSIFICATION：同协议原始screen按字节归档，整理全部曲线及P1 775k→1M paired normal/collision保持图；best-observed与last同时报告，仅描述性PROVISIONAL结果，不生成selection或追认。
+- CONTRACT_COORDINATION：用户要求运行中资源约束不再由监督器强停；监督器RAM/GPU/磁盘/租约改为告警，源码/checkpoint/预算/QA门禁保留。锁定训练源码未热修改。
+- FACT_RECOVERY：旧矩阵/DAG全文保留为历史，当前入口统一至BATCH01_STATUS_20261010_ZH.md；六任务的工程状态从实际registry刷新，正式WAITING_BASE状态保留。证据与文档同步GitHub，checkpoint权重仍保留服务器、同步路径/hash。

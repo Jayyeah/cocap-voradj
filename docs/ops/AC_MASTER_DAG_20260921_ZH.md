@@ -1,24 +1,10 @@
-> V3r2实际启动：P1-control PID1676675 + treatment PID1676916 / GPU0；R1 PID1676690 + N1 PID1677018 / GPU1。全部PROVISIONAL最多追加25k，已真实PPO update+checkpoint；正式RUNNING=0。T1/C0新版CPU通过，GPU每卡两线已占满，持久queue逐项CUDA/benchmark/evaluator门禁后可启动单次25k；无自动续预算/正式追认/Stage3。监督PID1680038、队列PID1680043，断连后从tools/batch01_status.py和runtime恢复。独立QA_PENDING、BASE未冻结；旧V3r1六pilot隔离。
+# AC MASTER DAG — Batch01当前入口
 
-> 2026-10-09 V3r2：candidate 9cc2d47c532c76239a61a0f6a19c8603358c92bf，canonical 384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab，CPU87/CUDA3/A3复用12自测通过；QA_PENDING、BASE未冻结。修复自身Guard缓存启动漏洞，强制源码启动入口；旧六pilot隔离。P1配对/R1/N1优先按每卡最多两线共享资源门禁启动新25k PROVISIONAL；T1/C0按独立CUDA容量门禁随后推进。
+2026-10-10运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261010_ZH.md)、[整理后的科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、N1、C0均完成1M，T1 Stage2完成100k，R1继续到1M；全部为PROVISIONAL_LONG。T1/C0已经自动恢复并跑完，当前没有合格且未启动的已登记预算。
 
-> 2026-10-09 更新：V3r1 自身 SourceGuard 可命中同 size/mtime 旧V2缓存，启动来源门禁不完整。全部六条旧pilot已隔离，不作正式证据；V3r2源码启动修复候选5b6224f正在回归。QA_PENDING、BASE未冻结。监督器registry锁等待已修复，重启前保持停止。两GPU目前均有其他用户任务，之后每卡最多两条自己的线。
+BASE仍为CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED，正式RUNNING=0；独立QA签字与Stage3升级门禁未解除。监督器运行期资源阈值只告警，不再杀停训练；启动/排队资源门禁保留。旧PID和旧25k预算不作为当前事实。
 
-## Commander 六路pilot交付状态（覆盖下方历史启动快照）
-
-P1-control/treatment均已完成775k→800k，R1/N1均已完成scratch25k，并按硬上限停止；T1 Stage2 PID1621721与C0 PID1623197已真实PPO update后登记PROVISIONAL_RUNNING，均限定25k。所有训练使用GPU1，GPU0外部任务受保护。T1三规模mask/current/partial生命周期与Stage2/Stage3完整恢复、C0九点原生物理parity/连续概率合同/完整恢复、CPU/CUDA256/8/4与新seed evaluator均SELFTEST_PASS。正式RUNNING=0，QA_PENDING，BASE未冻结；Stage3正式另需Stage2 selection与Stage1 retention条件。P1已生成两条pilot screen保持曲线与best-observed/last/collision，不能作为正式比较结论。
-
-持久监督：`python tools/batch01_status.py --json`；`tools/batch01_supervise.py`在独立tmux运行，不自动重启或扩预算。checkpoint hash、PID身份、磁盘reserve/容量、GPU外部占用与lease均纳入监测；每run完整registry可在CLI断连后恢复。
-
-## Commander 首批pilot实际启动
-
-GPU1四路并发门禁通过：P1-control PID1598749、P1-treatment PID1598755、R1 PID1598763、N1 PID1598768，均真实PPO update后登记PROVISIONAL_RUNNING。各自最多追加25k，分别停于800k/800k/25k/25k，禁止自动扩展。GPU0被hl训练PID1592050占用，未操作该任务；曾误起的短预检已结束且完整记录资源门禁事件，所有pilot只使用GPU1。实时进程/heartbeat/checkpoint/evaluation通过`python tools/batch01_status.py --json`读取，CLI断连不影响tmux及run registry恢复。BASE独立QA仍待签字，正式RUNNING=0。
-
-# 2026-10-09 Commander V3 当前状态（覆盖以下历史快照）
-
-**CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED**。科学candidate `0b2686a06e900a090a34fd3be4e0143ba3f794f0`，canonical lock `9ca6c24e881e4e13de58513bde32e2008805f3e1fd8fe55645c66a9c413cdf19`；交付HEAD `5ecb8774612f2002576b66f9a8a6cba46dad09a6`。最终CPU83 passed+CUDA3 passed；A3原脚本12探针由同一Commander执行，不能冒充独立签字。V2独立报告c20b632的BASE_QA_BLOCK完整保留。BASE共同正式parent仍为空。
-
-用户Commander V2授权一个Agent实施所有ARM，并在对应科学/资源门禁通过后运行最多25k additional joint decisions的明确PROVISIONAL pilot。正式运行仍要求独立V3 QA及冻结；pilot不可自动扩预算、使用final或追认为正式证据。中央run_registry的`pilot_runs`与正式`runs`区分。新ARM协议绑定2056100900/2066100900/2076100900，sample offset100000、scene offsets0/1000/2000，与历史实际种子不重叠；T0历史final不变。最新进程/门禁读取run registry及各run progress.json。
+六个Batch01正式任务节点继续WAITING_BASE，机器DAG中的engineering_state/progress单独同步真实PROVISIONAL运行、完成与checkpoint状态。CLI断连可用tools/batch01_status.py恢复。之前文档全文保留在[历史版本](AC_MASTER_DAG_BATCH01_HISTORY_20261010_ZH.md)。以下保留其它既有DAG及历史登记；Batch01运行事实以顶部入口和机器状态为准。
 
 ---
 

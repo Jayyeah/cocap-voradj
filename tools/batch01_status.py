@@ -83,6 +83,18 @@ def main():
     if item['status'] in {'WAITING_RESOURCE_RECOVERY_SLOT','RESOURCE_FLAPPING_REVIEW_REQUIRED','RESUME_FAILED_NO_AUTOMATIC_RETRY'}:
      key='P1-'+label.split('-')[1] if label.startswith('p1-') else label.upper();state['engineering_arm_states'][key]=item['status']
   central['batch01']['engineering_arm_states']=state.get('engineering_arm_states',{})
+  # DAG nodes retain their formal WAITING_BASE status while provisional
+  # execution follows the live registry, including completed queued jobs.
+  task_labels={'BATCH01-T1':'t1','BATCH01-N1':'n1','BATCH01-R1':'r1','BATCH01-P1':'p1-treatment','BATCH01-P1-control':'p1-control','BATCH01-C0':'c0'}
+  current={r['variant']:r for r in rows if not r.get('scientific_quarantine') and r['source_candidate_sha']==state['core']['candidate_sha'] and r.get('execution_mode')=='PROVISIONAL_LONG'}
+  for task in central.get('tasks',[]):
+   label=task_labels.get(task.get('task_id'));row=current.get(label)
+   if row is None:continue
+   key='P1-'+label.split('-')[1] if label.startswith('p1-') else label.upper()
+   task.update(engineering_execution_mode=row['execution_mode'],engineering_state=state['engineering_arm_states'][key],provisional_run_ids=[row['run_id']],formal_evidence=False,engineering_updated_at=now)
+   task['engineering_progress']={'step':row.get('step'),'authorized_end_step':row['authorized_end_step'],'update':row.get('update'),'pid':row.get('pid') if row.get('alive') else None,'last_pid':row.get('pid'),'alive':row.get('alive'),'GPU':row.get('physical_gpu'),'checkpoint':row.get('checkpoint')}
+   task['next_gate']='Independent same-candidate V3 QA -> BASE review; formal arm/source/seed/resource gates remain required'
+   if label=='t1':task['next_gate']+='; Stage3 additionally requires qualified Stage2 selection and Stage1 retention; no Stage3 provisional budget registered'
   central['batch01']['provisional_training_launched']=launched;central['batch01']['pilot_gpu_leases']=state['pilot_gpu_leases'];central['batch01']['pilot_runs']=[{'run_id':r['run_id'],'status':r['status'],'pid':r.get('pid'),'step':r.get('step'),'checkpoint':r.get('checkpoint')} for r in rows]
   central['updated_at']=now
   write(DIRECTORY/'batch_state.json',state);write(ROOT/'artifacts/2026-09-21_ac_master_dag/state.json',central)
