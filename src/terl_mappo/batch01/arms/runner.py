@@ -1,4 +1,4 @@
-"""Recoverable single-run process. PROVISIONAL budget is hard-capped at25k."""
+"""Recoverable single-run process. Pilot25k; long provisional requires an explicit pinned user grant."""
 from __future__ import annotations
 import argparse
 import copy
@@ -61,7 +61,7 @@ def launch_eval(output,manifest,checkpoint,step):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--delta',required=True);ap.add_argument('--run-id',required=True)
     ap.add_argument('--output',required=True);ap.add_argument('--device',default='cpu');ap.add_argument('--threads',type=int,default=1)
-    ap.add_argument('--mode',choices=['PROVISIONAL','FORMAL','SMOKE','BENCHMARK'],required=True)
+    ap.add_argument('--mode',choices=['PROVISIONAL','PROVISIONAL_LONG','FORMAL','SMOKE','BENCHMARK'],required=True)
     ap.add_argument('--decisions',type=int,required=True);ap.add_argument('--resume');ap.add_argument('--no-evaluation',action='store_true')
     args=ap.parse_args();output=Path(args.output).resolve();validate_resources(output,args.device,args.threads,workers=1)
     if args.decisions<=0 or (args.mode=='PROVISIONAL' and args.decisions>25000):raise ValueError('PROVISIONAL maximum25k additional decisions')
@@ -69,13 +69,21 @@ def main():
         state=read(CENTRAL/'batch_state.json')
         if state['base_freeze_status']!='BASE_FROZEN' or state.get('QA_SAME_SHA') not in {'PASS','A3_INDEPENDENT_QA_PASS'}:
             raise ValueError('formal training requires independent frozen BASE')
+    grant=None
+    if args.mode=='PROVISIONAL_LONG':
+        from .long_budget import validate_launch,AUTH_SHA
+        grant=validate_launch(read(args.delta),args.run_id,args.decisions)
     existed=output.exists();output.mkdir(parents=True,exist_ok=True)
     if existed and not args.resume and (output/'progress.json').exists():raise ValueError('refuse duplicate run; explicit resume required')
     descriptor=(output/'process.lock').open('w');fcntl.flock(descriptor,fcntl.LOCK_EX|fcntl.LOCK_NB)
     for folder in ('logs','checkpoints','evaluations','source_failures'): (output/folder).mkdir(exist_ok=True)
     torch.set_num_threads(args.threads)
     if args.device.startswith('cuda'):torch.cuda.reset_peak_memory_stats()
-    runtime,lock,delta,resolved,parent,fork_receipt=prepare(args.delta,args.device,output/'source_failures',fork=not args.resume)
+    runtime,lock,delta,resolved,parent,fork_receipt=prepare(args.delta,args.device,output/'source_failures',fork=not args.resume and (args.mode!='PROVISIONAL_LONG' or read(args.delta)['line']=='T1'))
+    if args.mode=='PROVISIONAL_LONG' and not args.resume:
+        from .long_budget import migrate
+        restored,continuation_receipt=migrate(runtime,delta)
+        if restored is not None:parent=restored;fork_receipt=continuation_receipt
     if args.mode=='FORMAL':
         if state['BATCH01_BASE_SHA']!=delta['base']['candidate_sha'] or state['core']['canonical_lock_sha256']!=delta['base']['lock_sha256']:
             raise ValueError('formal ARM parent differs from independently frozen BASE')
@@ -87,12 +95,14 @@ def main():
     start_steps=steps;budget=args.decisions
     with isolated_rng():manifest=runtime_manifest(lock,delta,resolved,runtime,resources)
     manifest.update(run_id=args.run_id,execution_mode=args.mode,max_additional_decisions=budget,
-                    authorized_end_step=steps+budget,independent_qa_accepted=False,scientific_evidence='PROVISIONAL_NOT_FORMAL' if args.mode=='PROVISIONAL' else args.mode)
+                    authorized_end_step=steps+budget,independent_qa_accepted=False,scientific_evidence='PROVISIONAL_NOT_FORMAL' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else args.mode)
+    if grant:manifest.update(budget_authorization_sha256=AUTH_SHA,authorization_id='USER-PROVISIONAL-LONG-20261010')
     if args.resume:
         stored=read(output/'manifest.json')
         if stored['run_id']!=args.run_id or stored['execution_mode']!=args.mode or stored['delta_manifest']!=delta:
             raise ValueError('resume run/mode/source delta mismatch')
         manifest=stored
+        if grant:validate_launch(delta,args.run_id,args.decisions,stored)
         loaded=load_bound(args.resume,runtime,manifest);steps=loaded['steps'];agent_steps=loaded['agent_transitions'];optimizers=loaded['optimizer_steps']
         start_steps=manifest['authorized_end_step']-manifest['max_additional_decisions']
     else:
@@ -101,6 +111,8 @@ def main():
         if fork_receipt:atomic_json(output/'fork_receipt.json',fork_receipt)
     end_step=manifest['authorized_end_step']
     if args.mode=='PROVISIONAL' and end_step-start_steps>25000:raise ValueError('resume cannot extend pilot authorization')
+    if grant and (start_steps!=grant['start_step'] or end_step!=grant['authorized_end_step']):raise ValueError('long manifest endpoint differs from pinned authorization')
+    session_start_steps=steps;session_start_update=runtime.trainer.update_count
     gpu_uuid=None
     if args.device.startswith('cuda'):
         gpu_uuid=subprocess.check_output(['nvidia-smi',f'--id={os.environ["CUDA_VISIBLE_DEVICES"]}','--query-gpu=uuid','--format=csv,noheader'],text=True).strip()
@@ -114,7 +126,7 @@ def main():
     def heartbeat(state):
         status.update(status=state,step=steps,update=runtime.trainer.update_count,agent_transitions=agent_steps,
                       optimizer_steps=optimizers,heartbeat=now(),elapsed_seconds=time.monotonic()-start,
-                      decisions_per_second=(steps-(int(parent['steps']) if parent else 0))/(time.monotonic()-start),
+                      decisions_per_second=(steps-session_start_steps)/(time.monotonic()-start),
                       disk_bytes=sum(p.stat().st_size for p in output.rglob('*') if p.is_file()),
                       checkpoint=latest,torch_peak_allocated_mib=torch.cuda.max_memory_allocated()/1024**2 if args.device.startswith('cuda') else 0)
         atomic_json(output/'progress.json',status)
@@ -127,7 +139,7 @@ def main():
     try:
         if not args.resume:
             path=save(steps)
-            if args.mode in {'FORMAL','PROVISIONAL'} and not args.no_evaluation:status['evaluation'].append(launch_eval(output,manifest,path,steps))
+            if args.mode in {'FORMAL','PROVISIONAL','PROVISIONAL_LONG'} and not args.no_evaluation:status['evaluation'].append(launch_eval(output,manifest,path,steps))
         else:latest=read(output/'checkpoints/latest.json')
         heartbeat('STARTING')
         with (output/'metrics.jsonl').open('a') as metrics_log:
@@ -143,15 +155,15 @@ def main():
                     row['reward_components_mean']={k:float(np.mean(v)) for k,v in batch['reward_components'].items()}
                 if runtime.hooks.backend.categorical:row['post_update_policy']=post_update_policy_stats(runtime.trainer,batch)
                 metrics_log.write(json.dumps(row,allow_nan=False)+'\n');metrics_log.flush()
-                if steps%25000==0 or steps==end_step or runtime.trainer.update_count==(int(parent['trainer']['update_count']) if parent else 0)+1:
+                if steps%25000==0 or steps==end_step or runtime.trainer.update_count==session_start_update+1:
                     path=save(steps)
-                    if (steps%25000==0 or steps==end_step) and args.mode in {'PROVISIONAL','FORMAL'} and not args.no_evaluation:
+                    if (steps%25000==0 or steps==end_step) and args.mode in {'PROVISIONAL','PROVISIONAL_LONG','FORMAL'} and not args.no_evaluation:
                         status['evaluation'].append(launch_eval(output,manifest,path,steps))
-                heartbeat('PROVISIONAL_RUNNING' if args.mode=='PROVISIONAL' else 'RUNNING_'+args.mode)
+                heartbeat(args.mode+'_RUNNING' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else 'RUNNING_'+args.mode)
                 if args.device.startswith('cuda') and torch.cuda.max_memory_allocated()/1024**2>2048:raise ValueError('GPU allocation exceeded2GiB lease')
                 if status['disk_bytes']>8*1024**3 or os.statvfs(output).f_bavail*os.statvfs(output).f_frsize<30*1024**3:
                     raise ValueError('run storage lease/reserve exceeded')
-        heartbeat('PROVISIONAL_COMPLETE_PENDING_SCREEN' if args.mode=='PROVISIONAL' else 'COMPLETE_'+args.mode)
+        heartbeat(args.mode+'_COMPLETE_PENDING_SCREEN' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else 'COMPLETE_'+args.mode)
     except BaseException:
         status['last_exception']=traceback.format_exc();heartbeat('FAILED_SOURCE_CONTRACT' if runtime.source_guard.failure else 'FAILED_ENGINEERING')
         raise
