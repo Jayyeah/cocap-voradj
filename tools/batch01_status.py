@@ -76,6 +76,12 @@ def main():
    for label,item in queue.get('items',{}).items():
     if not any(r['variant']==label and r.get('execution_mode')=='PROVISIONAL_LONG' for r in rows):state['engineering_arm_states'][label.upper()]=item['status']
    central['batch01']['provisional_long_queue']=queue
+  recovery_path=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime/resource_recovery_queue.json')
+  if recovery_path.exists():
+   recovery=read(recovery_path);state['resource_recovery_queue']=recovery;central['batch01']['resource_recovery_queue']=recovery
+   for label,item in recovery.get('items',{}).items():
+    if item['status'] in {'WAITING_RESOURCE_RECOVERY_SLOT','RESOURCE_FLAPPING_REVIEW_REQUIRED','RESUME_FAILED_NO_AUTOMATIC_RETRY'}:
+     key='P1-'+label.split('-')[1] if label.startswith('p1-') else label.upper();state['engineering_arm_states'][key]=item['status']
   central['batch01']['engineering_arm_states']=state.get('engineering_arm_states',{})
   central['batch01']['provisional_training_launched']=launched;central['batch01']['pilot_gpu_leases']=state['pilot_gpu_leases'];central['batch01']['pilot_runs']=[{'run_id':r['run_id'],'status':r['status'],'pid':r.get('pid'),'step':r.get('step'),'checkpoint':r.get('checkpoint')} for r in rows]
   central['updated_at']=now
@@ -92,6 +98,9 @@ def main():
    rows=[r for r in latest.values() if r['variant'] not in queued or r.get('execution_mode')=='PROVISIONAL_LONG']
   for r in rows:
    cp=r.get('checkpoint') or {};print(r['run_id'],r['status'],'PID',r.get('pid'),'GPU',r.get('physical_gpu'),'step',r.get('step',r['start_step']),'update',r.get('update'),'checkpoint',cp.get('path'),'alive',r['alive'])
+  if args.current:
+   for label,item in state.get('resource_recovery_queue',{}).get('items',{}).items():
+    if item['status'].startswith(('WAITING','BLOCKED','RESOURCE_FLAPPING','RESUME_FAILED')):print(label,'RECOVERY',item['status'])
   if args.current:
    for label,item in state.get('provisional_long_queue',{}).get('items',{}).items():
     if not any(r['variant']==label and r.get('execution_mode')=='PROVISIONAL_LONG' for r in rows):print(label.upper(),'LONG',item['status'],'PID None; previous pilot status is historical')

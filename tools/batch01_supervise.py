@@ -22,6 +22,10 @@ def digest(path):
  with path.open('rb') as f:
   for block in iter(lambda:f.read(1024**2),b''):h.update(block)
  return h.hexdigest()
+def process_rss(pid):
+ try:
+  return next(int(line.split()[1])*1024 for line in Path(f'/proc/{pid}/status').read_text().splitlines() if line.startswith('VmRSS:'))
+ except (OSError,StopIteration):return None
 def supervise(cache):
  registry,rows=inspect_runs();state=read(DIRECTORY/'batch_state.json');leases={l['id']:l for l in state.get('pilot_gpu_leases',[])}
  compute=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_memory','--format=csv,noheader'],text=True).strip()
@@ -63,7 +67,7 @@ def supervise(cache):
    if lease and lease.get('external_sharing_authorized') and sum(1 for r in rows if r.get('alive') and r.get('gpu_uuid')==row['gpu_uuid'])>2:reason='shared GPU exceeds user maximum2 own lines'
    if reason and alive(row['pid'],row['run_id']):
     os.kill(row['pid'],signal.SIGTERM)
-    events.append({'time':now(),'run_id':row['run_id'],'pid':row['pid'],'action':'SIGTERM_OWN_RUN','reason':reason})
+    events.append({'time':now(),'run_id':row['run_id'],'pid':row['pid'],'action':'SIGTERM_OWN_RUN','reason':reason,'observed_RAM':ram,'own_process_RSS_bytes':{str(p):process_rss(p) for p in own},'disk_free_bytes':free,'GPU_free_MiB':free_gpu})
   elif reason:events.append({'time':now(),'run_id':row['run_id'],'action':'ISOLATE_CHECKPOINT','reason':reason})
  if events:
   fd=(RUNTIME/'registry.lock').open('w');fcntl.flock(fd,fcntl.LOCK_EX)
@@ -78,13 +82,20 @@ def supervise(cache):
  subprocess.run([sys.executable,str(ROOT/'tools/batch01_status.py'),'--write'],check=True,stdout=subprocess.DEVNULL)
  _,rows=inspect_runs();snapshot={'time':now(),'pid':os.getpid(),'status':'MONITORING','automatic_restart':False,'automatic_budget_extension':False,
    'independent_QA':state['QA_SAME_SHA'],'BASE_FROZEN':state['base_freeze_status']=='BASE_FROZEN','disk_free_bytes':free,'memory':ram,
-   'GPU_processes':compute,'events':events,'attention_required':[{'run_id':r['run_id'],'status':r['status']} for r in rows if not r.get('scientific_quarantine') and (r.get('status','').startswith(('FAILED','STOPPED','PROVISIONAL_LONG_STARTING')) or any(e.get('status','').startswith('EVALUATION_') for e in r.get('evaluation',[])))],'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
+   'GPU_processes':compute,'events':events,'own_process_RSS_bytes':{str(p):process_rss(p) for p in own},'attention_required':[{'run_id':r['run_id'],'status':r['status']} for r in rows if not r.get('scientific_quarantine') and (r.get('status','').startswith(('FAILED','STOPPED','PROVISIONAL_LONG_STARTING')) or any(e.get('status','').startswith('EVALUATION_') for e in r.get('evaluation',[])))],'runs':[{'run_id':r['run_id'],'status':r['status'],'step':r.get('step'),'pid':r.get('pid'),'alive':r.get('alive')} for r in rows]}
  queue_path=RUNTIME/'v3r2_long_queue.json'
  if queue_path.exists():
   queue=read(queue_path);snapshot['long_queue']=queue
   for label,item in queue.get('items',{}).items():
    if item.get('attention_required'):snapshot['attention_required'].append({'variant':label,'queue_status':item['status'],'last_exception':item.get('last_exception')})
   if queue.get('status')!='QUEUE_FINISHED' and (datetime.now(timezone.utc)-datetime.fromisoformat(queue['heartbeat'])).total_seconds()>90:snapshot['attention_required'].append({'queue_status':'HEARTBEAT_STALE','last_heartbeat':queue['heartbeat']})
+ recovery_path=RUNTIME/'resource_recovery_queue.json'
+ if recovery_path.exists():
+  recovery=read(recovery_path);snapshot['resource_recovery_queue']=recovery
+  for label,item in recovery.get('items',{}).items():
+   if item.get('manual_review_required'):snapshot['attention_required'].append({'variant':label,'resource_recovery':item})
+  if (datetime.now(timezone.utc)-datetime.fromisoformat(recovery['heartbeat'])).total_seconds()>90:snapshot['attention_required'].append({'resource_recovery':'HEARTBEAT_STALE'})
+ with (RUNTIME/'resource_samples_20261010.jsonl').open('a') as f:f.write(json.dumps({k:snapshot[k] for k in ['time','memory','own_process_RSS_bytes','disk_free_bytes','events']})+'\n')
  write(RUNTIME/'supervisor.json',snapshot);return snapshot
 
 def main():

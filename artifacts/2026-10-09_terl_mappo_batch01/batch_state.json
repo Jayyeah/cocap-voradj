@@ -2,7 +2,7 @@
   "schema": "terl-mappo-batch-state-v1",
   "batch_id": "TERL-MAPPO-BATCH01",
   "owner": "MASTER",
-  "updated_at": "2026-10-10T01:09:07.646908+00:00",
+  "updated_at": "2026-10-10T03:12:36.132954+00:00",
   "status": "WAITING_QA_V3",
   "BATCH01_BASE_SHA": null,
   "central_authority": "artifacts/2026-09-21_ac_master_dag/state.json",
@@ -808,6 +808,38 @@
       "max_output_gib_per_run": 8,
       "keep_reserve_gib": 30,
       "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+    },
+    {
+      "id": "B01-LONG-T1-20261010-GPU1",
+      "gpu": 1,
+      "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+      "runs": [
+        "B01-T1-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 100000,
+      "expires_at": "2026-10-12T02:31:29.874414+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+    },
+    {
+      "id": "B01-LONG-C0-20261010-GPU0",
+      "gpu": 0,
+      "gpu_uuid": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+      "runs": [
+        "B01-C0-PROVLONG-V3R2-20261010"
+      ],
+      "maximum_compute_processes": 2,
+      "maximum_additional_decisions_per_run": 975000,
+      "expires_at": "2026-10-12T02:31:49.390964+00:00",
+      "formal": false,
+      "external_sharing_authorized": true,
+      "max_output_gib_per_run": 8,
+      "keep_reserve_gib": 30,
+      "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
     }
   ],
   "pilot_authorization": {
@@ -824,8 +856,8 @@
     "p1-treatment": "PROVISIONAL_LONG_RUNNING",
     "r1": "PROVISIONAL_LONG_RUNNING",
     "n1": "PROVISIONAL_LONG_RUNNING",
-    "t1": "QUARANTINED_PROVISIONAL",
-    "c0": "PROVISIONAL_COMPLETE"
+    "t1": "STOPPED_BY_SUPERVISOR",
+    "c0": "STOPPED_BY_SUPERVISOR"
   },
   "supervision": {
     "status": "MONITORING",
@@ -884,8 +916,8 @@
     "P1-treatment": "PROVISIONAL_LONG_RUNNING",
     "R1": "PROVISIONAL_LONG_RUNNING",
     "N1": "PROVISIONAL_LONG_RUNNING",
-    "T1": "WAITING_SHARED_GPU_SLOT",
-    "C0": "WAITING_SHARED_GPU_SLOT"
+    "T1": "STOPPED_BY_SUPERVISOR",
+    "C0": "STOPPED_BY_SUPERVISOR"
   },
   "provisional_long_authorization": {
     "path": "/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/provisional_long_authorization_20261010.json",
@@ -900,7 +932,7 @@
     "retry": "NEW_RUN_EXPLICIT_LONG_BUDGET"
   },
   "provisional_long_queue": {
-    "status": "QUEUE_MONITORING",
+    "status": "QUEUE_FINISHED",
     "automatic_budget_extension": false,
     "automatic_restart_failed_runs": false,
     "independent_QA": "QA_PENDING",
@@ -908,14 +940,32 @@
     "formal_evidence": false,
     "items": {
       "t1": {
-        "status": "WAITING_SHARED_GPU_SLOT",
-        "reason": "both GPUs occupied; shared GPU maximum2 own compute lines"
+        "status": "PROVISIONAL_LONG_LAUNCHED",
+        "reason": "both GPUs occupied; shared GPU maximum2 own compute lines",
+        "gpu": 1,
+        "time": "2026-10-10T02:31:48.189276+00:00"
       },
       "c0": {
-        "status": "WAITING_SHARED_GPU_SLOT"
+        "status": "PROVISIONAL_LONG_LAUNCHED",
+        "gpu": 0,
+        "time": "2026-10-10T02:32:10.734858+00:00"
       }
     },
-    "heartbeat": "2026-10-10T01:09:01.416003+00:00",
+    "heartbeat": "2026-10-10T02:32:10.735780+00:00",
     "pid": 2171510
+  },
+  "resource_recovery_policy": {
+    "scope": "verified resource stops only",
+    "existing_authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+    "minimum_RAM_available_GiB": 24,
+    "stable_30second_samples": 3,
+    "stop_RAM_reserve_GiB": 8,
+    "minimum_resource_stop_cooldown_seconds": 90,
+    "maximum_resource_restarts_per_run_per_hour": 3,
+    "shared_GPU_maximum_own_lines": 2,
+    "scientific_failure_auto_restart": false,
+    "automatic_budget_extension": false,
+    "source_delta_mutation": false,
+    "formal_evidence": false
   }
 }

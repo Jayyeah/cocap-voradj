@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-10T01:09:07.646908+00:00",
+  "updated_at": "2026-10-10T03:12:36.132954+00:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
@@ -933,7 +933,7 @@
       "training_launched_this_turn": false,
       "protected_external_gpu_pid": 1335255
     },
-    "latest_reconciliation_note": "2026-10-10: four source-pinned PROVISIONAL_LONG runs have actual PPO updates (P1 pair GPU0; R1/N1 GPU1); T1 Stage2 and C0 qualified in durable shared-GPU queue. Formal arms still WAITING_BASE, independent QA_PENDING, BASE not frozen. No foreign process touched."
+    "latest_reconciliation_note": "2026-10-10: all six lines stopped on supervisor-reported RAM<8GiB (four primary10:19, T1/C0 10:33). RAM recovered; strict resume of P1 pair from900k, R1 from75k, N1 from100k verified actual new PPO update. T1/C0 requeued; source and explicit provisional endpoints unchanged. Historical stop-time per-process RAM attribution unavailable; new supervisor records RSS and observed memory."
   },
   "tasks": [
     {
@@ -3360,6 +3360,13 @@
       "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
       "formal": false,
       "detail": "Old five25k pilots stopped at their authorized endpoints; T1 evaluator dispatch typo fixed. Four long runs passed new CPU/CUDA strict restore and actual first PPO update; T1/C0 passed gates and wait maximum2-own-line shared GPU slots."
+    },
+    {
+      "time": "2026-10-10T03:13:02.304650+00:00",
+      "event": "BATCH01_RESOURCE_STOP_STRICT_RECOVERY",
+      "source_candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
+      "formal": false,
+      "detail": "2026-10-10: all six lines stopped on supervisor-reported RAM<8GiB (four primary10:19, T1/C0 10:33). RAM recovered; strict resume of P1 pair from900k, R1 from75k, N1 from100k verified actual new PPO update. T1/C0 requeued; source and explicit provisional endpoints unchanged. Historical stop-time per-process RAM attribution unavailable; new supervisor records RSS and observed memory."
     }
   ],
   "server_recovery": {
@@ -23864,6 +23871,38 @@
         "max_output_gib_per_run": 8,
         "keep_reserve_gib": 30,
         "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+      },
+      {
+        "id": "B01-LONG-T1-20261010-GPU1",
+        "gpu": 1,
+        "gpu_uuid": "GPU-71b66566-de04-56b5-4331-8c12d4967672",
+        "runs": [
+          "B01-T1-PROVLONG-V3R2-20261010"
+        ],
+        "maximum_compute_processes": 2,
+        "maximum_additional_decisions_per_run": 100000,
+        "expires_at": "2026-10-12T02:31:29.874414+00:00",
+        "formal": false,
+        "external_sharing_authorized": true,
+        "max_output_gib_per_run": 8,
+        "keep_reserve_gib": 30,
+        "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
+      },
+      {
+        "id": "B01-LONG-C0-20261010-GPU0",
+        "gpu": 0,
+        "gpu_uuid": "GPU-fb584eaf-0dbe-5487-d539-695f9124efb0",
+        "runs": [
+          "B01-C0-PROVLONG-V3R2-20261010"
+        ],
+        "maximum_compute_processes": 2,
+        "maximum_additional_decisions_per_run": 975000,
+        "expires_at": "2026-10-12T02:31:49.390964+00:00",
+        "formal": false,
+        "external_sharing_authorized": true,
+        "max_output_gib_per_run": 8,
+        "keep_reserve_gib": 30,
+        "authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66"
       }
     ],
     "provisional_training_launched": true,
@@ -24003,49 +24042,73 @@
       {
         "run_id": "B01-R1-PROVLONG-V3R2-20261010",
         "status": "PROVISIONAL_LONG_RUNNING",
-        "pid": 2164743,
-        "step": 30376,
+        "pid": 2363030,
+        "step": 78072,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-r1-long-v3r2-20261010/runs/B01-R1-PROVLONG-V3R2-20261010/checkpoints/step_000025256.pt",
-          "sha256": "0f040d23f2f4e6fc13eb05464decc915567d22ab081571ab39c0d319286ff377",
-          "step": 25256,
-          "bytes": 82035940
+          "path": "/home/yjq/rl/CoCap1/batch01-r1-long-v3r2-20261010/runs/B01-R1-PROVLONG-V3R2-20261010/checkpoints/step_000075256.pt",
+          "sha256": "954900434ed7220537e2eb443856a996abd495427bb38ef20d959698169be0c9",
+          "step": 75256,
+          "bytes": 81989924
         }
       },
       {
         "run_id": "B01-P1-CONTROL-PROVLONG-V3R2-20261010",
         "status": "PROVISIONAL_LONG_RUNNING",
-        "pid": 2165171,
-        "step": 809984,
+        "pid": 2362944,
+        "step": 905888,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-p1-control-long-v3r2-20261010/runs/B01-P1-CONTROL-PROVLONG-V3R2-20261010/checkpoints/step_000800256.pt",
-          "sha256": "b4738609dce1d9d62dbb6790ca5634d31e7d500eddc9f9857bbf75ef59959ba5",
-          "step": 800256,
-          "bytes": 84603108
+          "path": "/home/yjq/rl/CoCap1/batch01-p1-control-long-v3r2-20261010/runs/B01-P1-CONTROL-PROVLONG-V3R2-20261010/checkpoints/step_000900256.pt",
+          "sha256": "2d1e2ca68bdca5cdd065133c34d0a01174d7d18f21e6a2e49fbabf1791d37c78",
+          "step": 900256,
+          "bytes": 82576484
         }
       },
       {
         "run_id": "B01-N1-PROVLONG-V3R2-20261010",
         "status": "PROVISIONAL_LONG_RUNNING",
-        "pid": 2166452,
-        "step": 31400,
+        "pid": 2363528,
+        "step": 103328,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-n1-long-v3r2-20261010/runs/B01-N1-PROVLONG-V3R2-20261010/checkpoints/step_000025256.pt",
-          "sha256": "1c2d37d5e387c111e455847063ec8187632b9d3804856d0b8da25a0a5ab23aa1",
-          "step": 25256,
-          "bytes": 88818648
+          "path": "/home/yjq/rl/CoCap1/batch01-n1-long-v3r2-20261010/runs/B01-N1-PROVLONG-V3R2-20261010/checkpoints/step_000100256.pt",
+          "sha256": "d1c1b5ac91db75877157d0bd71693746f0cf0ffa02fe3dd1f2332e14815a36e0",
+          "step": 100256,
+          "bytes": 86112664
         }
       },
       {
         "run_id": "B01-P1-TREATMENT-PROVLONG-V3R2-20261010",
         "status": "PROVISIONAL_LONG_RUNNING",
-        "pid": 2166729,
-        "step": 808960,
+        "pid": 2363231,
+        "step": 905376,
         "checkpoint": {
-          "path": "/home/yjq/rl/CoCap1/batch01-p1-treatment-long-v3r2-20261010/runs/B01-P1-TREATMENT-PROVLONG-V3R2-20261010/checkpoints/step_000800256.pt",
-          "sha256": "0504ef6a33cb43be35947be11768442cc0d4b5956e3cd05b6f53f87533ce8dba",
-          "step": 800256,
-          "bytes": 83229220
+          "path": "/home/yjq/rl/CoCap1/batch01-p1-treatment-long-v3r2-20261010/runs/B01-P1-TREATMENT-PROVLONG-V3R2-20261010/checkpoints/step_000900256.pt",
+          "sha256": "a2adadb94da81634830ebab2c5eff5d74b87e19e3122e577d43a8cffd587da6f",
+          "step": 900256,
+          "bytes": 84963044
+        }
+      },
+      {
+        "run_id": "B01-T1-PROVLONG-V3R2-20261010",
+        "status": "STOPPED_BY_SUPERVISOR",
+        "pid": 2330987,
+        "step": 3072,
+        "checkpoint": {
+          "path": "/home/yjq/rl/CoCap1/batch01-t1-long-v3r2-20261010/runs/B01-T1-PROVLONG-V3R2-20261010/checkpoints/step_000000256.pt",
+          "sha256": "32444786fad84e0f3e6f8498c0815dad60412c293da359ad4d6544325ad88dea",
+          "step": 256,
+          "bytes": 82396964
+        }
+      },
+      {
+        "run_id": "B01-C0-PROVLONG-V3R2-20261010",
+        "status": "STOPPED_BY_SUPERVISOR",
+        "pid": 2331913,
+        "step": 27816,
+        "checkpoint": {
+          "path": "/home/yjq/rl/CoCap1/batch01-c0-long-v3r2-20261010/runs/B01-C0-PROVLONG-V3R2-20261010/checkpoints/step_000025256.pt",
+          "sha256": "902299c478e5452880fadbe977a67ccbcce072af9aed975337cead890d4d1c1c",
+          "step": 25256,
+          "bytes": 83707644
         }
       }
     ],
@@ -24178,8 +24241,8 @@
       "P1-treatment": "PROVISIONAL_LONG_RUNNING",
       "R1": "PROVISIONAL_LONG_RUNNING",
       "N1": "PROVISIONAL_LONG_RUNNING",
-      "T1": "WAITING_SHARED_GPU_SLOT",
-      "C0": "WAITING_SHARED_GPU_SLOT"
+      "T1": "STOPPED_BY_SUPERVISOR",
+      "C0": "STOPPED_BY_SUPERVISOR"
     },
     "provisional_long_authorization": {
       "id": "USER-PROVISIONAL-LONG-20261010",
@@ -24193,7 +24256,7 @@
       "stage3_training_authorized": false
     },
     "provisional_long_queue": {
-      "status": "QUEUE_MONITORING",
+      "status": "QUEUE_FINISHED",
       "automatic_budget_extension": false,
       "automatic_restart_failed_runs": false,
       "independent_QA": "QA_PENDING",
@@ -24201,15 +24264,33 @@
       "formal_evidence": false,
       "items": {
         "t1": {
-          "status": "WAITING_SHARED_GPU_SLOT",
-          "reason": "both GPUs occupied; shared GPU maximum2 own compute lines"
+          "status": "PROVISIONAL_LONG_LAUNCHED",
+          "reason": "both GPUs occupied; shared GPU maximum2 own compute lines",
+          "gpu": 1,
+          "time": "2026-10-10T02:31:48.189276+00:00"
         },
         "c0": {
-          "status": "WAITING_SHARED_GPU_SLOT"
+          "status": "PROVISIONAL_LONG_LAUNCHED",
+          "gpu": 0,
+          "time": "2026-10-10T02:32:10.734858+00:00"
         }
       },
-      "heartbeat": "2026-10-10T01:09:01.416003+00:00",
+      "heartbeat": "2026-10-10T02:32:10.735780+00:00",
       "pid": 2171510
+    },
+    "resource_recovery_policy": {
+      "scope": "verified resource stops only",
+      "existing_authorization_sha256": "d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66",
+      "minimum_RAM_available_GiB": 24,
+      "stable_30second_samples": 3,
+      "stop_RAM_reserve_GiB": 8,
+      "minimum_resource_stop_cooldown_seconds": 90,
+      "maximum_resource_restarts_per_run_per_hour": 3,
+      "shared_GPU_maximum_own_lines": 2,
+      "scientific_failure_auto_restart": false,
+      "automatic_budget_extension": false,
+      "source_delta_mutation": false,
+      "formal_evidence": false
     }
   }
 }
