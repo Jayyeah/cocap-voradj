@@ -1,0 +1,69 @@
+{
+  "N3": {
+    "parent": "8ce5593",
+    "child": "28a3337",
+    "actual_git_delta": [
+      "A\tartifacts/2026-10-11_batch02_native/n3_code_diff.patch",
+      "A\tartifacts/2026-10-11_batch02_native/n3_engineering_verification.json",
+      "A\tconfigs/experiments/terl_mappo_batch02_native_20261011/n3.json",
+      "A\tdocs/experiments/BATCH02_NATIVE_N3_20261011_ZH.md",
+      "A\tsrc/terl_mappo/batch02_native/__init__.py",
+      "A\tsrc/terl_mappo/batch02_native/actor.py",
+      "A\tsrc/terl_mappo/batch02_native/runtime.py",
+      "A\ttools/verify_batch02_native_20261011.py"
+    ],
+    "training_experiment_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba"
+  },
+  "R3": {
+    "parent": "28a3337",
+    "child": "7cb8bc0",
+    "actual_git_delta": [
+      "A\tartifacts/2026-10-11_batch02_native/r3_code_diff.patch",
+      "A\tartifacts/2026-10-11_batch02_native/r3_engineering_verification.json",
+      "A\tartifacts/2026-10-11_batch02_native/r3_reward_transition_fixtures.json",
+      "A\tconfigs/experiments/terl_mappo_batch02_native_20261011/r3.json",
+      "A\tdocs/experiments/BATCH02_NATIVE_R3_20261011_ZH.md",
+      "A\tsrc/terl_mappo/batch02_native/reward.py",
+      "M\tsrc/terl_mappo/batch02_native/runtime.py",
+      "M\ttools/verify_batch02_native_20261011.py"
+    ],
+    "training_experiment_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba"
+  },
+  "V3": {
+    "parent": "7cb8bc0",
+    "child": "3575b74",
+    "actual_git_delta": [
+      "A\tartifacts/2026-10-11_batch02_native/run_plan.json",
+      "A\tartifacts/2026-10-11_batch02_native/v3_code_diff.patch",
+      "A\tartifacts/2026-10-11_batch02_native/v3_engineering_verification.json",
+      "A\tartifacts/2026-10-11_batch02_native/v3_reward_transition_fixtures.json",
+      "A\tconfigs/experiments/terl_mappo_batch02_native_20261011/v3.json",
+      "A\tdocs/experiments/BATCH02_NATIVE_V3_20261011_ZH.md",
+      "A\tsrc/terl_mappo/batch02_native/evaluation.py",
+      "A\tsrc/terl_mappo/batch02_native/reporting.py",
+      "M\tsrc/terl_mappo/batch02_native/runtime.py",
+      "A\ttools/run_batch02_native_long_20261011.py",
+      "A\ttools/run_batch02_native_pilot_20261011.py"
+    ],
+    "training_experiment_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba"
+  },
+  "map": [
+    {
+      "old": "src/terl_mappo/model.py::TERLActor.encode_entities",
+      "new": "src/terl_mappo/batch02_native/actor.py::CoCapVorAdjBackbone",
+      "successful_reference": "src/cocap_voradj/models/iqn.py::CoCapIQN.features/voradj_single_feature",
+      "why": "N3 actor representation only; existing TERL AW9 head and central V retained"
+    },
+    {
+      "old": "native CoCap replay_metadata capture/coverage/safety/terminal",
+      "new": "src/terl_mappo/batch02_native/reward.py::decompose",
+      "why": "R3 accounting categories; native total unchanged; terminal/PBRS subset fields avoid duplicate addends"
+    },
+    {
+      "old": "src/terl_mappo/batch02_a_long/evaluation.py",
+      "new": "src/terl_mappo/batch02_native/evaluation.py",
+      "why": "actor/adapter factory binding only; complete evaluator body/task/seeds/termination retained"
+    }
+  ],
+  "unchanged_scientific_sources": []
+}
