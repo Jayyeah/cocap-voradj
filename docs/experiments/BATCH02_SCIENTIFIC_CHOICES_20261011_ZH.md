@@ -1,5 +1,7 @@
 # 需要用户确认的科学选择
 
+**当前 Batch02-A 长训已授权：N2/R2各1M、每25k checkpoint/evaluate；scratch、原成功reward schedule clock0→1M、冻结E1 ordinary mixed reset。** N2完整CoCap输入，R2直接原TERL输入；不作严格单变量因果对照。当前阶段没有待定预算，未来 backbone/scale/lifecycle仍待下一次任务。见 [固定计划](BATCH02_A_CAPABILITY_PLAN_20261011_ZH.md)。下文是先前阶段选择记录。
+
 以下表格是第一阶段的选择记录。**最新状态：E1 已由获授权独立 QA 验证并冻结；用户确认 Batch02-A 只做 N2/R2 消费核验和短 pilot，不作单变量因果对照。** 两项完整合同已在 E1 消费，新增 task delta 为零，不自行提供反事实 control。共用1024步 pilot 已完成，保持成功 V2 Z05 Stage1、categorical AW9、原 PPO 和完整 CoCap checkpoint 恢复；没有改 reward/observation 设计。[pilot结果](BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md)。长期训练的初始化、reward clock 和 recovery 采样分布仍需在具体实验中确定，未进入 long run。
 
 | 选择 | 建议 | 另一条可行路径及影响 |

@@ -1,5 +1,7 @@
 # Batch02-A：N2 / R2 消费核验与短 pilot
 
+**后续授权更新：用户已授权 N2/R2各1M、每25k checkpoint/evaluate 的 PROVISIONAL capability validation；R2现明确使用原TERL observation。** 见 [固定长训计划](BATCH02_A_CAPABILITY_PLAN_20261011_ZH.md)。下文保留当时共享消费 pilot 的范围与预算记录，不代表当前长训授权。
+
 用户已确认：先由一个独立 QA reviewer 复验 E1 `8827c11`，仅 SHA/config/replay/update/resume，不修改代码、不扩大门禁；PASS 后冻结 bridge。**该复验已 PASS 并冻结**，见 [独立报告](BATCH02_E1_INDEPENDENT_VALIDATION_20261011_ZH.md)。Batch02-A 只推进 N2 observation 和 R2 reward，不启动 V1/T1/C0，不自动长训。
 
 用户同时确认本批按“先做消费核验与短 pilot”执行。**1024步 shared pilot 已完成，消费资格通过，不进入 long run**，见 [结果](BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md)。E1 已原样接入完整 observation/reward，**N2/R2 相对 E1 的任务合同 delta 为零**，所以本批是迁移消费资格确认，不能用来估计 observation/reward 各自的因果增益。没有自行构造旧 TERL 合同在 CoCap 上的反事实 control。

@@ -1,8 +1,8 @@
 # AC MASTER DAG — Batch01当前入口
 
-2026-10-11运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261011_ZH.md)、[migration audit](../experiments/BATCH01_MIGRATION_AUDIT_20261011_ZH.md)、[科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、R1、N1、C0均完成1M和末点screen，T1 Stage2完成100k和末点screen；六线均为PROVISIONAL_LONG_COMPLETE。当前没有合格且未启动的已登记预算。
+2026-10-11运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261011_ZH.md)、[migration audit](../experiments/BATCH01_MIGRATION_AUDIT_20261011_ZH.md)、[科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、R1、N1、C0均完成1M和末点screen，T1 Stage2完成100k和末点screen；六线均为PROVISIONAL_LONG_COMPLETE。Batch01没有合格且未启动的已登记预算。
 
-Batch02 E1 已通过独立 SHA/config/replay/update/resume 验证并冻结在 `8827c11`，见[独立签字](../experiments/BATCH02_E1_INDEPENDENT_VALIDATION_20261011_ZH.md)及[freeze manifest](../../artifacts/2026-10-11_batch02_e1_independent/freeze.json)。Batch02-A 按用户确认仅 N2/R2 消费核验与短 pilot，原 CoCap observation/reward 不变，二者相对 E1 的 task delta 为零、不作因果对照。CPU 共用1024新增 decisions、4次 PPO 已完成，两项消费资格通过；4个已结束训练 episode 触边、capture=0、recovery未触发，**不进入 long run**。[计划](../experiments/BATCH02_A_N2_R2_PLAN_20261011_ZH.md) 与 [结果](../experiments/BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md)；V1/T1/C0 不启动。
+Batch02 E1 独立 PASS 并冻结在 `8827c11`；原1024步消费 pilot结果保持归档，不用于学习结论。用户现已授权 **Batch02-A N2/R2各1M、每25k checkpoint/eval**：N2=TERL-MAPPO+CoCap observation+CoCap reward，R2=TERL-MAPPO+原TERL observation+CoCap reward，保持PROVISIONAL，不作严格因果对照。固定实验代码 `8ce5593` 与[长训计划](../experiments/BATCH02_A_CAPABILITY_PLAN_20261011_ZH.md)、[启动登记](../../artifacts/2026-10-11_batch02_a_long/run_registry.json)已准备；发布后错峰GPU0/GPU1启动。实际PID/step/checkpoint/ETA以登记的各线progress.json和本地runtime registry为准。V1/T1/C0、backbone、lifecycle不启动；Batch01/BASE状态不升级。
 
 BASE仍为CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED，正式RUNNING=0；独立QA签字与Stage3升级门禁未解除。监督器运行期资源阈值只告警，不再杀停训练；启动/排队资源门禁保留。旧PID和旧25k预算不作为当前事实。
 
