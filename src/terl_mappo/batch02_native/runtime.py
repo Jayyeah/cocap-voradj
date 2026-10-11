@@ -10,24 +10,54 @@ from terl_mappo.batch02_a_long.runtime import (CapabilityAdapter, build as basel
     collect, sources as baseline_sources)
 from terl_mappo.run import file_hash, rng_state, restore_rng
 from .actor import CoCapStyleActor, backbone_config
+from .reward import CATEGORIES, decompose
 
 
 class NativeAdapter(CapabilityAdapter):
     def __init__(self, seed, arm, *, training=True):
-        if arm != 'N3':
-            raise ValueError('implemented arm is N3')
+        if arm not in ('N3', 'R3'):
+            raise ValueError('implemented arms are N3/R3')
         self.experiment_arm = arm
-        super().__init__(seed, 'N2', training=training)
+        self.decomposition_enabled = arm == 'R3'
+        self.ledger_total = dict.fromkeys(CATEGORIES, 0.)
+        self.ledger_episode = dict.fromkeys(CATEGORIES, 0.)
+        self.ledger_residual_max = 0.
+        super().__init__(seed, 'R2' if arm == 'R3' else 'N2', training=training)
+
+    def reset(self):
+        observation = super().reset()
+        self.ledger_episode = dict.fromkeys(CATEGORIES, 0.)
+        return observation
+
+    def step(self, actions):
+        outcome = super().step(actions)
+        if self.decomposition_enabled:
+            info, reward = outcome[5], outcome[1]
+            ledger = [decompose(row['replay_metadata'], value) for row,value in zip(info['task_infos'], reward)]
+            for row in ledger:
+                self.ledger_residual_max = max(self.ledger_residual_max, abs(row['residual']))
+                for key in CATEGORIES:
+                    self.ledger_total[key] += row[key]
+                    self.ledger_episode[key] += row[key]
+            info['reward_decomposition'] = ledger
+            if outcome[4]:
+                self.last_episode.update(reward_decomposition=copy.deepcopy(self.ledger_episode),
+                                         reward_decomposition_residual_max=self.ledger_residual_max)
+        return outcome
 
     def contract(self):
         contract = super().contract()
-        contract.update(arm=self.experiment_arm, backbone='successful IQN VorAdj features + TERL AW9 head',
-                        reward_design_delta='none', critic_delta='none')
+        contract.update(arm=self.experiment_arm,
+                        backbone='original TERL' if self.experiment_arm == 'R3' else 'successful IQN VorAdj features + TERL AW9 head',
+                        reward_design_delta='none', critic_delta='none',
+                        reward_decomposition='lossless native metadata accounting' if self.decomposition_enabled else 'disabled')
         return contract
 
 
 def build(config, adapter, device='cpu'):
     original = baseline_build(config, adapter, device)
+    if config['arm'] == 'R3':
+        return original
     actor = CoCapStyleActor(backbone_config(adapter.root_config, config['learner']), original.actor)
     # Identical existing central V object and PPO/Adam config; actor alone changes.
     return MAPPOTrainer(actor, original.value, MAPPOConfig(**config['learner']['ppo']), device)

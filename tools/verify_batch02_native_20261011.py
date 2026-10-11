@@ -17,7 +17,7 @@ from terl_mappo.batch02.runtime import sources as frozen_sources
 from terl_mappo.batch02_a_long.runtime import CapabilityAdapter, build as baseline_build
 from terl_mappo.batch02_native.runtime import NativeAdapter, build, collect, sources, save_checkpoint, load_checkpoint
 from terl_mappo.run import atomic_json, file_hash, rng_state
-from verify_batch02_e1_20261011 import same, digest_graph, robot_state
+from verify_batch02_e1_20261011 import same, digest_graph, robot_state, inject
 
 CONFIGS = ROOT / 'configs/experiments/terl_mappo_batch02_native_20261011'
 FREEZE = Path('/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-11_batch02_e1_independent/freeze.json')
@@ -51,6 +51,9 @@ def main(args):
     same(digest_graph(original.value.state_dict()), digest_graph(trainer.value.state_dict()))
     shapes = {key:list(value.shape) for key,value in adapter.packed_observations().items()}
     actor_checks = dict(decentralized_interface=True, central_critic_initial_weights_identical=True)
+    if args.arm == 'R3':
+        same(digest_graph(original.actor.state_dict()), digest_graph(trainer.actor.state_dict()))
+        actor_checks['R2_actor_initial_weights_identical'] = True
     if args.arm in ('N3','V3'):
         actor = trainer.actor
         iqn = CoCapIQN(actor.config).eval()
@@ -101,6 +104,22 @@ def main(args):
             reward_residual=max(reward_residual,abs(row['residual']))
             role_counts[row['reward_role']]=role_counts.get(row['reward_role'],0)+1
         if a[4]: adapter.reset(); baseline.reset()
+    fixtures=[]
+    if args.arm in ('R3','V3'):
+        reference=json.loads((FREEZE.parents[1]/'2026-10-11_cocap_mappo_batch02/reference_transitions.json').read_text())
+        for case in reference['fixtures']:
+            candidate=NativeAdapter(config['learner']['seed'],args.arm)
+            control=CapabilityAdapter(config['learner']['seed'],config['baseline_arm'])
+            inject(candidate.env,case['input']); inject(control.env,case['input'])
+            candidate.observations=candidate.env.get_observations(); control.observations=control.env.get_observations()
+            a,b=candidate.step(case['input']['pursuer_actions']),control.step(case['input']['pursuer_actions'])
+            for field in range(5): same(a[field],b[field])
+            same(a[5]['task_infos'],b[5]['task_infos']);same(robot_state(candidate.env),robot_state(control.env))
+            residual=max(abs(row['residual']) for row in a[5]['reward_decomposition'])
+            reward_residual=max(reward_residual,residual)
+            fixtures.append(dict(name=case['name'],input=case['input'],reward_unchanged=True,
+                                 reconstruction_residual_max=residual,ledger=a[5]['reward_decomposition']))
+        atomic_json(args.output/'reward_transition_fixtures.json',fixtures)
     adapter=NativeAdapter(config['learner']['seed'],args.arm); trainer=build(config,adapter,'cpu')
     batch,episodes=collect(trainer,adapter,256)
     metrics=trainer.update(batch,categorical=True)
@@ -115,7 +134,7 @@ def main(args):
         actor_parameters=sum(p.numel() for p in trainer.actor.parameters()),
         critic_parameters=sum(p.numel() for p in trainer.value.parameters()),baseline_actor_parameters=sum(p.numel() for p in original.actor.parameters()),
         scripted_transition_parity=64,original_schedule_pre_and_post200k=True, reward_reconstruction_residual_max=reward_residual,
-        reward_role_counts=role_counts, PPO_metrics=metrics,checkpoint_sha256=digest, fresh_process_resume_exact=True,
+        reward_role_counts=role_counts, fixed_reward_fixtures=len(fixtures), PPO_metrics=metrics,checkpoint_sha256=digest, fresh_process_resume_exact=True,
         evaluator_compatibility='to be checked by pilot with unchanged native episode protocol',
         learning_capability_claim=False,independent_validation=False)
     atomic_json(args.output/'engineering_verification.json',report)
