@@ -15,10 +15,10 @@ from .reward import CATEGORIES, decompose
 
 class NativeAdapter(CapabilityAdapter):
     def __init__(self, seed, arm, *, training=True):
-        if arm not in ('N3', 'R3'):
-            raise ValueError('implemented arms are N3/R3')
+        if arm not in ('N3', 'R3', 'V3'):
+            raise ValueError('implemented arms are N3/R3/V3')
         self.experiment_arm = arm
-        self.decomposition_enabled = arm == 'R3'
+        self.decomposition_enabled = arm in ('R3', 'V3')
         self.ledger_total = dict.fromkeys(CATEGORIES, 0.)
         self.ledger_episode = dict.fromkeys(CATEGORIES, 0.)
         self.ledger_residual_max = 0.
