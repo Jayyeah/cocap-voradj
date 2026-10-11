@@ -35,21 +35,23 @@ P1报告775k之后每25k保持曲线及best-observed、last和collision；新con
 
 每25k checkpoint/screen，保留latest、必要milestone与pending evaluation；本次有限预算下保存量仍在已测容量内。旧资源中断及严格恢复回执保留，未保存尾段按记录回滚；预算不延长。持久服务为`batch01_commander_v3r2_long_supervisor`及`batch01_commander_resource_recovery`，恢复状态可在CLI断连后从registry与progress读取。
 
-## 2. 四个参照合同：实际值与目标值分开
+## 2. 三个主要参照合同：成功IQN优先
 
-“历史 CoCap”在本批特指上述 corrected scratch Capture；Coverage R20正控另列背景，不能混为同一个信息合同。“下一步 CoCap”是迁移目标，尚无冻结训练合同。
+本轮完整差异、配置消费者和transition原件见[成功IQN合同](TERL_COCAP_ENVIRONMENT_CONTRACT_20261011_ZH.md)。B0 Final roleful/R20与V2 Z05分别有成功证据，不把二者混成已验证的新组合。以下以V2 Z05 Stage1为E1首个桥接参考；N2采用Z05还是先roleful需用户明确。
 
-| 轴 | TERL-IQN 原始实际 | T0 TERL-MAPPO 实际 | 历史 CoCap-MAPPO Capture 实际 | 下一步 CoCap-MAPPO 目标（未冻结） |
-|---|---|---|---|---|
-| Environment | MarineEnv，120×120，原APF/current，decision末碰撞；boundary只罚 | 同原生；wrapper复刻trainer生命周期 | VorAdjEnv/Forward-Final V2，synchronized_swept_v1，boundary/safety合同 | 先 E1 bridge 审核，再采用 V2；不直接替换 T0 |
-| Network | entity/type Transformer 256/8/4实际入口，self+unmasked-max、Target Selection/fusion、IQN后端 | 同TERL特征；categorical9；action-free central V 256/8/4；empty-mask修复 | LegacyVorAdjFeatureBackbone，self9、friend8、enemy8、obs5；categorical9/central V | CoCap actor +经桥接验证的V；N1只验证结构 |
-| Reward | time/distance/global/emergency/collision/goal；驻留dense、多目标循环 | 原值原顺序重构assert；不缩放 | Final ring_importance_ms_v0/CR-MS，capture support=1、CE=0、clock offset2M | R2完整Capture合同；Coverage/Mixed需独立冻结 |
-| Information | self4/friend5×7/enemy8×7/obs5×5=19token；敌方不距离过滤；友军/障碍有限距离 | 同原生19token；actor不读central；V含current/time | self9/22token，NormSense V2 enemy surface R≈52.217m，neighbor_visible/approach_only，historical global-friendly VorAdj；无Z | N2全CoCap观测；M2才审Z/evidence；global-friendly保留，local-friendly V3延后 |
-| Task | 原生≥3几何capture，8m/related18m；active<3、capture terminal；timeout实际3001 | 同任务；明确terminated/truncated与pre-reset V | 4P1E1obs，Pure Capture成功terminal，无recovery，min_active4，horizon3000 | E1/R2后完整Capture；V1 Coverage、M1 Mixed另设任务 |
-| Action | a-major AW9，a∈{-0.4,0,0.4}、w∈{-π/6,0,π/6}；dt .05×10=.5s；P vmax3/E3.5 | 同原生索引与物理 | AW9同类接口但环境物理必须逐项断言，不能仅凭AW9名认为相同 | C0原生连续a/w为独立诊断；不自动改CoCap目标的动作合同 |
-| Algorithm | off-policy IQN/replay/epsilon/target Q | corrected on-policy PPO/GAE/ValueNorm/active loss；actor与V独立Adam；eval-mode防dropout似然漂移 | 同corrected PPO核心；其它环境consumer不同 | 共用经QA的PPO；任何稳定性改动单独登记 |
-| Curriculum | 0/2M/4M/5M/6M切换，共7M | 仅Stage1累计1M；selected775k | scratch Capture 500k及独立100k复现；Coverage200k | T1先短程迁移；不得自动走7M或第二批 |
-| Initialization | random IQN，无BC | seed9/109 random-origin；100k→1M精确全状态resume | fresh actor/V/Adam/ValueNorm，无teacher | 每条线单独冻结迁移方式；不得伪称跨结构bit-exact |
+| 轴 | TERL-IQN 原始实际 | 当前TERL-MAPPO实际 | 成功IQN-CoCap V2参考 / Batch02含义 |
+|---|---|---|---|
+| Environment | MarineEnv，120×120，原APF/current，decision末碰撞；boundary只罚 | T0同原生；T1改变规模，C0改动作接口 | VorAdjEnv、NormSense V2、零current、v2_fixed APF、synchronized_swept_v1、硬边界/死亡；E1串行bridge |
+| Network | entity/type Transformer 256/8/4，Target Selection/fusion、IQN后端 | T0 TERL actor；N1仅CoCap-style backbone；action-free central V | 成功IQN voradj_single_head；MAPPO categorical actor/central V为算法适配，须与task observation分开 |
+| Reward | time/distance/global/emergency/collision/goal | 同原；R1仅替换distance项 | 成功Final CR-MS、cartesian_disk、support=.5/.5、CE/PBRS/safety及真实clock；R2恢复原语义 |
+| Information | self4/friend5×7/enemy8×7/obs5×5=19；敌方不距离过滤 | N1保持native信息；V含current/time | self9/22slot、NormSense直接探测、global-friendly VorAdj；Z05=.5衰减/.10 floor、physical_only、无role late fusion；N2全合同 |
+| Task | ≥3几何capture，8m/related18m；active<3、全capture terminal；timeout3001 | wrapper明确terminated/truncated/pre-reset V | Stage1 4P1E1O，min_active4/horizon3000；mixed捕获后继续recovery/CE hold30/window500；M1/M2目标为完整生命周期 |
+| Action | a-major AW9，a={-.4,0,.4}、w={-π/6,0,π/6}；.05×10 | C0 continuous physical AW为独立诊断 | 成功AW9保留；continuous若成为目标须另标MAPPO adaptation |
+| Algorithm | off-policy IQN/replay/epsilon/target Q | on-policy PPO/GAE/ValueNorm；actor/V独立Adam | 不移植off-policy replay为PPO task概率；稳定性/初始化调整独立登记 |
+| Curriculum | 0/2M/4M/5M/6M，共7M | Batch01仅既有授权；T1 Stage2 100k完成 | 成功IQN 4/1/1→8/2/2→12/3/3，各阶段表现不同；不自动继承预算或宣称全规模成功 |
+| Initialization/eval | IQN random-origin | P1完整775k配对分叉；其余scratch或T1仅actor warm | 恢复selected1300k成功Stage1作为只读参考；新MAPPO初始化/clock待确认，best screen不替代正式评估 |
+
+历史失败CoCap-MAPPO corrected scratch Capture（support=1、CE=0、clock offset2M、无recovery、无Z）和Coverage失败仅保留在[历史矩阵](TERL_MAPPO_PARALLEL_MATRIX_HISTORY_20261010_ZH.md)，用于失败模式/debug对照。这些差异不得直接继承为R2/N2/M1/M2的新任务合同。
 
 ## 历史、QA与后续工作入口
 
@@ -58,4 +60,4 @@ P1报告775k之后每25k保持曲线及best-observed、last和collision；新con
 - [Scientific Changelog](BATCH01_SCIENTIFIC_CHANGELOG.md)
 - [当前状态、原始screen、曲线与云端SHA](BATCH01_STATUS_20261011_ZH.md)
 
-Batch02/T2、Evidence/Persistent及其它旧实验继续保持原门禁。此文档整理不批准新科学delta、额外预算或正式训练。
+Batch02准备依赖以[2026-10-11更新DAG](../ops/COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)为准；T2、Evidence/Persistent及其它旧实验状态不变。此文档整理不批准生产实施、新科学delta、额外预算或正式训练。

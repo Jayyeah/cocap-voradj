@@ -1,6 +1,8 @@
 # AC MASTER DAG — Batch01当前入口
 
-2026-10-11运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261011_ZH.md)、[整理后的科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、N1、C0均完成1M，T1 Stage2完成100k，R1已完成1M训练、末点screen待完成；全部为PROVISIONAL_LONG。T1/C0已经自动恢复并跑完，当前没有合格且未启动的已登记预算。
+2026-10-11运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261011_ZH.md)、[migration audit](../experiments/BATCH01_MIGRATION_AUDIT_20261011_ZH.md)、[科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、R1、N1、C0均完成1M和末点screen，T1 Stage2完成100k和末点screen；六线均为PROVISIONAL_LONG_COMPLETE。当前没有合格且未启动的已登记预算。
+
+Batch02第一阶段交付见[新DAG](COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)、[成功IQN环境合同](../experiments/TERL_COCAP_ENVIRONMENT_CONTRACT_20261011_ZH.md)和[E1计划](../experiments/BATCH02_E1_IMPLEMENTATION_PLAN_20261011_ZH.md)。E1是第一公共依赖，其后R2/N2/V1可并行准备；优先成功IQN，失败MAPPO仅作背景。当前WAITING_NEXT_AUTHORIZATION，生产bridge未实施，E1不是PASS，无新训练授权。下方历史Batch02前置门禁不覆盖本轮用户指定的准备依赖。
 
 BASE仍为CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED，正式RUNNING=0；独立QA签字与Stage3升级门禁未解除。监督器运行期资源阈值只告警，不再杀停训练；启动/排队资源门禁保留。旧PID和旧25k预算不作为当前事实。
 

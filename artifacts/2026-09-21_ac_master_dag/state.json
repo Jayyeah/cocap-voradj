@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-10T16:18:45.246729+00:00",
+  "updated_at": "2026-10-11T05:54:25.834394+00:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
@@ -2425,7 +2425,7 @@
         "B01-T1-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 100000,
         "authorized_end_step": 100000,
@@ -2473,7 +2473,7 @@
         "B01-N1-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 1000000,
         "authorized_end_step": 1000000,
@@ -2516,12 +2516,12 @@
       "next_gate": "Independent same-candidate V3 QA -> BASE review; formal arm/source/seed/resource gates remain required",
       "updated_at": "2026-10-09T17:38:31.228981+08:00",
       "engineering_execution_mode": "PROVISIONAL_LONG",
-      "engineering_state": "PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN",
+      "engineering_state": "PROVISIONAL_LONG_COMPLETE",
       "provisional_run_ids": [
         "B01-R1-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 1000000,
         "authorized_end_step": 1000000,
@@ -2569,7 +2569,7 @@
         "B01-P1-TREATMENT-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 1000000,
         "authorized_end_step": 1000000,
@@ -2617,7 +2617,7 @@
         "B01-C0-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 1000000,
         "authorized_end_step": 1000000,
@@ -2665,7 +2665,7 @@
         "B01-P1-CONTROL-PROVLONG-V3R2-20261010"
       ],
       "formal_evidence": false,
-      "engineering_updated_at": "2026-10-10T16:18:45.246729+00:00",
+      "engineering_updated_at": "2026-10-11T05:35:38.196257+00:00",
       "engineering_progress": {
         "step": 1000000,
         "authorized_end_step": 1000000,
@@ -2691,83 +2691,106 @@
     },
     {
       "task_id": "BATCH02-E1",
-      "status": "PREREGISTERED_LOCKED",
-      "dependencies": [
-        "T1_SCALE_REVIEW",
-        "T0_P1_STATE_COMPATIBILITY",
-        "CORE_QA_RUNTIME_ASSERTIONS"
-      ],
-      "expected_contract_delta": "MarineEnv->VorAdj Forward-FinalV2 environment/physics/current/APF/spawn/collision/boundary/terminal bridge",
+      "status": "PLAN_READY_WAITING_AUTHORIZATION",
+      "dependencies": [],
+      "expected_contract_delta": "Successful IQN CoCap V2 provider bridge: physics/current/APF/collision/boundary/spawn/terminal; full task-native outputs retained for oracle; no optimizer",
       "parallel_cpu_preparation": "CPU source delta and paired transitions fixture design",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false,
+      "reference_fixture_count": 8,
+      "reference_fixtures_passed": true,
+      "bridge_implemented": false,
+      "E1_pass": false
     },
     {
       "task_id": "BATCH02-R2",
-      "status": "PREREGISTERED_LOCKED",
+      "status": "WAITING_E1",
       "dependencies": [
-        "R1_DIAGNOSTIC",
-        "E1_PASS",
-        "REPRESENTATION_REWARD_NON_NULL_GATES"
+        "BATCH02-E1"
       ],
-      "expected_contract_delta": "Full Final Capture CR-MS/support/goal/safety/clock and credit/event semantics",
+      "expected_contract_delta": "Restore successful IQN Final Capture CR-MS/cartesian_disk/support/CE/safety/event/reward-clock semantics; PPO consumption separately labelled",
       "parallel_cpu_preparation": "Reward/component/event ledger",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false
     },
     {
       "task_id": "BATCH02-N2",
-      "status": "PREREGISTERED_LOCKED",
+      "status": "WAITING_E1",
       "dependencies": [
-        "N1_STRUCTURE_INFORMATION_ISOLATION_PASS",
-        "E1_PASS"
+        "BATCH02-E1"
       ],
-      "expected_contract_delta": "Full CoCap self9/22slot/NormSenseV2/detector/ordering/role/VorAdj observation; no automaticZ/local-friendlyV3",
+      "expected_contract_delta": "Restore complete successful CoCap observation; V2 Z05 recommended, B0 roleful alternative requires explicit choice; packing/actor adaptation separately labelled",
       "parallel_cpu_preparation": "Information and mask mapping",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false,
+      "scientific_choice_pending": "V2_successful_Z05_full_contract versus original_B0_roleful_then_Z; no silent combination"
     },
     {
       "task_id": "BATCH02-V1",
-      "status": "PREREGISTERED_LOCKED",
+      "status": "WAITING_E1",
       "dependencies": [
-        "E1_PASS",
-        "COVERAGE_REWARD_INFORMATION_NON_NULL_GATES"
+        "BATCH02-E1"
       ],
-      "expected_contract_delta": "Pure Coverage no enemy, CE/PBRS/hold/safety and coverage terminal/time",
+      "expected_contract_delta": "Pure Coverage positive-control consumer: successful CE/PBRS/hold/safety and terminal/time; no enemy",
       "parallel_cpu_preparation": "Positive-control and evaluator audit",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false
     },
     {
       "task_id": "BATCH02-M1",
-      "status": "PREREGISTERED_LOCKED",
+      "status": "WAITING_COMPONENTS",
       "dependencies": [
-        "E1_PASS",
-        "R2_PASS",
-        "N2_PASS",
-        "V1_PASS",
-        "CAPTURE_RECOVERY_RETENTION_GATE",
-        "EXPLICIT_FULL_TASK_PPO_GATE_REVIEW"
+        "BATCH02-E1",
+        "BATCH02-R2",
+        "BATCH02-N2",
+        "BATCH02-V1"
       ],
-      "expected_contract_delta": "Mixed phase/reward clock/post-capture recovery/CE/terminal service",
+      "expected_contract_delta": "Successful IQN mixed capture-to-recovery-to-CE lifecycle, phase/reset/clock/terminal and full evaluation; no training authorization",
       "parallel_cpu_preparation": "Phase-state machine and held-out manifest",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false
     },
     {
       "task_id": "BATCH02-M2",
-      "status": "PREREGISTERED_LOCKED",
+      "status": "WAITING_M1_AND_SCIENTIFIC_CHOICE",
       "dependencies": [
-        "N2_READY",
-        "M1_READY",
-        "EVIDENCE_CORRECTED_FINAL_AUDIT_PASS",
-        "PERSISTENT_N0_JOINT_REVIEW"
+        "BATCH02-M1",
+        "BATCH02-N2"
       ],
-      "expected_contract_delta": "Evidence/Z local-vs-global information propagation/slot/TTL/update, global oracle separately labelled",
+      "expected_contract_delta": "Successful IQN evidence/Z release/propagation and complete lifecycle audit; if Z restored in N2, audit existing Z rather than add a new variable",
       "parallel_cpu_preparation": "Handoff and no-leakage/propagation diagnostics",
       "implementation_authorized": false,
-      "training_authorized": false
+      "training_authorized": false,
+      "updated_at": "2026-10-11T05:54:25.834394+00:00",
+      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
+      "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
+      "independent_validation": false
     },
     {
       "task_id": "BATCH01-STORAGE-A0",
@@ -3463,6 +3486,13 @@
       "source_candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
       "formal": false,
       "detail": "2026-10-10: all six lines stopped on supervisor-reported RAM<8GiB (four primary10:19, T1/C0 10:33). RAM recovered; strict resume of P1 pair from900k, R1 from75k, N1 from100k verified actual new PPO update. T1/C0 requeued; source and explicit provisional endpoints unchanged. Historical stop-time per-process RAM attribution unavailable; new supervisor records RSS and observed memory."
+    },
+    {
+      "time": "2026-10-11T05:54:25.834394+00:00",
+      "event": "COCAP_MAPPO_BATCH02_FIRST_STAGE_DELIVERY",
+      "formal": false,
+      "training_authorized": false,
+      "detail": "Batch01 six provisional endpoints and R1 final screen recovered; successful IQN task contract restored; 8 offline reference fixtures; E1 shared dependency plan ready, bridge not implemented. User-defined preparation DAG supersedes historical undefined Batch02 gates. Await next authorization."
     }
   ],
   "server_recovery": {
@@ -24137,7 +24167,7 @@
       },
       {
         "run_id": "B01-R1-PROVLONG-V3R2-20261010",
-        "status": "PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN",
+        "status": "PROVISIONAL_LONG_COMPLETE",
         "pid": 2363030,
         "step": 1000000,
         "checkpoint": {
@@ -24338,7 +24368,7 @@
     "engineering_arm_states": {
       "P1-control": "PROVISIONAL_LONG_COMPLETE",
       "P1-treatment": "PROVISIONAL_LONG_COMPLETE",
-      "R1": "PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN",
+      "R1": "PROVISIONAL_LONG_COMPLETE",
       "N1": "PROVISIONAL_LONG_COMPLETE",
       "T1": "PROVISIONAL_LONG_COMPLETE",
       "C0": "PROVISIONAL_LONG_COMPLETE"
@@ -24405,7 +24435,7 @@
           "step": 1000000
         },
         "r1": {
-          "status": "PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN",
+          "status": "PROVISIONAL_LONG_COMPLETE",
           "step": 1000000
         },
         "n1": {
@@ -24428,10 +24458,10 @@
       "required_stable_samples": 3,
       "minimum_seconds_after_resource_stop": 90,
       "pid": 2370226,
-      "heartbeat": "2026-10-10T16:18:40.450016+00:00",
+      "heartbeat": "2026-10-11T05:10:32.532179+00:00",
       "status": "RESOURCE_ONLY_MONITORING",
-      "RAM_available_bytes": 108392816640,
-      "stable_RAM_samples": 1566
+      "RAM_available_bytes": 119758987264,
+      "stable_RAM_samples": 3107
     },
     "runtime_resource_policy": {
       "schema": "batch01.runtime_resource_policy.v2",
@@ -24473,5 +24503,59 @@
       "checkpoint_weights_uploaded": false,
       "screen_reports_uploaded_on_push": true
     }
+  },
+  "batch02": {
+    "schema": "cocap.batch02.migration-plan.v1",
+    "updated_at": "2026-10-11T05:54:25.834394+00:00",
+    "status": "WAITING_NEXT_AUTHORIZATION",
+    "first_stage_deliverables_complete": true,
+    "primary_reference": {
+      "worktree": "/home/yjq/rl/CoCap1/iqn-z05-independent-20260923",
+      "branch": "evaluation/iqn-z05-independent-20260923",
+      "head": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
+      "stage": 1,
+      "checkpoint_step": 1300000,
+      "checkpoint_sha256": "d35b7984d8ca03fa7b536811794578ff402e9b8ad48589e3318f2cb1077d702b",
+      "profile": "Forward-Final V2 successful IQN Z05",
+      "scope_limit": "Stage1 success does not establish all-scale curriculum stability; B0 roleful/R20 is a separate original successful contract"
+    },
+    "failed_MAPPO_reference_role": "known_failure_modes_debug_background_only",
+    "execution": {
+      "shared_dependencies": "serial",
+      "independent_arms_after_E1": [
+        "BATCH02-R2",
+        "BATCH02-N2",
+        "BATCH02-V1"
+      ],
+      "shared_environment_changes": "synchronized pinned source across dependent ARMs",
+      "training": "staggered only with future explicit budget"
+    },
+    "authorization": {
+      "first_stage_audit_contract_plan_reference_diagnostics": true,
+      "production_implementation": false,
+      "training": false,
+      "new_budget": null
+    },
+    "E1": {
+      "reference_fixture_count": 8,
+      "reference_fixtures_passed": true,
+      "bridge_implemented": false,
+      "pass": false,
+      "independent_validation": false,
+      "classification": "COMMANDER_OFFLINE_REFERENCE_DIAGNOSTIC"
+    },
+    "scientific_choices_pending": true,
+    "scientific_choices_document": "docs/experiments/BATCH02_SCIENTIFIC_CHOICES_20261011_ZH.md",
+    "documents": [
+      "docs/experiments/BATCH01_MIGRATION_AUDIT_20261011_ZH.md",
+      "docs/experiments/TERL_COCAP_ENVIRONMENT_CONTRACT_20261011_ZH.md",
+      "docs/experiments/BATCH02_E1_IMPLEMENTATION_PLAN_20261011_ZH.md",
+      "docs/ops/COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md",
+      "docs/experiments/BATCH02_SCIENTIFIC_CHOICES_20261011_ZH.md"
+    ],
+    "previous_dependencies_archive": "artifacts/2026-10-11_cocap_mappo_batch02/dag_before.json",
+    "stop_rule": "Two failed repairs of the same problem, or an environment design problem: stop affected work; preserve minimal repro, status, impact and unaffected branches; continue independent work",
+    "BASE_independent_QA_status_preserved": "QA_PENDING / BASE_FREEZE_BLOCKED; no PROVISIONAL promotion",
+    "new_performance_gates": []
   }
 }

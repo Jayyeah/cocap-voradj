@@ -1,0 +1,1068 @@
+diff --git a/configs/experiments/terl_mappo_batch01_20261009/t1_delta.json b/configs/experiments/terl_mappo_batch01_20261009/t1_delta.json
+new file mode 100644
+index 0000000..f2ac68a
+--- /dev/null
++++ b/configs/experiments/terl_mappo_batch01_20261009/t1_delta.json
+@@ -0,0 +1,88 @@
++{
++  "schema": "terl.batch01.delta.v1",
++  "line": "T1",
++  "base": {
++    "parent_sha": "bb794ca8435f06b9fa5693c0fed98f567320decf",
++    "candidate_sha": "9cc2d47c532c76239a61a0f6a19c8603358c92bf",
++    "lock_sha256": "384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab"
++  },
++  "config_changes": [
++    {
++      "path": "experiment",
++      "before": "EXP-TERL-MAPPO-01",
++      "after": "BATCH01-t1-V3R2",
++      "reason": "isolated ARM identity"
++    },
++    {
++      "path": "budget",
++      "before": 1000000,
++      "after": 100000,
++      "reason": "Stage2 first review100k; explicit extension only to200k; pilot hardcap25k"
++    }
++  ],
++  "source_changes": [
++    {
++      "path": "src/terl_mappo/batch01/arms/__init__.py",
++      "before": null,
++      "after": "93c0606fee90604fe37ded2f77d2deaff88c0e3f41e5a1e4f3d7e443e61f9319",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/evaluator.py",
++      "before": null,
++      "after": "48eecdccc11a58cb409f6f433fffa545fcdc09237dfd21b52088bdda98a829b2",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/preflight.py",
++      "before": null,
++      "after": "0e59927655b4da07a56ea75e4c9967b2aee150d0c2fdfdf714f8772e1d740bb6",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/runner.py",
++      "before": null,
++      "after": "eba837d145cd10e83bcf57df19a596a74d8712ab6129f8e6a73d594c771f71a9",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/secondary_contracts.py",
++      "before": null,
++      "after": "a4183407cdb857c04ff1fe2c7f824b50bb5b9e3e0063f3a199eaa990650f2db7",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/t1.py",
++      "before": null,
++      "after": "26ea3a1a195c5eb4d83fce5f7943290acefe484748f0e3b192dc28eb63c48b22",
++      "reason": "ARM implementation, bound evaluator, runtime consumers and scientific assertions",
++      "science_impact": "native multiscale curriculum; actor775k warm transfer; fixed7P2E2O8C critic; all currents; scale migration not exact resume"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/long_budget.py",
++      "before": null,
++      "after": "96e2a1ab16367935d00de57f076374583120fa9efa3af2334b2ca4e57998d780",
++      "reason": "explicit user authorized operational budget / strict full-state continuation / resume regression",
++      "science_impact": "no scientific config, actor, critic, learner, reward or dynamics change; PROVISIONAL_LONG only; final remains blind"
++    },
++    {
++      "path": "src/terl_mappo/batch01/arms/long_preflight.py",
++      "before": null,
++      "after": "d4477eb350c87726fea6f5d158f223e91ddc4c82755cd08bd8472008bf6c0c68",
++      "reason": "explicit user authorized operational budget / strict full-state continuation / resume regression",
++      "science_impact": "no scientific config, actor, critic, learner, reward or dynamics change; PROVISIONAL_LONG only; final remains blind"
++    }
++  ],
++  "extensions": {
++    "entrypoint": "terl_mappo.batch01.arms.t1:factory",
++    "parameters": {
++      "stage": 2,
++      "initialization": "actor775k_critic_adams_valuenorm_fresh"
++    }
++  }
++}
+diff --git a/src/terl_mappo/batch01/arms/__init__.py b/src/terl_mappo/batch01/arms/__init__.py
+new file mode 100644
+index 0000000..e42471c
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/__init__.py
+@@ -0,0 +1 @@
++"""Isolated Batch01 ARM sources; each file explicitly delta-pinned."""
+diff --git a/src/terl_mappo/batch01/arms/evaluator.py b/src/terl_mappo/batch01/arms/evaluator.py
+new file mode 100644
+index 0000000..c6e06f7
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/evaluator.py
+@@ -0,0 +1,114 @@
++"""Arm-aware, CPU-only screen/selection/final evaluator with paired seeds."""
++import argparse
++import fcntl
++import json
++import os
++from pathlib import Path
++import random
++import time
++import numpy as np
++import torch
++
++from .runner import prepare,read
++from terl_mappo.batch01.checkpoints import load_bound
++from terl_mappo.batch01.evaluation import isolated_rng,seed_manifest
++from terl_mappo.native import pack_local
++from terl_mappo.evaluate import summarize
++from terl_mappo.run import atomic_json,file_hash
++from cocap_voradj.training.small_step_ac import tensor_tree
++
++@torch.no_grad()
++def episode(runtime,seed,mode,offset,horizon_cap=None,scene_stage=None):
++    random.seed(seed);np.random.seed(seed);torch.manual_seed(seed+(offset if mode=='sample' else 0))
++    if scene_stage is None:
++        runtime.adapter=runtime.source_guard.call(runtime.hooks.env_factory,seed)
++    else:
++        from .t1 import NativeCurriculum
++        runtime.adapter=runtime.source_guard.call(NativeCurriculum,seed,scene_stage)
++    bridge=runtime.hooks.reward_transform
++    if bridge is not None and hasattr(bridge,'bind'):runtime.source_guard.call(bridge.bind,runtime.adapter)
++    initial=runtime.adapter.fingerprint();visited2=visited3=strict=False;entropy=[];components={};collisions=[];reward_sum=0.
++    count=0
++    with runtime.source_guard.scope():
++        while True:
++            obs=tensor_tree(pack_local(runtime.adapter.observations),'cpu')
++            actor=runtime.trainer.actor
++            actions,_,latent=actor.sample(obs,deterministic=mode in {'argmax','mean'})
++            if runtime.hooks.backend.categorical:ent=actor.distribution(obs).entropy()
++            else:
++                # MC entropy diagnostics cannot consume the paired action stream.
++                with isolated_rng():ent=actor.evaluate_latent(obs,latent)[1]
++            entropy.append(float(ent.mean()))
++            snap=getattr(bridge,'snapshot',None);pre=runtime.source_guard.call(snap,runtime.adapter.env) if callable(snap) else None
++            _,raw,_,_,end,info=runtime.source_guard.call(runtime.adapter.step,actions.cpu().numpy())
++            shaped=np.asarray(raw)
++            if bridge is not None:
++                if pre is not None:info.update(bridge_pre=pre,bridge_post=runtime.source_guard.call(snap,runtime.adapter.env))
++                shaped=np.asarray(runtime.source_guard.call(bridge,np.asarray(raw).copy(),info))
++            reward_sum+=float(np.mean(shaped));count+=1
++            visited2|=info['ring2'];visited3|=info['ring3'];strict|=info['strict_geometry'];collisions+=info['collision_types']
++            for k,v in info['components'].items():components[k]=components.get(k,0)+float(np.mean(v))
++            if bridge is not None and hasattr(bridge,'last_components'):
++                for k in ('raw','native_distance','shaping','shaped'):
++                    components['bridge_'+k]=components.get('bridge_'+k,0)+float(np.mean(bridge.last_components[k]))
++            if end or horizon_cap is not None and count>=horizon_cap:break
++    return {'seed':seed,'sample_action_seed':seed+offset if mode=='sample' else None,'mode':mode,'initial_fingerprint':initial,
++            'steps':info['episode_steps'],'capture':info['capture'],'normal_capture':info['normal_capture'],
++            'collision':info['collision'],'collision_types':sorted(set(collisions)),
++            'ring2':visited2,'ring3':visited3,'strict_geometry':strict,
++            'capture_time':info['episode_steps']*.5 if info['capture'] else None,'censored':not info['capture'],
++            'reward_components':components,'episode_reward':reward_sum,
++            'native_episode_reward':float(np.mean(info['episode_return'])),'action_entropy':float(np.mean(entropy))}
++
++def main():
++    p=argparse.ArgumentParser();p.add_argument('--manifest',required=True);p.add_argument('--checkpoint',required=True);p.add_argument('--output',required=True)
++    p.add_argument('--domain',choices=['screen','selection','final','smoke'],required=True);p.add_argument('--horizon-cap',type=int);p.add_argument('--scene-stage',type=int,choices=[1,2,3])
++    a=p.parse_args();torch.set_num_threads(1);manifest=read(a.manifest);out=Path(a.output)
++    if out.exists():raise ValueError('refuse evaluation overwrite')
++    if a.horizon_cap and a.domain!='smoke':raise ValueError('formal evaluations must run full episodes')
++    if a.domain=='final':
++        selection=out.parent/'selected.json'
++        if not selection.exists() or read(selection).get('checkpoint_sha256')!=file_hash(a.checkpoint):
++            raise ValueError('final requires frozen selection receipt')
++        if manifest['execution_mode'] in {'PROVISIONAL','PROVISIONAL_LONG'}:raise ValueError('pilot cannot consume final holdout')
++    # Keep full evaluations at4 slots; bounded8-step engineering smokes have2 separate CPU slots.
++    lease_name='smoke_evaluator_leases' if a.domain=='smoke' else 'evaluator_leases'
++    lockdir=Path('/home/yjq/rl/CoCap1/batch01-commander-runtime')/lease_name;lockdir.mkdir(parents=True,exist_ok=True)
++    lease=None
++    while lease is None:
++        for i in range(2 if a.domain=='smoke' else 4):
++            fd=(lockdir/f'{i}.lock').open('w')
++            try:fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);lease=fd;break
++            except BlockingIOError:fd.close()
++        if lease is None:time.sleep(.5)
++    runtime,lock,delta,resolved,_,_=prepare(Path(a.manifest).parent/'delta.json','cpu',Path(a.manifest).parent/'source_failures')
++    ck=load_bound(a.checkpoint,runtime,manifest);protocol=manifest['evaluation_protocol'];seed_manifest(resolved,protocol)
++    domain='screen' if a.domain=='smoke' else a.domain;setting=protocol[domain]
++    n=1 if a.domain=='smoke' else setting['max_episodes_per_mode']
++    if domain=='screen' and ck['steps'] not in protocol['screen_milestones'] and a.domain!='smoke':n=setting['regular_episodes_per_mode']
++    seeds=[setting['seed_base']+i for i in range(n)]
++    # This arm's scene is explicitly bound; all other scenes use their locked
++    # offsets and are evaluated separately, never pooled with Stage1.
++    if a.scene_stage is not None:
++        if delta['line']!='T1':raise ValueError('scene override only for T1 scale evaluation')
++        from .t1 import NativeCurriculum
++        with isolated_rng():runtime.adapter=runtime.source_guard.call(NativeCurriculum,resolved['seed'],a.scene_stage)
++    scene=runtime.adapter.contract()['counts'];label=f'{scene[0]}P{scene[1]}E{scene[2]}O{scene[3]}C'
++    if label not in protocol['scene_offsets']:raise ValueError('scene missing from locked paired seed protocol')
++    scene_offset=protocol['scene_offsets'][label];seeds=[s+scene_offset for s in seeds]
++    digest=file_hash(a.checkpoint);rows=[];start=time.monotonic()
++    modes=('argmax','sample') if runtime.hooks.backend.categorical else ('mean','sample')
++    with isolated_rng():
++        for mode in modes:
++            for seed in seeds:
++                rows.append(episode(runtime,seed,mode,protocol['sample_torch_offset'],a.horizon_cap,a.scene_stage))
++                atomic_json(out.with_suffix('.partial.json'),{'completed':len(rows),'total':2*n,'rows':rows,'pid':os.getpid()})
++    if file_hash(a.checkpoint)!=digest:raise ValueError('checkpoint changed during evaluation')
++    result={'checkpoint':a.checkpoint,'checkpoint_sha256':digest,'steps':ck['steps'],'seed_domain':a.domain,
++            'seed_base':seeds[0],'episodes_per_mode':n,'duration_seconds':time.monotonic()-start,
++            'scene':label,'evaluation_protocol':protocol,'execution_mode':manifest['execution_mode'],
++            'status':'SMOKE_NOT_FORMAL_EVIDENCE' if a.domain=='smoke' else 'PROVISIONAL_SCREEN' if manifest['execution_mode'] in {'PROVISIONAL','PROVISIONAL_LONG'} else 'COMPLETE',
++            'modes':{mode:summarize([r for r in rows if r['mode']==mode]) for mode in modes},'action_backend':manifest['active_runtime_values']['action_backend'],'episodes':rows}
++    atomic_json(out,result);out.with_suffix('.partial.json').unlink(missing_ok=True);print(json.dumps({k:v for k,v in result.items() if k!='episodes'}),flush=True)
++
++if __name__=='__main__':main()
+diff --git a/src/terl_mappo/batch01/arms/long_budget.py b/src/terl_mappo/batch01/arms/long_budget.py
+new file mode 100644
+index 0000000..7966e09
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/long_budget.py
+@@ -0,0 +1,65 @@
++"""Explicit user budget binding and strict full-state operational continuation.
++Scientific sources and resolved config are immutable across this continuation.
++Old manifests, sidecars, source commits and quarantines are checked before load.
++"""
++from pathlib import Path
++import hashlib,json,subprocess
++from terl_mappo.batch01.contracts import ROOT,fingerprint
++from terl_mappo.run import file_hash,load_checkpoint
++AUTH_PATH=Path('/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01/commander_v3r2/provisional_long_authorization_20261010.json')
++AUTH_SHA='d7f85e98a20adab536fbac5ee66251af07f945686ad9712118e1f3d3a4d36e66'
++LABEL='t1'
++OPS={'src/terl_mappo/batch01/arms/runner.py','src/terl_mappo/batch01/arms/evaluator.py','src/terl_mappo/batch01/arms/long_budget.py','src/terl_mappo/batch01/arms/long_preflight.py'}
++def read(p):return json.loads(Path(p).read_text())
++def authorization(delta):
++    if file_hash(AUTH_PATH)!=AUTH_SHA:raise ValueError('explicit long authorization hash changed')
++    a=read(AUTH_PATH);r=a['runs'][LABEL]
++    if a['candidate_sha']!=delta['base']['candidate_sha'] or a['canonical_lock_sha256']!=delta['base']['lock_sha256']:raise ValueError('authorization BASE pin mismatch')
++    if a['execution_mode']!='PROVISIONAL_LONG' or a['formal_evidence'] or a['retroactive_promotion'] or a['automatic_budget_extension'] or a['final_domain_allowed'] or a['stage3_training_authorized']:raise ValueError('authorization scientific gate drift')
++    if r['authorized_end_step']!=(100000 if LABEL=='t1' else 1000000):raise ValueError('unregistered long endpoint')
++    if LABEL=='t1' and delta['extensions']['parameters']['stage']!=2:raise ValueError('Stage3 is not authorized')
++    return r
++
++def validate_launch(delta,run_id,decisions,stored=None):
++    r=authorization(delta)
++    if run_id!=r['run_id'] or decisions!=r['authorized_end_step']-r['start_step']:raise ValueError('long run identity / budget differs from explicit user grant')
++    reg=read(AUTH_PATH.parents[1]/'run_registry.json')
++    rows=[x for x in reg['pilot_runs'] if x['run_id']==run_id]
++    if len(rows)!=1:raise ValueError('long run must be uniquely registered before execution')
++    row=rows[0]
++    if row['execution_mode']!='PROVISIONAL_LONG' or row['delta_hash']!=fingerprint(delta) or row['authorization_sha256']!=AUTH_SHA or row['authorized_end_step']!=r['authorized_end_step']:raise ValueError('registered long source/budget pin mismatch')
++    if row.get('scientific_quarantine') or row.get('formal_evidence'):raise ValueError('quarantined/formal long run prohibited')
++    if stored is not None and (stored['budget_authorization_sha256']!=AUTH_SHA or stored['authorized_end_step']!=r['authorized_end_step']):raise ValueError('resume cannot change long grant')
++    return r
++
++def migrate(runtime,delta):
++    r=authorization(delta)
++    if r['parent_checkpoint'] is None:return None,None
++    manifest_path=Path(r['parent_manifest']);path=Path(r['parent_checkpoint'])
++    if file_hash(manifest_path)!=r['parent_manifest_sha256']:raise ValueError('parent manifest hash changed')
++    old=read(manifest_path);side=read(path.with_suffix('.batch01.json'))
++    if old['run_id']!=r['previous_run_id'] or old['execution_mode']!='PROVISIONAL' or old['base']!=delta['base'] or old['source_git_head']!=r['previous_head']:raise ValueError('wrong parent identity/source BASE')
++    if old['resolved_config']!=runtime.config:raise ValueError('operational continuation may not change resolved scientific config')
++    if old['authorized_end_step']!=r['start_step'] or side['steps']!=r['start_step']:raise ValueError('parent is not the registered completed pilot endpoint')
++    if side['manifest_fingerprint']!=fingerprint(old) or side['base']!=old['base'] or side['checkpoint_sha256']!=r['parent_checkpoint_sha256'] or file_hash(path)!=r['parent_checkpoint_sha256']:raise ValueError('parent checkpoint/sidecar/manifest binding mismatch')
++    previous_delta=read(manifest_path.parent/'delta.json')
++    if previous_delta!=old['delta_manifest']:raise ValueError('parent delta file differs from manifest')
++    reg=read(AUTH_PATH.parents[1]/'run_registry.json')
++    prior=[x for x in reg['pilot_runs'] if x['run_id']==r['previous_run_id']]
++    if len(prior)!=1 or prior[0].get('scientific_quarantine') or prior[0]['status']!='PROVISIONAL_COMPLETE' or prior[0]['delta_hash']!=fingerprint(previous_delta):raise ValueError('parent is quarantined, incomplete or unregistered')
++    expected=runtime.source_guard.expected;previous=old['common_source_hashes']
++    differences={p for p in set(expected)|set(previous) if expected.get(p)!=previous.get(p)}
++    if differences-OPS:raise ValueError('scientific source change in continuation: '+str(sorted(differences-OPS)))
++    if old['generated_runtime_source_hashes']!=runtime.source_guard.generated_sources:raise ValueError('generated source mismatch')
++    # Every old source is verified against its original committed object, rather
++    # than adopting the current disk or trusting a filename/mtime.
++    for p,digest in previous.items():
++        source=subprocess.check_output(['git','-C',str(ROOT),'show',r['previous_head']+':'+p])
++        if hashlib.sha256(source).hexdigest()!=digest:raise ValueError('parent source receipt mismatch: '+p)
++    with runtime.source_guard.scope():
++        runtime.source_guard.check()
++        loaded=load_checkpoint(path,runtime.trainer,runtime.adapter,runtime.config,runtime.trainer.device,strict=True)
++        runtime.source_guard.check()
++    if loaded['steps']!=r['start_step']:raise ValueError('checkpoint counter mismatch')
++    receipt={'type':'STRICT_FULL_STATE_OPERATIONAL_CONTINUATION','parent_run_id':r['previous_run_id'],'parent_head':r['previous_head'],'checkpoint':str(path),'checkpoint_sha256':r['parent_checkpoint_sha256'],'parent_manifest_sha256':r['parent_manifest_sha256'],'steps':loaded['steps'],'strict_load':True,'config_unchanged':True,'science_sources_unchanged':True,'declared_operational_source_changes':sorted(differences),'authorization_sha256':AUTH_SHA,'formal_evidence':False,'retroactive_promotion':False}
++    return loaded,receipt
+diff --git a/src/terl_mappo/batch01/arms/long_preflight.py b/src/terl_mappo/batch01/arms/long_preflight.py
+new file mode 100644
+index 0000000..28a61a2
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/long_preflight.py
+@@ -0,0 +1,47 @@
++"""Check operational migration and new bound resume with actual PPO updates."""
++import argparse,copy,json,time
++from pathlib import Path
++import numpy as np
++import torch
++from .runner import prepare
++from .long_budget import authorization,migrate,AUTH_SHA
++from .preflight import same,same_graph
++from terl_mappo.batch01.contracts import fingerprint
++from terl_mappo.batch01.provenance import runtime_manifest,active_values
++from terl_mappo.batch01.checkpoints import save_bound,load_bound
++from terl_mappo.batch01.evaluation import isolated_rng
++from terl_mappo.run import atomic_json,rng_state
++
++def main():
++    p=argparse.ArgumentParser();p.add_argument('--delta',required=True);p.add_argument('--device',default='cpu');p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=8);a=p.parse_args()
++    torch.set_num_threads(1);start=time.monotonic();out=Path(a.output);out.parent.mkdir(parents=True,exist_ok=True)
++    if a.device.startswith('cuda'):torch.cuda.reset_peak_memory_stats()
++    runtime,lock,delta,resolved,_,warm=prepare(a.delta,a.device,out.parent/'source_failures',fork=False)
++    grant=authorization(delta);ck,receipt=migrate(runtime,delta)
++    if ck is None:
++        runtime,lock,delta,resolved,_,warm=prepare(a.delta,a.device,out.parent/'source_failures',fork=True)
++    else:
++        same(runtime.trainer.state_dict(),ck['trainer']);same_graph(runtime.adapter.state_dict(),ck['runtime']);same({k:v for k,v in rng_state().items() if k!='cuda' or a.device.startswith('cuda')},{k:v for k,v in ck['rng'].items() if k!='cuda' or a.device.startswith('cuda')})
++    with isolated_rng():manifest=runtime_manifest(lock,delta,resolved,runtime,{'device':a.device,'max_gpu_allocated_mib':2048})
++    manifest.update(run_id=grant['run_id'],execution_mode='PROVISIONAL_LONG',budget_authorization_sha256=AUTH_SHA,max_additional_decisions=grant['authorized_end_step']-grant['start_step'],authorized_end_step=grant['authorized_end_step'],independent_qa_accepted=False,scientific_evidence='PROVISIONAL_NOT_FORMAL')
++    checks={'authorization_pinned':True,'old_pilot_caps_preserved':True,'strict_full_state_parent':bool(ck),'scratch_or_stage_transfer':ck is None,'config_and_science_sources_unchanged':True}
++    batch,_=runtime.collect(a.length);metrics=runtime.update(batch);assert metrics['minibatch_updates']>0
++    cp=out.parent/('bound_'+a.device.replace(':','_')+'.pt')
++    step=grant['start_step']+a.length
++    save_bound(cp,runtime,manifest,step,int(np.asarray(batch['active_mask']).sum()),int(metrics['minibatch_updates']))
++    atomic_json(out.parent/'delta.json',delta);atomic_json(out.parent/'manifest.json',manifest)
++    expected,episodes=runtime.collect(8);em=runtime.update(expected);state=copy.deepcopy(runtime.trainer.state_dict());env=runtime.adapter.state_dict();rng=rng_state()
++    other,_,_,_,_,_=prepare(a.delta,a.device,out.parent/'source_failures',fork=False);load_bound(cp,other,manifest)
++    actual,ae=other.collect(8);am=other.update(actual)
++    same(expected,actual);same(episodes,ae);same(em,am);same(state,other.trainer.state_dict());same_graph(env,other.adapter.state_dict());same(rng,rng_state())
++    checks['new_bound_full_state_resume_exact']=True
++    if ck:
++        # Two independent strict restores of the legacy checkpoint must give
++        # identical rollout, update, optimizer/ValueNorm/environment and RNG.
++        migrate(runtime,delta);b1,e1=runtime.collect(8);m1=runtime.update(b1);s1=copy.deepcopy(runtime.trainer.state_dict());v1=runtime.adapter.state_dict();r1=rng_state()
++        migrate(other,delta);b2,e2=other.collect(8);m2=other.update(b2)
++        same(b1,b2);same(e1,e2);same(m1,m2);same(s1,other.trainer.state_dict());same_graph(v1,other.adapter.state_dict());same(r1,rng_state())
++        checks['parent_next_rollout_update_exact']=True
++    result={'status':'LONG_OPERATIONAL_PREFLIGHT_PASS','device':a.device,'length':a.length,'delta_hash':fingerprint(delta),'authorization_sha256':AUTH_SHA,'checks':checks,'receipt':receipt,'warm_start_receipt':warm,'active_values':active_values(runtime),'metrics':metrics,'duration_seconds':time.monotonic()-start,'torch_peak_allocated_mib':torch.cuda.max_memory_allocated()/1024**2 if a.device.startswith('cuda') else 0,'checkpoint':{'path':str(cp)},'formal_evidence':False}
++    atomic_json(out,result);print(json.dumps(result),flush=True)
++if __name__=='__main__':main()
+diff --git a/src/terl_mappo/batch01/arms/preflight.py b/src/terl_mappo/batch01/arms/preflight.py
+new file mode 100644
+index 0000000..eb2cb17
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/preflight.py
+@@ -0,0 +1,117 @@
++"""Scientific ARM assertions and exact bound full-state continuation checks."""
++import argparse
++import copy
++import json
++from pathlib import Path
++import time
++import numpy as np
++import torch
++from .runner import prepare
++from terl_mappo.batch01.provenance import runtime_manifest,active_values
++from terl_mappo.batch01.contracts import fingerprint,resolve_config
++from terl_mappo.batch01.checkpoints import save_bound,load_bound
++from terl_mappo.batch01.evaluation import isolated_rng
++from terl_mappo.run import rng_state,atomic_json
++from terl_mappo.native import pack_local
++from cocap_voradj.training.small_step_ac import tensor_tree
++import sys
++from terl_mappo.batch01.contracts import ROOT
++sys.path.insert(0,str(ROOT/"test"))
++from test_terl_mappo_batch01_base_20261009 import same
++
++def same_graph(a,b,seen=None):
++    seen=set() if seen is None else seen
++    pair=(id(a),id(b))
++    if pair in seen:return
++    seen.add(pair)
++    if isinstance(a,torch.Tensor):assert torch.equal(a.detach().cpu(),b.detach().cpu())
++    elif isinstance(a,np.ndarray):np.testing.assert_array_equal(a,b)
++    elif isinstance(a,dict):
++        assert a.keys()==b.keys()
++        for key in a:same_graph(a[key],b[key],seen)
++    elif isinstance(a,(tuple,list)):
++        assert len(a)==len(b)
++        for x,y in zip(a,b):same_graph(x,y,seen)
++    elif isinstance(a,np.random.RandomState):same_graph(a.get_state(),b.get_state(),seen)
++    elif hasattr(a,'query') and hasattr(a,'data'):
++        same_graph(a.data,b.data,seen);same_graph(a.query(a.data,k=len(a.data)),b.query(b.data,k=len(b.data)),seen)
++        same_graph(a.leafsize,b.leafsize,seen);same_graph(a.boxsize,b.boxsize,seen)
++    elif hasattr(a,'__dict__'):
++        assert type(a) is type(b)
++        same_graph(a.__dict__,b.__dict__,seen)
++    else:assert a==b
++
++
++def main():
++    p=argparse.ArgumentParser();p.add_argument('--delta',required=True);p.add_argument('--device',default='cpu');p.add_argument('--output',required=True);p.add_argument('--length',type=int,default=8)
++    a=p.parse_args();torch.set_num_threads(1);start=time.monotonic();out=Path(a.output);out.parent.mkdir(parents=True,exist_ok=True)
++    runtime,lock,delta,resolved,parent,receipt=prepare(a.delta,a.device,out.parent/'source_failures',fork=True)
++    line=delta['line'];checks={};active=active_values(runtime)
++    if line=='P1':
++        from .p1 import fork
++        control=copy.deepcopy(lock['anchor_config']);other,_,_,_,_,_=prepare(a.delta,a.device,out.parent/'source_failures',fork=True)
++        original_rng=rng_state();same(runtime.trainer.state_dict(),other.trainer.state_dict());same_graph(runtime.adapter.state_dict(),other.adapter.state_dict())
++        changed=copy.deepcopy(resolved);changed['ppo']['target_kl']=.01 if resolved['ppo']['target_kl']==.02 else .02
++        from dataclasses import replace
++        other.trainer.config=replace(other.trainer.config,target_kl=changed['ppo']['target_kl'])
++        same(runtime.trainer.state_dict(),other.trainer.state_dict());same(original_rng,rng_state())
++        checks['paired_full_state_before_first_rollout']=True;checks['strict_anchor_receipt']=receipt
++        assert runtime.trainer.config.target_kl==resolved['ppo']['target_kl']
++    if line=='N1':
++        actor=runtime.trainer.actor;obs=tensor_tree(pack_local(runtime.adapter.observations),a.device)
++        assert actor.encoder.config.self_feature_dim==4 and actor.encoder.config.max_pursuers==5
++        assert (actor.encoder.config.hidden_dim,actor.encoder.config.num_heads,actor.encoder.config.num_layers)==(256,8,4)
++        obs['masks'][:,1:]=False
++        with torch.no_grad():
++            expected=actor(obs);changed={k:v.clone() for k,v in obs.items()};changed['pursuers'].fill_(999);changed['evaders'].fill_(-999);changed['obstacles'].fill_(999)
++            same(expected,actor(changed));obs['masks'].zero_();assert torch.isfinite(actor(obs)).all()
++            action,logp,latent=actor.sample(obs);same(logp,actor.evaluate_indices(obs,latent)[0])
++        assert active['architecture']['critic']['hidden_dim']==256 and active['architecture']['critic']['layers']==4
++        checks['native_self4_information_only']=True;checks['masked_pooling_no_target_logprob']=True;checks['fixed_t0_critic']=active['architecture']['critic']
++    if line=='R1':
++        from .r1 import shaping,angle_delta
++        bridge=runtime.hooks.reward_transform;pre=bridge.snapshot(runtime.adapter.env);post=copy.deepcopy(pre)
++        assert not shaping(pre,post).any()
++        absent=copy.deepcopy(pre);absent['evaders']=np.zeros((0,6));assert not shaping(absent,post).any()
++        inactive=copy.deepcopy(pre);inactive['pursuers'][:,3]=0;post['pursuers'][:,:2]+=.1;assert not shaping(inactive,post).any()
++        assert abs(float(angle_delta(-np.pi+1e-5,np.pi-1e-5))-2e-5)<1e-10
++        checks['pre_target_post_recipient_geometry_inactive_no_target_wrap']=True
++    if line in {'T1','C0'}:
++        from .secondary_contracts import verify
++        checks.update(verify(runtime,line,a.device))
++    with isolated_rng():manifest=runtime_manifest(lock,delta,resolved,runtime,{'device':a.device,'max_gpu_allocated_mib':2048})
++    first=time.monotonic();batch,_=runtime.collect(a.length);collect_seconds=time.monotonic()-first
++    if line=='R1':
++        same(batch['raw_rewards'],batch['reward_components']['raw'])
++        same(batch['rewards'],batch['raw_rewards']-batch['reward_components']['native_distance']+batch['shaping_rewards'])
++        preserved=sum(batch['reward_components'][key] for key in ('time','global','emergency','collision','goal'))
++        np.testing.assert_allclose(preserved,batch['rewards']-batch['shaping_rewards'],atol=1e-6)
++        assert runtime.trainer.update_count==0
++        checks['raw_native_distance_shaping_shaped_separate']=True;checks['other_components_preserved']=True
++    if line=='C0':
++        from .secondary_contracts import rejected
++        corrupt=copy.deepcopy(batch);corrupt['log_prob'][corrupt['active_mask']]+=1.
++        before=copy.deepcopy(runtime.trainer.state_dict());before_rng=rng_state()
++        rejected(runtime.update,corrupt);same(before,runtime.trainer.state_dict());same(before_rng,rng_state())
++        checks['corrupt_behavior_density_rejected_before_optimizer']=True
++    first=time.monotonic();metrics=runtime.update(batch);update_seconds=time.monotonic()-first
++    assert metrics['minibatch_updates']>0 and all(np.isfinite(x) for x in metrics.values())
++    path=out.parent/'resume_probe.pt'
++    try:
++        save_bound(path,runtime,manifest,a.length,int(np.asarray(batch['active_mask']).sum()),int(metrics['minibatch_updates']))
++        expected,episodes=runtime.collect(8);expected_metrics=runtime.update(expected)
++        trainer=copy.deepcopy(runtime.trainer.state_dict());env=runtime.adapter.state_dict();rng=rng_state()
++        other,_,_,_,_,_=prepare(a.delta,a.device,out.parent/'source_failures',fork=False)
++        load_bound(path,other,manifest)
++        actual,actual_episodes=other.collect(8);actual_metrics=other.update(actual)
++        same(expected,actual);same(episodes,actual_episodes);same(expected_metrics,actual_metrics)
++        same(trainer,other.trainer.state_dict());same_graph(env,other.adapter.state_dict());same(rng,rng_state())
++        checks['full_state_resume_exact']=True
++    finally:path.unlink(missing_ok=True);path.with_suffix('.batch01.json').unlink(missing_ok=True)
++    result={'status':'ARM_SELFTEST_PASS','independent_qa':False,'line':line,'device':a.device,'length':a.length,
++            'base':delta['base'],'delta_hash':fingerprint(delta),'checks':checks,'active_values':active,
++            'metrics':metrics,'collect_seconds':collect_seconds,'update_seconds':update_seconds,'duration_seconds':time.monotonic()-start,
++            'torch_peak_allocated_mib':torch.cuda.max_memory_allocated()/1024**2 if a.device.startswith('cuda') else 0}
++    atomic_json(out,result);print(json.dumps(result),flush=True)
++
++if __name__=='__main__':main()
+diff --git a/src/terl_mappo/batch01/arms/runner.py b/src/terl_mappo/batch01/arms/runner.py
+new file mode 100644
+index 0000000..48a748d
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/runner.py
+@@ -0,0 +1,175 @@
++"""Recoverable single-run process. Pilot25k; long provisional requires an explicit pinned user grant."""
++from __future__ import annotations
++import argparse
++import copy
++from dataclasses import asdict
++from datetime import datetime,timezone
++import fcntl
++import importlib
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++import time
++import traceback
++import numpy as np
++import torch
++
++from terl_mappo.batch01.contracts import ROOT,LOCK_PATH,fingerprint,verify_base,validate_resources
++from terl_mappo.batch01.source_guard import SourceGuard
++from terl_mappo.batch01.interfaces import Hooks,assemble
++from terl_mappo.batch01.provenance import runtime_manifest,active_values
++from terl_mappo.batch01.checkpoints import save_bound,load_bound
++from terl_mappo.batch01.evaluation import isolated_rng
++from terl_mappo.run import atomic_json,file_hash,post_update_policy_stats
++
++CENTRAL=Path('/home/yjq/rl/CoCap1/ac-master-dag-20260921/artifacts/2026-10-09_terl_mappo_batch01')
++
++def read(path):return json.loads(Path(path).read_text())
++def now():return datetime.now(timezone.utc).isoformat()
++
++def prepare(delta_path,device='cpu',diagnostics=None,fork=False):
++    lock=read(ROOT/LOCK_PATH);delta=read(delta_path);pin=delta['base']['lock_sha256']
++    resolved=verify_base(lock,delta,pin)
++    guard=SourceGuard.from_base(lock,delta,pin,diagnostics=diagnostics)
++    hooks=Hooks();extension=delta.get('extensions')
++    if extension:
++        name,fn=extension['entrypoint'].split(':')
++        with guard.scope():hooks=guard.call(getattr(importlib.import_module(name),fn),extension.get('parameters',{}))
++    config=copy.deepcopy(lock['anchor_config']) if fork and delta['line']=='P1' else resolved
++    runtime=assemble(config,device,hooks,delta['line'],source_guard=guard)
++    if hooks.reward_transform is not None and hasattr(hooks.reward_transform,'bind'):
++        guard.call(hooks.reward_transform.bind,runtime.adapter)
++    parent=None;receipt=None
++    if fork and delta['line']=='P1':
++        from .p1 import fork as controlled_fork
++        parent,receipt=controlled_fork(runtime,resolved)
++    if fork and delta['line']=='T1':
++        from .t1 import initialize_stage
++        receipt=guard.call(initialize_stage,runtime,delta['extensions']['parameters'])
++    return runtime,lock,delta,resolved,parent,receipt
++
++
++def launch_eval(output,manifest,checkpoint,step):
++    target=output/'evaluations'/f'screen_{step:09d}.json'
++    cmd=[sys.executable,'-m','terl_mappo.batch01.arms.evaluator','--manifest',str(output/'manifest.json'),
++         '--checkpoint',str(checkpoint),'--output',str(target),'--domain','screen']
++    env=dict(os.environ,CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
++    log=(output/'logs'/f'eval_screen_{step:09d}.log').open('a')
++    p=subprocess.Popen(cmd,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True);log.close()
++    return {'pid':p.pid,'checkpoint':str(checkpoint),'output':str(target),'status':'PENDING_SCREEN','step':step}
++
++
++def main():
++    ap=argparse.ArgumentParser();ap.add_argument('--delta',required=True);ap.add_argument('--run-id',required=True)
++    ap.add_argument('--output',required=True);ap.add_argument('--device',default='cpu');ap.add_argument('--threads',type=int,default=1)
++    ap.add_argument('--mode',choices=['PROVISIONAL','PROVISIONAL_LONG','FORMAL','SMOKE','BENCHMARK'],required=True)
++    ap.add_argument('--decisions',type=int,required=True);ap.add_argument('--resume');ap.add_argument('--no-evaluation',action='store_true')
++    args=ap.parse_args();output=Path(args.output).resolve();validate_resources(output,args.device,args.threads,workers=1)
++    if args.decisions<=0 or (args.mode=='PROVISIONAL' and args.decisions>25000):raise ValueError('PROVISIONAL maximum25k additional decisions')
++    if args.mode=='FORMAL':
++        state=read(CENTRAL/'batch_state.json')
++        if state['base_freeze_status']!='BASE_FROZEN' or state.get('QA_SAME_SHA') not in {'PASS','A3_INDEPENDENT_QA_PASS'}:
++            raise ValueError('formal training requires independent frozen BASE')
++    grant=None
++    if args.mode=='PROVISIONAL_LONG':
++        from .long_budget import validate_launch,AUTH_SHA
++        grant=validate_launch(read(args.delta),args.run_id,args.decisions)
++    existed=output.exists();output.mkdir(parents=True,exist_ok=True)
++    if existed and not args.resume and (output/'progress.json').exists():raise ValueError('refuse duplicate run; explicit resume required')
++    descriptor=(output/'process.lock').open('w');fcntl.flock(descriptor,fcntl.LOCK_EX|fcntl.LOCK_NB)
++    for folder in ('logs','checkpoints','evaluations','source_failures'): (output/folder).mkdir(exist_ok=True)
++    torch.set_num_threads(args.threads)
++    if args.device.startswith('cuda'):torch.cuda.reset_peak_memory_stats()
++    runtime,lock,delta,resolved,parent,fork_receipt=prepare(args.delta,args.device,output/'source_failures',fork=not args.resume and (args.mode!='PROVISIONAL_LONG' or read(args.delta)['line']=='T1'))
++    if args.mode=='PROVISIONAL_LONG' and not args.resume:
++        from .long_budget import migrate
++        restored,continuation_receipt=migrate(runtime,delta)
++        if restored is not None:parent=restored;fork_receipt=continuation_receipt
++    if args.mode=='FORMAL':
++        if state['BATCH01_BASE_SHA']!=delta['base']['candidate_sha'] or state['core']['canonical_lock_sha256']!=delta['base']['lock_sha256']:
++            raise ValueError('formal ARM parent differs from independently frozen BASE')
++        maximum=225000 if delta['line']=='P1' else resolved['budget']
++        if args.decisions>maximum:raise ValueError('formal budget exceeds registered window')
++    resources=validate_resources(output,args.device,args.threads,workers=1)
++    steps=int(parent['steps']) if parent else 0;agent_steps=int(parent['agent_transitions']) if parent else 0
++    optimizers=int(parent['optimizer_steps']) if parent else 0
++    start_steps=steps;budget=args.decisions
++    with isolated_rng():manifest=runtime_manifest(lock,delta,resolved,runtime,resources)
++    manifest.update(run_id=args.run_id,execution_mode=args.mode,max_additional_decisions=budget,
++                    authorized_end_step=steps+budget,independent_qa_accepted=False,scientific_evidence='PROVISIONAL_NOT_FORMAL' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else args.mode)
++    if grant:manifest.update(budget_authorization_sha256=AUTH_SHA,authorization_id='USER-PROVISIONAL-LONG-20261010')
++    if args.resume:
++        stored=read(output/'manifest.json')
++        if stored['run_id']!=args.run_id or stored['execution_mode']!=args.mode or stored['delta_manifest']!=delta:
++            raise ValueError('resume run/mode/source delta mismatch')
++        manifest=stored
++        if grant:validate_launch(delta,args.run_id,args.decisions,stored)
++        loaded=load_bound(args.resume,runtime,manifest);steps=loaded['steps'];agent_steps=loaded['agent_transitions'];optimizers=loaded['optimizer_steps']
++        start_steps=manifest['authorized_end_step']-manifest['max_additional_decisions']
++    else:
++        atomic_json(output/'delta.json',delta)
++        atomic_json(output/'manifest.json',manifest)
++        if fork_receipt:atomic_json(output/'fork_receipt.json',fork_receipt)
++    end_step=manifest['authorized_end_step']
++    if args.mode=='PROVISIONAL' and end_step-start_steps>25000:raise ValueError('resume cannot extend pilot authorization')
++    if grant and (start_steps!=grant['start_step'] or end_step!=grant['authorized_end_step']):raise ValueError('long manifest endpoint differs from pinned authorization')
++    session_start_steps=steps;session_start_update=runtime.trainer.update_count
++    gpu_uuid=None
++    if args.device.startswith('cuda'):
++        gpu_uuid=subprocess.check_output(['nvidia-smi',f'--id={os.environ["CUDA_VISIBLE_DEVICES"]}','--query-gpu=uuid','--format=csv,noheader'],text=True).strip()
++    status={'run_id':args.run_id,'mode':args.mode,'status':'STARTING','pid':os.getpid(),'pgid':os.getpgrp(),
++            'base':delta['base'],'branch':subprocess.check_output(['git','branch','--show-current'],text=True).strip(),
++            'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'delta_hash':fingerprint(delta),
++            'resolved_config_hash':fingerprint(resolved),'physical_gpu':os.environ.get('CUDA_VISIBLE_DEVICES'),
++            'gpu_uuid':gpu_uuid,'step':steps,'start_step':start_steps,'authorized_end_step':end_step,
++            'update':runtime.trainer.update_count,'last_exception':None,'evaluation':[]}
++    start=time.monotonic();latest=None
++    def heartbeat(state):
++        status.update(status=state,step=steps,update=runtime.trainer.update_count,agent_transitions=agent_steps,
++                      optimizer_steps=optimizers,heartbeat=now(),elapsed_seconds=time.monotonic()-start,
++                      decisions_per_second=(steps-session_start_steps)/(time.monotonic()-start),
++                      disk_bytes=sum(p.stat().st_size for p in output.rglob('*') if p.is_file()),
++                      checkpoint=latest,torch_peak_allocated_mib=torch.cuda.max_memory_allocated()/1024**2 if args.device.startswith('cuda') else 0)
++        atomic_json(output/'progress.json',status)
++    def save(step):
++        nonlocal latest
++        path=output/'checkpoints'/f'step_{step:09d}.pt';digest=save_bound(path,runtime,manifest,steps,agent_steps,optimizers)
++        latest={'path':str(path),'sha256':digest,'step':steps,'bytes':path.stat().st_size}
++        atomic_json(output/'checkpoints/latest.json',latest)
++        return path
++    try:
++        if not args.resume:
++            path=save(steps)
++            if args.mode in {'FORMAL','PROVISIONAL','PROVISIONAL_LONG'} and not args.no_evaluation:status['evaluation'].append(launch_eval(output,manifest,path,steps))
++        else:latest=read(output/'checkpoints/latest.json')
++        heartbeat('STARTING')
++        with (output/'metrics.jsonl').open('a') as metrics_log:
++            while steps<end_step:
++                length=min(256,end_step-steps,25000-steps%25000)
++                t=time.monotonic();batch,episodes=runtime.collect(length);collect_seconds=time.monotonic()-t
++                t=time.monotonic();metrics=runtime.update(batch);update_seconds=time.monotonic()-t
++                if not all(np.isfinite(value) for value in metrics.values()):raise ValueError('nonfinite PPO metrics')
++                steps+=length;agent_steps+=int(np.asarray(batch['active_mask']).sum());optimizers+=int(metrics['minibatch_updates'])
++                row={'time':now(),'step':steps,'update':runtime.trainer.update_count,'collect_seconds':collect_seconds,
++                     'update_seconds':update_seconds,'live_target_kl':runtime.trainer.config.target_kl,'metrics':metrics,'episodes':episodes}
++                if 'reward_components' in batch:
++                    row['reward_components_mean']={k:float(np.mean(v)) for k,v in batch['reward_components'].items()}
++                if runtime.hooks.backend.categorical:row['post_update_policy']=post_update_policy_stats(runtime.trainer,batch)
++                metrics_log.write(json.dumps(row,allow_nan=False)+'\n');metrics_log.flush()
++                if steps%25000==0 or steps==end_step or runtime.trainer.update_count==session_start_update+1:
++                    path=save(steps)
++                    if (steps%25000==0 or steps==end_step) and args.mode in {'PROVISIONAL','PROVISIONAL_LONG','FORMAL'} and not args.no_evaluation:
++                        status['evaluation'].append(launch_eval(output,manifest,path,steps))
++                heartbeat(args.mode+'_RUNNING' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else 'RUNNING_'+args.mode)
++                if args.device.startswith('cuda') and torch.cuda.max_memory_allocated()/1024**2>2048:raise ValueError('GPU allocation exceeded2GiB lease')
++                if status['disk_bytes']>8*1024**3 or os.statvfs(output).f_bavail*os.statvfs(output).f_frsize<30*1024**3:
++                    raise ValueError('run storage lease/reserve exceeded')
++        heartbeat(args.mode+'_COMPLETE_PENDING_SCREEN' if args.mode in {'PROVISIONAL','PROVISIONAL_LONG'} else 'COMPLETE_'+args.mode)
++    except BaseException:
++        status['last_exception']=traceback.format_exc();heartbeat('FAILED_SOURCE_CONTRACT' if runtime.source_guard.failure else 'FAILED_ENGINEERING')
++        raise
++    print(json.dumps(status,allow_nan=False),flush=True)
++
++if __name__=='__main__':main()
+diff --git a/src/terl_mappo/batch01/arms/secondary_contracts.py b/src/terl_mappo/batch01/arms/secondary_contracts.py
+new file mode 100644
+index 0000000..5014d93
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/secondary_contracts.py
+@@ -0,0 +1,168 @@
++"""Physical/probability and curriculum lifecycle assertions; all sources pinned."""
++import copy
++import numpy as np
++import torch
++from terl_mappo.native import NativeStage1,pack_local
++from terl_mappo.batch01.evaluation import isolated_rng
++from terl_mappo.run import rng_state
++from cocap_voradj.training.small_step_ac import tensor_tree
++
++def rejected(fn,*args):
++    try:fn(*args)
++    except (ValueError,TypeError):return
++    raise AssertionError('expected contract rejection')
++
++def physical(adapter):
++    e=adapter.env
++    return {'robots':[[r.x,r.y,r.theta,r.speed,*r.velocity,float(r.collision),float(r.deactivated)] for r in e.pursuers+e.evaders],
++            'trajectory':[r.trajectory for r in e.pursuers+e.evaders], 'rng':e.rd.get_state(),'time':(e.episode_time_steps,e.total_time_steps)}
++
++def verify_c0(runtime,device):
++    from .c0 import NativeContinuous,PhysicalActionList,BOUNDS
++    from .preflight import same,same_graph
++    checks={}
++    with isolated_rng():
++        for grid in range(9):
++            native=NativeStage1(9);continuous=NativeContinuous(9)
++            assert native.fingerprint()==continuous.fingerprint()
++            values=np.array([p.action_list[grid] for p in native.env.pursuers],float)
++            for _ in range(3):
++                same_graph(native.step(np.full(3,grid,np.int64)),continuous.step(values))
++                same_graph(physical(native),physical(continuous))
++        for collision in (False,True):
++            native=NativeStage1(9);continuous=NativeContinuous(9)
++            if collision:
++                for a in (native,continuous):
++                    p,q=a.env.pursuers[:2];q.x=p.x+.1;q.y=p.y
++            else:
++                native.env.episode_time_steps=continuous.env.episode_time_steps=3000
++            result=native.step(np.full(3,4,np.int64));actual=continuous.step(np.zeros((3,2)))
++            same_graph(result,actual);same_graph(physical(native),physical(continuous))
++            assert result[4] and (result[5]['collision'] if collision else result[3].all())
++        for speed,command in [(3.,np.array([.4,0.])),(0.,np.array([-.4,0.])),(1.,np.array([.137,.1158]))]:
++            base=NativeStage1(9).env.pursuers[0];robot=copy.deepcopy(base);robot.action_list=PhysicalActionList(robot.action_list)
++            robot.speed=speed;before=(robot.x,robot.y,robot.theta);expected=speed;theta=before[2];x,y=before[:2];current=np.array([.3,-.2])
++            for _ in range(10):
++                velocity=expected*np.array([np.cos(theta),np.sin(theta)])+current;x+=velocity[0]*robot.dt;y+=velocity[1]*robot.dt
++                expected=np.clip(expected+(command[0]-robot.coefficient_water_resistance*expected)*robot.dt,0,robot.max_speed)
++                theta=(theta+command[1]*robot.dt)%(2*np.pi);robot.update_state(command,current)
++            np.testing.assert_allclose([robot.x,robot.y,robot.theta,robot.speed],[x,y,theta,expected],rtol=0,atol=1e-12)
++            if speed==3.:assert robot.speed==3.
++            if speed==0.:assert robot.speed==0.
++        continuous=NativeContinuous(9);native=NativeStage1(9)
++        continuous.step(np.broadcast_to([.137,.1158],(3,2)).copy());native.step(np.full(3,4,np.int64))
++        assert continuous.fingerprint()!=native.fingerprint()
++        assert np.all(np.abs(np.asarray(continuous.env.pursuers[0].action_history[-1]))<=BOUNDS)
++        rejected(continuous.validate_actions,np.zeros(3,dtype=int));rejected(continuous.validate_actions,np.full((3,2),.9))
++        actor=runtime.trainer.actor;obs=tensor_tree(pack_local(runtime.adapter.observations),device)
++        with torch.no_grad():
++            action,logp,latent=actor.sample(obs);evaluated=actor.evaluate_latent(obs,latent)[0]
++            torch.testing.assert_close(torch.exp(evaluated-logp),torch.ones(3,device=device),rtol=0,atol=1e-6)
++            assert torch.isfinite(logp).all() and np.all(np.abs(action.cpu().numpy())<=BOUNDS+1e-7)
++            d,_=actor.distribution(obs);x=torch.tensor([[.2,-.3],[2.,-3.],[-15.,20.]],device=device,dtype=torch.float64)
++            expected=d.log_prob(x).sum(-1)-(torch.log(x.new_tensor([.4,np.pi/6]))+2*(np.log(2)-x-torch.nn.functional.softplus(-2*x))).sum(-1)
++            torch.testing.assert_close(actor.density(d,x),expected,rtol=0,atol=1e-12)
++            safe=x[:2];sub=torch.distributions.Normal(d.loc[:2],d.scale[:2]);direct=sub.log_prob(safe).sum(-1)-torch.log(safe.new_tensor([.4,np.pi/6])*(1-safe.tanh().square())).sum(-1)
++            torch.testing.assert_close(actor.density(sub,safe),direct,rtol=0,atol=1e-10)
++            assert torch.isfinite(actor.density(d,x)).all()
++            obs['masks'].zero_();assert torch.isfinite(actor.sample(obs)[1]).all()
++    checks.update(AW9_nine_point_transition_reward_event_parity=True,native_current_drag_speed_limit_collision_timing=True,
++                  offgrid_physical_integration_without_quantization=True,joint_tanh_and_scale_jacobian=True,
++                  pre_tanh_latent_authoritative_saturation_finite=True,zero_update_ratio_one=True,no_target_finite=True)
++    assert runtime.trainer.update_count==0 and not runtime.trainer.actor_optimizer.state and not runtime.trainer.value_optimizer.state
++    checks['scratch_Adam_ValueNorm']=True
++    return checks
++
++def verify_t1(runtime,device):
++    from .t1 import NativeCurriculum,state_encoder,critic_factory,qualification,ANCHOR
++    from .preflight import same,same_graph
++    from terl_mappo.batch01.interfaces import Runtime,Hooks,assemble
++    from .t1 import env_stage3
++    from terl_mappo.batch01.checkpoints import save_bound,load_bound
++    from terl_mappo.batch01.provenance import runtime_manifest
++    from terl_mappo.batch01.contracts import ROOT
++    import json
++    from pathlib import Path
++    checks={}
++    with isolated_rng():
++        anchor=torch.load(ANCHOR,map_location='cpu',weights_only=False)
++        same(anchor['trainer']['actor'],runtime.trainer.actor.state_dict())
++        assert runtime.trainer.update_count==0 and not runtime.trainer.actor_optimizer.state and not runtime.trainer.value_optimizer.state
++        assert runtime.adapter.stage==2
++        stage1=NativeCurriculum(9,1);native=NativeStage1(9);assert stage1.fingerprint()==native.fingerprint()
++        for _ in range(3):
++            expected=native.step(np.full(3,4,np.int64));actual=stage1.step(np.full(7,4,np.int64))
++            same(expected[0],{k:v[:3] for k,v in actual[0].items()});same(expected[1],actual[1][:3]);same(expected[2],actual[2][:3]);same(expected[3],actual[3][:3]);same(expected[4],actual[4])
++            same_graph(physical(native),physical(stage1));assert not actual[1][3:].any() and actual[2][3:].all()
++        for stage,counts in [(1,(3,1,0,4)),(2,(4,1,1,6)),(3,(7,2,2,8))]:
++            adapter=NativeCurriculum(9,stage);state=state_encoder(adapter.env);n=counts[0]
++            assert adapter.contract()['counts']==list(counts) and state['self'].shape==(7,57)
++            assert state['active_mask'].sum()==n and state['pursuer_mask'].sum()==7*n
++            assert state['evader_mask'].sum()==counts[1] and state['obstacle_mask'].sum()==counts[2]
++            currents=state['self'][0,9:].reshape(8,6);assert currents[:,5].sum()==counts[3]
++            for i,c in enumerate(sorted(adapter.env.cores,key=lambda c:(c.x,c.y))):
++                np.testing.assert_allclose(currents[i],[c.x/120,c.y/120,1 if c.clockwise else -1,c.Gamma/(10*np.pi),adapter.env.vortex_core_radius/120,1],rtol=1e-6)
++            if n<7:assert not state['self'][n:].any() and not state['pursuer_mask'][:,n:].any()
++            with torch.no_grad():
++                output=runtime.trainer.value(tensor_tree({k:v[None] for k,v in state.items()},device));assert torch.isfinite(output).all() and not output[0,n:].any()
++            order=np.arange(n)[::-1];env=copy.deepcopy(adapter.env);env.pursuers=[env.pursuers[i] for i in order];permuted=state_encoder(env)
++            np.testing.assert_array_equal(permuted['self'][:n],state['self'][order])
++            adapter.step(np.full(7,4,np.int64));saved=adapter.state_dict();expected=adapter.step(np.full(7,4,np.int64));expected_state=adapter.state_dict()
++            adapter.load_state_dict(saved);same_graph(expected,adapter.step(np.full(7,4,np.int64)));same_graph(expected_state,adapter.state_dict())
++        # Actual native collision event deactivates one slot and continues with3.
++        adapter=NativeCurriculum(9,2);p=adapter.env.pursuers[0];o=adapter.env.obstacles[0];p.x=o.x;p.y=o.y;p.speed=0;p.update_velocity(np.zeros(2))
++        _,_,term,_,end,info=adapter.step(np.full(7,4,np.int64))
++        assert term[0] and info['collision'] and not end and adapter.env.pursuers[0].deactivated
++        following=adapter.step(np.full(7,4,np.int64));assert not following[5]['active'][0] and following[5]['active'].sum()==3
++        assert not state_encoder(adapter.env)['active_mask'][0]
++        second=adapter.env.pursuers[1];second.x=o.x;second.y=o.y;second.speed=0
++        failed=adapter.step(np.full(7,4,np.int64));assert failed[4] and failed[2].all()
++        # Native multi-target capture: one captured E does not end Stage3.
++        adapter=NativeCurriculum(9,3);env=adapter.env;e=env.evaders[0]
++        for p in env.pursuers[:3]:p.captured_evaderId_list.append(e.id)
++        e.deactivated=True;env.update_pursuing_status();adapter.observations,_=env.get_pursuers_observations();adapter.evader_obs,_=env.get_evaders_observation()
++        result=adapter.step(np.full(7,4,np.int64));assert not result[4] and not result[5]['capture'] and state_encoder(env)['evader_mask'].sum()==1
++        np.testing.assert_allclose(sum(np.asarray(v) for v in result[5]['components'].values()),result[1],atol=1e-6)
++        assert len(adapter.apf)==2
++        target=env.evaders[1];target.x=60.;target.y=60.;target.speed=0.
++        for i,p in enumerate(env.pursuers):
++            if i<3:
++                angle=i*2*np.pi/3;p.x=60+5*np.cos(angle);p.y=60+5*np.sin(angle)
++            else:p.x=15+15*(i-3);p.y=100.
++            p.speed=0.;p.collision=False;p.deactivated=False
++        for i,o in enumerate(env.obstacles):o.x=5+110*i;o.y=5+110*i
++        env.update_pursuing_status();adapter.observations,_=env.get_pursuers_observations();adapter.evader_obs,_=env.get_evaders_observation()
++        completed=adapter.step(np.full(7,4,np.int64))
++        assert completed[4] and completed[5]['capture'] and not completed[5]['collision']
++        assert sum(completed[5]['components']['goal'])>0
++        reports=[{'seed_domain':'selection','scene':s,'episodes_per_mode':20,'modes':{m:{'normal_capture_rate':.8,'collision_rate':.2} for m in ('argmax','sample')}} for s in ('4P1E1O6C','3P1E0O4C')]
++        assert qualification(*reports,100000);reports[0]['modes']['sample']['normal_capture_rate']=.79;assert not qualification(*reports,100000)
++        reports[0]['seed_domain']='final';rejected(qualification,*reports,100000)
++        from .t1 import factory
++        rejected(factory,{'stage':3,'initialization':'actor775k_critic_adams_valuenorm_fresh'})
++        lock=json.loads((ROOT/'configs/experiments/terl_mappo_batch01_20261009/base_lock.json').read_text())
++        delta=json.loads((ROOT/'configs/experiments/terl_mappo_batch01_20261009/t1_delta.json').read_text())
++        engineering=assemble(runtime.config,device,Hooks(env_factory=env_stage3,state_encoder=state_encoder,critic_factory=critic_factory),'T1',runtime.source_guard)
++        manifest=runtime_manifest(lock,delta,runtime.config,engineering,{'device':device,'max_gpu_allocated_mib':2048})
++        manifest['execution_mode']='ENGINEERING_STAGE3_CORRECTNESS_ONLY_NOT_TRAINING'
++        batch,_=engineering.collect(8);metrics=engineering.update(batch)
++        probe=ROOT/'runs/preflight/stage3_resume.pt'
++        try:
++            save_bound(probe,engineering,manifest,8,int(batch['active_mask'].sum()),int(metrics['minibatch_updates']))
++            expected,episodes=engineering.collect(8);expected_metrics=engineering.update(expected)
++            state=copy.deepcopy(engineering.trainer.state_dict());environment=engineering.adapter.state_dict();rng=rng_state()
++            actual=assemble(runtime.config,device,Hooks(env_factory=env_stage3,state_encoder=state_encoder,critic_factory=critic_factory),'T1',runtime.source_guard)
++            load_bound(probe,actual,manifest);restored,restored_episodes=actual.collect(8);restored_metrics=actual.update(restored)
++            same(expected,restored);same(episodes,restored_episodes);same(expected_metrics,restored_metrics)
++            same(state,actual.trainer.state_dict());same_graph(environment,actual.adapter.state_dict());same(rng,rng_state())
++        finally:
++            probe.unlink(missing_ok=True);probe.with_suffix('.batch01.json').unlink(missing_ok=True)
++    checks.update(selected775k_actor_strict_warm_fresh_critic_Adam_ValueNorm=True,fixed7P2E2O8C_capacity_masks_all_currents=True,
++                  native_Stage1_transition_parity=True,multiscale_environment_APF_exact_resume=True,
++                  partial_pursuer_collision_lifecycle=True,multiple_evader_reward_capture_lifecycle=True,
++                  Stage3_qualification_selection_retention_only=True,Stage3_without_qualified_promotion_rejected=True,
++                  cross_scale_migration_not_bit_exact=True,Stage3_full_trainer_environment_rng_resume_exact=True)
++    return checks
++
++def verify(runtime,line,device):
++    return verify_c0(runtime,device) if line=='C0' else verify_t1(runtime,device)
+diff --git a/src/terl_mappo/batch01/arms/t1.py b/src/terl_mappo/batch01/arms/t1.py
+new file mode 100644
+index 0000000..485c022
+--- /dev/null
++++ b/src/terl_mappo/batch01/arms/t1.py
+@@ -0,0 +1,239 @@
++"""Native accelerated curriculum, fixed7P/2E/2O/8C capacity and masks."""
++import copy
++import json
++from pathlib import Path
++import numpy as np
++import torch
++from terl_mappo.native import NativeStage1,MarineEnv,initialize_native,pack_local
++from thirdparty.APF import ApfAgent
++from terl_mappo.batch01.interfaces import Hooks,ActionCapabilities
++from cocap_voradj.models.small_step_ac import CentralValueNetwork
++from terl_mappo.run import file_hash
++
++CAPACITY=(7,2,2,8)
++STAGES={1:(3,1,0,4),2:(4,1,1,6),3:(7,2,2,8)}
++ANCHOR='/home/yjq/rl/CoCap1/terl-backbone-mappo-20261008/runs/terl_mappo_stage1_seed9_1m_continuation/checkpoints/step_000775000.pt'
++ANCHOR_HASH='590d486876d4fca1cd75311c2dcc1255f847a1f756d91eed202e737193b58db4'
++
++def geometry(env):
++    counts=[];stricts=[]
++    for e in env.evaders:
++        near=[p for p in env.pursuers if not p.deactivated and np.hypot(p.x-e.x,p.y-e.y)<8]
++        count=len(near);strict=False
++        if count>=3:
++            angles=sorted(np.arctan2(p.y-e.y,p.x-e.x)%(2*np.pi) for p in near)
++            gaps=np.diff(angles+[angles[0]+2*np.pi]);strict=bool(gaps.max()<=np.pi and gaps.max()<=3*gaps.min())
++        counts.append(count);stricts.append(strict)
++    return max(counts,default=0),any(stricts)
++
++def reward_components(env,before_active,rewards,infos):
++    n=len(env.pursuers);dense=np.zeros(n)
++    for i,p in enumerate(env.pursuers):
++        if not before_active[i]:continue
++        distances=[np.hypot(p.x-e.x,p.y-e.y) for e in env.evaders]
++        if not distances:continue
++        dense[i]=sum(env.distance_reward if d<=8 else 5*np.exp(env.decay_factor*(min(distances)-8)) for d in distances)
++    global_reward=env.global_reward()
++    collision=np.array([env.collision_penalty if x['state']=='collision' else 0 for x in infos])
++    goal=np.array([rewards[i]-env.timestep_penalty-dense[i]-global_reward[i]-collision[i] if '✌️capture' in infos[i]['state'] else 0 for i in range(n)])
++    return dense,global_reward,collision,goal
++
++class NativeCurriculum(NativeStage1):
++    def __init__(self,seed,stage=2):
++        if stage not in STAGES:raise ValueError('unregistered native stage')
++        self.stage=stage;cfg=initialize_native();schedule={k:[v[stage-1]] for k,v in cfg['training_schedule'].items()}
++        schedule['time_steps']=[0]
++        self.env=MarineEnv(seed=int(seed),schedule=schedule)
++        self.reset();self.apf=[ApfAgent(e.a,e.w) for e in self.env.evaders];self.assert_contract()
++    def reset(self):
++        (obs,_),_=self.env.reset();self.observations=obs+[None]*(7-len(obs))
++        self.evader_obs,_=self.env.get_evaders_observation();self.return_sum=np.zeros(len(self.env.pursuers))
++        return pack_local(self.observations)
++    def native_contract(self):
++        e=self.env; p=e.pursuers[0]; q=e.evaders[0]
++        return {
++            "counts": [len(e.pursuers),len(e.evaders),len(e.obstacles),len(e.cores)],
++            "map": [e.width,e.height],"spawn_min_pe":e.min_pursuer_evader_init_dis,
++            "dt":p.dt,"integration_substeps":p.N,"decision_seconds":p.dt*p.N,
++            "pursuer_max_speed":p.max_speed,"evader_max_speed":q.max_speed,
++            "aw9":p.action_list,"capture_distance":e.capture_distance,"related_distance":e.related_distance,
++            "goal_reward":e.goal_reward,"distance_reward":e.distance_reward,"timestep_penalty":e.timestep_penalty,
++            "emergency_penalty":e.emergency_penalty,"collision_penalty":e.collision_penalty,
++            "boundary_penalty":e.boundary_penalty,"decay_factor":e.decay_factor,
++            "evenly_distributed_reward":e.evenly_distributed_reward,"unevenly_distributed_reward":e.unevenly_distributed_reward,
++            "perception_range":p.perception.range,"token_count":len(pack_local(self.observations)["masks"][0]),
++            "horizon_decisions":e.episode_max_length+1,"episode_reset_min_active":3,
++            "collision_semantics":"native_end_of_decision","enemy_distance_filter":False}
++
++    def contract(self):
++        c=self.native_contract();c.update(stage=self.stage,counts=list(STAGES[self.stage]),actor_capacity=7,critic_capacity=list(CAPACITY),
++             current_features=['x/120','y/120','clockwise_sign','Gamma/(10*pi)','global_vortex_core_radius/120','presence'],
++             lifecycle='pursuer collision deactivation; continue while>=3 active; all-target capture or<3 active ends; padding inactive',
++             migration='warm transfer across scales; never bit-exact stage transition')
++        return c
++    def assert_contract(self):
++        e=self.env
++        if (len(e.pursuers),len(e.evaders),len(e.obstacles),len(e.cores))!=STAGES[self.stage]:raise ValueError('native stage counts not applied')
++        if e.min_pursuer_evader_init_dis!=[10.,13.,15.][self.stage-1]:raise ValueError('native spawn separation not applied')
++        if any(p.dt!=.05 or p.N!=10 or p.max_speed!=3. for p in e.pursuers):raise ValueError('native AW physics changed')
++        if pack_local(self.observations)['self'].shape!=(7,4):raise ValueError('fixed local actor slots violated')
++    def action_capabilities(self):return ActionCapabilities('categorical_aw9','integer_indices')
++    def validate_actions(self,actions):
++        value=np.asarray(actions)
++        if value.shape!=(7,) or not np.issubdtype(value.dtype,np.integer) or np.any((value<0)|(value>8)):raise ValueError('T1 fixed7 integer AW9 indices')
++        return value
++    def pad_transition(self,reward,terminated,truncated,end,info):
++        n=len(self.env.pursuers)
++        self.observations=self.observations[:n]+[None]*(7-n)
++        info['active']=np.pad(info['active'],(0,7-n),constant_values=False)
++        info['components']={k:np.pad(v,(0,7-n)).tolist() for k,v in info['components'].items()}
++        info['episode_return']=np.pad(info['episode_return'],(0,7-n)).tolist()
++        return pack_local(self.observations),np.pad(reward,(0,7-n)),np.pad(terminated,(0,7-n),constant_values=True),np.pad(truncated,(0,7-n),constant_values=False),end,info
++
++    def step(self, indices):
++        self.validate_actions(indices)
++        indices = np.asarray(indices)[:len(self.env.pursuers)]
++        env = self.env
++        active = np.array([not p.deactivated for p in env.pursuers])
++        # These helpers use cached pre-step perception in the native reward.
++        stale_od = env.get_distance_to_obstacles()
++        ea = [None if e.deactivated else self.apf[i].act(self.evader_obs[i]) for i,e in enumerate(env.evaders)]
++        obs, reward, done, info = env.step(([int(a) if active[i] else None for i,a in enumerate(indices)], ea))
++        self.observations = obs
++        self.evader_obs, _ = env.get_evaders_observation()
++        ring, strict = geometry(env)
++        live_pd = env.get_distance_to_other_pursuers()
++        dense, glob, collision, goal_residual = reward_components(env, active, reward, info)
++        emergency = np.array([env.emergency_penalty if active[i] and
++            (min(np.hypot(p.x-e.x,p.y-e.y) for e in env.evaders)<4 or live_pd[i]<4 or stale_od[i]<4)
++            else 0 for i,p in enumerate(env.pursuers)])
++        goal = goal_residual - np.where(goal_residual!=0, emergency, 0)
++        components = {'time': active.astype(float)*env.timestep_penalty, 'distance': dense,
++                      'global': glob, 'emergency': emergency, 'collision': collision, 'goal': goal}
++        if not np.allclose(sum(components.values()), reward, atol=1e-6):
++            raise ValueError('native reward component reconstruction disagrees with effective reward')
++        capture = env.check_all_evader_is_captured()
++        colliding = np.array([p.collision for p in env.pursuers])
++        collision_types = []
++        for i,p in enumerate(env.pursuers):
++            if not colliding[i] or not active[i]: continue
++            if any(np.hypot(p.x-q.x,p.y-q.y)<=p.r+q.r for q in env.pursuers if q is not p and not q.deactivated):
++                collision_types.append('pursuer_pursuer')
++            if any(np.hypot(p.x-e.x,p.y-e.y)<=p.r+e.r for e in env.evaders):
++                collision_types.append('pursuer_evader')
++            if any(np.hypot(p.x-o.x,p.y-o.y)<=p.r+o.r for o in env.obstacles):
++                collision_types.append('pursuer_obstacle')
++            if not collision_types: collision_types.append('cached_collision')
++        for p in env.pursuers:
++            if p.collision: p.deactivated = True
++        failure = sum(not p.deactivated for p in env.pursuers)<3
++        terminal = capture or failure
++        # Original trainer's ep_length starts at 0 and checks >=3000 AFTER step.
++        truncation = env.episode_time_steps>env.episode_max_length and not terminal
++        end = terminal or truncation
++        terminated = colliding | terminal
++        truncated = np.full(len(env.pursuers), truncation) & ~terminated
++        self.return_sum += reward * active
++        return self.pad_transition(reward, terminated, truncated, end, {
++            'capture': bool(capture), 'normal_capture': bool(capture and not colliding.any()),
++            'collision': bool(colliding.any()), 'collision_types': collision_types,
++            'ring2': ring>=2, 'ring3': ring>=3, 'strict_geometry': strict,
++            'components': {k:v.tolist() for k,v in components.items()},
++            'native_done': done, 'native_infos': info, 'active': active,
++            'episode_steps': env.episode_time_steps, 'episode_return': self.return_sum.tolist()})
++
++def state_encoder(env):
++    n=len(env.pursuers)
++    if n>7 or len(env.evaders)>2 or len(env.obstacles)>2 or len(env.cores)>8:raise ValueError('T1 fixed capacity overflow')
++    active=np.zeros(7,bool);active[:n]=[not p.deactivated for p in env.pursuers]
++    currents=np.zeros((8,6),np.float32)
++    for i,c in enumerate(sorted(env.cores,key=lambda c:(c.x,c.y))):
++        currents[i]=[c.x/120,c.y/120,1 if c.clockwise else -1,c.Gamma/(10*np.pi),env.vortex_core_radius/120,1]
++    focal=np.zeros((7,57),np.float32);pfeat=np.zeros((7,7),np.float32)
++    for i,p in enumerate(env.pursuers):
++        focal[i]=[p.x/120,p.y/120,*(p.velocity/3.5),np.cos(p.theta),np.sin(p.theta),p.speed/3,float(p.is_pursuing),env.episode_time_steps/3000,*currents.reshape(-1)]
++        pfeat[i]=[p.x/120,p.y/120,*(p.velocity/3.5),np.cos(p.theta),np.sin(p.theta),float(p.is_pursuing)]
++    ef=np.zeros((2,7),np.float32);em=np.zeros(2,bool);of=np.zeros((2,5),np.float32);om=np.zeros(2,bool)
++    for i,e in enumerate(env.evaders):
++        ef[i]=[e.x/120,e.y/120,*(e.velocity/3.5),np.cos(e.theta),np.sin(e.theta),e.speed/3.5];em[i]=not e.deactivated
++    for i,o in enumerate(env.obstacles):of[i]=[o.x/120,o.y/120,o.r/120,0,0];om[i]=True
++    return {'self':focal,'pursuers':np.broadcast_to(pfeat,(7,7,7)).copy(),'pursuer_mask':np.broadcast_to(active,(7,7)).copy(),
++            'evaders':ef,'evader_mask':em,'obstacles':of,'obstacle_mask':om,'active_mask':active}
++
++def critic_factory(hidden_dim=256,num_heads=8,num_layers=4):
++    return CentralValueNetwork(hidden_dim,num_heads,num_layers,self_feature_dim=57,max_agents=7,max_evaders=2,max_obstacles=2).eval()
++
++def qualification(stage_report,retention_report,stage_steps):
++    if stage_steps not in {100000,200000}:raise ValueError('Stage2 firstreview100k, preregistered extension200k')
++    for report,scene in ((stage_report,'4P1E1O6C'),(retention_report,'3P1E0O4C')):
++        if report['seed_domain']!='selection' or report['scene']!=scene or report['episodes_per_mode']!=20:
++            raise ValueError('promotion uses20+20 selection and retention only; final must remain blind')
++        for mode in ('argmax','sample'):
++            if report['modes'][mode]['normal_capture_rate']<.8 or report['modes'][mode]['collision_rate']>.2:return False
++    return True
++
++def env_factory(seed):return NativeCurriculum(seed,2)
++
++def promotion_bundle(parameters):
++    if set(parameters)!={'stage','initialization','promotion_receipt'} or parameters['stage']!=3 or parameters['initialization']!='qualified_stage2_full_trainer_new_env':
++        raise ValueError('Stage3 requires explicit registered promotion bundle')
++    pin=parameters['promotion_receipt'];path=Path(pin['path']).resolve()
++    if not path.is_relative_to(Path('/home/yjq')) or file_hash(path)!=pin['sha256']:raise ValueError('promotion receipt path/hash mismatch')
++    bundle=json.loads(path.read_text())
++    from .runner import CENTRAL,read
++    state=read(CENTRAL/'batch_state.json')
++    if state['base_freeze_status']!='BASE_FROZEN' or state.get('QA_SAME_SHA') not in {'PASS','A3_INDEPENDENT_QA_PASS'}:
++        raise ValueError('formal Stage3 requires independent frozen BASE')
++    reports=[]
++    for key in ('stage_report','retention_report'):
++        source=bundle[key];target=Path(source['path']).resolve()
++        if not target.is_relative_to(Path('/home/yjq')) or file_hash(target)!=source['sha256']:raise ValueError('qualified report path/hash mismatch')
++        report=json.loads(target.read_text())
++        if report.get('execution_mode')!='FORMAL' or report.get('status')!='COMPLETE':raise ValueError('pilot/partial report cannot authorize Stage3')
++        reports.append(report)
++    if not qualification(*reports,bundle['stage_steps']):raise ValueError('Stage2 qualification and Stage1 retention required')
++    checkpoint=Path(bundle['checkpoint']).resolve();manifest_path=Path(bundle['manifest']).resolve()
++    if not checkpoint.is_relative_to(Path('/home/yjq')) or not manifest_path.is_relative_to(Path('/home/yjq')):raise ValueError('promotion source path must be local')
++    digest=file_hash(checkpoint)
++    if any(r['checkpoint_sha256']!=digest for r in reports) or file_hash(manifest_path)!=bundle['manifest_sha256']:
++        raise ValueError('promotion selection/retention/checkpoint/manifest mismatch')
++    manifest=json.loads(manifest_path.read_text())
++    if manifest['line']!='T1' or manifest['execution_mode']!='FORMAL' or manifest['delta_manifest']['extensions']['parameters']['stage']!=2:
++        raise ValueError('qualified parent must be formal Stage2')
++    if reports[0]['evaluation_protocol']!=manifest['evaluation_protocol'] or reports[1]['evaluation_protocol']!=manifest['evaluation_protocol']:
++        raise ValueError('promotion evaluation protocol differs from locked Stage2')
++    if state.get('BATCH01_BASE_SHA')!=manifest['base']['candidate_sha']:raise ValueError('promotion parent differs from frozen BASE')
++    return bundle,manifest
++
++def env_stage3(seed):return NativeCurriculum(seed,3)
++
++def factory(parameters):
++    if parameters=={'stage':2,'initialization':'actor775k_critic_adams_valuenorm_fresh'}:
++        return Hooks(env_factory=env_factory,state_encoder=state_encoder,critic_factory=critic_factory)
++    promotion_bundle(parameters)
++    return Hooks(env_factory=env_stage3,state_encoder=state_encoder,critic_factory=critic_factory)
++
++def warm_start(runtime):
++    if file_hash(ANCHOR)!=ANCHOR_HASH:raise ValueError('T1 warm actor anchor hash mismatch')
++    checkpoint=torch.load(ANCHOR,map_location='cpu',weights_only=False)
++    if checkpoint['steps']!=775000:raise ValueError('T1 requires selected775k actor')
++    runtime.trainer.actor.load_state_dict(checkpoint['trainer']['actor'],strict=True)
++    if runtime.trainer.actor_optimizer.state or runtime.trainer.value_optimizer.state or runtime.trainer.update_count!=0:raise ValueError('T1 fresh optimizers required')
++    return {'anchor':ANCHOR,'anchor_hash':ANCHOR_HASH,'actor_load_strict':True,'transferred':['actor_parameters_only'],
++            'fresh':['fixed_capacity_critic','actor_Adam','critic_Adam','ValueNorm','Stage2_env_APF','RNG','stage_counters'],
++            'bit_exact_cross_scale_resume':False}
++
++def initialize_stage(runtime,parameters):
++    if parameters['stage']==2:return warm_start(runtime)
++    bundle,manifest=promotion_bundle(parameters)
++    from terl_mappo.batch01.checkpoints import load_bound
++    config=runtime.config
++    runtime.config=manifest['resolved_config']
++    try:load_bound(bundle['checkpoint'],runtime,manifest)
++    finally:runtime.config=config
++    runtime.adapter=runtime.source_guard.call(env_stage3,config['seed'])
++    return {'migration':'strict full trainer transfer; new scale environment/APF and joint counters; not bit-exact resume',
++            'stage':3,'transferred':['actor','fixed_capacity_critic','actor_Adam','critic_Adam','ValueNorm','checkpoint_RNG'],
++            'fresh':['Stage3_environment','Stage3_APF','stage_joint_counters'],
++            'review_windows':[100000,200000,300000],'automatic_extension':False,'promotion_receipt':parameters['promotion_receipt'],
++            'checkpoint_sha256':file_hash(bundle['checkpoint']),'bit_exact_cross_scale_resume':False}

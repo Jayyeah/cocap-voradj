@@ -1,6 +1,6 @@
 # Batch01 运行状态与结果快照
 
-快照：2026-10-11T00:17:57.702032+08:00（Asia/Shanghai）。5条线完成授权预算与screen，0条训练进程仍在运行；全部属于`PROVISIONAL_LONG`。没有合格且尚未启动的已登记预算。另有1条线已完成训练预算，末点screen尚待完成。
+快照：2026-10-11T13:35:38.319629+08:00（Asia/Shanghai）。6条线完成授权预算与screen，0条训练进程仍在运行；全部属于`PROVISIONAL_LONG`。没有合格且尚未启动的已登记预算。
 
 科学candidate：`9cc2d47c532c76239a61a0f6a19c8603358c92bf`；canonical lock：`384b9ba587b905b879a08f01fa1073ca470bdc0a836459067d193d97b03a84ab`。`CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED`。同一Commander执行A3独立编写的测试，不等于独立审核签字；正式RUNNING=0，不能追认为正式证据。
 
@@ -10,7 +10,7 @@
 |---|---|---|---|---:|---:|
 | p1-control | PROVISIONAL预算与screen完成 | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
 | p1-treatment | PROVISIONAL预算与screen完成 | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
-| r1 | PROVISIONAL_LONG_COMPLETE_PENDING_SCREEN | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
+| r1 | PROVISIONAL预算与screen完成 | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
 | n1 | PROVISIONAL预算与screen完成 | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
 | t1 | PROVISIONAL预算与screen完成 | 已退出 | 100,000 / 100,000 | 392 | 100,000 |
 | c0 | PROVISIONAL预算与screen完成 | 已退出 | 1,000,000 / 1,000,000 | 3,920 | 1,000,000 |
@@ -25,7 +25,7 @@ R1训练进程已退出，预算与screen状态见上表。实际吞吐、完整
 |---|---:|---|---|---|
 | p1-control | 1,000,000 | 20/20 | 40%/45% | 45%/40% |
 | p1-treatment | 1,000,000 | 20/20 | 95%/70% | 5%/10% |
-| r1 | 975,000 | 10/10 | 70%/80% | 30%/20% |
+| r1 | 1,000,000 | 20/20 | 10%/50% | 90%/45% |
 | n1 | 1,000,000 | 20/20 | 75%/75% | 25%/20% |
 | t1 | 100,000 | 20/20 | 85%/55% | 15%/40% |
 | c0 | 1,000,000 | 20/20 | 40%/40% | 10%/15% |
@@ -74,4 +74,4 @@ python tools/batch01_status.py --write --json
 python tools/batch01_report.py
 ```
 
-持久监督器tmux：`batch01_commander_v3r2_long_supervisor`；恢复队列：`batch01_commander_resource_recovery`。CLI断连后可从中央registry、每run progress/manifest及runtime heartbeat恢复。NEXT WAKE-UP：R1末点screen完成，或独立同SHA/lock QA签字到达；完成预算的线不自动续训。
+持久监督器tmux：`batch01_commander_v3r2_long_supervisor`；恢复队列：`batch01_commander_resource_recovery`。CLI断连后可从中央registry、每run progress/manifest及runtime heartbeat恢复。NEXT WAKE-UP：用户对Batch02 E1实施/科学选择的下一步授权，或独立同SHA/lock QA签字到达。六线既有预算与末点screen均已完成，不自动续训。
