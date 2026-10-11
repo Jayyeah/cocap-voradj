@@ -1,6 +1,6 @@
 # TERL vs CoCap environment contract
 
-本轮以成功 IQN 为主要参考，恢复其代码、resolved config和既有评估原件。历史MAPPO失败版本仅用于故障背景，不作为任务定义。
+本轮以成功 IQN 为主要参考，恢复其代码、resolved config和既有评估原件。历史MAPPO失败版本仅用于故障背景，不作为任务定义。最新 [E1实施结果](BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md)：bridge/rollout/PPO/fresh-process恢复工程通过，正式 E1_PASS=false、independent_validation=false；本合同正文及末尾8个 reference fixture 的分类是第一阶段原始记录。
 
 ## 成功参考的两层来源
 

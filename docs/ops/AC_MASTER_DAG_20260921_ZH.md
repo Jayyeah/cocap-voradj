@@ -2,7 +2,7 @@
 
 2026-10-11运行更新：[Batch01实时快照与结果](../experiments/BATCH01_STATUS_20261011_ZH.md)、[migration audit](../experiments/BATCH01_MIGRATION_AUDIT_20261011_ZH.md)、[科学矩阵](../experiments/TERL_MAPPO_PARALLEL_MATRIX_20261009_ZH.md)、[机器DAG](../../artifacts/2026-09-21_ac_master_dag/state.json)。P1两分支、R1、N1、C0均完成1M和末点screen，T1 Stage2完成100k和末点screen；六线均为PROVISIONAL_LONG_COMPLETE。当前没有合格且未启动的已登记预算。
 
-Batch02第一阶段交付见[新DAG](COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)、[成功IQN环境合同](../experiments/TERL_COCAP_ENVIRONMENT_CONTRACT_20261011_ZH.md)和[E1计划](../experiments/BATCH02_E1_IMPLEMENTATION_PLAN_20261011_ZH.md)。E1是第一公共依赖，其后R2/N2/V1可并行准备；优先成功IQN，失败MAPPO仅作背景。当前WAITING_NEXT_AUTHORIZATION，生产bridge未实施，E1不是PASS，无新训练授权。下方历史Batch02前置门禁不覆盖本轮用户指定的准备依赖。
+Batch02 E1 已完成成功 IQN-CoCap V2 → TERL-MAPPO learner 最小闭环，见[E1实施报告](../experiments/BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md)、[新DAG](COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)及[成功IQN环境合同](../experiments/TERL_COCAP_ENVIRONMENT_CONTRACT_20261011_ZH.md)。当前 E1_ENGINEERING_CLOSED_LOOP_PASS，正式独立验证尚未取得，E1_PASS=false。用户已授权必要输入维度/容量绑定，reward/observation设计和网络层拓扑不变。只有272 unique decisions的有限CPU PPO smoke，无长期训练。E1仍是第一公共依赖，R2/N2/V1未在本轮实施；下方历史Batch02前置门禁不覆盖本轮用户指定的准备依赖。
 
 BASE仍为CORE_V3_SELFTEST_PASS / QA_PENDING / BASE_FREEZE_BLOCKED，正式RUNNING=0；独立QA签字与Stage3升级门禁未解除。监督器运行期资源阈值只告警，不再杀停训练；启动/排队资源门禁保留。旧PID和旧25k预算不作为当前事实。
 

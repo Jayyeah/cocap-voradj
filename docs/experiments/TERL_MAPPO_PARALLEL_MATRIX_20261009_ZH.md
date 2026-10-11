@@ -60,4 +60,4 @@ P1报告775k之后每25k保持曲线及best-observed、last和collision；新con
 - [Scientific Changelog](BATCH01_SCIENTIFIC_CHANGELOG.md)
 - [当前状态、原始screen、曲线与云端SHA](BATCH01_STATUS_20261011_ZH.md)
 
-Batch02准备依赖以[2026-10-11更新DAG](../ops/COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)为准；T2、Evidence/Persistent及其它旧实验状态不变。此文档整理不批准生产实施、新科学delta、额外预算或正式训练。
+Batch02准备依赖以[2026-10-11更新DAG](../ops/COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)为准；[E1实施报告](BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md)记录最新已授权的成功CoCap闭环与必要输入绑定，工程通过、独立验证未完成。T2、Evidence/Persistent及其它旧实验状态不变，无额外长期预算或正式训练。

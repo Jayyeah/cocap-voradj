@@ -1,6 +1,6 @@
 # 需要用户确认的科学选择
 
-下面的选择会改变实验解释，实施前应明确。本轮只整理可评审结果，未改生产environment/reward/observation、PPO默认、初始化或预算。
+以下表格是第一阶段的选择记录。**最新授权：完成 E1 learner 闭环，合同冲突以成功 CoCap 为准。** 本轮沿用成功 V2 Z05 Stage1、categorical AW9、原 T0 PPO，只做 fresh-model CPU smoke；没有改 reward/observation 设计。用户已明确允许所需输入维度/容量绑定。[实际结果](BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md) 优先于表格中的历史 E1 范围。长期训练的初始化、reward clock 和 recovery 采样分布仍需在具体实验中确定。
 
 | 选择 | 建议 | 另一条可行路径及影响 |
 |---|---|---|
@@ -11,7 +11,7 @@
 | PPO默认 | 沿用T0已登记target_kl=.02和其它PPO参数；P1-treatment=.01暂为描述性稳定性线索 | 若用.01作Batch02默认，需明确选择并保留相同env/obs/reward的对照；不能把单分叉末点较好视为普适最优 |
 | PPO recovery训练分布 | 恢复成功IQN的task reset/recovery合同，保持capture snapshot pool及其已登记采样比例；PPO使用on-policy rollout | 若简化为只从普通mixed reset开始，须标MAPPO adaptation/未验证设计。IQN replay 64/16/32/16是off-policy批构成，不能直接当作新的PPO task概率 |
 
-**当前E1生产实施和Batch02训练均未获授权，等待用户下一步指令。** 这些选择按实际依赖决定：下一步建议仅评审E1 adapter实施/有限CPU transition与生命周期验证的范围及首个成功参考profile；N2路径在N2 consumer实施前确认。初始化、PPO默认和recovery训练分布留到后续训练设计，不要求一次全部决定，也不作为E1离线工作的额外前置。Batch02预算、长训练、多seed、额外任务变量均保持未授权。
+**E1生产实施和有限 PPO 检查已授权并完成；后续独立 ARM 与长期训练未在本轮启动。** E1 工程接入采用成功 Z05 全 observation，不增加 roleful+V2 混合变量；以后如提出偏离成功合同的变更再明示。初始化、训练 clock 和 recovery 训练分布留到后续训练设计，不要求一次全部决定，也不作为 E1 离线工作的额外前置。Batch02长期预算、多seed、额外任务变量均保持未授权。
 
 当前无需决定新的reward系数、sensor k、collision模型、CE阈值、APF参数或任务成功定义：优先照成功IQN恢复。若后续提出为了MAPPO训练方便的变化，一律独立标 **MAPPO adaptation**；对尚无证据的新组合标 **尚未验证的新设计**。
 

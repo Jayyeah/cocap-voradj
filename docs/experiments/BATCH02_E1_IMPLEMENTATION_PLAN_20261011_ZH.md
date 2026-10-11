@@ -1,6 +1,6 @@
 # E1代码实施计划
 
-目标：以成功IQN-CoCap为oracle，将 `TERL MarineEnv` 接口桥接到 `CoCap VorAdj Forward-Final V2`。当前状态 **PLAN_READY_WAITING_AUTHORIZATION**：已完成代码定位和8个参考transition fixture，尚未编写生产bridge或开启Batch02 ARM训练。
+目标：以成功IQN-CoCap为oracle，将 `TERL MarineEnv` 接口桥接到 `CoCap VorAdj Forward-Final V2`。**本计划是第一阶段历史方案。最新用户已授权 E1 learner 闭环和有限 PPO 检查，并确认尺寸冲突以 CoCap 为准；实施交付见 [E1报告](BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md)。当前 E1_ENGINEERING_CLOSED_LOOP_PASS，正式独立验证未完成，没有长期训练。** 下文“等待授权”“先不连接 optimizer”和拟新增文件清单保留当时计划，不覆盖最新授权与实际实现。
 
 ## 实施边界
 
