@@ -3047,7 +3047,7 @@
     },
     {
       "task_id": "BATCH02-N3",
-      "status": "IMPLEMENTED_ENGINEERING_PASS_EVALUATOR_PENDING",
+      "status": "IMPLEMENTED_ENGINEERING_PASS_PILOT_PENDING",
       "dependencies": [
         "BATCH02-E1"
       ],
@@ -3064,11 +3064,13 @@
       "result_classification": "PROVISIONAL",
       "pilot_budget": 1024,
       "reference_precedence": "successful IQN only",
-      "updated_at": "2026-10-11T21:20:05.411950+08:00"
+      "updated_at": "2026-10-11T21:20:05.411950+08:00",
+      "source_HEAD": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+      "config_sha256": "d1f44979f7516b3acc88b1b0f5cbeec15612a24286b01908aad7c49b1fc3a20f"
     },
     {
       "task_id": "BATCH02-R3",
-      "status": "IMPLEMENTED_ENGINEERING_PASS_EVALUATOR_PENDING",
+      "status": "IMPLEMENTED_ENGINEERING_PASS_PILOT_PENDING",
       "dependencies": [
         "BATCH02-E1"
       ],
@@ -3085,7 +3087,32 @@
       "result_classification": "PROVISIONAL",
       "pilot_budget": 1024,
       "reference_precedence": "successful IQN only",
-      "updated_at": "2026-10-11T21:23:44.556739+08:00"
+      "updated_at": "2026-10-11T21:23:44.556739+08:00",
+      "source_HEAD": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+      "config_sha256": "0eb859fd0868770482e1ef506f0de3dc0355702400aaa092fc5605faffbdda54"
+    },
+    {
+      "task_id": "BATCH02-V3",
+      "status": "IMPLEMENTED_ENGINEERING_PASS_PILOT_PENDING",
+      "dependencies": [
+        "BATCH02-N3",
+        "BATCH02-R3"
+      ],
+      "dependency_semantics": "code/engineering integration only; no additional learning/performance gate",
+      "implementation_authorized": true,
+      "training_authorized": true,
+      "source_HEAD": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+      "branch": "experiment/terl-mappo-batch02-native-20261011",
+      "worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011",
+      "implementation_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+      "source_parent_SHA": "7cb8bc07b6ed95c29cacdc6c308e2f64ef59c380",
+      "physical_gpu": 1,
+      "budget": 1000000,
+      "checkpoint_interval": 25000,
+      "result_classification": "PROVISIONAL",
+      "pilot_budget": 1024,
+      "reference_precedence": "successful IQN only",
+      "updated_at": "2026-10-11T21:31:03.952958+08:00"
     }
   ],
   "current_snapshot": {
@@ -24688,7 +24715,7 @@
   },
   "batch02": {
     "schema": "cocap.batch02.migration-plan.v1",
-    "updated_at": "2026-10-11T21:23:44.556739+08:00",
+    "updated_at": "2026-10-11T21:31:03.952958+08:00",
     "status": "E1_FROZEN_N2_R2_RUNNING_NATIVE_IMPLEMENTATION",
     "first_stage_deliverables_complete": true,
     "primary_reference": {
@@ -24738,7 +24765,7 @@
       "scope": "N2/R2 continue; sequential N3 representation, R3 lossless reward ledger, V3 minimal integration; pilots1024 then fixed1M/25k; no lifecycle/multi-target/coverage expansion",
       "Batch02_A_consumption_qualification": true,
       "bounded_N2_R2_pilot": true,
-      "independent_QA_agent": true
+      "independent_QA_agent": "historical E1 only; no additional agent authorization inferred"
     },
     "E1": {
       "reference_fixture_count": 8,
@@ -24799,7 +24826,7 @@
       "input_and_capacity_conflicts": "CoCap takes precedence, explicit user reply",
       "actor_actions": "successful categorical AW9",
       "PPO": "unchanged T0 config",
-      "remaining": "No current-stage budget choice pending; future backbone/scale/curriculum/lifecycle changes require a new task",
+      "remaining": "Native long budgets authorized1M/25k; no new reward numeric design introduced; lifecycle/scale/coverage extension deferred",
       "current_stage_initialization": "paired scratch; original CE weight schedule clock0->1M; frozen E1 ordinary mixed reset"
     },
     "A": {
@@ -25027,6 +25054,30 @@
         "reward_numeric_delta": "none",
         "observation_network_delta": "none relative R2",
         "reconstruction_residual_max": 2.7755575615628914e-17
+      },
+      "V3": {
+        "status": "IMPLEMENTED_ENGINEERING_PASS_PILOT_PENDING",
+        "parent_SHA": "7cb8bc07b6ed95c29cacdc6c308e2f64ef59c380",
+        "implementation_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+        "baseline_arm": "N2",
+        "integration_dependencies": {
+          "N3": "28a3337",
+          "R3": "7cb8bc0"
+        },
+        "reward_numeric_delta": "none",
+        "actor_parameters": 3963913,
+        "critic_parameters": 3236865,
+        "optimization_equivalent_to": "N3; reward ledger only"
+      },
+      "experiment_SHA": "3575b742548f8ce5ceba68f3db776533fb5d83ba",
+      "source_branch": "experiment/terl-mappo-batch02-native-20261011",
+      "publication_verified": false,
+      "status": "CODE_COMPLETE_ENGINEERING_PASS_PILOT_PENDING",
+      "runtime_registry": "/home/yjq/rl/CoCap1/batch01-commander-runtime/batch02_native_runtime_20261011.json",
+      "source_worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011",
+      "science_equivalence": {
+        "R3": "R2 plus telemetry",
+        "V3": "N3 plus telemetry"
       }
     }
   }
