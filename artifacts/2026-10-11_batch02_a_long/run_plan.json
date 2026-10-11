@@ -1,0 +1,81 @@
+{
+  "status": "PREPARED_NOT_LAUNCHED",
+  "classification": "PROVISIONAL",
+  "user_authorized": {
+    "arms": [
+      "N2",
+      "R2"
+    ],
+    "decisions_per_arm": 1000000,
+    "checkpoint_interval": 25000
+  },
+  "frozen_E1_SHA": "8827c11ef3534e5e9894bfb6b223405f24544be3",
+  "source_branch": "experiment/terl-mappo-batch02-a-long-20261011",
+  "parent_SHA": "53ed5b2eabe3b48c280741e29629038b450e7d7b",
+  "experiment_SHA_binding": "derive from committed HEAD at launch; fixed in each manifest before first action",
+  "run_root": "/home/yjq/rl/CoCap1/terl-mappo-batch02-a-long-20261011/runs/batch02_a_capability_20261011",
+  "arms": {
+    "N2": {
+      "name": "TERL-MAPPO + CoCap observation + CoCap reward",
+      "config": "configs/experiments/terl_mappo_batch02_a_long_20261011/n2.json",
+      "physical_gpu": 0,
+      "relative_E1_delta": {
+        "observation": "unchanged",
+        "reward_design": "none",
+        "reward_schedule_execution": "original trainer callback restored for long clock",
+        "learner": "none",
+        "critic": "none",
+        "action": "none",
+        "terminal": "none",
+        "reset": "none",
+        "instrumentation": "bounded training/evaluation/checkpoint/closeout orchestration"
+      },
+      "relative_successful_IQN_delta": {
+        "task_environment": "none",
+        "task_reward": "none",
+        "task_observation": "none",
+        "MAPPO_adaptation": "TERL categorical on-policy PPO, E1 central V self9 and 4P capacity; ordinary mixed reset without off-policy IQN recovery/replay sampling",
+        "optimizer": "TERL PPO defaults; not IQN optimizer/epsilon",
+        "stage_budget": "user-authorized1M; not IQN2M",
+        "evaluation": "same native CoCap mixed task; MAPPO argmax/sample, fresh disjoint reset seeds; no scale changes"
+      },
+      "checkpoint_directory": "/home/yjq/rl/CoCap1/terl-mappo-batch02-a-long-20261011/runs/batch02_a_capability_20261011/N2/checkpoints"
+    },
+    "R2": {
+      "name": "TERL-MAPPO + TERL observation + CoCap reward",
+      "config": "configs/experiments/terl_mappo_batch02_a_long_20261011/r2.json",
+      "physical_gpu": 1,
+      "relative_E1_delta": {
+        "observation": "original TERL view on CoCap state; actor self input9->4; no topology change",
+        "reward_design": "none",
+        "reward_schedule_execution": "original trainer callback restored for long clock",
+        "learner": "none",
+        "critic": "none",
+        "action": "none",
+        "terminal": "none",
+        "reset": "none",
+        "instrumentation": "bounded training/evaluation/checkpoint/closeout orchestration"
+      },
+      "relative_successful_IQN_delta": {
+        "task_environment": "none",
+        "task_reward": "none",
+        "task_observation": "intentional original TERL consumer view; global enemy/raw metre/20m sensor/role bit instead of CoCap Z05 contract",
+        "MAPPO_adaptation": "TERL categorical on-policy PPO, E1 central V self9 and 4P capacity; ordinary mixed reset without off-policy IQN recovery/replay sampling",
+        "optimizer": "TERL PPO defaults; not IQN optimizer/epsilon",
+        "stage_budget": "user-authorized1M; not IQN2M",
+        "evaluation": "same native CoCap mixed task; MAPPO argmax/sample, fresh disjoint reset seeds; no scale changes"
+      },
+      "checkpoint_directory": "/home/yjq/rl/CoCap1/terl-mappo-batch02-a-long-20261011/runs/batch02_a_capability_20261011/R2/checkpoints"
+    }
+  },
+  "training_started": false,
+  "excluded": [
+    "V1",
+    "T1",
+    "C0",
+    "backbone_refactor",
+    "lifecycle_migration"
+  ],
+  "auto_extension": false,
+  "next_batch_started": false
+}
