@@ -1,0 +1,113 @@
+{
+  "sources": {
+    "src/cocap_voradj/control/apf.py": "85ed6b256cd4088c1383ad49711ef7dde8d82e77173bebe3d57cda912bae3266",
+    "src/cocap_voradj/dynamics/robot.py": "cc13cee9eda6975c862cc35a4ecc66b1961a9dcfca33453c22ac46c636c608a8",
+    "src/cocap_voradj/envs/__init__.py": "eae88e1f5d805e49464c902ace182c8dfca63516f383b2303da87ab12e4fea73",
+    "src/cocap_voradj/envs/base.py": "ae5330758936b85cd3a63d4821624fa2bb1529c86804de42f95d750139edb415",
+    "src/cocap_voradj/envs/coverage_ce.py": "ace53671a24604f7bf0e28835943c18a5a088263fb85694e98305401071bdbac",
+    "src/cocap_voradj/envs/density_sensing.py": "0e8685398f80a88715db308ed9dadf9a447ad3020376395a9ae94649f7901963",
+    "src/cocap_voradj/envs/voronoi_adjacency.py": "16abc2f313c6ca3961594242f02d8042409667f9686635d883b907365046980a",
+    "src/cocap_voradj/models/small_step_ac.py": "55bd523c57590ba961e5a788d9ea3a399b43f229f470dc71586978e1cdaa6c60",
+    "src/cocap_voradj/training/forward_final_v2.py": "e9e37f63e4cc0645b90ca3c3896b745c03f75c35f3a8a3753343d43f268b5d09",
+    "src/cocap_voradj/training/small_step_ac.py": "5feb37d8844a80c8f36af925aa5ffee85bf26cfd26353022cfa85255e287ccd4",
+    "src/cocap_voradj/training/trainer.py": "4c0cf08d32ce43d300b0c1bb5e5344d360e5e175ed712f6b9e3ba3d2c1312951",
+    "src/terl_mappo/batch01/interfaces.py": "9078120f08b49eedf3a19bfc1214c5dbb0793299eef004cab533024e9b1f84c6",
+    "src/terl_mappo/batch02/__init__.py": "8038241d993705d134606dd38743456c94fe518ac122286d0f3281bec621a826",
+    "src/terl_mappo/batch02/cocap_env.py": "0a1fb0be4c1aea3e81701baed26aafef9d30ef9f621c29486faaaaf66fd4d46c",
+    "src/terl_mappo/batch02/runtime.py": "e66a9021ef1ba45e6ac18a15ab9eafcde0d6aade2ea92ef2bb9e843ddf97fd5b",
+    "src/terl_mappo/model.py": "5fb516a70cbadf99e311e3e24792f877913d28a76c3c0326e8db30384a9ad31d",
+    "src/terl_mappo/native.py": "9ff043d6124830288311743b7320052f71f4c040f17a8de9fe65197c580a5c4d",
+    "src/terl_mappo/run.py": "daa5d382669aaf5015916286f53b40d2d79716afc9acabfff2ef04b914c5cfd3",
+    "vendor/terl/policy/TERL_model.py": "6f8bdcee958c35024a64a048f17f9a7fe6362048b67fecc47819c7fdd4453139"
+  },
+  "config": {
+    "actor_seed": 109,
+    "hidden_dim": 256,
+    "num_heads": 8,
+    "num_layers": 4,
+    "masked_pool": false,
+    "ppo": {
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_param": 0.2,
+      "ppo_epochs": 3,
+      "minibatches": 2,
+      "actor_lr": 3e-05,
+      "critic_lr": 0.0001,
+      "entropy_coef": 0.01,
+      "value_coef": 1.0,
+      "max_grad_norm": 0.5,
+      "target_kl": 0.02,
+      "value_norm": true,
+      "value_norm_beta": 0.99999,
+      "value_norm_epsilon": 1e-05
+    },
+    "task_reference_resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a"
+  },
+  "contract": {
+    "reference": "successful IQN Z05 Stage1 Forward-Final V2",
+    "resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a",
+    "scene": "mixed",
+    "counts": [
+      4,
+      1,
+      1
+    ],
+    "local_shapes": {
+      "self": [
+        9
+      ],
+      "pursuers": [
+        8,
+        7
+      ],
+      "evaders": [
+        8,
+        7
+      ],
+      "obstacles": [
+        5,
+        5
+      ],
+      "masks": [
+        22
+      ],
+      "types": [
+        22
+      ]
+    },
+    "action": "categorical_aw9",
+    "auto_reset": false,
+    "reward_transform": null,
+    "observation_feature_transform": null,
+    "sensing": {
+      "policy": "forward-final-density-normalized-sensing-v2",
+      "schema_version": 2,
+      "k": 0.8715,
+      "resolved_onboard_radius": 52.21732449580312,
+      "num_pursuers": 4,
+      "map_size": [
+        120.0,
+        120.0
+      ],
+      "free_space_area": 14360.0,
+      "normalized_radius": 0.8715,
+      "radius_floor": 20.0,
+      "distance_semantics": "surface_clearance",
+      "blind_area_metric": {
+        "tolerance": 0.001,
+        "population": "representative CVT free mask",
+        "measured_fraction": 0.0,
+        "applies_to": "offline 72-layout calibration, not a guarantee for current agent positions",
+        "artifact": "artifacts/2026-09-15_normsense_v2/geometry.json"
+      },
+      "free_mask_sha256": "0873de1e6bfc481a994f2e60ab1f358ef1f150acb5b22437b9827e93ea684e5d",
+      "free_mask_grid_n": 60,
+      "free_area_method": "Final free_mask_projected grid fraction times map area",
+      "friendly_information": "historical global-friendly VorAdj unchanged; local-friendly deferred to V3"
+    },
+    "transition_semantics": "terminal-priority-truncation-bootstrap-weighted-ce-v2"
+  },
+  "checkpoint_sha256": "e69025598651c38c01eb2600ca6d476ee472d3c550b7d2a9efcfeac5e0775190",
+  "current_sources_match_tested_checkpoint": true
+}
