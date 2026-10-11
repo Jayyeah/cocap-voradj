@@ -1,6 +1,6 @@
 # 需要用户确认的科学选择
 
-以下表格是第一阶段的选择记录。**最新授权：完成 E1 learner 闭环，合同冲突以成功 CoCap 为准。** 本轮沿用成功 V2 Z05 Stage1、categorical AW9、原 T0 PPO，只做 fresh-model CPU smoke；没有改 reward/observation 设计。用户已明确允许所需输入维度/容量绑定。[实际结果](BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md) 优先于表格中的历史 E1 范围。长期训练的初始化、reward clock 和 recovery 采样分布仍需在具体实验中确定。
+以下表格是第一阶段的选择记录。**最新状态：E1 已由获授权独立 QA 验证并冻结；用户确认 Batch02-A 只做 N2/R2 消费核验和短 pilot，不作单变量因果对照。** 两项完整合同已在 E1 消费，新增 task delta 为零，不自行提供反事实 control。共用1024步 pilot 已完成，保持成功 V2 Z05 Stage1、categorical AW9、原 PPO 和完整 CoCap checkpoint 恢复；没有改 reward/observation 设计。[pilot结果](BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md)。长期训练的初始化、reward clock 和 recovery 采样分布仍需在具体实验中确定，未进入 long run。
 
 | 选择 | 建议 | 另一条可行路径及影响 |
 |---|---|---|

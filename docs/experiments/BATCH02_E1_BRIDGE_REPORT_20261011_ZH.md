@@ -1,5 +1,7 @@
 # Batch02 E1 environment bridge
 
+最新状态：独立 reviewer 已完成固定 `8827c11` 的 SHA/config/replay/update/resume 复验，**E1_PASS=true / E1_PASS_FROZEN**。见 [独立签字](BATCH02_E1_INDEPENDENT_VALIDATION_20261011_ZH.md) 与 [freeze manifest](../../artifacts/2026-10-11_batch02_e1_independent/freeze.json)。下文保留前一轮工程交付时的状态和证据，未改原工程收据。
+
 本轮完成 TERL-MAPPO learner → 成功 IQN-CoCap Forward-Final V2 的最小闭环。环境、adapter parity、真实 PPO update、fresh-process checkpoint continuation 均通过。分类为 **E1_ENGINEERING_CLOSED_LOOP_PASS**；按上一轮计划中已明确的独立验证定义，**正式 E1_PASS=false，independent_validation=false**。这是证据分类，当前没有未修复的阻断 bug，不新增性能门禁。
 
 用户本轮授权 E1 接入及有限 PPO 检查，禁止长期训练、reward/observation 设计修改和 actor/critic 结构修改。尺寸冲突经用户明确回复：“后续一致，二者冲突时，以cocap的为准，因为我们的目的是成功迁移为原生cocap，而不是terl修改版”。因此保留 CoCap 完整输入，只绑定网络输入尺寸与实体容量；以下明确标为 **MAPPO adaptation**。

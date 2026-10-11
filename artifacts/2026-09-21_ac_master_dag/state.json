@@ -1,6 +1,6 @@
 {
   "schema": "ac-master-dag-v1",
-  "updated_at": "2026-10-11T07:03:32.827691+00:00",
+  "updated_at": "2026-10-11T07:52:42.177936+00:00",
   "master": {
     "model": "Codex",
     "role": "MASTER / CENTRAL INTEGRATION",
@@ -2691,21 +2691,21 @@
     },
     {
       "task_id": "BATCH02-E1",
-      "status": "E1_ENGINEERING_CLOSED_LOOP_PASS",
+      "status": "E1_PASS_FROZEN",
       "dependencies": [],
       "expected_contract_delta": "Successful IQN CoCap V2 provider to unchanged TERL-MAPPO PPO; full task-native observation/reward preserved; authorized input/capacity binding only",
       "parallel_cpu_preparation": "CPU source delta and paired transitions fixture design",
       "implementation_authorized": true,
       "training_authorized": false,
-      "updated_at": "2026-10-11T07:03:32.827691+00:00",
+      "updated_at": "2026-10-11T07:44:27.910245+00:00",
       "dependency_semantics": "First shared dependency; E1 implementation and finite learner verification authorized and complete. Independent validation absent as prior evidence definition; dependent offline preparation may continue without extra performance gates.",
       "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
       "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
-      "independent_validation": false,
+      "independent_validation": true,
       "reference_fixture_count": 8,
       "reference_fixtures_passed": true,
       "bridge_implemented": true,
-      "E1_pass": false,
+      "E1_pass": true,
       "finite_CPU_PPO_verification_authorized": true,
       "learner_closed_loop_implemented": true,
       "engineering_closed_loop_pass": true,
@@ -2713,50 +2713,87 @@
       "head": "8827c11ef3534e5e9894bfb6b223405f24544be3",
       "worktree": "/home/yjq/rl/CoCap1/terl-mappo-batch02-e1-20261011",
       "evidence": "artifacts/2026-10-11_batch02_e1/result.json",
-      "next_action": "Independent replay absent as existing evidence warning; no blocking implementation bug or extra performance gate; no long training"
+      "next_action": "Frozen common source8827c11; N2/R2 consumption qualification only; no source change or new gate",
+      "frozen": true
     },
     {
       "task_id": "BATCH02-R2",
-      "status": "WAITING_E1",
+      "status": "CONSUMPTION_QUALIFICATION_PILOT_COMPLETE",
       "dependencies": [
         "BATCH02-E1"
       ],
       "expected_contract_delta": "Restore successful IQN Final Capture CR-MS/cartesian_disk/support/CE/safety/event/reward-clock semantics; PPO consumption separately labelled",
       "parallel_cpu_preparation": "Reward/component/event ledger",
-      "implementation_authorized": false,
+      "implementation_authorized": true,
       "training_authorized": false,
-      "updated_at": "2026-10-11T07:03:32.827691+00:00",
-      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "updated_at": "2026-10-11T07:52:42.177936+00:00",
+      "dependency_semantics": "Frozen independently validated E1 source8827c11; user approved consumption qualification and shared short pilot, no causal control or extra performance gate",
       "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
       "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
       "independent_validation": false,
       "shared_source_head": "8827c11ef3534e5e9894bfb6b223405f24544be3",
       "offline_preparation_unblocked": true,
-      "latest_E1_engineering_status": "E1_ENGINEERING_CLOSED_LOOP_PASS"
+      "latest_E1_engineering_status": "E1_ENGINEERING_CLOSED_LOOP_PASS",
+      "bounded_pilot_authorized": true,
+      "causal_ablation": false,
+      "effective_task_delta_from_E1": null,
+      "run_id": "BATCH02-A-N2-R2-1024-CONSUMPTION-20261011",
+      "pid": null,
+      "source_HEAD": "1a5475c7dacdbcb7f68aedddc71af4322e9e1732",
+      "progress": {
+        "additional_decisions": 1024,
+        "budget_unique_shared_decisions": 1024,
+        "new_PPO_calls": 4,
+        "new_minibatch_updates": 24
+      },
+      "consumer_qualification_pass": true,
+      "pilot_independent_validation": false,
+      "evidence": "artifacts/2026-10-11_batch02_a/r2_consumption.json",
+      "entered_long_run": false,
+      "long_run_authorized": false,
+      "delivery_HEAD": "53ed5b2eabe3b48c280741e29629038b450e7d7b"
     },
     {
       "task_id": "BATCH02-N2",
-      "status": "WAITING_E1",
+      "status": "CONSUMPTION_QUALIFICATION_PILOT_COMPLETE",
       "dependencies": [
         "BATCH02-E1"
       ],
       "expected_contract_delta": "Restore complete successful CoCap observation; V2 Z05 recommended, B0 roleful alternative requires explicit choice; packing/actor adaptation separately labelled",
       "parallel_cpu_preparation": "Information and mask mapping",
-      "implementation_authorized": false,
+      "implementation_authorized": true,
       "training_authorized": false,
-      "updated_at": "2026-10-11T07:03:32.827691+00:00",
-      "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
+      "updated_at": "2026-10-11T07:52:42.177936+00:00",
+      "dependency_semantics": "Frozen independently validated E1 source8827c11; user approved consumption qualification and shared short pilot, no causal control or extra performance gate",
       "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
       "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
       "independent_validation": false,
       "scientific_choice_pending": "Future deviations from successful Z05 require explicit design; E1 already consumes complete successful Z05, no roleful+V2 hybrid introduced",
       "shared_source_head": "8827c11ef3534e5e9894bfb6b223405f24544be3",
       "offline_preparation_unblocked": true,
-      "latest_E1_engineering_status": "E1_ENGINEERING_CLOSED_LOOP_PASS"
+      "latest_E1_engineering_status": "E1_ENGINEERING_CLOSED_LOOP_PASS",
+      "bounded_pilot_authorized": true,
+      "causal_ablation": false,
+      "effective_task_delta_from_E1": null,
+      "run_id": "BATCH02-A-N2-R2-1024-CONSUMPTION-20261011",
+      "pid": null,
+      "source_HEAD": "1a5475c7dacdbcb7f68aedddc71af4322e9e1732",
+      "progress": {
+        "additional_decisions": 1024,
+        "budget_unique_shared_decisions": 1024,
+        "new_PPO_calls": 4,
+        "new_minibatch_updates": 24
+      },
+      "consumer_qualification_pass": true,
+      "pilot_independent_validation": false,
+      "evidence": "artifacts/2026-10-11_batch02_a/n2_consumption.json",
+      "entered_long_run": false,
+      "long_run_authorized": false,
+      "delivery_HEAD": "53ed5b2eabe3b48c280741e29629038b450e7d7b"
     },
     {
       "task_id": "BATCH02-V1",
-      "status": "WAITING_E1",
+      "status": "DEFERRED_BY_USER_BATCH02_A",
       "dependencies": [
         "BATCH02-E1"
       ],
@@ -2764,7 +2801,7 @@
       "parallel_cpu_preparation": "Positive-control and evaluator audit",
       "implementation_authorized": false,
       "training_authorized": false,
-      "updated_at": "2026-10-11T07:03:32.827691+00:00",
+      "updated_at": "2026-10-11T07:44:27.910245+00:00",
       "dependency_semantics": "Shared E1 must pass before dependent implementation; M1 integrates verified consumers. First-stage source recovery/diagnostics completed; production work awaits user authorization.",
       "reference_precedence": "successful_IQN_CoCap_primary; failed_MAPPO_background_only",
       "shared_environment_policy": "serial shared changes, pinned common source synchronized to every dependent ARM",
@@ -24523,8 +24560,8 @@
   },
   "batch02": {
     "schema": "cocap.batch02.migration-plan.v1",
-    "updated_at": "2026-10-11T07:03:32.827691+00:00",
-    "status": "E1_ENGINEERING_CLOSED_LOOP_PASS",
+    "updated_at": "2026-10-11T07:52:42.177936+00:00",
+    "status": "E1_PASS_FROZEN_BATCH02_A_CONSUMPTION_PILOT_COMPLETE",
     "first_stage_deliverables_complete": true,
     "primary_reference": {
       "worktree": "/home/yjq/rl/CoCap1/iqn-z05-independent-20260923",
@@ -24545,7 +24582,16 @@
         "BATCH02-V1"
       ],
       "shared_environment_changes": "synchronized pinned source across dependent ARMs",
-      "training": "staggered only with future explicit budget"
+      "training": "Completed one shared1024-decision CPU pilot; no long run or automatic extension",
+      "current_active_arms": [
+        "BATCH02-N2",
+        "BATCH02-R2"
+      ],
+      "deferred_for_Batch02_A": [
+        "BATCH02-V1",
+        "T1",
+        "C0"
+      ]
     },
     "authorization": {
       "first_stage_audit_contract_plan_reference_diagnostics": true,
@@ -24556,15 +24602,18 @@
       "long_training": false,
       "input_dimension_and_capacity_binding": true,
       "CoCap_contract_precedence": true,
-      "scope": "E1 only; preserve successful reward/observation and network layer topology"
+      "scope": "E1 only; preserve successful reward/observation and network layer topology",
+      "Batch02_A_consumption_qualification": true,
+      "bounded_N2_R2_pilot": true,
+      "independent_QA_agent": true
     },
     "E1": {
       "reference_fixture_count": 8,
       "reference_fixtures_passed": true,
       "bridge_implemented": true,
-      "pass": false,
-      "independent_validation": false,
-      "classification": "E1_ENGINEERING_CLOSED_LOOP_PASS",
+      "pass": true,
+      "independent_validation": true,
+      "classification": "E1_PASS_FROZEN",
       "learner_closed_loop_implemented": true,
       "engineering_closed_loop_pass": true,
       "source_branch": "experiment/terl-mappo-batch02-e1-20261011",
@@ -24586,10 +24635,13 @@
       "evidence": "artifacts/2026-10-11_batch02_e1",
       "blocking_bugs": [],
       "warnings": [
-        "Independent reviewer sign-off absent; engineering closed-loop pass is not independent validation.",
         "No capture/coverage performance conclusion from smoke.",
         "Clock remains successful provider initialization at0; this smoke does not exercise200k reward schedule."
-      ]
+      ],
+      "frozen": true,
+      "frozen_bridge_sha": "8827c11ef3534e5e9894bfb6b223405f24544be3",
+      "independent_report": "artifacts/2026-10-11_batch02_e1_independent/independent_report.json",
+      "freeze_manifest": "artifacts/2026-10-11_batch02_e1_independent/freeze.json"
     },
     "scientific_choices_pending": true,
     "scientific_choices_document": "docs/experiments/BATCH02_SCIENTIFIC_CHOICES_20261011_ZH.md",
@@ -24599,7 +24651,10 @@
       "docs/experiments/BATCH02_E1_IMPLEMENTATION_PLAN_20261011_ZH.md",
       "docs/ops/COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md",
       "docs/experiments/BATCH02_SCIENTIFIC_CHOICES_20261011_ZH.md",
-      "docs/experiments/BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md"
+      "docs/experiments/BATCH02_E1_BRIDGE_REPORT_20261011_ZH.md",
+      "docs/experiments/BATCH02_E1_INDEPENDENT_VALIDATION_20261011_ZH.md",
+      "docs/experiments/BATCH02_A_N2_R2_PLAN_20261011_ZH.md",
+      "docs/experiments/BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md"
     ],
     "previous_dependencies_archive": "artifacts/2026-10-11_cocap_mappo_batch02/dag_before.json",
     "stop_rule": "Two failed repairs of the same problem, or an environment design problem: stop affected work; preserve minimal repro, status, impact and unaffected branches; continue independent work",
@@ -24611,6 +24666,67 @@
       "actor_actions": "successful categorical AW9",
       "PPO": "unchanged T0 config",
       "remaining": "future training initialization/clock/recovery reset distribution; no long training authorized"
+    },
+    "A": {
+      "status": "CONSUMPTION_QUALIFICATION_PILOT_COMPLETE",
+      "arms": [
+        "N2",
+        "R2"
+      ],
+      "excluded": [
+        "V1",
+        "T1",
+        "C0"
+      ],
+      "classification": "SHARED_CONSUMPTION_QUALIFICATION",
+      "causal_ablation": false,
+      "contract_delta_from_E1": {
+        "N2": null,
+        "R2": null
+      },
+      "pilot": {
+        "additional_unique_decisions": 1024,
+        "rollout_length": 256,
+        "PPO_calls": 4,
+        "device": "cpu",
+        "shared_training_trajectory": true,
+        "budget_counted_once": true,
+        "parent_checkpoint_sha256": "e69025598651c38c01eb2600ca6d476ee472d3c550b7d2a9efcfeac5e0775190",
+        "code_branch": "experiment/terl-mappo-batch02-a-20261011",
+        "source_HEAD": "1a5475c7dacdbcb7f68aedddc71af4322e9e1732",
+        "run_id": "BATCH02-A-N2-R2-1024-CONSUMPTION-20261011",
+        "run_dir": "/home/yjq/rl/CoCap1/terl-mappo-batch02-a-20261011/runs/batch02_a_pilot_20261011",
+        "pid": null,
+        "registry": "artifacts/2026-10-11_batch02_a/run_registry.json",
+        "current_additional_decisions": 1024,
+        "total_decisions": 1280,
+        "new_minibatch_updates": 24,
+        "active_agent_transitions": 4096,
+        "duration_seconds": 174.08777934299906,
+        "last_checkpoint": "/home/yjq/rl/CoCap1/terl-mappo-batch02-a-20261011/runs/batch02_a_pilot_20261011/last.pt",
+        "last_checkpoint_sha256": "d335e2250e9a08469be5cd58faba884d321ad1f342f3e8f23b7ca8fdfd310dc9",
+        "provider_replay_decisions": 1024,
+        "delivery_HEAD": "53ed5b2eabe3b48c280741e29629038b450e7d7b"
+      },
+      "long_run_authorized": false,
+      "entered_long_run": false,
+      "plan": "docs/experiments/BATCH02_A_N2_R2_PLAN_20261011_ZH.md",
+      "result": "artifacts/2026-10-11_batch02_a/result.json",
+      "report": "docs/experiments/BATCH02_A_N2_R2_PILOT_REPORT_20261011_ZH.md",
+      "consumer_qualification": {
+        "N2": true,
+        "R2": true
+      },
+      "pilot_independent_validation": false,
+      "long_run_decision": "NO: only consumption qualification established, no causal/performance result or authorized long budget",
+      "warnings": [
+        "Shared pilot qualifies both consumers; it is one training trajectory, not two independent causal experiments.",
+        "No held-out or full-lifecycle learning-performance conclusion from1024 decisions.",
+        "Original successful reward schedule200k boundary and recovery snapshot training distribution remain outside scope.",
+        "4 completed training episodes ended on boundary;0 capture events;recovery absent;unfinished tail censored",
+        "No formal performance or independent pilot evaluation",
+        "Long-run budget absent; no automatic extension"
+      ]
     }
   }
 }
