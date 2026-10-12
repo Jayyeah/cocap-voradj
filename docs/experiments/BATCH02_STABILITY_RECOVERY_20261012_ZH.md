@@ -32,9 +32,11 @@ R3/V3 的上述含义以实际 manifest/config/source 为准。当前代码没�
 
 成功 IQN-CoCap `1a9da05`、resolved hash `6955ecf2…` 继续是任务合同唯一来源；P1 提供的只是 MAPPO algorithm adaptation。新的科学配置与各自 baseline JSON 仅有 `learner.ppo.target_kl` 一处 diff。运行目录、line_id、父 checkpoint 和代码 SHA 写在独立 registry，不混入环境或 learner 配置。
 
-原始 baseline 代码和运行目录保持不变。续训在隔离分支 `experiment/batch02-mappo-stability-20261012` 执行，三条线保留各自原物理 GPU1，以 process-local `cuda:0` 恢复父 CUDA RNG。
+原始 baseline 代码和运行目录保持不变。续训在隔离分支 `experiment/batch02-mappo-stability-20261012` 执行。用户追加指定 R2/R3 → GPU0，V3 → GPU1；各进程以 `cuda:0` 恢复保存的完整逻辑 CUDA RNG。GPU 分配写入运行 plan/registry，不改三条 baseline 对比 JSON 的科学配置；该 JSON 中原 `physical_gpu` 只保留为 baseline 历史元数据，实际绑定以 plan/registry/CUDA_VISIBLE_DEVICES 为准。
 
-工程检查限定为已有需求：原 strict loader 检查 checkpoint/config/source；完整 actor/V/Adam/ValueNorm/env/APF/RNG 与父状态 hash 一致；覆盖 KL 前后完整状态一致；16-decision 原 rollout 与 baseline 完全一致；16-decision PPO continuation 在新 Python 进程恢复后完全一致；原 evaluator 两局与父500k screen 相同。诊断 rollout 状态丢弃，正式作业再次从父500k加载。
+此前 R2-stability 在 GPU1 的短启动尝试运行到502,304、最后完整保存500k；收到新分配后已单独停止，其2,304未保存decision作为被用户重新分配取代的尝试保留，排除在正式 paired continuation 结果外。该目录不删除、不用其末点挑选父模型。新的正式运行目录为 `runs/batch02_stability_gpu01_20261012/`，仍固定原500k完整状态→1M，不加载工程 rollout 或被取代尝试的未保存状态。
+
+工程检查限定为已有需求：原 strict loader 检查 checkpoint/config/source；完整 actor/V/Adam/ValueNorm/env/APF/RNG 与父状态 hash 一致；覆盖 KL 前后完整状态一致；16-decision 原 rollout 与 baseline 完全一致；16-decision PPO continuation 在新 Python 进程恢复后完全一致；原 evaluator 两局与父500k screen 相同。R2/R3在新指定GPU0复验完整恢复和PPO/evaluator；V3仍使用已通过的GPU1证据。诊断 rollout 状态丢弃，正式作业再次从父500k加载。
 
 原 checkpoint schema 与 task/source manifest 保留，故 evaluator 源文件逐字节不变。新增 continuation 代码的 hashes、experiment SHA、父 SHA、config hash 和运行元数据单独绑定。每25k保存所有 checkpoint并做原 screen：argmax/sample 各10局、相同 reset/action seed、相同原 terminal。500k原20局 screen作为两条件公共起点保留，并显式记录源路径/hash；525k起逐25k执行新 screen。
 

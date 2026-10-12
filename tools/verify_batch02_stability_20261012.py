@@ -40,7 +40,7 @@ def main(args):
         return
     config, baseline, plan = config_and_plan(args.arm)
     assert os.environ.get('CUDA_VISIBLE_DEVICES') == str(plan['physical_gpu'])
-    assert args.device == 'cuda:0', 'verify parent CUDA RNG on original physical GPU'
+    assert args.device == 'cuda:0', 'restore saved logical CUDA RNG on assigned physical GPU'
     trainer, adapter, config, payload, receipt = fork_parent(args.arm, args.device)
     atomic_json(args.output / 'fork_receipt.json', receipt)
     digest = save(args.arm, checkpoint, trainer, adapter, config, payload['decisions'],
@@ -75,7 +75,7 @@ def main(args):
                   evaluator_parent_episodes_exact=True, evaluator_smoke_episodes=len(smoke['episodes']),
                   checkpoint_hash=digest, reward_observation_network_environment_action_terminal_delta='ZERO',
                   diagnostic_decisions_excluded_from_long_budget=True,
-                  live_target_kl=.01, additional_training_authorized=500000,
+                  live_target_kl=.01, physical_gpu=plan['physical_gpu'], additional_training_authorized=500000,
                   gradient_parameter_metrics_finite=True)
     atomic_json(args.output / 'verification.json', report)
     print(json.dumps(dict(arm=args.arm, status=report['status'], strict_resume=True, fresh_process_exact=True)))
