@@ -28,3 +28,5 @@ flowchart TD
 [完整合同与历史参数](../experiments/BATCH02_STABILITY_RECOVERY_20261012_ZH.md)；[实验 registry](../../artifacts/2026-10-12_batch02_stability/run_registry.json)；[原迁移 DAG](COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)。
 
 不选择 best 作为父状态、不改 evaluator、不调 reward/network/环境。完成后比较 baseline/stability 的500k→1M曲线、550k峰值后保持、800k→1M表现及KL真实触发。暂无 A/B/C 科学结论，不自动启动下一批。
+
+最新状态/ETA/完整历史信号见 [2026-10-12 快速检查](BATCH02_STATUS_20261012_1655_ZH.md)。旧启动快照保留其观测时间。
