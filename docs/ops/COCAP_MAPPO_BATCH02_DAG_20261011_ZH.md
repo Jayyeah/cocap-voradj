@@ -36,3 +36,5 @@ R3≈R2、V3≈N3（新增telemetry），不能称为新reward因果证据或两
 现场GPU0/1各49GiB，当前各使用约1.5GiB，GPU utilization3–5%；128CPU、104GiB available RAM。pilot用CPU且线程1；long按N3→R3→V3错峰，资源不足仅降低并发。实际启动以本地runtime/per-arm progress.json为准，预登记不等于已训练。
 
 Batch01、BASE、旧V1/M1/M2原结论与状态保留；本批不宣称最终CoCap-MAPPO成功，不自动启动其他任务。
+
+2026-10-12 新增 [stability recovery DAG](COCAP_MAPPO_BATCH02_STABILITY_DAG_20261012_ZH.md)：三条固定500k→1M continuation，唯一变量为历史 P1 target_kl .02→.01；基线继续运行，阶段仍 PROVISIONAL。
