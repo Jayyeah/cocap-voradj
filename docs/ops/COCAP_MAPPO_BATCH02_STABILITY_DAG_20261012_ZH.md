@@ -23,7 +23,7 @@ flowchart TD
   C --> Review
 ```
 
-三线代码固定 `4b33c3fd549c180ce9ba61f7a1e8c0e22ce6fa5f`，历史审计提交 `6e4a4fe`。只有 PPO target_kl .02→.01，完整 Adam/ValueNorm/env/APF/RNG 恢复。原 baseline 源码及进程继续运行，未重训500k。三线保持原 GPU1，错峰启动；资源告警不新增科学门禁。
+三线代码固定 `b479a869027262ad60bf30b0604263f5b99b5341`，历史审计提交 `6e4a4fe`。只有 PPO target_kl .02→.01，完整 Adam/ValueNorm/env/APF/RNG 恢复。原 baseline 源码及进程继续运行，未重训500k。按用户最新分配 R2/R3 使用 GPU0、V3 使用 GPU1，错峰启动后并行；保存的逻辑 CUDA RNG 原样恢复，GPU 分配记入运行元数据。旧 R2 GPU1 502304 尝试已保留/排除；正式三线仍固定原500k→1M。资源告警不新增科学门禁。
 
 [完整合同与历史参数](../experiments/BATCH02_STABILITY_RECOVERY_20261012_ZH.md)；[实验 registry](../../artifacts/2026-10-12_batch02_stability/run_registry.json)；[原迁移 DAG](COCAP_MAPPO_BATCH02_DAG_20261011_ZH.md)。
 
