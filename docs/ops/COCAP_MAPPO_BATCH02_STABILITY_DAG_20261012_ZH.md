@@ -1,6 +1,6 @@
 # Batch02 stability recovery DAG — 2026-10-12
 
-状态：PROVISIONAL。历史审计、三线完整状态恢复/rollout/PPO/原 evaluator 验证 PASS；当前是待启动快照，实时进度见 runtime registry 和各 run 的 progress.json。
+状态：PROVISIONAL。历史审计、三线完整状态恢复/rollout/PPO/原 evaluator 验证 PASS；三线已错峰启动并行运行，实际GPU绑定及首个PPO更新确认无报错。观测时间 2026-10-12T09:55:52.054950+08:00；实时进度见 runtime registry 和各 run 的 progress.json。
 
 ```mermaid
 flowchart TD
