@@ -1,0 +1,348 @@
+{
+  "classification": "PROVISIONAL",
+  "status": "COMPLETE_BUDGET_AND_EVALUATION",
+  "arm": "R3",
+  "budget": 1000000,
+  "selected_checkpoint_decisions": 550000,
+  "selected_checkpoint_sha256": "d449d1aca86d43720d95b73b82d901699f0603abe43d21ee49c138aa4dc4d467",
+  "best_selection_basis": [
+    "mean_capture_completion_rate",
+    "negative_mean_collision_rate",
+    "negative_mean_boundary_rate",
+    "negative_conditional_capture_time",
+    "negative_step"
+  ],
+  "best_screen_decisions": 925000,
+  "last_decisions": 1000000,
+  "screen_initial_capture_rate": 0.0,
+  "screen_best_capture_rate": 0.8,
+  "final_initial_capture_rate": 0.0,
+  "final_selected_capture_rate": 0.62,
+  "final_last_capture_rate": 0.36,
+  "final_last_minus_selected": -0.26,
+  "late_capture_mean": 0.52,
+  "late_capture_min": 0.35,
+  "late_capture_max": 0.8,
+  "late_capture_std": 0.19131126469708992,
+  "learning_assessment": "出现 held-out capture 能力提升，但 last 低于 selected；存在退化或不稳定信号",
+  "next_stage_recommendation": "D. 先分析退化时段和失败模式，再决定迁移路线",
+  "next_stage_started": false,
+  "final_domain_used_for_selection": false,
+  "warnings": [
+    "One training seed; no scale/lifecycle experiment or formal promotion.",
+    "Capture completion is separate from full CoCap episode_success.",
+    "Simple rate differences are descriptive signals, not statistical proof of regression."
+  ],
+  "final_reports": {
+    "initial": {
+      "evaluator_version": "batch02-a-cocap-native-mixed-v1",
+      "evaluator_sha256": "3800013878713fa28f6b625ef74153e17647b7d9e7ad265ab40d259a81f007f6",
+      "checkpoint": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011/runs/batch02_native_capability_20261011/R3/checkpoints/step_000000000.pt",
+      "checkpoint_sha256": "07c35ef6bc4c88e33629d095bf94c1de0c1631410d3f3d66de99366d20d84c09",
+      "decisions": 0,
+      "arm": "R3",
+      "classification": "PROVISIONAL",
+      "seed_domain": "final",
+      "independent_validation": false,
+      "engineering_smoke": false,
+      "task_reference": {
+        "source": "successful IQN Z05 Stage1 Forward-Final V2",
+        "source_SHA": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
+        "resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a"
+      },
+      "protocol": {
+        "protocol_id": "batch02-a-native-mixed-capability-20261011-v1",
+        "modes": [
+          "argmax",
+          "sample"
+        ],
+        "sample_torch_offset": 100000,
+        "screen": {
+          "seed_base": 2106101100,
+          "episodes_per_mode": 10
+        },
+        "selection": {
+          "seed_base": 2116101100,
+          "episodes_per_mode": 20
+        },
+        "final": {
+          "seed_base": 2126101100,
+          "episodes_per_mode": 50
+        },
+        "top_screen_candidates": 3,
+        "late_window": 5,
+        "selection_order": [
+          "mean_capture_completion_rate",
+          "negative_mean_collision_rate",
+          "negative_mean_boundary_rate",
+          "negative_conditional_capture_time",
+          "negative_step"
+        ],
+        "scene": "mixed",
+        "scene_counts": [
+          4,
+          1,
+          1
+        ],
+        "task_termination": "native_successful_IQN_CoCap",
+        "reward_clock": "successful IQN native fresh-env evaluator: clock0, no training schedule callback",
+        "generalization": "unseen reset seeds within the unchanged 4P1E1O scene; no scale or lifecycle experiment",
+        "final_used_for_selection": false,
+        "formal_promotion_gate": null
+      },
+      "modes": {
+        "argmax": {
+          "episodes": 50,
+          "episode_reward_mean": -64.01372819390521,
+          "capture_completion_rate": 0.0,
+          "fully_capture_rate": 0.0,
+          "episode_success_rate": 0.0,
+          "collision_rate": 1.0,
+          "boundary_rate": 0.96,
+          "episode_length_mean": 41.76,
+          "capture_time_seconds_mean": null,
+          "capture_time_n": 0,
+          "noncapture_censored_n": 50,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 50
+          },
+          "collision_type_counts": {
+            "boundary": 48,
+            "obstacle": 1,
+            "agent_agent": 1
+          }
+        },
+        "sample": {
+          "episodes": 50,
+          "episode_reward_mean": -247.52532256209997,
+          "capture_completion_rate": 0.0,
+          "fully_capture_rate": 0.0,
+          "episode_success_rate": 0.0,
+          "collision_rate": 1.0,
+          "boundary_rate": 0.92,
+          "episode_length_mean": 378.76,
+          "capture_time_seconds_mean": null,
+          "capture_time_n": 0,
+          "noncapture_censored_n": 50,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 50
+          },
+          "collision_type_counts": {
+            "boundary": 46,
+            "agent_agent": 3,
+            "obstacle": 1
+          }
+        }
+      },
+      "duration_seconds": 737.2617664800055
+    },
+    "selected": {
+      "evaluator_version": "batch02-a-cocap-native-mixed-v1",
+      "evaluator_sha256": "3800013878713fa28f6b625ef74153e17647b7d9e7ad265ab40d259a81f007f6",
+      "checkpoint": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011/runs/batch02_native_capability_20261011/R3/checkpoints/step_000550000.pt",
+      "checkpoint_sha256": "d449d1aca86d43720d95b73b82d901699f0603abe43d21ee49c138aa4dc4d467",
+      "decisions": 550000,
+      "arm": "R3",
+      "classification": "PROVISIONAL",
+      "seed_domain": "final",
+      "independent_validation": false,
+      "engineering_smoke": false,
+      "task_reference": {
+        "source": "successful IQN Z05 Stage1 Forward-Final V2",
+        "source_SHA": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
+        "resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a"
+      },
+      "protocol": {
+        "protocol_id": "batch02-a-native-mixed-capability-20261011-v1",
+        "modes": [
+          "argmax",
+          "sample"
+        ],
+        "sample_torch_offset": 100000,
+        "screen": {
+          "seed_base": 2106101100,
+          "episodes_per_mode": 10
+        },
+        "selection": {
+          "seed_base": 2116101100,
+          "episodes_per_mode": 20
+        },
+        "final": {
+          "seed_base": 2126101100,
+          "episodes_per_mode": 50
+        },
+        "top_screen_candidates": 3,
+        "late_window": 5,
+        "selection_order": [
+          "mean_capture_completion_rate",
+          "negative_mean_collision_rate",
+          "negative_mean_boundary_rate",
+          "negative_conditional_capture_time",
+          "negative_step"
+        ],
+        "scene": "mixed",
+        "scene_counts": [
+          4,
+          1,
+          1
+        ],
+        "task_termination": "native_successful_IQN_CoCap",
+        "reward_clock": "successful IQN native fresh-env evaluator: clock0, no training schedule callback",
+        "generalization": "unseen reset seeds within the unchanged 4P1E1O scene; no scale or lifecycle experiment",
+        "final_used_for_selection": false,
+        "formal_promotion_gate": null
+      },
+      "modes": {
+        "argmax": {
+          "episodes": 50,
+          "episode_reward_mean": -828.217542454957,
+          "capture_completion_rate": 0.62,
+          "fully_capture_rate": 0.62,
+          "episode_success_rate": 0.0,
+          "collision_rate": 0.38,
+          "boundary_rate": 0.18,
+          "episode_length_mean": 447.84,
+          "capture_time_seconds_mean": 84.48387096774194,
+          "capture_time_n": 31,
+          "noncapture_censored_n": 19,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 19
+          },
+          "collision_type_counts": {
+            "boundary": 9,
+            "evader_contact": 5,
+            "agent_agent": 3,
+            "obstacle": 2
+          }
+        },
+        "sample": {
+          "episodes": 50,
+          "episode_reward_mean": -462.0657832081979,
+          "capture_completion_rate": 0.62,
+          "fully_capture_rate": 0.42,
+          "episode_success_rate": 0.0,
+          "collision_rate": 0.58,
+          "boundary_rate": 0.3,
+          "episode_length_mean": 422.86,
+          "capture_time_seconds_mean": 102.74193548387096,
+          "capture_time_n": 31,
+          "noncapture_censored_n": 19,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 19
+          },
+          "collision_type_counts": {
+            "agent_agent": 5,
+            "boundary": 15,
+            "evader_contact": 5,
+            "obstacle": 4
+          }
+        }
+      },
+      "duration_seconds": 1306.1916214109951
+    },
+    "last": {
+      "evaluator_version": "batch02-a-cocap-native-mixed-v1",
+      "evaluator_sha256": "3800013878713fa28f6b625ef74153e17647b7d9e7ad265ab40d259a81f007f6",
+      "checkpoint": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011/runs/batch02_native_capability_20261011/R3/checkpoints/step_001000000.pt",
+      "checkpoint_sha256": "e5256b3c499aa9c547951b8065b89d4e7eda8067e48f48198ea68b686eb893cb",
+      "decisions": 1000000,
+      "arm": "R3",
+      "classification": "PROVISIONAL",
+      "seed_domain": "final",
+      "independent_validation": false,
+      "engineering_smoke": false,
+      "task_reference": {
+        "source": "successful IQN Z05 Stage1 Forward-Final V2",
+        "source_SHA": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
+        "resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a"
+      },
+      "protocol": {
+        "protocol_id": "batch02-a-native-mixed-capability-20261011-v1",
+        "modes": [
+          "argmax",
+          "sample"
+        ],
+        "sample_torch_offset": 100000,
+        "screen": {
+          "seed_base": 2106101100,
+          "episodes_per_mode": 10
+        },
+        "selection": {
+          "seed_base": 2116101100,
+          "episodes_per_mode": 20
+        },
+        "final": {
+          "seed_base": 2126101100,
+          "episodes_per_mode": 50
+        },
+        "top_screen_candidates": 3,
+        "late_window": 5,
+        "selection_order": [
+          "mean_capture_completion_rate",
+          "negative_mean_collision_rate",
+          "negative_mean_boundary_rate",
+          "negative_conditional_capture_time",
+          "negative_step"
+        ],
+        "scene": "mixed",
+        "scene_counts": [
+          4,
+          1,
+          1
+        ],
+        "task_termination": "native_successful_IQN_CoCap",
+        "reward_clock": "successful IQN native fresh-env evaluator: clock0, no training schedule callback",
+        "generalization": "unseen reset seeds within the unchanged 4P1E1O scene; no scale or lifecycle experiment",
+        "final_used_for_selection": false,
+        "formal_promotion_gate": null
+      },
+      "modes": {
+        "argmax": {
+          "episodes": 50,
+          "episode_reward_mean": -634.4367806776427,
+          "capture_completion_rate": 0.32,
+          "fully_capture_rate": 0.3,
+          "episode_success_rate": 0.0,
+          "collision_rate": 0.7,
+          "boundary_rate": 0.28,
+          "episode_length_mean": 606.8,
+          "capture_time_seconds_mean": 288.09375,
+          "capture_time_n": 16,
+          "noncapture_censored_n": 34,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 34
+          },
+          "collision_type_counts": {
+            "agent_agent": 14,
+            "boundary": 14,
+            "obstacle": 4,
+            "evader_contact": 3
+          }
+        },
+        "sample": {
+          "episodes": 50,
+          "episode_reward_mean": -381.7158811004012,
+          "capture_completion_rate": 0.4,
+          "fully_capture_rate": 0.26,
+          "episode_success_rate": 0.0,
+          "collision_rate": 0.74,
+          "boundary_rate": 0.34,
+          "episode_length_mean": 662.28,
+          "capture_time_seconds_mean": 296.75,
+          "capture_time_n": 20,
+          "noncapture_censored_n": 30,
+          "failure_types": {
+            "deactivated after collision|too few active pursuers": 30
+          },
+          "collision_type_counts": {
+            "obstacle": 9,
+            "boundary": 17,
+            "evader_contact": 3,
+            "agent_agent": 8
+          }
+        }
+      },
+      "duration_seconds": 2200.8215803460043
+    }
+  }
+}

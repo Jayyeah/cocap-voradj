@@ -1,0 +1,6050 @@
+{
+  "evaluator_version": "batch02-a-cocap-native-mixed-v1",
+  "evaluator_sha256": "3800013878713fa28f6b625ef74153e17647b7d9e7ad265ab40d259a81f007f6",
+  "checkpoint": "/home/yjq/rl/CoCap1/terl-mappo-batch02-native-20261011/runs/batch02_native_capability_20261011/R3/checkpoints/step_000550000.pt",
+  "checkpoint_sha256": "d449d1aca86d43720d95b73b82d901699f0603abe43d21ee49c138aa4dc4d467",
+  "decisions": 550000,
+  "arm": "R3",
+  "classification": "PROVISIONAL",
+  "seed_domain": "final",
+  "independent_validation": false,
+  "engineering_smoke": false,
+  "task_reference": {
+    "source": "successful IQN Z05 Stage1 Forward-Final V2",
+    "source_SHA": "1a9da054ecb5652726005d00d08ab05a2188dd8e",
+    "resolved_hash": "6955ecf28383f7e146a0ee485ef3e33cb1d1782b197a51ceadd2ef93968d3b5a"
+  },
+  "protocol": {
+    "protocol_id": "batch02-a-native-mixed-capability-20261011-v1",
+    "modes": [
+      "argmax",
+      "sample"
+    ],
+    "sample_torch_offset": 100000,
+    "screen": {
+      "seed_base": 2106101100,
+      "episodes_per_mode": 10
+    },
+    "selection": {
+      "seed_base": 2116101100,
+      "episodes_per_mode": 20
+    },
+    "final": {
+      "seed_base": 2126101100,
+      "episodes_per_mode": 50
+    },
+    "top_screen_candidates": 3,
+    "late_window": 5,
+    "selection_order": [
+      "mean_capture_completion_rate",
+      "negative_mean_collision_rate",
+      "negative_mean_boundary_rate",
+      "negative_conditional_capture_time",
+      "negative_step"
+    ],
+    "scene": "mixed",
+    "scene_counts": [
+      4,
+      1,
+      1
+    ],
+    "task_termination": "native_successful_IQN_CoCap",
+    "reward_clock": "successful IQN native fresh-env evaluator: clock0, no training schedule callback",
+    "generalization": "unseen reset seeds within the unchanged 4P1E1O scene; no scale or lifecycle experiment",
+    "final_used_for_selection": false,
+    "formal_promotion_gate": null
+  },
+  "modes": {
+    "argmax": {
+      "episodes": 50,
+      "episode_reward_mean": -828.217542454957,
+      "capture_completion_rate": 0.62,
+      "fully_capture_rate": 0.62,
+      "episode_success_rate": 0.0,
+      "collision_rate": 0.38,
+      "boundary_rate": 0.18,
+      "episode_length_mean": 447.84,
+      "capture_time_seconds_mean": 84.48387096774194,
+      "capture_time_n": 31,
+      "noncapture_censored_n": 19,
+      "failure_types": {
+        "deactivated after collision|too few active pursuers": 19
+      },
+      "collision_type_counts": {
+        "boundary": 9,
+        "evader_contact": 5,
+        "agent_agent": 3,
+        "obstacle": 2
+      }
+    },
+    "sample": {
+      "episodes": 50,
+      "episode_reward_mean": -462.0657832081979,
+      "capture_completion_rate": 0.62,
+      "fully_capture_rate": 0.42,
+      "episode_success_rate": 0.0,
+      "collision_rate": 0.58,
+      "boundary_rate": 0.3,
+      "episode_length_mean": 422.86,
+      "capture_time_seconds_mean": 102.74193548387096,
+      "capture_time_n": 31,
+      "noncapture_censored_n": 19,
+      "failure_types": {
+        "deactivated after collision|too few active pursuers": 19
+      },
+      "collision_type_counts": {
+        "agent_agent": 5,
+        "boundary": 15,
+        "evader_contact": 5,
+        "obstacle": 4
+      }
+    }
+  },
+  "episodes": [
+    {
+      "seed": 2126101100,
+      "action_seed": 2126201100,
+      "mode": "argmax",
+      "length": 87,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -101.13533542146305,
+      "episode_reward_sum": -404.5413416858522,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 323.8487596202185,
+        "reward_coverage": -18.39010130607083,
+        "reward_safety": -710.0,
+        "reward_terminal": 0.0,
+        "reward_total": -404.5413416858522
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 324.1362321343175,
+        "support": -18.8266393441435,
+        "safety": -710.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.1490655239737404,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101101,
+      "action_seed": 2126201101,
+      "mode": "argmax",
+      "length": 791,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1771.6727042171854,
+      "episode_reward_sum": -7086.690816868741,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 291,
+      "capture_time_seconds": 145.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 832.5721926077463,
+        "reward_coverage": -3168.6735642591334,
+        "reward_safety": -5130.0,
+        "reward_terminal": 379.4105547826725,
+        "reward_total": -7086.69081686861
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 830.0177822163298,
+        "support": 1.4950399111235064,
+        "safety": -5130.0,
+        "geometry": -3205.948621010875,
+        "auxiliary_shaping": 38.33442723208255,
+        "terminal": 379.4105547826725
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101102,
+      "action_seed": 2126201102,
+      "mode": "argmax",
+      "length": 582,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -923.8491069343305,
+      "episode_reward_sum": -3695.396427737322,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 82,
+      "capture_time_seconds": 41.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 409.2190318968191,
+        "reward_coverage": -4228.802807341956,
+        "reward_safety": -230.0,
+        "reward_terminal": 354.1873477078689,
+        "reward_total": -3695.396427737273
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 392.0293013327177,
+        "support": 6.101295672534867,
+        "safety": -230.0,
+        "geometry": -4268.423979166785,
+        "auxiliary_shaping": 50.70960671623623,
+        "terminal": 354.1873477078689
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101103,
+      "action_seed": 2126201103,
+      "mode": "argmax",
+      "length": 780,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -644.1519791314739,
+      "episode_reward_sum": -2576.6079165258957,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 280,
+      "capture_time_seconds": 140.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 864.5295226809757,
+        "reward_coverage": -3336.2977979363814,
+        "reward_safety": -640.0,
+        "reward_terminal": 535.1603587295981,
+        "reward_total": -2576.6079165258593
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 853.8459531846287,
+        "support": 6.860243478859523,
+        "safety": -640.0,
+        "geometry": -3374.220734312591,
+        "auxiliary_shaping": 41.74626239357297,
+        "terminal": 535.1603587295981
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101104,
+      "action_seed": 2126201104,
+      "mode": "argmax",
+      "length": 691,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2369.2580385081446,
+      "episode_reward_sum": -9477.032154032579,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 191,
+      "capture_time_seconds": 95.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 696.5647848425749,
+        "reward_coverage": -4567.693990346644,
+        "reward_safety": -5980.0,
+        "reward_terminal": 374.0970514714933,
+        "reward_total": -9477.032154032599
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 670.0568075616764,
+        "support": 23.00302592194606,
+        "safety": -5980.0,
+        "geometry": -4621.19158700364,
+        "auxiliary_shaping": 57.002548016066065,
+        "terminal": 374.0970514714933
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101105,
+      "action_seed": 2126201105,
+      "mode": "argmax",
+      "length": 82,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 1.203980863524297,
+      "episode_reward_sum": 4.815923454097188,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 561.2001979371599,
+        "reward_coverage": -6.384274483062496,
+        "reward_safety": -550.0,
+        "reward_terminal": 0.0,
+        "reward_total": 4.815923454097259
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 553.0044203591486,
+        "support": 1.6611062722401735,
+        "safety": -550.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.1503968227087609,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101106,
+      "action_seed": 2126201106,
+      "mode": "argmax",
+      "length": 669,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -825.6832214569188,
+      "episode_reward_sum": -3302.732885827675,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 169,
+      "capture_time_seconds": 84.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 630.6656423414321,
+        "reward_coverage": -3490.7273225077,
+        "reward_safety": -1000.0,
+        "reward_terminal": 557.3287943386792,
+        "reward_total": -3302.7328858275973
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 602.1598230215637,
+        "support": -0.4907148409335571,
+        "safety": -1000.0,
+        "geometry": -3502.5589552093866,
+        "auxiliary_shaping": 40.82816686247323,
+        "terminal": 557.3287943386792
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101107,
+      "action_seed": 2126201107,
+      "mode": "argmax",
+      "length": 575,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -540.1354807034055,
+      "episode_reward_sum": -2160.541922813622,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 75,
+      "capture_time_seconds": 37.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 340.69684074806105,
+        "reward_coverage": -2836.1211003076696,
+        "reward_safety": -300.0,
+        "reward_terminal": 634.8823367460119,
+        "reward_total": -2160.541922813629
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 330.3336680415755,
+        "support": 5.031993557434007,
+        "safety": -300.0,
+        "geometry": -2869.2378694895247,
+        "auxiliary_shaping": 38.44794833083267,
+        "terminal": 634.8823367460119
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101108,
+      "action_seed": 2126201108,
+      "mode": "argmax",
+      "length": 808,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -618.3468003586677,
+      "episode_reward_sum": -2473.3872014346707,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 308,
+      "capture_time_seconds": 154.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 965.5527150336164,
+        "reward_coverage": -3375.108989852263,
+        "reward_safety": -400.0,
+        "reward_terminal": 336.1690733839209,
+        "reward_total": -2473.387201434675
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 945.0604302656403,
+        "support": 16.198125226594314,
+        "safety": -400.0,
+        "geometry": -3412.8637823030836,
+        "auxiliary_shaping": 42.048951992205374,
+        "terminal": 336.1690733839209
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101109,
+      "action_seed": 2126201109,
+      "mode": "argmax",
+      "length": 591,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -569.4207588640802,
+      "episode_reward_sum": -2277.683035456321,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 91,
+      "capture_time_seconds": 45.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 460.0486061278686,
+        "reward_coverage": -3046.861393469441,
+        "reward_safety": -250.0,
+        "reward_terminal": 559.1297518852732,
+        "reward_total": -2277.6830354563094
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 451.29126734416224,
+        "support": 8.489014794331801,
+        "safety": -250.0,
+        "geometry": -3087.700430925743,
+        "auxiliary_shaping": 41.107361445591046,
+        "terminal": 559.1297518852732
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101110,
+      "action_seed": 2126201110,
+      "mode": "argmax",
+      "length": 47,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -11.236847808773202,
+      "episode_reward_sum": -44.94739123509281,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 273.04217747391795,
+        "reward_coverage": -7.9895687090107685,
+        "reward_safety": -310.0,
+        "reward_terminal": 0.0,
+        "reward_total": -44.94739123509281
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 268.24175049101063,
+        "support": -3.1671878133041846,
+        "safety": -310.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.021953912799218094,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101111,
+      "action_seed": 2126201111,
+      "mode": "argmax",
+      "length": 175,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -238.00243823624294,
+      "episode_reward_sum": -952.0097529449718,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 583.7308667525367,
+        "reward_coverage": -15.74061969750887,
+        "reward_safety": -1520.0,
+        "reward_terminal": 0.0,
+        "reward_total": -952.0097529449722
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 560.2712714204445,
+        "support": 8.215055741010216,
+        "safety": -1520.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.49608010642730016,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101112,
+      "action_seed": 2126201112,
+      "mode": "argmax",
+      "length": 45,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -64.7214430766949,
+      "episode_reward_sum": -258.8857723067796,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 222.82816460368855,
+        "reward_coverage": -1.7139369104680915,
+        "reward_safety": -480.0,
+        "reward_terminal": 0.0,
+        "reward_total": -258.88577230677953
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 221.07528590724428,
+        "support": 0.028750100518617705,
+        "safety": -480.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.01019168545757173,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101113,
+      "action_seed": 2126201113,
+      "mode": "argmax",
+      "length": 43,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -0.8127117780844255,
+      "episode_reward_sum": -3.250847112337702,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 189.72173525710465,
+        "reward_coverage": -2.972582369442356,
+        "reward_safety": -190.0,
+        "reward_terminal": 0.0,
+        "reward_total": -3.2508471123377056
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 187.41979229529252,
+        "support": -0.7954039537341775,
+        "safety": -190.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.12476454610392305,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101114,
+      "action_seed": 2126201114,
+      "mode": "argmax",
+      "length": 214,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -75.75826664584949,
+      "episode_reward_sum": -303.03306658339795,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 813.4410774207221,
+        "reward_coverage": -16.474144004119882,
+        "reward_safety": -1100.0,
+        "reward_terminal": 0.0,
+        "reward_total": -303.0330665833977
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 775.1141223081623,
+        "support": 21.839916264182595,
+        "safety": -1100.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.012894844257672747,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101115,
+      "action_seed": 2126201115,
+      "mode": "argmax",
+      "length": 92,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 26.948544641019474,
+      "episode_reward_sum": 107.7941785640779,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 504.1454240405134,
+        "reward_coverage": -6.351245476435651,
+        "reward_safety": -390.0,
+        "reward_terminal": 0.0,
+        "reward_total": 107.79417856407792
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 484.09560194405765,
+        "support": 13.843710664069416,
+        "safety": -390.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.1451340440491858,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101116,
+      "action_seed": 2126201116,
+      "mode": "argmax",
+      "length": 207,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -535.001606273527,
+      "episode_reward_sum": -2140.006425094108,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 811.4918998088722,
+        "reward_coverage": -11.498324902979478,
+        "reward_safety": -2940.0,
+        "reward_terminal": 0.0,
+        "reward_total": -2140.0064250941105
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 780.4400104977012,
+        "support": 20.054305437219117,
+        "safety": -2940.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.5007410290276301,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 1.3877787807814457e-17
+    },
+    {
+      "seed": 2126101117,
+      "action_seed": 2126201117,
+      "mode": "argmax",
+      "length": 85,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -46.54865139461499,
+      "episode_reward_sum": -186.19460557845997,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 414.6403909841147,
+        "reward_coverage": -0.8349965625748401,
+        "reward_safety": -600.0,
+        "reward_terminal": 0.0,
+        "reward_total": -186.1946055784601
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 413.6689684783911,
+        "support": 0.14501824997974772,
+        "safety": -600.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.00859230683104617,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101118,
+      "action_seed": 2126201118,
+      "mode": "argmax",
+      "length": 56,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -76.75780211473449,
+      "episode_reward_sum": -307.03120845893795,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 189.29427954426953,
+        "reward_coverage": -26.32548800320765,
+        "reward_safety": -470.0,
+        "reward_terminal": 0.0,
+        "reward_total": -307.03120845893795
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 168.77324950972007,
+        "support": -6.146454701258656,
+        "safety": -470.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.34199673260056457,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101119,
+      "action_seed": 2126201119,
+      "mode": "argmax",
+      "length": 901,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -760.7917850433046,
+      "episode_reward_sum": -3043.1671401732183,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 401,
+      "capture_time_seconds": 200.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1164.84561291275,
+        "reward_coverage": -4141.715342931161,
+        "reward_safety": -540.0,
+        "reward_terminal": 473.70258984525407,
+        "reward_total": -3043.167140173184
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1164.84561291275,
+        "support": 0.0,
+        "safety": -540.0,
+        "geometry": -4191.547520556252,
+        "auxiliary_shaping": 49.83217762501172,
+        "terminal": 473.70258984525407
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101120,
+      "action_seed": 2126201120,
+      "mode": "argmax",
+      "length": 731,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1129.6244115284005,
+      "episode_reward_sum": -4518.497646113602,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 231,
+      "capture_time_seconds": 115.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 895.2487259955025,
+        "reward_coverage": -5114.549485486049,
+        "reward_safety": -840.0,
+        "reward_terminal": 540.8031133770577,
+        "reward_total": -4518.497646113535
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 872.9331300618695,
+        "support": 4.804407866659543,
+        "safety": -840.0,
+        "geometry": -5161.308045242282,
+        "auxiliary_shaping": 64.2697478230919,
+        "terminal": 540.8031133770577
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101121,
+      "action_seed": 2126201121,
+      "mode": "argmax",
+      "length": 789,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -763.8129689244323,
+      "episode_reward_sum": -3055.2518756977292,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 289,
+      "capture_time_seconds": 144.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1004.5559682195532,
+        "reward_coverage": -3414.9090883540616,
+        "reward_safety": -1120.0,
+        "reward_terminal": 475.10124443682275,
+        "reward_total": -3055.2518756976865
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 976.4425875449025,
+        "support": 24.830010566409577,
+        "safety": -1120.0,
+        "geometry": -3452.2664836129916,
+        "auxiliary_shaping": 40.64076536713579,
+        "terminal": 475.10124443682275
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101122,
+      "action_seed": 2126201122,
+      "mode": "argmax",
+      "length": 593,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2514.565708029597,
+      "episode_reward_sum": -10058.262832118387,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 93,
+      "capture_time_seconds": 46.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 337.5111469300232,
+        "reward_coverage": -4317.945637757581,
+        "reward_safety": -6410.0,
+        "reward_terminal": 332.17165870920815,
+        "reward_total": -10058.2628321183
+      },
+      "reward_component_residual_max": 1.4210854715202004e-14,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 325.3609418748804,
+        "support": -0.2720025985981963,
+        "safety": -6410.0,
+        "geometry": -4357.773295941256,
+        "auxiliary_shaping": 52.249865837380156,
+        "terminal": 332.17165870920815
+      },
+      "reward_decomposition_residual_max": 1.4210854715202004e-14
+    },
+    {
+      "seed": 2126101123,
+      "action_seed": 2126201123,
+      "mode": "argmax",
+      "length": 584,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -6818.452609205782,
+      "episode_reward_sum": -27273.81043682313,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 84,
+      "capture_time_seconds": 42.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 314.0103201644516,
+        "reward_coverage": -7722.861933377276,
+        "reward_safety": -20370.0,
+        "reward_terminal": 505.0411763896441,
+        "reward_total": -27273.810436823424
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 309.5528483362773,
+        "support": -18.27926591869795,
+        "safety": -20370.0,
+        "geometry": -7788.925152301468,
+        "auxiliary_shaping": 88.79995667089607,
+        "terminal": 505.0411763896441
+      },
+      "reward_decomposition_residual_max": 3.552713678800501e-15
+    },
+    {
+      "seed": 2126101124,
+      "action_seed": 2126201124,
+      "mode": "argmax",
+      "length": 70,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 5.829577375590043,
+      "episode_reward_sum": 23.318309502360172,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 412.2805763557607,
+        "reward_coverage": -18.962266853400546,
+        "reward_safety": -370.0,
+        "reward_terminal": 0.0,
+        "reward_total": 23.31830950235991
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 395.49857932414386,
+        "support": -2.0858593782732884,
+        "safety": -370.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.09441044351057247,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101125,
+      "action_seed": 2126201125,
+      "mode": "argmax",
+      "length": 46,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 1.2436268928128147,
+      "episode_reward_sum": 4.974507571251259,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 200.37716052644726,
+        "reward_coverage": -5.402652955196152,
+        "reward_safety": -190.0,
+        "reward_terminal": 0.0,
+        "reward_total": 4.974507571251095
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 197.22574479381933,
+        "support": -2.32904607615407,
+        "safety": -190.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.07780885358584308,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101126,
+      "action_seed": 2126201126,
+      "mode": "argmax",
+      "length": 603,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -905.1895207829425,
+      "episode_reward_sum": -3620.75808313177,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 103,
+      "capture_time_seconds": 51.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 529.1364352759811,
+        "reward_coverage": -4055.4277556723414,
+        "reward_safety": -520.0,
+        "reward_terminal": 425.5332372644465,
+        "reward_total": -3620.75808313188
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 500.6846055565996,
+        "support": 16.730650209461146,
+        "safety": -520.0,
+        "geometry": -4094.623623021973,
+        "auxiliary_shaping": 50.917046859637615,
+        "terminal": 425.5332372644465
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101127,
+      "action_seed": 2126201127,
+      "mode": "argmax",
+      "length": 553,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -268.96117149779155,
+      "episode_reward_sum": -1075.8446859911662,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 53,
+      "capture_time_seconds": 26.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 267.41616018038354,
+        "reward_coverage": -1590.7012633646414,
+        "reward_safety": -150.0,
+        "reward_terminal": 397.44041719306995,
+        "reward_total": -1075.8446859911676
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 246.17685943513195,
+        "support": 11.675769033904016,
+        "safety": -150.0,
+        "geometry": -1600.0302920232061,
+        "auxiliary_shaping": 18.892560369957053,
+        "terminal": 397.44041719306995
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101128,
+      "action_seed": 2126201128,
+      "mode": "argmax",
+      "length": 904,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -759.2355127612752,
+      "episode_reward_sum": -3036.942051045101,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 404,
+      "capture_time_seconds": 202.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1214.5260319966358,
+        "reward_coverage": -3349.0589997290085,
+        "reward_safety": -1300.0,
+        "reward_terminal": 397.59091668732583,
+        "reward_total": -3036.942051045065
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1174.912045908827,
+        "support": 27.758289754318618,
+        "safety": -1300.0,
+        "geometry": -3377.1964803605115,
+        "auxiliary_shaping": 39.9931769649596,
+        "terminal": 397.59091668732583
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101129,
+      "action_seed": 2126201129,
+      "mode": "argmax",
+      "length": 77,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -27.250704813066868,
+      "episode_reward_sum": -109.00281925226747,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 403.7511266439292,
+        "reward_coverage": -2.7539458961966687,
+        "reward_safety": -510.0,
+        "reward_terminal": 0.0,
+        "reward_total": -109.00281925226753
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 388.8573115366246,
+        "support": 12.226713521700391,
+        "safety": -510.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.08684431059255818,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 3.469446951953614e-18
+    },
+    {
+      "seed": 2126101130,
+      "action_seed": 2126201130,
+      "mode": "argmax",
+      "length": 30,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -30.623154331311284,
+      "episode_reward_sum": -122.49261732524513,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 129.09585614603435,
+        "reward_coverage": -1.5884734712794875,
+        "reward_safety": -250.0,
+        "reward_terminal": 0.0,
+        "reward_total": -122.49261732524515
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 116.8293054027128,
+        "support": 10.6909037140061,
+        "safety": -250.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.012826441964058771,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101131,
+      "action_seed": 2126201131,
+      "mode": "argmax",
+      "length": 45,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -70.25556083190733,
+      "episode_reward_sum": -281.0222433276293,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 198.9777566723706,
+        "reward_coverage": 0.0,
+        "reward_safety": -480.0,
+        "reward_terminal": 0.0,
+        "reward_total": -281.0222433276294
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 198.9777566723706,
+        "support": 0.0,
+        "safety": -480.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.0,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101132,
+      "action_seed": 2126201132,
+      "mode": "argmax",
+      "length": 64,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 14.717479883059188,
+      "episode_reward_sum": 58.86991953223675,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 296.42132399267115,
+        "reward_coverage": -17.551404460434277,
+        "reward_safety": -220.0,
+        "reward_terminal": 0.0,
+        "reward_total": 58.869919532236786
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 272.2155224550039,
+        "support": 10.836291945337065,
+        "safety": -220.0,
+        "geometry": -4.199885214214039,
+        "auxiliary_shaping": 0.017990346109804378,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101133,
+      "action_seed": 2126201133,
+      "mode": "argmax",
+      "length": 645,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1095.9093215127805,
+      "episode_reward_sum": -4383.637286051122,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 145,
+      "capture_time_seconds": 72.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 580.2604739758175,
+        "reward_coverage": -4681.790553703973,
+        "reward_safety": -680.0,
+        "reward_terminal": 397.8927936769611,
+        "reward_total": -4383.637286051209
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 557.2044294431563,
+        "support": 6.037108274414267,
+        "safety": -680.0,
+        "geometry": -4722.115732359802,
+        "auxiliary_shaping": 57.34411491412878,
+        "terminal": 397.8927936769611
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101134,
+      "action_seed": 2126201134,
+      "mode": "argmax",
+      "length": 620,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1401.262772471926,
+      "episode_reward_sum": -5605.051089887704,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 120,
+      "capture_time_seconds": 60.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 643.4348840621839,
+        "reward_coverage": -5433.155433460435,
+        "reward_safety": -1140.0,
+        "reward_terminal": 324.6694595105589,
+        "reward_total": -5605.051089887691
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 641.1626065265951,
+        "support": -0.16132673243344672,
+        "safety": -1140.0,
+        "geometry": -5493.303046177787,
+        "auxiliary_shaping": 62.58121698528922,
+        "terminal": 324.6694595105589
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101135,
+      "action_seed": 2126201135,
+      "mode": "argmax",
+      "length": 745,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2586.9879409300893,
+      "episode_reward_sum": -10347.951763720357,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 245,
+      "capture_time_seconds": 122.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 853.553157364724,
+        "reward_coverage": -5227.937120294803,
+        "reward_safety": -6300.0,
+        "reward_terminal": 326.4321992097745,
+        "reward_total": -10347.951763720315
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 823.0347367420197,
+        "support": -14.144828748425715,
+        "safety": -6300.0,
+        "geometry": -5246.44468007217,
+        "auxiliary_shaping": 63.17080914848832,
+        "terminal": 326.4321992097745
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101136,
+      "action_seed": 2126201136,
+      "mode": "argmax",
+      "length": 586,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -334.0354769646876,
+      "episode_reward_sum": -1336.1419078587503,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 86,
+      "capture_time_seconds": 43.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 361.8955077975408,
+        "reward_coverage": -1794.929815979545,
+        "reward_safety": -260.0,
+        "reward_terminal": 356.89240032327154,
+        "reward_total": -1336.1419078587396
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 342.43732540778774,
+        "support": 1.945750829635946,
+        "safety": -260.0,
+        "geometry": -1799.528849019217,
+        "auxiliary_shaping": 22.111464599806947,
+        "terminal": 356.89240032327154
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101137,
+      "action_seed": 2126201137,
+      "mode": "argmax",
+      "length": 111,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 38.1186796182306,
+      "episode_reward_sum": 152.4747184729224,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 527.4402695389055,
+        "reward_coverage": -4.9655510659833135,
+        "reward_safety": -370.0,
+        "reward_terminal": 0.0,
+        "reward_total": 152.47471847292218
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 520.6825282893772,
+        "support": 1.6787851171045174,
+        "safety": -370.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.11340506644086668,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101138,
+      "action_seed": 2126201138,
+      "mode": "argmax",
+      "length": 551,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -687.4596680865463,
+      "episode_reward_sum": -2749.8386723461854,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 51,
+      "capture_time_seconds": 25.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 231.37660314470665,
+        "reward_coverage": -3000.45048078209,
+        "reward_safety": -330.0,
+        "reward_terminal": 349.2352052912089,
+        "reward_total": -2749.8386723461745
+      },
+      "reward_component_residual_max": 1.4210854715202004e-14,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 224.2785686931317,
+        "support": 2.7761702927655616,
+        "safety": -330.0,
+        "geometry": -3032.8868331007507,
+        "auxiliary_shaping": 36.758216477428476,
+        "terminal": 349.2352052912089
+      },
+      "reward_decomposition_residual_max": 1.4210854715202004e-14
+    },
+    {
+      "seed": 2126101139,
+      "action_seed": 2126201139,
+      "mode": "argmax",
+      "length": 574,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -901.5292321664151,
+      "episode_reward_sum": -3606.1169286656605,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 74,
+      "capture_time_seconds": 37.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 388.98763394495364,
+        "reward_coverage": -4283.802093666997,
+        "reward_safety": -320.0,
+        "reward_terminal": 608.6975310564239,
+        "reward_total": -3606.116928665633
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 364.3665913475066,
+        "support": 11.68116535313659,
+        "safety": -320.0,
+        "geometry": -4321.933200800631,
+        "auxiliary_shaping": 51.07098437792654,
+        "terminal": 608.6975310564239
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101140,
+      "action_seed": 2126201140,
+      "mode": "argmax",
+      "length": 655,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2110.1441765047357,
+      "episode_reward_sum": -8440.576706018943,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 155,
+      "capture_time_seconds": 77.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 498.36889495036746,
+        "reward_coverage": -3747.8014887414924,
+        "reward_safety": -5810.0,
+        "reward_terminal": 618.8558877721575,
+        "reward_total": -8440.576706018952
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 494.0464223112998,
+        "support": 0.4688543876544612,
+        "safety": -5810.0,
+        "geometry": -3789.3051727336147,
+        "auxiliary_shaping": 45.35730224360372,
+        "terminal": 618.8558877721575
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101141,
+      "action_seed": 2126201141,
+      "mode": "argmax",
+      "length": 78,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -68.48962185357692,
+      "episode_reward_sum": -273.9584874143077,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 324.5549827920603,
+        "reward_coverage": -38.51347020636798,
+        "reward_safety": -560.0,
+        "reward_terminal": 0.0,
+        "reward_total": -273.9584874143078
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 300.01668297677224,
+        "support": -12.067913765219435,
+        "safety": -560.0,
+        "geometry": -1.7637929139258777,
+        "auxiliary_shaping": -0.1434637119347244,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101142,
+      "action_seed": 2126201142,
+      "mode": "argmax",
+      "length": 1228,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -738.9526768696638,
+      "episode_reward_sum": -2955.8107074786553,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 728,
+      "capture_time_seconds": 364.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 2079.93136733807,
+        "reward_coverage": -3429.8334468284997,
+        "reward_safety": -2030.0,
+        "reward_terminal": 424.09137201172393,
+        "reward_total": -2955.810707478692
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 2050.4821222701266,
+        "support": 26.14772217178457,
+        "safety": -2030.0,
+        "geometry": -3468.429269106164,
+        "auxiliary_shaping": 41.89734517383781,
+        "terminal": 424.09137201172393
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101143,
+      "action_seed": 2126201143,
+      "mode": "argmax",
+      "length": 582,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2332.6442730251424,
+      "episode_reward_sum": -9330.57709210057,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 82,
+      "capture_time_seconds": 41.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 543.565297243825,
+        "reward_coverage": -4999.234257848998,
+        "reward_safety": -5240.0,
+        "reward_terminal": 365.0918685045756,
+        "reward_total": -9330.577092100555
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 536.7948304332444,
+        "support": 1.279346381591014,
+        "safety": -5240.0,
+        "geometry": -5053.109261801103,
+        "auxiliary_shaping": 59.36612438115951,
+        "terminal": 365.0918685045756
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101144,
+      "action_seed": 2126201144,
+      "mode": "argmax",
+      "length": 549,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -568.4296326242572,
+      "episode_reward_sum": -2273.718530497029,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 49,
+      "capture_time_seconds": 24.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 310.1322289068919,
+        "reward_coverage": -2806.9415814977606,
+        "reward_safety": -170.0,
+        "reward_terminal": 393.09082209379545,
+        "reward_total": -2273.718530497034
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 303.2536701050334,
+        "support": 3.99752603940587,
+        "safety": -170.0,
+        "geometry": -2836.801120312614,
+        "auxiliary_shaping": 32.74057157734327,
+        "terminal": 393.09082209379545
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101145,
+      "action_seed": 2126201145,
+      "mode": "argmax",
+      "length": 559,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2775.8927755531736,
+      "episode_reward_sum": -11103.571102212694,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 59,
+      "capture_time_seconds": 29.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 274.5930131264654,
+        "reward_coverage": -2149.33663046464,
+        "reward_safety": -9920.0,
+        "reward_terminal": 691.1725151254462,
+        "reward_total": -11103.571102212654
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 258.4283108322384,
+        "support": 0.407946915383558,
+        "safety": -9920.0,
+        "geometry": -2158.75314134052,
+        "auxiliary_shaping": 25.173266254704874,
+        "terminal": 691.1725151254462
+      },
+      "reward_decomposition_residual_max": 6.938893903907228e-18
+    },
+    {
+      "seed": 2126101146,
+      "action_seed": 2126201146,
+      "mode": "argmax",
+      "length": 591,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -662.0720535728238,
+      "episode_reward_sum": -2648.2882142912954,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 91,
+      "capture_time_seconds": 45.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 434.39990168940875,
+        "reward_coverage": -3240.87091165891,
+        "reward_safety": -350.0,
+        "reward_terminal": 508.1827956782345,
+        "reward_total": -2648.288214291296
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 397.5779040545603,
+        "support": 27.186040056978687,
+        "safety": -350.0,
+        "geometry": -3268.2040720448704,
+        "auxiliary_shaping": 36.96911796385387,
+        "terminal": 508.1827956782345
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101147,
+      "action_seed": 2126201147,
+      "mode": "argmax",
+      "length": 542,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -514.1351577585815,
+      "episode_reward_sum": -2056.540631034326,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 42,
+      "capture_time_seconds": 21.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 215.59253908388484,
+        "reward_coverage": -2795.97742265279,
+        "reward_safety": 0.0,
+        "reward_terminal": 523.8442525346609,
+        "reward_total": -2056.540631034298
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 215.59253908388484,
+        "support": 0.0,
+        "safety": 0.0,
+        "geometry": -2830.62093281365,
+        "auxiliary_shaping": 34.64351016078575,
+        "terminal": 523.8442525346609
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101148,
+      "action_seed": 2126201148,
+      "mode": "argmax",
+      "length": 543,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -401.32495717730063,
+      "episode_reward_sum": -1605.2998287092025,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 43,
+      "capture_time_seconds": 21.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 231.0268024940411,
+        "reward_coverage": -2468.9646963845894,
+        "reward_safety": -30.0,
+        "reward_terminal": 662.6380651813889,
+        "reward_total": -1605.2998287092057
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 226.88846712892777,
+        "support": -0.4378343396142302,
+        "safety": -30.0,
+        "geometry": -2494.409226982871,
+        "auxiliary_shaping": 30.020700302960893,
+        "terminal": 662.6380651813889
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101149,
+      "action_seed": 2126201149,
+      "mode": "argmax",
+      "length": 623,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -858.4129742763924,
+      "episode_reward_sum": -3433.65189710557,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 123,
+      "capture_time_seconds": 61.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 530.8703974754787,
+        "reward_coverage": -3188.204986397567,
+        "reward_safety": -1330.0,
+        "reward_terminal": 553.6826918165333,
+        "reward_total": -3433.651897105543
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 475.9832117535501,
+        "support": 42.90098386834058,
+        "safety": -1330.0,
+        "geometry": -3215.891145485821,
+        "auxiliary_shaping": 39.672360941751016,
+        "terminal": 553.6826918165333
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101100,
+      "action_seed": 2126201100,
+      "mode": "sample",
+      "length": 422,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": true,
+      "episode_reward_mean": -286.43918751198703,
+      "episode_reward_sum": -1145.7567500479481,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 413,
+      "capture_time_seconds": 206.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1514.6913044477692,
+        "reward_coverage": -75.47608140263253,
+        "reward_safety": -2910.0,
+        "reward_terminal": 325.0280269069141,
+        "reward_total": -1145.7567500479513
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1501.7746138991984,
+        "support": 7.206245031513876,
+        "safety": -2910.0,
+        "geometry": -72.51826231511814,
+        "auxiliary_shaping": 2.7526264295425853,
+        "terminal": 325.0280269069141
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101101,
+      "action_seed": 2126201101,
+      "mode": "sample",
+      "length": 295,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 9.923338822717113,
+      "episode_reward_sum": 39.69335529086845,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 1085.021706005738,
+        "reward_coverage": -5.328350714870383,
+        "reward_safety": -1040.0,
+        "reward_terminal": 0.0,
+        "reward_total": 39.69335529086854
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1082.471190002263,
+        "support": -2.56341155798335,
+        "safety": -1040.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.21442315341186016,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101102,
+      "action_seed": 2126201102,
+      "mode": "sample",
+      "length": 775,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -433.30910188795076,
+      "episode_reward_sum": -1733.236407551803,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 275,
+      "capture_time_seconds": 137.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1011.873665794933,
+        "reward_coverage": -2366.2223561253672,
+        "reward_safety": -770.0,
+        "reward_terminal": 391.1122827786335,
+        "reward_total": -1733.2364075518
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 995.1915808375147,
+        "support": -1.2087149935031747,
+        "safety": -770.0,
+        "geometry": -2378.694657027919,
+        "auxiliary_shaping": 30.363100853476922,
+        "terminal": 391.1122827786335
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101103,
+      "action_seed": 2126201103,
+      "mode": "sample",
+      "length": 576,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -584.8592571537953,
+      "episode_reward_sum": -2339.437028615181,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 76,
+      "capture_time_seconds": 38.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 297.385943420362,
+        "reward_coverage": -3132.085183442329,
+        "reward_safety": -180.0,
+        "reward_terminal": 675.2622114067811,
+        "reward_total": -2339.4370286151848
+      },
+      "reward_component_residual_max": 2.842170943040401e-14,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 284.4324182569499,
+        "support": 7.842226604747729,
+        "safety": -180.0,
+        "geometry": -3163.8053667827803,
+        "auxiliary_shaping": 36.831481899108546,
+        "terminal": 675.2622114067811
+      },
+      "reward_decomposition_residual_max": 2.842170943040401e-14
+    },
+    {
+      "seed": 2126101104,
+      "action_seed": 2126201104,
+      "mode": "sample",
+      "length": 656,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -480.13850063548375,
+      "episode_reward_sum": -1920.554002541935,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 156,
+      "capture_time_seconds": 78.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 489.50742812117545,
+        "reward_coverage": -2848.0604482383837,
+        "reward_safety": -70.0,
+        "reward_terminal": 507.9990175752763,
+        "reward_total": -1920.5540025419357
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 463.2340427314886,
+        "support": 16.094730528039882,
+        "safety": -70.0,
+        "geometry": -2872.929116160484,
+        "auxiliary_shaping": 35.04732278374104,
+        "terminal": 507.9990175752763
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101105,
+      "action_seed": 2126201105,
+      "mode": "sample",
+      "length": 599,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -832.7566188598018,
+      "episode_reward_sum": -3331.0264754392074,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 99,
+      "capture_time_seconds": 49.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 457.18222364794633,
+        "reward_coverage": -2222.0685461017288,
+        "reward_safety": -2160.0,
+        "reward_terminal": 593.8598470145677,
+        "reward_total": -3331.0264754392106
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 448.8440707664083,
+        "support": 0.7753580579536825,
+        "safety": -2160.0,
+        "geometry": -2242.4248717015344,
+        "auxiliary_shaping": 27.919120423402234,
+        "terminal": 593.8598470145677
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101106,
+      "action_seed": 2126201106,
+      "mode": "sample",
+      "length": 316,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -343.94712890535095,
+      "episode_reward_sum": -1375.7885156214038,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 1076.8040055211757,
+        "reward_coverage": -52.5925211425784,
+        "reward_safety": -2400.0,
+        "reward_terminal": 0.0,
+        "reward_total": -1375.7885156214045
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1047.550676540627,
+        "support": -13.866179141727219,
+        "safety": -2400.0,
+        "geometry": -8.581249883503553,
+        "auxiliary_shaping": -0.8917631367988864,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101107,
+      "action_seed": 2126201107,
+      "mode": "sample",
+      "length": 46,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -17.723419074655347,
+      "episode_reward_sum": -70.89367629862139,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 124.52924989523308,
+        "reward_coverage": -5.422926193854487,
+        "reward_safety": -190.0,
+        "reward_terminal": 0.0,
+        "reward_total": -70.89367629862134
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 117.38029172095189,
+        "support": 1.5156208310661863,
+        "safety": -190.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.21041114936051938,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101108,
+      "action_seed": 2126201108,
+      "mode": "sample",
+      "length": 116,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -102.62135717540056,
+      "episode_reward_sum": -410.48542870160225,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 574.4777080749312,
+        "reward_coverage": -4.963136776533668,
+        "reward_safety": -980.0,
+        "reward_terminal": 0.0,
+        "reward_total": -410.48542870160213
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 553.6195787002774,
+        "support": 15.848462579695681,
+        "safety": -980.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.04653001842428503,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101109,
+      "action_seed": 2126201109,
+      "mode": "sample",
+      "length": 328,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -685.2952430305124,
+      "episode_reward_sum": -2741.1809721220498,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 168,
+      "capture_time_seconds": 84.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 686.1076889191921,
+        "reward_coverage": -1581.4968208238645,
+        "reward_safety": -2350.0,
+        "reward_terminal": 504.2081597826227,
+        "reward_total": -2741.1809721220507
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 677.6694802777041,
+        "support": 8.156333987698197,
+        "safety": -2350.0,
+        "geometry": -1606.934938973902,
+        "auxiliary_shaping": 25.71999280382739,
+        "terminal": 504.2081597826227
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101110,
+      "action_seed": 2126201110,
+      "mode": "sample",
+      "length": 584,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -526.8807768346467,
+      "episode_reward_sum": -2107.5231073385867,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 84,
+      "capture_time_seconds": 42.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 329.9300692285586,
+        "reward_coverage": -2720.6741932162645,
+        "reward_safety": -170.0,
+        "reward_terminal": 453.22101664911986,
+        "reward_total": -2107.523107338586
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 325.1231851389928,
+        "support": -3.910297231123698,
+        "safety": -170.0,
+        "geometry": -2748.966492722608,
+        "auxiliary_shaping": 37.00948082702859,
+        "terminal": 453.22101664911986
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101111,
+      "action_seed": 2126201111,
+      "mode": "sample",
+      "length": 214,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -667.4346566452691,
+      "episode_reward_sum": -2669.7386265810765,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 100,
+      "capture_time_seconds": 50.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 389.19314551268366,
+        "reward_coverage": -1262.300606888422,
+        "reward_safety": -2470.0,
+        "reward_terminal": 673.3688347946625,
+        "reward_total": -2669.7386265810796
+      },
+      "reward_component_residual_max": 1.7763568394002505e-15,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 366.049837338092,
+        "support": 6.447148907413801,
+        "safety": -2470.0,
+        "geometry": -1267.8567733556124,
+        "auxiliary_shaping": 22.25232573436802,
+        "terminal": 673.3688347946625
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101112,
+      "action_seed": 2126201112,
+      "mode": "sample",
+      "length": 275,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -376.4058937336517,
+      "episode_reward_sum": -1505.6235749346067,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 896.6058568477292,
+        "reward_coverage": -2.229431782335791,
+        "reward_safety": -2400.0,
+        "reward_terminal": 0.0,
+        "reward_total": -1505.6235749346072
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 894.5928683314453,
+        "support": -0.2304979968506533,
+        "safety": -2400.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.014054730798976345,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101113,
+      "action_seed": 2126201113,
+      "mode": "sample",
+      "length": 562,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -146.88084590734698,
+      "episode_reward_sum": -587.5233836293879,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 62,
+      "capture_time_seconds": 31.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 205.02578185077502,
+        "reward_coverage": -1375.6513607708775,
+        "reward_safety": 0.0,
+        "reward_terminal": 583.1021952907134,
+        "reward_total": -587.5233836293884
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 202.77372518837822,
+        "support": -2.793321619015285,
+        "safety": 0.0,
+        "geometry": -1388.1958321598183,
+        "auxiliary_shaping": 17.58984967035325,
+        "terminal": 583.1021952907134
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101114,
+      "action_seed": 2126201114,
+      "mode": "sample",
+      "length": 220,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -331.35067802796067,
+      "episode_reward_sum": -1325.4027121118427,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 762.4620107514808,
+        "reward_coverage": -47.86472286332267,
+        "reward_safety": -2040.0,
+        "reward_terminal": 0.0,
+        "reward_total": -1325.4027121118422
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 739.6371886272622,
+        "support": -3.3486367853674803,
+        "safety": -2040.0,
+        "geometry": -20.821889464631607,
+        "auxiliary_shaping": -0.8693744891051174,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101115,
+      "action_seed": 2126201115,
+      "mode": "sample",
+      "length": 689,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -607.4268833023193,
+      "episode_reward_sum": -2429.7075332092772,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 189,
+      "capture_time_seconds": 94.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 733.7006357791215,
+        "reward_coverage": -2652.9915261853425,
+        "reward_safety": -950.0,
+        "reward_terminal": 439.5833571969447,
+        "reward_total": -2429.7075332092795
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 714.302893310278,
+        "support": 11.640089971842198,
+        "safety": -950.0,
+        "geometry": -2679.7396030445357,
+        "auxiliary_shaping": 34.505729356193115,
+        "terminal": 439.5833571969447
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101116,
+      "action_seed": 2126201116,
+      "mode": "sample",
+      "length": 180,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -212.48920346946505,
+      "episode_reward_sum": -849.9568138778602,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 549.462928541858,
+        "reward_coverage": -19.419742419717718,
+        "reward_safety": -1380.0,
+        "reward_terminal": 0.0,
+        "reward_total": -849.95681387786
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 517.9657552203234,
+        "support": 12.666023224389912,
+        "safety": -1380.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.5885923225731332,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101117,
+      "action_seed": 2126201117,
+      "mode": "sample",
+      "length": 695,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -562.1106726369437,
+      "episode_reward_sum": -2248.442690547775,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 195,
+      "capture_time_seconds": 97.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 711.3194313440714,
+        "reward_coverage": -2194.734661716778,
+        "reward_safety": -1100.0,
+        "reward_terminal": 334.97253982492856,
+        "reward_total": -2248.4426905477767
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 710.1689900904104,
+        "support": 0.16807237957786944,
+        "safety": -1100.0,
+        "geometry": -2222.724012170691,
+        "auxiliary_shaping": 28.97171932800252,
+        "terminal": 334.97253982492856
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101118,
+      "action_seed": 2126201118,
+      "mode": "sample",
+      "length": 212,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -245.10660105622787,
+      "episode_reward_sum": -980.4264042249115,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 563.9784948889085,
+        "reward_coverage": -44.404899113820925,
+        "reward_safety": -1500.0,
+        "reward_terminal": 0.0,
+        "reward_total": -980.4264042249121
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 543.8206916520237,
+        "support": -24.260120293069228,
+        "safety": -1500.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.013024416133356101,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101119,
+      "action_seed": 2126201119,
+      "mode": "sample",
+      "length": 748,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -400.659972551186,
+      "episode_reward_sum": -1602.639890204744,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 248,
+      "capture_time_seconds": 124.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 929.8330989766166,
+        "reward_coverage": -2269.4266293254886,
+        "reward_safety": -720.0,
+        "reward_terminal": 456.9536401441327,
+        "reward_total": -1602.6398902047476
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 929.8330989766166,
+        "support": 0.0,
+        "safety": -720.0,
+        "geometry": -2297.7705514100676,
+        "auxiliary_shaping": 28.343922084577397,
+        "terminal": 456.9536401441327
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101120,
+      "action_seed": 2126201120,
+      "mode": "sample",
+      "length": 60,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -80.74878642126819,
+      "episode_reward_sum": -322.99514568507277,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 63.813334268339666,
+        "reward_coverage": -146.8084799534123,
+        "reward_safety": -240.0,
+        "reward_terminal": 0.0,
+        "reward_total": -322.9951456850727
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 52.70992800175878,
+        "support": 0.13360241586604818,
+        "safety": -240.0,
+        "geometry": -140.14932358808682,
+        "auxiliary_shaping": 4.310647485389367,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101121,
+      "action_seed": 2126201121,
+      "mode": "sample",
+      "length": 642,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -702.5756297945991,
+      "episode_reward_sum": -2810.3025191783963,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 142,
+      "capture_time_seconds": 71.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 569.9531267200899,
+        "reward_coverage": -3218.6475209566265,
+        "reward_safety": -610.0,
+        "reward_terminal": 448.39187505815084,
+        "reward_total": -2810.302519178389
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 542.2280197975123,
+        "support": 23.233013508313764,
+        "safety": -610.0,
+        "geometry": -3254.0192034409897,
+        "auxiliary_shaping": 39.86377589861298,
+        "terminal": 448.39187505815084
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101122,
+      "action_seed": 2126201122,
+      "mode": "sample",
+      "length": 45,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -21.059517549471014,
+      "episode_reward_sum": -84.23807019788406,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 136.12662088305416,
+        "reward_coverage": -10.364691080938202,
+        "reward_safety": -210.0,
+        "reward_terminal": 0.0,
+        "reward_total": -84.23807019788397
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 129.6385427474134,
+        "support": -4.143452963251536,
+        "safety": -210.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.26684001795410867,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101123,
+      "action_seed": 2126201123,
+      "mode": "sample",
+      "length": 149,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -199.80301813241965,
+      "episode_reward_sum": -799.2120725296786,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 501.90150755771845,
+        "reward_coverage": -31.113580087397327,
+        "reward_safety": -1270.0,
+        "reward_terminal": 0.0,
+        "reward_total": -799.2120725296788
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 497.2873195715789,
+        "support": -26.981157218888946,
+        "safety": -1270.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.48176511763124996,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101124,
+      "action_seed": 2126201124,
+      "mode": "sample",
+      "length": 479,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1504.582265257888,
+      "episode_reward_sum": -6018.329061031552,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 145,
+      "capture_time_seconds": 72.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 621.940951497539,
+        "reward_coverage": -3627.089243715654,
+        "reward_safety": -3470.0,
+        "reward_terminal": 456.81923118656965,
+        "reward_total": -6018.329061031554
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 604.6907397797917,
+        "support": -14.138751064960696,
+        "safety": -3470.0,
+        "geometry": -3639.4426673391245,
+        "auxiliary_shaping": 43.74238640617211,
+        "terminal": 456.81923118656965
+      },
+      "reward_decomposition_residual_max": 3.552713678800501e-15
+    },
+    {
+      "seed": 2126101125,
+      "action_seed": 2126201125,
+      "mode": "sample",
+      "length": 548,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -277.20483839808486,
+      "episode_reward_sum": -1108.8193535923394,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 48,
+      "capture_time_seconds": 24.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 184.59592122342866,
+        "reward_coverage": -1788.2249081788746,
+        "reward_safety": 0.0,
+        "reward_terminal": 494.80963336311237,
+        "reward_total": -1108.819353592338
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 181.24830795388004,
+        "support": -3.790040365305347,
+        "safety": 0.0,
+        "geometry": -1802.4191532665864,
+        "auxiliary_shaping": 21.33189872255928,
+        "terminal": 494.80963336311237
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101126,
+      "action_seed": 2126201126,
+      "mode": "sample",
+      "length": 1513,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -2199.7283205650297,
+      "episode_reward_sum": -8798.913282260119,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 1013,
+      "capture_time_seconds": 506.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 3311.195827641558,
+        "reward_coverage": -3212.4588810970454,
+        "reward_safety": -9330.0,
+        "reward_terminal": 432.34977119535995,
+        "reward_total": -8798.913282260126
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 3282.7831517564937,
+        "support": 14.823396999820494,
+        "safety": -9330.0,
+        "geometry": -3238.911899886867,
+        "auxiliary_shaping": 40.04229767506594,
+        "terminal": 432.34977119535995
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101127,
+      "action_seed": 2126201127,
+      "mode": "sample",
+      "length": 67,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": true,
+      "episode_reward_mean": 58.02064647786845,
+      "episode_reward_sum": 232.0825859114738,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 63,
+      "capture_time_seconds": 31.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 224.38220145781088,
+        "reward_coverage": -25.282970377859588,
+        "reward_safety": -580.0,
+        "reward_terminal": 612.9833548315227,
+        "reward_total": 232.0825859114738
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 203.83647980749964,
+        "support": 10.330566991949935,
+        "safety": -580.0,
+        "geometry": -17.919385097917957,
+        "auxiliary_shaping": 2.851569378419644,
+        "terminal": 612.9833548315227
+      },
+      "reward_decomposition_residual_max": 1.1102230246251565e-16
+    },
+    {
+      "seed": 2126101128,
+      "action_seed": 2126201128,
+      "mode": "sample",
+      "length": 375,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -88.06672081610876,
+      "episode_reward_sum": -352.266883264435,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 1355.5276831064682,
+        "reward_coverage": -17.79456637090419,
+        "reward_safety": -1690.0,
+        "reward_terminal": 0.0,
+        "reward_total": -352.2668832644346
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1316.4695848584063,
+        "support": 21.542086381313283,
+        "safety": -1690.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.2785545041546826,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101129,
+      "action_seed": 2126201129,
+      "mode": "sample",
+      "length": 751,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -619.4252205492041,
+      "episode_reward_sum": -2477.7008821968166,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 251,
+      "capture_time_seconds": 125.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 877.1452355198829,
+        "reward_coverage": -2436.528421710994,
+        "reward_safety": -1300.0,
+        "reward_terminal": 381.682303994294,
+        "reward_total": -2477.700882196817
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 859.0223588239879,
+        "support": 12.256014308454686,
+        "safety": -1300.0,
+        "geometry": -2462.652842573309,
+        "auxiliary_shaping": 31.991283249753245,
+        "terminal": 381.682303994294
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101130,
+      "action_seed": 2126201130,
+      "mode": "sample",
+      "length": 143,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -226.30758279542792,
+      "episode_reward_sum": -905.2303311817117,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 100,
+      "capture_time_seconds": 50.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 444.18620634080276,
+        "reward_coverage": -324.07737030551056,
+        "reward_safety": -1410.0,
+        "reward_terminal": 384.6608327829963,
+        "reward_total": -905.2303311817119
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 432.1052818195566,
+        "support": 9.755562785216148,
+        "safety": -1410.0,
+        "geometry": -330.2096011419023,
+        "auxiliary_shaping": 8.457592572421703,
+        "terminal": 384.6608327829963
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101131,
+      "action_seed": 2126201131,
+      "mode": "sample",
+      "length": 571,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -837.2846524821739,
+      "episode_reward_sum": -3349.1386099286956,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 71,
+      "capture_time_seconds": 35.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 262.03848885748386,
+        "reward_coverage": -2402.1551781253893,
+        "reward_safety": -1650.0,
+        "reward_terminal": 440.9780793392057,
+        "reward_total": -3349.1386099287024
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 262.03848885748386,
+        "support": 0.0,
+        "safety": -1650.0,
+        "geometry": -2433.263037314773,
+        "auxiliary_shaping": 31.107859189387327,
+        "terminal": 440.9780793392057
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101132,
+      "action_seed": 2126201132,
+      "mode": "sample",
+      "length": 628,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -608.7106958503828,
+      "episode_reward_sum": -2434.842783401531,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 128,
+      "capture_time_seconds": 64.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 392.3842392179215,
+        "reward_coverage": -3086.5307958847466,
+        "reward_safety": -170.0,
+        "reward_terminal": 429.3037732652998,
+        "reward_total": -2434.842783401531
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 362.5601935072324,
+        "support": 10.14009302358921,
+        "safety": -170.0,
+        "geometry": -3105.58108613711,
+        "auxiliary_shaping": 38.73424293945095,
+        "terminal": 429.3037732652998
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101133,
+      "action_seed": 2126201133,
+      "mode": "sample",
+      "length": 659,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1382.5512403474336,
+      "episode_reward_sum": -5530.204961389734,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 159,
+      "capture_time_seconds": 79.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 549.8393878494422,
+        "reward_coverage": -3403.661700845269,
+        "reward_safety": -3070.0,
+        "reward_terminal": 393.6173516060902,
+        "reward_total": -5530.204961389728
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 525.137947840552,
+        "support": 7.0834912774063215,
+        "safety": -3070.0,
+        "geometry": -3427.8990321981573,
+        "auxiliary_shaping": 41.855280084374094,
+        "terminal": 393.6173516060902
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101134,
+      "action_seed": 2126201134,
+      "mode": "sample",
+      "length": 115,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 15.3838975341299,
+      "episode_reward_sum": 61.5355901365196,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 410.1574890220996,
+        "reward_coverage": -8.621898885580153,
+        "reward_safety": -340.0,
+        "reward_terminal": 0.0,
+        "reward_total": 61.53559013651951
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 407.76310147544945,
+        "support": -6.042788067172583,
+        "safety": -340.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.18472327175732906,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101135,
+      "action_seed": 2126201135,
+      "mode": "sample",
+      "length": 445,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -1361.5135017778287,
+      "episode_reward_sum": -5446.054007111315,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 265,
+      "capture_time_seconds": 132.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 892.9992138748842,
+        "reward_coverage": -2304.480429523268,
+        "reward_safety": -4450.0,
+        "reward_terminal": 415.42720853706714,
+        "reward_total": -5446.05400711133
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 861.3254627626311,
+        "support": -17.636971702940073,
+        "safety": -4450.0,
+        "geometry": -2295.111183792579,
+        "auxiliary_shaping": 39.941477084507646,
+        "terminal": 415.42720853706714
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101136,
+      "action_seed": 2126201136,
+      "mode": "sample",
+      "length": 465,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -775.600734176169,
+      "episode_reward_sum": -3102.402936704676,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 273,
+      "capture_time_seconds": 136.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 848.4251489031599,
+        "reward_coverage": -2049.1900688777537,
+        "reward_safety": -2290.0,
+        "reward_terminal": 388.36198326991405,
+        "reward_total": -3102.40293670468
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 811.8209050307423,
+        "support": 12.046388076971567,
+        "safety": -2290.0,
+        "geometry": -2061.1878477819882,
+        "auxiliary_shaping": 36.55563469968605,
+        "terminal": 388.36198326991405
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101137,
+      "action_seed": 2126201137,
+      "mode": "sample",
+      "length": 182,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 53.271699817554165,
+      "episode_reward_sum": 213.08679927021666,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 658.7107643318695,
+        "reward_coverage": -15.623965061653347,
+        "reward_safety": -430.0,
+        "reward_terminal": 0.0,
+        "reward_total": 213.0867992702164
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 652.2040921438027,
+        "support": -9.035911098932877,
+        "safety": -430.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.08138177465355952,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101138,
+      "action_seed": 2126201138,
+      "mode": "sample",
+      "length": 45,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -7.258950551844954,
+      "episode_reward_sum": -29.035802207379817,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 175.98704306349114,
+        "reward_coverage": -5.022845270871028,
+        "reward_safety": -200.0,
+        "reward_terminal": 0.0,
+        "reward_total": -29.035802207379913
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 169.02533234066456,
+        "support": 2.01870143442182,
+        "safety": -200.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.07983598246627077,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 2.7755575615628914e-17
+    },
+    {
+      "seed": 2126101139,
+      "action_seed": 2126201139,
+      "mode": "sample",
+      "length": 679,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -621.8335313598628,
+      "episode_reward_sum": -2487.3341254394513,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 179,
+      "capture_time_seconds": 89.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 660.0802530841809,
+        "reward_coverage": -3111.6335089331737,
+        "reward_safety": -390.0,
+        "reward_terminal": 354.21913040953433,
+        "reward_total": -2487.3341254394486
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 635.8940388492679,
+        "support": 10.156895836037743,
+        "safety": -390.0,
+        "geometry": -3137.213058474258,
+        "auxiliary_shaping": 39.608867939973244,
+        "terminal": 354.21913040953433
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101140,
+      "action_seed": 2126201140,
+      "mode": "sample",
+      "length": 406,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -822.1584571102757,
+      "episode_reward_sum": -3288.6338284411027,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 310,
+      "capture_time_seconds": 155.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 1020.8908031599191,
+        "reward_coverage": -852.9940242558304,
+        "reward_safety": -3790.0,
+        "reward_terminal": 333.4693926548093,
+        "reward_total": -3288.6338284411013
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 1016.1785619623291,
+        "support": -1.7464413551771178,
+        "safety": -3790.0,
+        "geometry": -864.4194200481888,
+        "auxiliary_shaping": 17.884078345124834,
+        "terminal": 333.4693926548093
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101141,
+      "action_seed": 2126201141,
+      "mode": "sample",
+      "length": 98,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -22.925929695481017,
+      "episode_reward_sum": -91.70371878192407,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 397.9966334330705,
+        "reward_coverage": -19.700352214994197,
+        "reward_safety": -470.0,
+        "reward_terminal": 0.0,
+        "reward_total": -91.7037187819241
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 374.0510109996056,
+        "support": 6.701955064304817,
+        "safety": -470.0,
+        "geometry": -2.004468340301384,
+        "auxiliary_shaping": -0.45221650553270215,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    },
+    {
+      "seed": 2126101142,
+      "action_seed": 2126201142,
+      "mode": "sample",
+      "length": 722,
+      "captured": true,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "boundary": 1
+      },
+      "boundary_collision_event": true,
+      "active_pursuers": 3,
+      "post_capture_episode": true,
+      "episode_reward_mean": -809.9055956192836,
+      "episode_reward_sum": -3239.6223824771346,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 582,
+      "capture_time_seconds": 291.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 2123.4793099380386,
+        "reward_coverage": -1521.8286645167198,
+        "reward_safety": -4340.0,
+        "reward_terminal": 498.7269721015516,
+        "reward_total": -3239.6223824771364
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 2094.244948824928,
+        "support": 25.25407530441443,
+        "safety": -4340.0,
+        "geometry": -1547.5415285824934,
+        "auxiliary_shaping": 29.69314987446712,
+        "terminal": 498.7269721015516
+      },
+      "reward_decomposition_residual_max": 8.881784197001252e-16
+    },
+    {
+      "seed": 2126101143,
+      "action_seed": 2126201143,
+      "mode": "sample",
+      "length": 776,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -907.2265596843168,
+      "episode_reward_sum": -3628.9062387372674,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 276,
+      "capture_time_seconds": 138.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 996.994925146471,
+        "reward_coverage": -3279.8403399039003,
+        "reward_safety": -1680.0,
+        "reward_terminal": 333.939176020152,
+        "reward_total": -3628.9062387372837
+      },
+      "reward_component_residual_max": 1.4210854715202004e-14,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 990.224906443918,
+        "support": -6.191955586797184,
+        "safety": -1680.0,
+        "geometry": -3308.1171626777964,
+        "auxiliary_shaping": 41.238797063252306,
+        "terminal": 333.939176020152
+      },
+      "reward_decomposition_residual_max": 1.4210854715202004e-14
+    },
+    {
+      "seed": 2126101144,
+      "action_seed": 2126201144,
+      "mode": "sample",
+      "length": 137,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "agent_agent": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 2,
+      "post_capture_episode": false,
+      "episode_reward_mean": -67.4474210182711,
+      "episode_reward_sum": -269.7896840730844,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 515.3215576372866,
+        "reward_coverage": -5.111241710370981,
+        "reward_safety": -780.0,
+        "reward_terminal": 0.0,
+        "reward_total": -269.7896840730842
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 508.70307991340394,
+        "support": 1.589577319440195,
+        "safety": -780.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": -0.08234130592824243,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 6.938893903907228e-18
+    },
+    {
+      "seed": 2126101145,
+      "action_seed": 2126201145,
+      "mode": "sample",
+      "length": 679,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -527.8784765590309,
+      "episode_reward_sum": -2111.5139062361236,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 179,
+      "capture_time_seconds": 89.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 602.4143633901608,
+        "reward_coverage": -2719.285058016349,
+        "reward_safety": -350.0,
+        "reward_terminal": 355.35678839006846,
+        "reward_total": -2111.5139062361227
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 584.2703421359427,
+        "support": -1.4655593444617694,
+        "safety": -350.0,
+        "geometry": -2733.904265492535,
+        "auxiliary_shaping": 34.228788074866145,
+        "terminal": 355.35678839006846
+      },
+      "reward_decomposition_residual_max": 4.440892098500626e-16
+    },
+    {
+      "seed": 2126101146,
+      "action_seed": 2126201146,
+      "mode": "sample",
+      "length": 100,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "evader_contact": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": 17.898472708406246,
+      "episode_reward_sum": 71.59389083362498,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 392.84182226271497,
+        "reward_coverage": -11.247931429090217,
+        "reward_safety": -310.0,
+        "reward_terminal": 0.0,
+        "reward_total": 71.59389083362478
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 356.2618272211586,
+        "support": 24.949502316468877,
+        "safety": -310.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.38256129599719285,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 0.0
+    },
+    {
+      "seed": 2126101147,
+      "action_seed": 2126201147,
+      "mode": "sample",
+      "length": 558,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -362.4567317933678,
+      "episode_reward_sum": -1449.8269271734712,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 58,
+      "capture_time_seconds": 29.0,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 227.07954089716702,
+        "reward_coverage": -2012.6412514695082,
+        "reward_safety": -100.0,
+        "reward_terminal": 435.7347833988758,
+        "reward_total": -1449.8269271734678
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 227.07954089716702,
+        "support": 0.0,
+        "safety": -100.0,
+        "geometry": -2038.6306596169807,
+        "auxiliary_shaping": 25.98940814747016,
+        "terminal": 435.7347833988758
+      },
+      "reward_decomposition_residual_max": 2.220446049250313e-16
+    },
+    {
+      "seed": 2126101148,
+      "action_seed": 2126201148,
+      "mode": "sample",
+      "length": 563,
+      "captured": true,
+      "fully_capture": true,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": true,
+      "collision_event": false,
+      "pursuer_collision_event": false,
+      "evader_collision_event": false,
+      "collision_type_counts": {},
+      "boundary_collision_event": false,
+      "active_pursuers": 4,
+      "post_capture_episode": true,
+      "episode_reward_mean": -348.14452771662536,
+      "episode_reward_sum": -1392.5781108665014,
+      "capture_completion": true,
+      "capture_events": 1,
+      "capture_time_decisions": 63,
+      "capture_time_seconds": 31.5,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "voradj completed"
+      ],
+      "failure_type": "none",
+      "reward_components": {
+        "reward_capture": 254.67685675564536,
+        "reward_coverage": -1892.5709041746845,
+        "reward_safety": -130.0,
+        "reward_terminal": 375.3159365525369,
+        "reward_total": -1392.5781108665014
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 250.0699884214185,
+        "support": -0.5352766627638634,
+        "safety": -130.0,
+        "geometry": -1910.576818097246,
+        "auxiliary_shaping": 23.148058919553055,
+        "terminal": 375.3159365525369
+      },
+      "reward_decomposition_residual_max": 1.7763568394002505e-15
+    },
+    {
+      "seed": 2126101149,
+      "action_seed": 2126201149,
+      "mode": "sample",
+      "length": 35,
+      "captured": false,
+      "fully_capture": false,
+      "episode_success": false,
+      "episode_success_mode": "capture_then_post_coverage",
+      "collision_free": false,
+      "collision_event": true,
+      "pursuer_collision_event": true,
+      "evader_collision_event": false,
+      "collision_type_counts": {
+        "obstacle": 1
+      },
+      "boundary_collision_event": false,
+      "active_pursuers": 3,
+      "post_capture_episode": false,
+      "episode_reward_mean": -31.552311348766857,
+      "episode_reward_sum": -126.20924539506743,
+      "capture_completion": false,
+      "capture_events": 0,
+      "capture_time_decisions": null,
+      "capture_time_seconds": null,
+      "decision_seconds": 0.5,
+      "task_end_states": [
+        "deactivated after collision",
+        "too few active pursuers"
+      ],
+      "failure_type": "deactivated after collision|too few active pursuers",
+      "reward_components": {
+        "reward_capture": 101.10557533148943,
+        "reward_coverage": -7.3148207265568415,
+        "reward_safety": -220.0,
+        "reward_terminal": 0.0,
+        "reward_total": -126.2092453950674
+      },
+      "reward_component_residual_max": 0.0,
+      "terminated": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "truncated": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reward_decomposition": {
+        "capture": 69.76238047270694,
+        "support": 23.86033644099777,
+        "safety": -220.0,
+        "geometry": 0.0,
+        "auxiliary_shaping": 0.16803769122783987,
+        "terminal": 0.0
+      },
+      "reward_decomposition_residual_max": 5.551115123125783e-17
+    }
+  ],
+  "duration_seconds": 1306.1916214109951
+}
