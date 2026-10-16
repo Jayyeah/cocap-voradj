@@ -32,3 +32,11 @@ worktree=/home/yjq/rl/CoCap1/iqn-z-guided-support-20261016；独立runtime同名
 ## 工程修正记录
 
 首轮历史模块加载缺少包名、初版日志不能直接JSON序列化NumPy数组、tiny单任务smoke误用mixed-only recovery字段，均在训练启动前修复。保留的initial_boundary_expectation_failed回执来自零CE权重却要求reset的测试预期；最终unit_tests.xml为64/64通过。未更改Z05科学合同来迁就测试。
+
+## Live 启动与有效学习速度
+
+源码启动commit=5b885c7718071a355fd9916e4d6bfabfeecab674；train seed=2026101601。Control PID3330786 / GPU0，Treatment PID3330787 / GPU1，起始两臂初始化权重hash一致，fresh optimizer/replay/recovery pool和Z全部通过。初始约42 env steps/s/arm（尚未开始反向更新，不能用其估算完整训练速度）。
+
+截至5,000步两臂updates=0；4,000步 replay pursuing=2370、pre_capture_cover=402、post_capture_real=5760、recovery_pure=7468，原最小样本阈值3000使稀少类别成为等待项。25k若仍无更新，matched评价主要是能力保持/评价链路证据，不能声称新奖励已经适应；100k后若学习量不足才单独记录扩至200k理由，不能改原采样合同加速。
+
+50episode训练后matched捕获/碰撞结果：**PENDING**。当前训练episode的比例是带探索的相关样本，不升级为正式评价。完整课程建议仍为等待；scratch/Stage2/Stage3均未启动。NEXT WAKE-UP=2026-10-16 22:15+08或首个checkpoint/错误事件，以实时状态为准。

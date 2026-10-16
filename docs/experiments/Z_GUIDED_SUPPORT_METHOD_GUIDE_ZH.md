@@ -32,6 +32,8 @@ flowchart LR
   A --> R[alpha ally + 1-alpha CE]
 ```
 
+![最大 Z、自身优先和最近友机选择示例](../../artifacts/2026-10-16_z_guided_support/greedy_selection_examples.png)
+
 ## 奖励公式与实现时间线
 
 令 `C_i={i} ∪ N_i^obs`，`zmax=max(z_j)`，Z 容差 epsilon=1e-6。
@@ -80,6 +82,8 @@ T2 先将冻结的历史 Stage1 selected policy 固化成15条轨迹（capture/m
 
 这些轨迹中的接敌、ring、碰撞等物理结果在两臂完全相同；reward 均值提高和进展相关系数均不能证明围捕效率提高。
 
+![同一固定动作轨迹上的离线奖励诊断](../../artifacts/2026-10-16_z_guided_support/offline_reward_diagnostics.png)
+
 ## Paired warm-start pilot 合同与 Gate
 
 共同起点是 Z05 Stage1 正式 selected `step_1300000.pt`，SHA256 `d35b7984d8ca03fa7b536811794578ff402e9b8ad48589e3318f2cb1077d702b`。Control/Treatment 均 fresh optimizer、fresh replay、fresh recovery pool/RNG/env/Z，只传同一 policy 权重；这是 warm-start，不是完整 state resume。训练 seed=2026101601，4P1E1O 和原 mixed/coverage 交替、网络、AW9、IQN、replay合同保留。
@@ -110,3 +114,9 @@ T2 先将冻结的历史 Stage1 selected policy 固化成15条轨迹（capture/m
 - `tools/z_guided_support_20261016.py`：固定重放、PBRS审计、有限训练/配对Gate、评价、导出。
 - `artifacts/2026-10-16_z_guided_support/`：测试、T2 CSV/JSON、registry、曲线和轻量状态；大型轨迹/checkpoint 保留服务器 runtime。
 - `docs/experiments/z_guided_support_20261016/`：源码审计、完整 patch、代码摘录、测试输入/预期/实际及 paired pilot 回执。
+
+## 2026-10-16 运行快照
+
+源码启动提交 `5b885c7718071a355fd9916e4d6bfabfeecab674`。Control PID3330786 / GPU0，Treatment PID3330787 / GPU1；已启动25k→50k→100k有界执行，当前还没有完成的训练后50episode配对评价。实时回执见 `runtime_snapshot.json` 与服务器各臂 `heartbeat.json`。
+
+截至两臂各5,000步，optimizer updates仍为0。原semantic replay要求相关类别至少3,000条，4,000步时pre_capture_cover仅402条，故早期窗口可能主要是replay填充；这不是学习失败，也不能算适应性成功。本轮保留该合同；如100k有效更新仍不足，应依据实际更新数和完成的matched评价另行记录是否扩至200k，不自动扩展。
