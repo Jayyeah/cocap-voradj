@@ -40,3 +40,5 @@ worktree=/home/yjq/rl/CoCap1/iqn-z-guided-support-20261016；独立runtime同名
 截至5,000步两臂updates=0；4,000步 replay pursuing=2370、pre_capture_cover=402、post_capture_real=5760、recovery_pure=7468，原最小样本阈值3000使稀少类别成为等待项。25k若仍无更新，matched评价主要是能力保持/评价链路证据，不能声称新奖励已经适应；100k后若学习量不足才单独记录扩至200k理由，不能改原采样合同加速。
 
 50episode训练后matched捕获/碰撞结果：**PENDING**。当前训练episode的比例是带探索的相关样本，不升级为正式评价。完整课程建议仍为等待；scratch/Stage2/Stage3均未启动。NEXT WAKE-UP=2026-10-16 22:15+08或首个checkpoint/错误事件，以实时状态为准。
+
+交付时最新持久化状态：两臂均已采集 13000 env steps，optimizer updates均0；最新rare-class数量、PID、checkpoints与预计25k到达时间见 runtime_snapshot.json。当前没有trained checkpoint或completed paired Gate；init.pt是共同初始权重副本。GitHub状态=LOCAL_ONLY_PENDING_AUTHORIZATION。

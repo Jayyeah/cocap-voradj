@@ -42,3 +42,7 @@ for ax,(friends,zself,chosen,title) in zip(axes,cases):
  else:ax.text(.55,.32,'alpha=0',color='#c84c38')
  ax.set(xlim=(-.2,1.35),ylim=(-.3,.85),aspect='equal',title=title);ax.axis('off')
 for ext in ('png','svg'):fig.savefig(ART/f'greedy_selection_examples.{ext}',dpi=160)
+
+# Normalize generated SVG path-line whitespace for a clean review diff.
+for output in ART.glob("*.svg"):
+    output.write_text("\n".join(line.rstrip() for line in output.read_text().splitlines())+"\n")
