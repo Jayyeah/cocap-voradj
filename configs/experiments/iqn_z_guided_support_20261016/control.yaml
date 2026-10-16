@@ -1,0 +1,16 @@
+extends: ../iqn_z_unified_decay_curriculum_20260919/z05_stage1_4p1e1obs_2m.yaml
+seed: 2026101601
+total_timesteps: 100000
+run_name: control
+# Matched continuation contract: existing Z05 stage2 warm-start LR/epsilon.
+iqn:
+  learning_rate: 0.00003
+  learning_rate_schedule:
+    - step: 0
+      learning_rate: 0.00003
+  epsilon_start: 0.28
+  epsilon_final: 0.05
+  epsilon_decay_steps: 200000
+  checkpoint_freq: 25000
+voradj:
+  z_guided_support_enabled: false

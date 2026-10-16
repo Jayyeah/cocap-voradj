@@ -11,6 +11,7 @@ from cocap_voradj.envs.coverage_ce import (
 )
 
 from cocap_voradj.envs.base import CoCapEnv, StepResult, TWO_PI
+from cocap_voradj.envs.z_guided_support import ally_progress, select_support_target
 
 
 SiteKey = Tuple[str, int]
@@ -88,6 +89,15 @@ class VorAdjEnv(CoCapEnv):
         self._z_lineage_hops = np.full(len(self.pursuers), -1, dtype=np.int16)
         self._z_source_age_steps = np.full(len(self.pursuers), -1, dtype=np.int32)
         self._z_last_neighbors: List[List[int]] = [[] for _ in self.pursuers]
+        self._support_policy_snapshots: Dict[int, Dict[str, Any]] = {}
+        self._last_z_support_target: Dict[int, int] = {}
+        self._z_guided_support_enabled = bool(voradj_cfg.get("z_guided_support_enabled", False))
+        if self._z_guided_support_enabled and (
+            not self._z_state_enabled
+            or self.per_cfg.get("friend_ordering_mode", "physical_only") != "physical_only"
+            or str(self.per_cfg.get("observation_frame", "robot")) != "robot"
+        ):
+            raise ValueError("Z-guided support requires Z tokens, physical_only ordering and robot frame")
         self._voronoi_cache_version = 0
         self._voronoi_cache_version_tag = -1
         self._voronoi_cache: Dict[str, Dict[str, Any]] = {}
@@ -102,6 +112,8 @@ class VorAdjEnv(CoCapEnv):
         self._validate_pure_capture_all_capture_contract()
 
     def reset(self, *args, **kwargs):
+        self._support_policy_snapshots = {}
+        self._last_z_support_target = {}
         self.coverage_hold_reward_claim_steps = 0
         self.coverage_hold_reward_steps_by_phase = {
             "pre_capture": 0,
@@ -1541,6 +1553,13 @@ class VorAdjEnv(CoCapEnv):
         masks += [True] * min(len(obstacle_feats), max_o) + [False] * max(0, max_o - len(obstacle_feats))
         types = [0] + [1] * max_p + [2] * max_e + [3] * max_o
         friend_dim = 6 + int(include_is_pursuing) + int(include_z_state)
+        if include_z_state and not include_is_pursuing:
+            # Internal mapping only: do not add IDs or change policy tensors.
+            self._support_policy_snapshots[idx] = {
+                "friend_ids": tuple(int(j) for j in friend_ids[:max_p]),
+                "tokens": np.asarray(pursuer_feats, dtype=np.float32).reshape(-1, friend_dim).copy(),
+                "self_z": float(np.float32(self_feat[-1])),
+            }
         return {
             "self": np.asarray(self_feat, dtype=np.float32),
             "pursuers": self._pad(pursuer_feats, max_p, len(pursuer_feats[0]) if pursuer_feats else friend_dim),
@@ -2126,6 +2145,7 @@ class VorAdjEnv(CoCapEnv):
         before_e = np.asarray([self._position(e) for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2))
         before_evader_velocities = np.asarray([np.asarray(e.velocity, dtype=float).copy() for e in self.evaders], dtype=float) if self.evaders else np.zeros((0, 2))
         before_settle_participant_ids = [i for i, p in enumerate(self.pursuers) if not p.deactivated]
+        before_active_pursuer_ids = set(before_settle_participant_ids)
         before_settle_speeds = {i: float(self.pursuers[i].speed) for i in before_settle_participant_ids}
         before_settle_phase_eligible = bool(not self.evaders or all(e.deactivated for e in self.evaders))
         before_data = self._capture_voronoi_map(before_p, before_e)
@@ -2138,6 +2158,20 @@ class VorAdjEnv(CoCapEnv):
         before_z_source = list(self._z_last_source)
         before_z_hops = self._z_lineage_hops.copy()
         before_z_age = self._z_source_age_steps.copy()
+        z_support_selections = []
+        for i, p in enumerate(self.pursuers):
+            if p.deactivated or not self._z_state_enabled:
+                z_support_selections.append(None)
+                continue
+            snapshot = self._support_policy_snapshots.get(i)
+            if snapshot is None:
+                raise RuntimeError("missing pre-action policy friend mapping")
+            selection = select_support_target(i, snapshot["self_z"], snapshot["friend_ids"], snapshot["tokens"])
+            # Inactive/non-finite entities must never silently become anchors.
+            chosen = selection["target_id"]
+            if self._z_guided_support_enabled and (self.pursuers[chosen].deactivated or not np.all(np.isfinite(before_p[chosen]))):
+                raise ValueError("invalid pre-action support anchor")
+            z_support_selections.append(selection)
         before_cov = self._voradj_coverage_potentials(
             before_p,
             before_e,
@@ -2190,6 +2224,11 @@ class VorAdjEnv(CoCapEnv):
         reward_support_blend_capture_component = np.zeros(len(self.pursuers), dtype=float)
         reward_support_blend_coverage_component = np.zeros(len(self.pursuers), dtype=float)
         support_reward_blend_flags = np.zeros(len(self.pursuers), dtype=bool)
+        support_capture_scales = np.zeros(len(self.pursuers), dtype=float)
+        support_coverage_scales = np.zeros(len(self.pursuers), dtype=float)
+        z_support_ally_rewards = np.zeros(len(self.pursuers), dtype=float)
+        z_support_progress = np.zeros(len(self.pursuers), dtype=float)
+        z_support_switched = np.zeros(len(self.pursuers), dtype=bool)
         ce_reward_applied = np.zeros(len(self.pursuers), dtype=bool)
         ce_reward_scales = np.zeros(len(self.pursuers), dtype=float)
         ce_pbrs_reset_reasons = ["none"] * len(self.pursuers)
@@ -2562,17 +2601,38 @@ class VorAdjEnv(CoCapEnv):
                 rewards[i] += task_reward
                 reward_capture_component[i] += task_reward
             elif support_reward_blend_active(i):
-                capture_reward = support_capture_task_reward(i, capture_reward_candidates(i, support_mode=True))
+                capture_weight, coverage_weight = support_capture_weight, support_coverage_weight
+                if self._z_guided_support_enabled:
+                    selection = z_support_selections[i]
+                    target_id = selection["target_id"]
+                    capture_weight = selection["alpha"]
+                    coverage_weight = 1.0 - capture_weight
+                    capture_reward = 0.0
+                    if target_id != i:
+                        support_cfg = self.config.get("voradj", {}) or {}
+                        capture_reward, z_support_progress[i] = ally_progress(
+                            before_p[i], after_p[i], before_p[target_id],
+                            weight=float(support_cfg.get("support_reward_approach_weight", 1.0)),
+                            clip=float(support_cfg.get("support_reward_approach_clip", self.reward_cfg.get("c_d", 3.0))),
+                        )
+                    z_support_ally_rewards[i] = capture_reward
+                    previous_target = self._last_z_support_target.get(i)
+                    z_support_switched[i] = previous_target is not None and previous_target != target_id
+                    self._last_z_support_target[i] = target_id
+                else:
+                    capture_reward = support_capture_task_reward(i, capture_reward_candidates(i, support_mode=True))
                 coverage_reward, ce_terms = coverage_task_reward(i)
-                blended_capture = self._capture_scale() * support_capture_weight * capture_reward
-                blended_coverage = support_coverage_weight * coverage_reward
+                blended_capture = self._capture_scale() * capture_weight * capture_reward
+                blended_coverage = coverage_weight * coverage_reward
                 rewards[i] += blended_capture + blended_coverage
                 reward_capture_component[i] += blended_capture
                 reward_coverage_component[i] += blended_coverage
                 reward_support_blend_capture_component[i] += blended_capture
                 reward_support_blend_coverage_component[i] += blended_coverage
                 support_reward_blend_flags[i] = True
-                add_coverage_ce_terms(i, ce_terms, scale=support_coverage_weight)
+                support_capture_scales[i] = capture_weight
+                support_coverage_scales[i] = coverage_weight
+                add_coverage_ce_terms(i, ce_terms, scale=coverage_weight)
             else:
                 task_reward, ce_terms = coverage_task_reward(i)
                 rewards[i] += task_reward
@@ -3043,6 +3103,7 @@ class VorAdjEnv(CoCapEnv):
                 "reward_ce_control": float(reward_ce_control_component[i]),
                 "reward_ce_pbrs": float(reward_ce_pbrs_component[i]),
                 "reward_ce_terminal_correction": float(reward_ce_terminal_correction_component[i]),
+                "coverage_ce_applied_weight": float(ce_reward_scales[i]),
                 "reward_support_blend_capture": float(reward_support_blend_capture_component[i]),
                 "reward_support_blend_coverage": float(reward_support_blend_coverage_component[i]),
                 "coverage_ce_pbrs_reset_reason": ce_pbrs_reset_reasons[i],
@@ -3079,11 +3140,31 @@ class VorAdjEnv(CoCapEnv):
                 "support_candidate": bool(reward_roles[i] == "support"),
                 "support_pursuing_friend_count": int(len(self._support_pursuing_friend_ids(i, reward_role_labels, before_data))),
                 "support_reward_blend_active": bool(support_reward_blend_flags[i]),
-                "support_reward_capture_weight": float(support_capture_weight if support_reward_blend_flags[i] else 0.0),
-                "support_reward_coverage_weight": float(support_coverage_weight if support_reward_blend_flags[i] else 0.0),
+                "support_reward_capture_weight": float(support_capture_scales[i]),
+                "support_reward_coverage_weight": float(support_coverage_scales[i]),
                 "support_reward_capture_target_mode": self._support_reward_capture_target_mode(),
                 "support_reward_capture_component_mode": self._support_reward_capture_component_mode(),
                 **support_behavior_diagnostics[i],
+                "z_support_enabled": self._z_guided_support_enabled,
+                "z_support_selection": z_support_selections[i],
+                "z_support_ally_reward": float(z_support_ally_rewards[i]),
+                "z_support_friend_progress": float(z_support_progress[i]),
+                "z_support_target_switched": bool(z_support_switched[i]),
+                "z_support_nonzero_neighbor_not_support": bool(
+                    before_labels[i] != "inactive" and reward_roles[i] != "support"
+                    and any(float(before_z_state[int(nk[1])]) > 0 for nk in before_data.get("adjacency", {}).get(("pursuer", i), set())
+                            if nk[0] == "pursuer" and int(nk[1]) in before_active_pursuer_ids)
+                ),
+                "z_support_observed_nonzero_neighbor": bool(z_support_selections[i] and any(
+                    before_z_state[j] > 0 for j in z_support_selections[i]["candidate_ids"]
+                )),
+                "z_support_high_z_truncated_count": int(sum(
+                    float(before_z_state[int(nk[1])]) > 0 and
+                    float(before_z_state[int(nk[1])]) >= float((z_support_selections[i] or {}).get("zmax", 1.0)) - 1e-6
+                    for nk in before_data.get("adjacency", {}).get(("pursuer", i), set())
+                    if nk[0] == "pursuer" and int(nk[1]) in before_active_pursuer_ids
+                    and int(nk[1]) not in (z_support_selections[i] or {}).get("candidate_ids", [])
+                )),
                 "perception_topology_version": self._perception_topology_version(),
                 "vct_ls_enabled": bool(self._vct_ls_enabled()),
                 "vct_ls_direct_enemy_count": int(len(self._vct_ls_direct_enemy_ids_for_pursuer(i, before_p, before_e))) if self._vct_ls_enabled() and before_labels[i] != "inactive" else 0,

@@ -1,0 +1,495 @@
+[
+  {
+    "case": "zero",
+    "self_z": 0.0,
+    "ids": [],
+    "tokens": [],
+    "expected_target": 0,
+    "expected_alpha": 0.0,
+    "actual": {
+      "target_id": 0,
+      "alpha": 0.0,
+      "zmax": 0.0,
+      "self_tie": false,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 0.0,
+      "invalid_tokens": 0,
+      "candidate_ids": []
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "self-max",
+    "self_z": 0.5,
+    "ids": [
+      1
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.25
+      ]
+    ],
+    "expected_target": 0,
+    "expected_alpha": 0.0,
+    "actual": {
+      "target_id": 0,
+      "alpha": 0.0,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 0.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "self-equal",
+    "self_z": 0.5,
+    "ids": [
+      1
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 0,
+    "expected_alpha": 0.0,
+    "actual": {
+      "target_id": 0,
+      "alpha": 0.0,
+      "zmax": 0.5,
+      "self_tie": true,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 0.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "self-near-equal",
+    "self_z": 0.5,
+    "ids": [
+      1
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5000004768371582
+      ]
+    ],
+    "expected_target": 0,
+    "expected_alpha": 0.0,
+    "actual": {
+      "target_id": 0,
+      "alpha": 0.0,
+      "zmax": 0.5000004768371582,
+      "self_tie": true,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 0.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "unique-high",
+    "self_z": 0.25,
+    "ids": [
+      1
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "expected_target": 1,
+    "expected_alpha": 1.0,
+    "actual": {
+      "target_id": 1,
+      "alpha": 1.0,
+      "zmax": 1.0,
+      "self_tie": false,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "far-high-vs-near-low",
+    "self_z": 0.0,
+    "ids": [
+      1,
+      2
+    ],
+    "tokens": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.5
+      ],
+      [
+        8.0,
+        0.0,
+        0.0,
+        0.0,
+        8.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 1.0,
+    "actual": {
+      "target_id": 2,
+      "alpha": 1.0,
+      "zmax": 1.0,
+      "self_tie": false,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 8.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1,
+        2
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "highest-nearest",
+    "self_z": 0.0,
+    "ids": [
+      1,
+      2,
+      3
+    ],
+    "tokens": [
+      [
+        9.0,
+        0.0,
+        0.0,
+        0.0,
+        9.0,
+        0.0,
+        1.0
+      ],
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        1.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 1.0,
+    "actual": {
+      "target_id": 2,
+      "alpha": 1.0,
+      "zmax": 1.0,
+      "self_tie": false,
+      "friend_tie": true,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1,
+        2,
+        3
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "geometry-opposite",
+    "self_z": 0.0,
+    "ids": [
+      1,
+      2
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ],
+      [
+        -2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        3.1415927410125732,
+        0.5
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 0.5,
+    "actual": {
+      "target_id": 2,
+      "alpha": 0.5,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": true,
+      "distance_tie": true,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1,
+        2
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "geometry-velocity",
+    "self_z": 0.0,
+    "ids": [
+      1,
+      2
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ],
+      [
+        2.0,
+        0.0,
+        -1.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 0.5,
+    "actual": {
+      "target_id": 2,
+      "alpha": 0.5,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": true,
+      "distance_tie": true,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        1,
+        2
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "stable-id-fallback",
+    "self_z": 0.0,
+    "ids": [
+      3,
+      2
+    ],
+    "tokens": [
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ],
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 0.5,
+    "actual": {
+      "target_id": 2,
+      "alpha": 0.5,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": true,
+      "distance_tie": true,
+      "id_fallback": true,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        3,
+        2
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "not-slot-order",
+    "self_z": 0.0,
+    "ids": [
+      2,
+      1
+    ],
+    "tokens": [
+      [
+        -8.0,
+        0.0,
+        0.0,
+        0.0,
+        8.0,
+        3.1415927410125732,
+        0.5
+      ],
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 1,
+    "expected_alpha": 0.5,
+    "actual": {
+      "target_id": 1,
+      "alpha": 0.5,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": true,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 0,
+      "candidate_ids": [
+        2,
+        1
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "case": "invalid-friend",
+    "self_z": 0.0,
+    "ids": [
+      1,
+      2
+    ],
+    "tokens": [
+      [
+        "nan",
+        0.0,
+        0.0,
+        0.0,
+        "nan",
+        "nan",
+        1.0
+      ],
+      [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.5
+      ]
+    ],
+    "expected_target": 2,
+    "expected_alpha": 0.5,
+    "actual": {
+      "target_id": 2,
+      "alpha": 0.5,
+      "zmax": 0.5,
+      "self_tie": false,
+      "friend_tie": false,
+      "distance_tie": false,
+      "id_fallback": false,
+      "selected_distance_normalized": 2.0,
+      "invalid_tokens": 1,
+      "candidate_ids": [
+        2
+      ]
+    },
+    "status": "PASS"
+  }
+]

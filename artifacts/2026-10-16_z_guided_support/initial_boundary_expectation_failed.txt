@@ -1,0 +1,69 @@
+........................FF.                                              [100%]
+=================================== FAILURES ===================================
+_____________ test_real_capture_boundary_and_weighted_reset[False] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7782854f3740>
+terminal = False
+
+    @pytest.mark.parametrize('terminal',[False,True])
+    def test_real_capture_boundary_and_weighted_reset(monkeypatch,terminal):
+        env,_=make_env(True,scene='capture' if terminal else 'mixed')
+        for p,pos in zip(env.pursuers,[(67,60),(56.5,66.0621778),(56.5,53.9378222),(95,95)]):
+            p.x,p.y=pos;p.speed=0;p.theta=0;p.deactivated=False
+        env.evaders[0].x=60;env.evaders[0].y=60;env.evaders[0].speed=0
+        env._invalidate_voronoi_cache()
+        monkeypatch.setattr(env,'_task_reward_role',lambda i,*args:'support')
+        env.z_state[:]=[.25,1,.5,.125];env.get_observations()
+        result=env.step([4]*4,[4])
+        assert env.last_capture_events and env.evaders[0].deactivated
+        assert env.last_capture_events[0]['capture_type']=='loose'
+        assert max(env.z_state)==.5  # capture does not clear natural memory
+        for info in result.infos:
+            m=info['replay_metadata']
+            w=m['support_reward_coverage_weight']
+>           assert m['coverage_ce_pbrs_reset_reason']=='capture_phase_boundary'
+E           AssertionError: assert 'none' == 'capture_phase_boundary'
+E             - capture_phase_boundary
+E             + none
+
+tests/test_z_guided_support_20261016.py:203: AssertionError
+_____________ test_real_capture_boundary_and_weighted_reset[True] ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7782854f3f50>
+terminal = True
+
+    @pytest.mark.parametrize('terminal',[False,True])
+    def test_real_capture_boundary_and_weighted_reset(monkeypatch,terminal):
+        env,_=make_env(True,scene='capture' if terminal else 'mixed')
+        for p,pos in zip(env.pursuers,[(67,60),(56.5,66.0621778),(56.5,53.9378222),(95,95)]):
+            p.x,p.y=pos;p.speed=0;p.theta=0;p.deactivated=False
+        env.evaders[0].x=60;env.evaders[0].y=60;env.evaders[0].speed=0
+        env._invalidate_voronoi_cache()
+        monkeypatch.setattr(env,'_task_reward_role',lambda i,*args:'support')
+        env.z_state[:]=[.25,1,.5,.125];env.get_observations()
+        result=env.step([4]*4,[4])
+        assert env.last_capture_events and env.evaders[0].deactivated
+        assert env.last_capture_events[0]['capture_type']=='loose'
+        assert max(env.z_state)==.5  # capture does not clear natural memory
+        for info in result.infos:
+            m=info['replay_metadata']
+            w=m['support_reward_coverage_weight']
+>           assert m['coverage_ce_pbrs_reset_reason']=='capture_phase_boundary'
+E           AssertionError: assert 'none' == 'capture_phase_boundary'
+E             - capture_phase_boundary
+E             + none
+
+tests/test_z_guided_support_20261016.py:203: AssertionError
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/yjq/rl/CoCap1/iqn-z-guided-support-20261016/artifacts/2026-10-16_z_guided_support/support_tests.xml -
+=========================== short test summary info ============================
+FAILED tests/test_z_guided_support_20261016.py::test_real_capture_boundary_and_weighted_reset[False]
+FAILED tests/test_z_guided_support_20261016.py::test_real_capture_boundary_and_weighted_reset[True]
+2 failed, 25 passed, 2 warnings in 21.85s
