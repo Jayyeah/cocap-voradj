@@ -3,7 +3,7 @@
 状态：**训练中**。未完成任务保留待完成状态，不把预算或运行中状态当作结果。
 
 规模：4 Pursuers / 1 Evaders / 1 Obstacles。预算：2,000,000 environment decision steps。
-已持久化进度：300,000环境决策；74,137次optimizer更新；422个episode。三者独立计数。
+已持久化进度：400,000环境决策；99,137次optimizer更新；552个episode。三者独立计数。
 
 初始化：scratch随机初始化，禁止历史或pilot权重。
 配置：`/home/yjq/rl/CoCap1/iqn-z-guided-support-full3stage-20261017-runtime/stages/stage1/resolved.yaml`；训练日志：`/home/yjq/rl/CoCap1/iqn-z-guided-support-full3stage-20261017-runtime/stages/stage1/training`。
