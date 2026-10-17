@@ -12,6 +12,7 @@ from cocap_voradj.envs.coverage_ce import (
 
 from cocap_voradj.envs.base import CoCapEnv, StepResult, TWO_PI
 from cocap_voradj.envs.z_guided_support import ally_progress, select_support_target
+from cocap_voradj.envs.map_normalization import (get_map_normalization_scale, uses_map_side_length, physical_distance_threshold_factor, map_normalization_facts)
 
 
 SiteKey = Tuple[str, int]
@@ -92,6 +93,14 @@ class VorAdjEnv(CoCapEnv):
         self._support_policy_snapshots: Dict[int, Dict[str, Any]] = {}
         self._last_z_support_target: Dict[int, int] = {}
         self._z_guided_support_enabled = bool(voradj_cfg.get("z_guided_support_enabled", False))
+        self._relative_z_support_enabled = bool(voradj_cfg.get("relative_z_support_enabled", False))
+        if self._relative_z_support_enabled and not self._z_guided_support_enabled:
+            raise ValueError("Relative-Z requires the Z-guided support reward contract")
+        if uses_map_side_length(self):
+            get_map_normalization_scale(self)
+            physical_distance_threshold_factor(self)
+            if not self.per_cfg.get("normalize_distances", False):
+                raise ValueError("R contract requires normalized policy distances")
         if self._z_guided_support_enabled and (
             not self._z_state_enabled
             or self.per_cfg.get("friend_ordering_mode", "physical_only") != "physical_only"
@@ -583,11 +592,19 @@ class VorAdjEnv(CoCapEnv):
         idx: int,
         labels: List[str],
         data: Dict[str, Any],
+        support_selection: Optional[Dict[str, Any]] = None,
     ) -> str:
         if idx < 0 or idx >= len(labels) or labels[idx] == "inactive":
             return "inactive"
         if labels[idx] == "capture":
             return "capture"
+        if self._relative_z_support_enabled:
+            snapshot = self._support_policy_snapshots.get(idx)
+            if snapshot is None:
+                raise RuntimeError("Relative-Z role requires actual policy observation tokens")
+            selection = support_selection if support_selection is not None else select_support_target(
+                idx, snapshot["self_z"], snapshot["friend_ids"], snapshot["tokens"])
+            return "support" if selection["target_id"] != idx else "coverage"
         if self._support_pursuing_friend_ids(idx, labels, data):
             return "support"
         return "coverage"
@@ -728,11 +745,14 @@ class VorAdjEnv(CoCapEnv):
         xl, xr, yb, yt = self._bounds()
         return max(float(np.hypot(xr - xl, yt - yb)), 1e-6)
 
+    def _map_normalization_scale(self) -> float:
+        return get_map_normalization_scale(self)
+
     def _ce_center_distance_and_cost(
         self, position: np.ndarray, centroid: np.ndarray, participant_count: int
     ) -> Tuple[float, float]:
         distance = float(np.linalg.norm(np.asarray(position, dtype=float) - np.asarray(centroid, dtype=float)))
-        normalized = float(np.sqrt(max(participant_count, 1)) * distance / self._map_diagonal())
+        normalized = float(np.sqrt(max(participant_count, 1)) * distance / self._map_normalization_scale())
         return normalized, normalized * normalized
 
     def _ce_terminal_pbrs_correction(self, center_cost: float) -> float:
@@ -949,8 +969,7 @@ class VorAdjEnv(CoCapEnv):
     def _distance_scale(self) -> float:
         if not bool(self.per_cfg.get("normalize_distances", False)):
             return 1.0
-        xl, xr, yb, yt = self._bounds()
-        return max(float(np.hypot(xr - xl, yt - yb)), 1e-6)
+        return self._map_normalization_scale()
 
     def _center_sqrt_n_scale(self, data: Optional[Dict[str, Any]] = None) -> float:
         if not self._center_sqrt_n_normalization_enabled:
@@ -1589,7 +1608,7 @@ class VorAdjEnv(CoCapEnv):
         pursuer_counts = np.asarray([data["counts"].get(("pursuer", i), 0) for i in active], dtype=float)
         expected = float(np.sum(pursuer_counts) / max(len(active), 1))
         xl, xr, yb, yt = self._bounds()
-        diag = float(np.hypot(xr - xl, yt - yb))
+        diag = self._map_normalization_scale()
         center_scale = self._center_sqrt_n_scale(data)
         for i in active:
             key = ("pursuer", i)
@@ -1618,9 +1637,12 @@ class VorAdjEnv(CoCapEnv):
             }
 
         xl, xr, yb, yt = self._bounds()
-        diag = max(float(np.hypot(xr - xl, yt - yb)), 1e-6)
+        diag = self._map_normalization_scale()
         far_dist = max(float(self.reward_cfg.get("coverage_cell_center_speed_far_distance", 0.12)), 1e-6)
         full_dist = float(self.reward_cfg.get("coverage_cell_center_speed_full_distance", 0.04))
+        threshold_factor = physical_distance_threshold_factor(self)
+        far_dist *= threshold_factor
+        full_dist *= threshold_factor
         if full_dist >= far_dist:
             full_dist = 0.5 * far_dist
         target_speed = max(float(self.reward_cfg.get("coverage_cell_center_speed_target", 0.75)), 0.0)
@@ -1681,6 +1703,12 @@ class VorAdjEnv(CoCapEnv):
         prefix = "coverage_ce_success" if strict else "coverage_ce_loose"
         rms_threshold = float(self.reward_cfg.get(f"{prefix}_rms_threshold", self.reward_cfg.get("coverage_ce_success_rms_threshold", 0.05)))
         max_threshold = float(self.reward_cfg.get(f"{prefix}_max_threshold", self.reward_cfg.get("coverage_ce_success_max_threshold", 0.10)))
+        threshold_factor = physical_distance_threshold_factor(self)
+        rms_threshold *= threshold_factor
+        max_threshold *= threshold_factor
+        physical_distances = [float(np.linalg.norm(self._position(self.pursuers[i]) - np.asarray(data.get("centroids", {}).get(("pursuer", i), self._position(self.pursuers[i]))))) for i in participants]
+        physical_rms = float(np.sqrt(np.mean(np.square(physical_distances)))) if physical_distances else float("inf")
+        physical_max = max(physical_distances, default=float("inf"))
         rms_error = float(np.sqrt(np.mean(costs))) if costs else float("inf")
         max_error = float(max(distances)) if distances else float("inf")
         min_participants = int(self.reward_cfg.get("coverage_ce_min_active_pursuers", self.reward_cfg.get("min_active_pursuers", 2)))
@@ -1707,6 +1735,11 @@ class VorAdjEnv(CoCapEnv):
             "mean_speed": float(np.mean(speeds)) if speeds else float("inf"),
             "geometry_strict": converged,
             "speed_strict": bool(speeds and max(speeds) <= float(self.reward_cfg.get("strict_speed_threshold", 0.15))),
+            "ce_center_physical_distances": physical_distances,
+            "ce_center_physical_rms": physical_rms,
+            "ce_center_physical_max": physical_max,
+            "ce_physical_rms_threshold": rms_threshold * self._map_normalization_scale() / np.sqrt(max(len(participants), 1)),
+            "ce_physical_max_threshold": max_threshold * self._map_normalization_scale() / np.sqrt(max(len(participants), 1)),
             "ce_center_distances": distances,
             "ce_center_costs": costs,
             "ce_center_rms": rms_error,
@@ -1744,12 +1777,13 @@ class VorAdjEnv(CoCapEnv):
             participant_areas = participant_counts / max(participant_owned_grid_count, 1.0)
             area_cv = float(np.std(participant_areas) / max(np.mean(participant_areas), 1e-9))
             xl, xr, yb, yt = self._bounds()
-            diag = float(np.hypot(xr - xl, yt - yb))
+            diag = self._map_normalization_scale()
             center_dists = []
             for i in participants:
                 centroid = data["centroids"].get(("pursuer", i), self._position(self.pursuers[i]))
                 center_dists.append(float(np.linalg.norm(self._position(self.pursuers[i]) - centroid) / max(diag, 1e-6)))
             center_threshold = float(self.reward_cfg.get("strict_center_distance", 0.08) if strict else self.reward_cfg.get("distribution_voronoi_center_distance_threshold", 0.12))
+            center_threshold *= physical_distance_threshold_factor(self)
             center_ratio_threshold = float(self.reward_cfg.get("strict_center_ok_ratio", 0.75) if strict else self.reward_cfg.get("distribution_voronoi_center_ok_ratio_threshold", 0.5))
             area_threshold = float(self.reward_cfg.get("strict_area_cv", 0.30) if strict else self.reward_cfg.get("distribution_area_cv_threshold", 0.40))
             inside_required = float(self.reward_cfg.get("strict_inside_ratio", 0.99) if strict else self.reward_cfg.get("distribution_inside_ratio_threshold", 0.95))
@@ -2243,7 +2277,7 @@ class VorAdjEnv(CoCapEnv):
         # support/coverage reward while observation and replay still said capture.
         reward_role_labels = before_labels
         reward_roles = [
-            self._task_reward_role(i, reward_role_labels, before_data)
+            self._task_reward_role(i, reward_role_labels, before_data, z_support_selections[i])
             for i in range(len(self.pursuers))
         ]
         pure_capture_partitions = (
@@ -2340,10 +2374,12 @@ class VorAdjEnv(CoCapEnv):
             if support_reward_blend_flags[index]:
                 reward_support_blend_coverage_component[index] += correction
             ce_pbrs_reset_reasons[index] = reason
+        normalization_facts = map_normalization_facts(self) if uses_map_side_length(self) else None
         infos = [
             {
                 "state": "normal",
-                "task_label": before_labels[i],
+                "task_label": reward_roles[i] if self._relative_z_support_enabled else before_labels[i],
+                "effective_task_label": before_labels[i],
                 "next_task_label": next_labels[i],
                 "reward_role": reward_roles[i],
             }
@@ -2359,7 +2395,7 @@ class VorAdjEnv(CoCapEnv):
         def support_reward_blend_active(index: int) -> bool:
             return bool(
                 support_reward_blend_enabled
-                and active_targets
+                and (self._relative_z_support_enabled or active_targets)
                 and reward_roles[index] == "support"
             )
 
@@ -3083,7 +3119,8 @@ class VorAdjEnv(CoCapEnv):
                 "terminated": terminated,
                 "truncated": truncated,
                 "transition_semantics": self.transition_semantics,
-                "task_label": before_labels[i],
+                "task_label": reward_roles[i] if self._relative_z_support_enabled else before_labels[i],
+                "effective_task_label": before_labels[i],
                 "next_task_label": next_labels[i],
                 "task_switched": bool(before_labels[i] != next_labels[i]),
                 "raw_task_label": before_raw_labels[i],
@@ -3146,7 +3183,10 @@ class VorAdjEnv(CoCapEnv):
                 "support_reward_capture_component_mode": self._support_reward_capture_component_mode(),
                 **support_behavior_diagnostics[i],
                 "z_support_enabled": self._z_guided_support_enabled,
+                "relative_z_support_enabled": self._relative_z_support_enabled,
+                "map_normalization": normalization_facts,
                 "z_support_selection": z_support_selections[i],
+                "z_support_self_z": float(before_z_state[i]),
                 "z_support_ally_reward": float(z_support_ally_rewards[i]),
                 "z_support_friend_progress": float(z_support_progress[i]),
                 "z_support_target_switched": bool(z_support_switched[i]),
@@ -3422,7 +3462,16 @@ class VorAdjEnv(CoCapEnv):
             "soft_boundary_out_of_bounds_evader_count": float(len(self.last_out_of_bounds_evaders)),
             **self.last_voradj_metrics,
         }
-        return StepResult(self.get_observations(), rewards, dones, infos)
+        observations = self.get_observations()
+        if self._relative_z_support_enabled:
+            next_roles = [self._task_reward_role(i, next_labels, data) for i in range(len(self.pursuers))]
+            self.last_task_labels = next_roles
+            for i, info in enumerate(infos):
+                info["next_task_label"] = next_roles[i]
+                metadata = info["replay_metadata"]
+                metadata["next_task_label"] = next_roles[i]
+                metadata["task_switched"] = metadata["task_label"] != next_roles[i]
+        return StepResult(observations, rewards, dones, infos)
 
     def episode_record(self, task: Optional[str] = None) -> Dict[str, Any]:
         captured = bool(self.evaders and all(e.deactivated and not e.collision for e in self.evaders))

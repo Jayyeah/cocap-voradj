@@ -27,6 +27,7 @@ def select_support_target(agent_id, own_z, friend_ids, friend_tokens):
     highest = [(j, t) for j, t in valid if float(t[6]) >= zmax - TIE_EPS]
     self_best = own_z >= zmax - TIE_EPS
     result = dict(target_id=int(agent_id), alpha=0.0, zmax=zmax,
+                  neighbor_zmax=max([0.0] + [float(t[6]) for _, t in valid]),
                   self_tie=bool(self_best and highest), friend_tie=len(highest) > 1,
                   distance_tie=False, id_fallback=False, selected_distance_normalized=0.0,
                   invalid_tokens=invalid, candidate_ids=[j for j, _ in valid])

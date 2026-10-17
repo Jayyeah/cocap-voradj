@@ -170,10 +170,10 @@ def build_masked_voronoi_map(
 def normalized_center_costs(
     positions: np.ndarray,
     centroids: Sequence[np.ndarray],
-    map_diagonal: float,
+    map_scale: float,
     participant_count: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    scale = float(np.sqrt(max(participant_count, 1)) / max(map_diagonal, 1e-6))
+    scale = float(np.sqrt(max(participant_count, 1)) / max(map_scale, 1e-6))
     distances = np.asarray(
         [float(np.linalg.norm(positions[idx] - np.asarray(centroid, dtype=float)) * scale) for idx, centroid in enumerate(centroids)],
         dtype=float,

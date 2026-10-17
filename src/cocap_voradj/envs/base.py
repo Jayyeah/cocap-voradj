@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from cocap_voradj.config import ConfigManager
+from cocap_voradj.envs.map_normalization import get_map_normalization_scale, physical_distance_threshold_factor
 from cocap_voradj.dynamics.evader import Evader
 from cocap_voradj.dynamics.pursuer import Pursuer
 from cocap_voradj.dynamics.continuous_action import (
@@ -1341,7 +1342,7 @@ class CoCapEnv:
         owners = np.argmin(dist_sq, axis=1)
         fractions = np.bincount(owners, minlength=len(active)).astype(float) / max(len(pts), 1)
         expected = 1.0 / max(len(active), 1)
-        diag = np.hypot(self.inner_x_max - self.inner_x_min, self.inner_y_max - self.inner_y_min)
+        diag = get_map_normalization_scale(self, legacy_geometry_bounds=(self.inner_x_min, self.inner_x_max, self.inner_y_min, self.inner_y_max))
         for local, idx in enumerate(active):
             owned = pts[owners == local]
             center_error = 1.0 if len(owned) == 0 else float(np.linalg.norm(apos[local] - owned.mean(axis=0)) / max(diag, 1e-6))
@@ -1371,12 +1372,13 @@ class CoCapEnv:
             counts = np.bincount(owners, minlength=len(active)).astype(float)
             areas = counts / max(np.sum(counts), 1.0)
             area_cv = float(np.std(areas) / max(np.mean(areas), 1e-9))
-            diag = np.hypot(self.inner_x_max - self.inner_x_min, self.inner_y_max - self.inner_y_min)
+            diag = get_map_normalization_scale(self, legacy_geometry_bounds=(self.inner_x_min, self.inner_x_max, self.inner_y_min, self.inner_y_max))
             center_dists = []
             for local, pos in enumerate(positions):
                 owned = pts[owners == local]
                 center_dists.append(np.inf if len(owned) == 0 else float(np.linalg.norm(pos - owned.mean(axis=0)) / max(diag, 1e-6)))
             center_threshold = float(self.reward_cfg.get("strict_center_distance", 0.08) if strict else self.reward_cfg.get("distribution_voronoi_center_distance_threshold", 0.12))
+            center_threshold *= physical_distance_threshold_factor(self, legacy_geometry_bounds=(self.inner_x_min, self.inner_x_max, self.inner_y_min, self.inner_y_max))
             center_ok_ratio_threshold = float(self.reward_cfg.get("strict_center_ok_ratio", 0.75) if strict else self.reward_cfg.get("distribution_voronoi_center_ok_ratio_threshold", 0.5))
             area_threshold = float(self.reward_cfg.get("strict_area_cv", 0.30) if strict else self.reward_cfg.get("distribution_area_cv_threshold", 0.40))
             inside_required = float(self.reward_cfg.get("strict_inside_ratio", 0.99) if strict else self.reward_cfg.get("distribution_inside_ratio_threshold", 0.95))

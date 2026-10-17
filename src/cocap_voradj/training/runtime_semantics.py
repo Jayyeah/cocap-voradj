@@ -19,6 +19,11 @@ def runtime_facts(env, actor=None):
     cw, vw = env._vct_ls_support_reward_weights()
     p = env.pursuers[0]
     facts = {"topology": env._perception_topology_version(), "enemy_token_rule": "surface_radius" if env._vct_ls_enabled() else "voronoi_adjacency_not_radius", "global_enemy_flag": bool(env.per_cfg.get("global_evader_visibility", False)), "support_capture_weight": cw, "support_coverage_weight": vw, "support_blend_enabled": env._vct_ls_support_reward_blend_enabled(), "action_mode": env.action_mode, "decision_dt": float(p.dt*p.N), "physics_dt": float(p.dt), "collision_semantics": env.env_cfg.get("collision_semantics", "legacy_end_step"), "capture_radius": float(env.env_cfg.get("capture_distance", env.reward_cfg.get("r_e", 8))), "capture_k": int(env.reward_cfg.get("k_required", 3)), "capture_reward_mode": env._capture_reward_mode(), "pursuers": len(env.pursuers), "evaders": len(env.evaders), "enemy_radius": env._vct_ls_sensing_radius("enemy"), "yaw_held_for_vxy": bool(getattr(env, "desired_velocity_action", False)), "a_longitudinal_max": float(max(p.a)), "omega_max": float(max(p.w)), "v_max": float(p.max_speed), "drag": float(p.coefficient_water_resistance), "servo_acceleration_limit": float(env.config.get("action", {}).get("servo_acceleration_limit", env.config.get("action", {}).get("a_max", .4)))}
+    if (env.config.get("normalization", {}) or {}).get("map_scale") == "side_length_r":
+        from cocap_voradj.envs.map_normalization import get_map_normalization_scale
+        facts["map_scale_contract"] = "side_length_r"
+        facts["map_normalization_scale"] = get_map_normalization_scale(env)
+        facts["support_role_contract"] = "relative_z" if env._relative_z_support_enabled else "legacy_capture_neighbor"
     facts["adapter_a_max"] = getattr(env.action_adapter, "a_max", None)
     facts["adapter_w_max"] = getattr(env.action_adapter, "w_max", None)
     if actor is not None:
