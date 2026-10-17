@@ -1,5 +1,7 @@
 # CoCap baseline candidate screening — 总览与推荐
 
+> 第四轮补充：允许全局敌人信息与集中式分层分配，最新决策见 [V4 全局分层基线](GLOBAL_HIERARCHICAL_BASELINE_REVIEW_V4_20261017_ZH.md)。本文既有结论保留作历史/局部方案依据。
+
 > 历史 Round 1 记录。第二轮保留在 [Shortlist V2](BASELINE_FINAL_SHORTLIST_V2_ZH.md)；当前第三轮的架构、证据和决策入口为 [V3 分层研究结果](BASELINE_HIERARCHICAL_REVIEW_V3_20261017_ZH.md)。统一 registry 已增量更新并保留历史快照。本文原推荐不代表当前结论。
 
 筛选日期：2026-10-16  

@@ -161,3 +161,19 @@ Six requested deliverables are under `docs/baselines/`; current facts remain in 
 - Updated the **same** registry to schema1.2.0: original20 candidate IDs, Round1 snapshots and V2 focused fields preserved; V2 recommendation/repository snapshots retained;18 literature sources,7 components and4 configurations added. Historical entry documents now link to V3.
 - Validation checks JSON/CSV parsing and references, old-field preservation, PDF page counts/hash provenance, commit pins, relative document links, LF formatting and documentation-only changes. Synchronization uses a normal commit/push on the new branch; resulting remote HEAD is verified and reported with delivery, without merging main.
 
+
+
+## Round 4 — 2026-10-17：全局敌人信息与集中式传统分层基线
+
+- 用户追加范围：不限局部分布式，允许全局敌人状态和集中协调；延续同一 registry，完成文档并同步远端。未授权/未启动正式复现、preflight 或训练。
+- 启动重新 fetch/history：V1 `94753f9fd82d137af7ff9930634788ffeba6f3e2`，V2 `ec15f16eca08f9071f35ba4cbcccfcf1542a5d2a`，V3 `a3726025352a3cf0a688ea79d04b097e68c4b8b0`；IQN-Z 审计 `3038ef5cd728acdd302772ca08bf10060685af16`。从 V3 新建 `docs/baseline-global-hierarchical-review-20261017`。
+- 重读 TR-11 正文/补充、TR-13 pp.3–6；核查纯中央执行与原分布式分配的区别。式(7)固定配额分组可采用 min-cost-flow，式(8)为槽位线性指派；两阶段与联合槽位目标不同。
+- 新读 AFRA，Drones10(6):406，2026，DOI10.3390/drones10060406：全局人数经验库+MCKP-DP+APF；目标是预期捕获数，不是全目标联合成功。21页正式 PDF 重点 pp.5–6、9–11、13–14。
+- AFRA 由论文定位 Gitee 官方仓库，固定 `72440fdf0aa9516e87fcd52f282ce2a612c2df68`；静态审计发现主捕获路径跳过角度、经验库变手写 logistic、动态脚本缺源、余量追加可能破坏人数选项，根许可/环境锁缺失。OFFICIAL_PARTIAL；未执行第三方代码/pyc/权重。
+- 新读 ICRA2021 Liao cooperative hunting 7页及 TCyb2022 Fang faster-evader arXivv2 10页，作为单目标几何/速度比理论，不升格为完整多目标基线。新读 FITEE2023 Mu pursuit-evasion survey 24页相关章节；沿用 V3 TAMP、distributed optimization、Robotics2025 coalition survey 的已读页码。
+- 新核 ICUS2024 Dynamic Alliance DOI10.1109/ICUS61736.2024.10840019，Crossref/作者记录一致，PDF418；PGM full/pdf403，MK-WTA 作者页/OpenAlex仍无正文。缺口保留。下载的 Sewlia IJRNC2022 PDF 未作为本轮阅读证据。
+- GitHub 精确标题/缩写仓库查询（详见 manifest）未找到 TR11/TR13 完整实现；该否定限于检索范围，不忽略无代码的已发表强方法。
+- 新审 OR-Tools/SciPy/PythonRobotics 固定 commit、真实核心路径、许可和现有测试；纠正猜测文件404；只作组件可用性审计，没有安装/跑测试/性能测量。
+- 决策：完整论文强基线仍选 TR-11；集中式分配主要依据 TR-13；新增项目组合 TR-15 G-CAP-GE，配额>=3（四机优先验证）→分组/槽位→几何→AW9→捕获释放重分配；AFRA TR-14 为自适应人数备选。所有推荐仅为下一阶段 preflight 决策。
+- 信息分 GE 与额外 full-map 的 GEM；未来轨迹不授予。V3 H-L/TERL 决策保留，GE 不能将 oracle 发现作为自主搜索性能。重复到达采用共同外生 manifest，不复用 Z 归零触发。
+- 输出：V4 总览、蓝图、方法/逐层 CSV、文献证据、代码审计、preflight 可行性共六份；统一 registry 20→22候选，sources18→23，components7→11。源 manifest / 验证 JSON 与本节追加供追溯。
