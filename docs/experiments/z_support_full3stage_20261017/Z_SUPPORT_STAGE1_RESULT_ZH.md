@@ -1,6 +1,6 @@
 # Z-Guided Support Stage1 执行结果
 
-状态：**等待课程交接**。未完成任务保留待完成状态，不把预算或运行中状态当作结果。
+状态：**待验收后scratch启动**。未完成任务保留待完成状态，不把预算或运行中状态当作结果。
 
 规模：4 Pursuers / 1 Evaders / 1 Obstacles。预算：2,000,000 environment decision steps。
 已持久化进度：0环境决策；0次optimizer更新；0个episode。三者独立计数。

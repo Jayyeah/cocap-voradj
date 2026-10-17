@@ -121,6 +121,10 @@ class QueueTrainer(CoCapTrainer):
         self._telemetry_start_time=time.time();self._telemetry_start_step=self.global_step
 
     def _select_actions(self,task,obs_list):
+        runtime=Path(self.config['output_root']).parents[1]
+        if (runtime/'pause_request.json').is_file():
+            if self.global_step and getattr(self,'_train_runtime_ready',False):self._save_full_resume()
+            raise RuntimeError('scientific coordinator requested safe pause; exact decision state preserved')
         # At the next decision boundary the previous loop has committed every
         # current_* field. Never save from _update, which precedes that commit.
         if self.global_step==1 or (self.global_step%25000==0 and self.global_step%100000!=0):
@@ -364,7 +368,13 @@ def worker(kinds,runtime):
         try:
             with log.open('a') as h:
                 result=subprocess.run([sys.executable,__file__,'job','--runtime',str(runtime),'--job-id',r['id']],stdout=h,stderr=subprocess.STDOUT,env={**os.environ,'CUDA_VISIBLE_DEVICES':'','OMP_NUM_THREADS':'1','MKL_NUM_THREADS':'1'})
-            if result.returncode:raise RuntimeError(f'job exited {result.returncode}; log={log}')
+            if result.returncode:
+                details=log.read_text()[-20000:]
+                fatal=any(x in details for x in ('initial-state mismatch','immutable checkpoint SHA changed','selected model changed','runtime policy drift','policy/environment friend token cap mismatch','non-finite'))
+                if fatal:
+                    evidence=dict(job=r['id'],log=str(log),error=details[-5000:],updated_at=now())
+                    write(runtime/'scientific_failure.json',evidence);write(runtime/'pause_request.json',evidence)
+                raise RuntimeError(f'job exited {result.returncode}; log={log}')
             with db(runtime) as c:c.execute("UPDATE jobs SET status='complete',error=NULL,updated_at=? WHERE id=?",(now(),r['id']))
         except Exception:
             error=traceback.format_exc()
@@ -452,6 +462,7 @@ def supervise(runtime,gpu):
     except BlockingIOError:raise SystemExit('an identical curriculum supervisor is already running')
     acceptance=read(ART/'acceptance_gate.json',{})
     if acceptance.get('status') not in ('PASS','CONDITIONAL_PASS') or not acceptance.get('engineering_blockers_resolved'):raise RuntimeError('acceptance gate is not signed')
+    if (runtime/'scientific_failure.json').is_file():raise RuntimeError('unresolved scientific failure marker; refusing automatic restart')
     prepare(runtime)
     workers=[]
     for idx,kinds in enumerate(('selection','selection','formal,reference,render')):
@@ -471,6 +482,11 @@ def supervise(runtime,gpu):
                     write(runtime/'status.json',dict(status='running',phase='training',stage=stage,supervisor_pid=os.getpid(),attempt=attempt,updated_at=now()))
                     child=launch_child(['train','--stage',stage,'--device','cuda:0'],runtime/'logs'/f'{stage}_train_attempt{attempt}.log',runtime,gpu)
                     while child.poll() is None:
+                        if (runtime/'scientific_failure.json').is_file():
+                            write(runtime/'pause_request.json',read(runtime/'scientific_failure.json'))
+                            try:child.wait(timeout=60)
+                            except subprocess.TimeoutExpired:child.terminate();child.wait(timeout=30)
+                            raise RuntimeError('scientific failure in evaluation; training paused at a decision boundary')
                         write(runtime/'live_processes.json',dict(supervisor_pid=os.getpid(),training_pid=child.pid,workers=[p.pid for _,p in workers],gpu=gpu,stage=stage,updated_at=now()))
                         export(runtime);reports(runtime)
                         with db(runtime) as c:count=c.execute('SELECT COUNT(*) FROM checkpoints').fetchone()[0]
@@ -490,6 +506,7 @@ def supervise(runtime,gpu):
                 assert completion['environment_decision_steps']==BUDGETS[stage]
             # All required selection batches are needed only at the stage boundary.
             while not (stage_dir/'selection_report.json').is_file():
+                if (runtime/'scientific_failure.json').is_file():raise RuntimeError('scientific failure; stage handoff refused')
                 with db(runtime) as c:
                     rows=c.execute("SELECT * FROM jobs WHERE kind='selection' AND stage=?",(stage,)).fetchall()
                 if any(r['status']=='failed' for r in rows):raise RuntimeError('selection job exhausted retries; cannot perform scientific handoff')
@@ -520,6 +537,7 @@ def supervise(runtime,gpu):
             for i,(k,p) in enumerate(workers):
                 if p.poll() is not None:workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
             time.sleep(20)
+        if (runtime/'scientific_failure.json').is_file():raise RuntimeError('scientific failure; final acceptance refused')
         missing=[r['id'] for r in rows if r['status']=='failed']
         write(runtime/'orchestration_complete.json',dict(status='COMPLETE' if not missing else 'COMPLETE_WITH_MISSING_ARTIFACTS',missing=missing,completed_at=now()))
         write(runtime/'status.json',read(runtime/'orchestration_complete.json'));export(runtime);reports(runtime);sync_milestone(runtime,'final')
