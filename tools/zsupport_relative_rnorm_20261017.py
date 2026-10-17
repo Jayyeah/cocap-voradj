@@ -57,6 +57,7 @@ def process_start(pid):
 def alive(pid,start=None):
     try:
         os.kill(int(pid),0)
+        if Path(f'/proc/{int(pid)}/stat').read_text().rsplit(')',1)[1].split()[0]=='Z':return False
         return start is None or str(start)==process_start(pid)
     except (OSError,TypeError,ValueError):return False
 
@@ -85,7 +86,7 @@ def register(path,stage,kind,metadata=None,runtime=RUNTIME):
         c.execute('INSERT OR REPLACE INTO artifacts VALUES(?,?,?,?,?,?,?)',(str(path),stage,kind,sha256_file(path),path.stat().st_size,json.dumps(dict(source_head=head(),command=shlex.join([sys.executable,*sys.argv]),**(metadata or {})),ensure_ascii=False),now()))
 
 def claim(kinds,runtime=RUNTIME):
-    if (runtime/'pause_request.json').is_file():return None
+    if (runtime/'pause_request.json').is_file() or (runtime/'scientific_failure.json').is_file():return None
     c=db(runtime)
     try:
         c.execute('BEGIN IMMEDIATE')
@@ -103,10 +104,13 @@ def claim(kinds,runtime=RUNTIME):
     finally:c.close()
 
 def reviewed_source_hash():
+    # Freeze transitive local imports and extends parents as well as new files.
+    # Reports/registries/checkpoints are mutable evidence, not execution sources.
     digest=hashlib.sha256()
-    paths=list((ROOT/'src').rglob('*.py'))+list(CONFIG_DIR.glob('*.yaml'))
-    paths += [ROOT/'tools/zsupport_relative_rnorm_20261017.py',ROOT/'tools/zsupport_relative_rnorm_reports_20261017.py',ROOT/'tools/smoke_relative_z_rnorm_20261017.py',ROOT/'tests/test_relative_z_rnorm_20261017.py']
-    for path in sorted(paths):
+    paths=[]
+    for directory,pattern in (('src','*.py'),('tools','*.py'),('tests','*.py'),('configs','*.yaml'),('configs','*.yml')):
+        paths.extend((ROOT/directory).rglob(pattern))
+    for path in sorted(set(paths)):
         digest.update(str(path.relative_to(ROOT)).encode());digest.update(path.read_bytes())
     return digest.hexdigest()
 
@@ -123,6 +127,29 @@ def require_independent_review():
 def wait_for_safe_pause(child):
     # Full replay serialization can exceed minutes. Never timeout/kill a saving trainer.
     while child.poll() is None:time.sleep(1)
+
+
+def is_scientific_failure(details):
+    markers=('AssertionError','FloatingPointError','runtime assertion','initial-state mismatch',
+             'immutable checkpoint','immutable snapshot','selected model changed','runtime policy drift',
+             'policy/environment friend token cap mismatch','non-finite','contract mismatch',
+             'R normalization requires','map normalization contract','Relative-Z',
+             'pre-action policy friend mapping','warm-start handoff hash mismatch','partial warm-start',
+             'refusing fresh restart','source changed after independent review','resource safety:')
+    return any(marker in details for marker in markers)
+
+
+def raise_if_paused(runtime,adopted=None):
+    failure=runtime/'scientific_failure.json'
+    if failure.is_file() and not (runtime/'pause_request.json').is_file():
+        write(runtime/'pause_request.json',read(failure))
+    if not (runtime/'pause_request.json').is_file():return
+    candidates=[adopted] if adopted else [read(runtime/'stages'/stage/'training_started.json',{}) for stage in old.STAGE_ORDER]
+    for candidate in candidates:
+        pid,start=candidate.get('pid'),candidate.get('process_start')
+        # Only wait for the originally identified process, never a reused PID.
+        while start is not None and process_start(pid)==str(start) and alive(pid,start):time.sleep(1)
+    raise PauseRequested('persistent operator/scientific hold; no retry, worker restart or stage handoff')
 
 
 def assert_scientific_config(cfg):
@@ -234,12 +261,15 @@ class QueueTrainer(CoCapTrainer):
         # These are the transitions just generated, before any learning update.
         for b in self.replays.values():
             if b.data and not math.isfinite(b.data[-1][2]):raise FloatingPointError('non-finite environment reward')
+        for event in getattr(self.envs[task],'last_capture_events',[]):
+            kind='normal' if event.get('capture_type')=='loose' else event.get('capture_type','unknown')
+            self._scientific_counts['capture_event/'+kind]+=1
         value=super()._update(task)
         if self.global_step%1000==0:
             if shutil.disk_usage(self.run_dir).free<20*1024**3:raise OSError('resource safety: less than 20 GiB free')
             mem_available=int(next(line.split()[1] for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:')))*1024
             if mem_available<8*1024**3:raise OSError('resource safety: less than 8 GiB available RAM')
-            write(self.run_dir/'progress.json',dict(steps_per_second=(self.global_step-self._telemetry_start_step)/max(time.time()-self._telemetry_start_time,1e-6),eta_seconds=(self.total_timesteps-self.global_step)/max((self.global_step-self._telemetry_start_step)/max(time.time()-self._telemetry_start_time,1e-6),1e-6),pid=os.getpid(),environment_decision_steps=self.global_step,optimizer_updates=self.update_steps,episodes=self.episode_idx,loss_ema=self.loss_ema,replay_sizes={k:len(v) for k,v in self.replays.items()},episode_step=self.envs[task].episode_step,scientific_counts=dict(self._scientific_counts),q_values=self._last_q,gradient_norm=getattr(self,'_last_grad_norm',None),map_normalization={k:map_normalization_facts(e) for k,e in self.envs.items()},gpu_memory_allocated=torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,ce=self.envs[task]._ce_coverage_geometry(self.envs[task]._coverage_voronoi_map(),True),updated_at=now()))
+            write(self.run_dir/'progress.json',dict(steps_per_second=(self.global_step-self._telemetry_start_step)/max(time.time()-self._telemetry_start_time,1e-6),eta_seconds=(self.total_timesteps-self.global_step)/max((self.global_step-self._telemetry_start_step)/max(time.time()-self._telemetry_start_time,1e-6),1e-6),pid=os.getpid(),environment_decision_steps=self.global_step,optimizer_updates=self.update_steps,episodes=self.episode_idx,loss_ema=self.loss_ema,replay_sizes={k:len(v) for k,v in self.replays.items()},episode_step=self.envs[task].episode_step,recent_diagnostics={name:self._recent_diagnostic_summary(name) for name in self.task_order},batch_reward_stats=getattr(self,'last_batch_reward_stats',{}),scientific_counts=dict(self._scientific_counts),q_values=self._last_q,gradient_norm=getattr(self,'_last_grad_norm',None),map_normalization={k:map_normalization_facts(e) for k,e in self.envs.items()},gpu_memory_allocated=torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,ce=self.envs[task]._ce_coverage_geometry(self.envs[task]._coverage_voronoi_map(),True),updated_at=now()))
         return value
 
     def _save_checkpoint(self,name):
@@ -272,6 +302,10 @@ def register_checkpoint(path,stage,step,updates,episode,cfg_hash,runtime=RUNTIME
         c.execute('INSERT OR IGNORE INTO jobs(id,kind,stage,payload,created_at,updated_at) VALUES(?,?,?,?,?,?)',(f'selection/{stage}/{step:09d}','selection',stage,json.dumps(payload),now(),now()))
 
 def train_stage(stage,runtime,device):
+    require_independent_review()
+    acceptance=read(ART/'acceptance_gate.json',{})
+    assert acceptance.get('status')=='PASS' and acceptance.get('engineering_blockers_resolved'),'formal smoke has not passed'
+    raise_if_paused(runtime)
     training_lock=(runtime/'training.lock').open('w')
     try:fcntl.flock(training_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     except BlockingIOError:raise RuntimeError('an identical training process is already alive; refusing duplicate')
@@ -447,16 +481,17 @@ def worker(kinds,runtime):
     while True:
         r=claim(kinds,runtime)
         if not r:
-            if (runtime/'pause_request.json').is_file() or read(runtime/'orchestration_complete.json'):
+            if (runtime/'pause_request.json').is_file() or (runtime/'scientific_failure.json').is_file() or read(runtime/'orchestration_complete.json'):
                 return
             time.sleep(5);continue
         log=runtime/'logs'/(r['id'].replace('/','_')+f'_attempt{r["attempts"]+1}.log');log.parent.mkdir(parents=True,exist_ok=True)
+        fatal=False
         try:
             with log.open('a') as h:
                 result=subprocess.run([sys.executable,__file__,'job','--runtime',str(runtime),'--job-id',r['id']],stdout=h,stderr=subprocess.STDOUT,env={**os.environ,'CUDA_VISIBLE_DEVICES':'','OMP_NUM_THREADS':'1','MKL_NUM_THREADS':'1'})
             if result.returncode:
                 details=log.read_text()[-20000:]
-                fatal=any(x in details for x in ('initial-state mismatch','immutable checkpoint SHA changed','selected model changed','runtime policy drift','policy/environment friend token cap mismatch','non-finite'))
+                fatal=is_scientific_failure(details)
                 if fatal:
                     evidence=dict(job=r['id'],log=str(log),error=details[-5000:],updated_at=now())
                     write(runtime/'scientific_failure.json',evidence);write(runtime/'pause_request.json',evidence)
@@ -466,7 +501,7 @@ def worker(kinds,runtime):
             error=traceback.format_exc()
             with db(runtime) as c:
                 attempts=c.execute('SELECT attempts FROM jobs WHERE id=?',(r['id'],)).fetchone()[0]
-                c.execute('UPDATE jobs SET status=?,error=?,updated_at=? WHERE id=?',('failed' if attempts>=MAX_ATTEMPTS else 'pending',error,now(),r['id']))
+                c.execute('UPDATE jobs SET status=?,error=?,updated_at=? WHERE id=?',('failed' if fatal or attempts>=MAX_ATTEMPTS else 'pending',error,now(),r['id']))
                 c.execute('INSERT INTO failures(job_id,attempt,error,created_at) VALUES(?,?,?,?)',(r['id'],attempts,error,now()))
         export(runtime)
 
@@ -549,25 +584,29 @@ def supervise(runtime,gpu):
     require_independent_review()
     acceptance=read(ART/'acceptance_gate.json',{})
     if acceptance.get('status') not in ('PASS','CONDITIONAL_PASS') or not acceptance.get('engineering_blockers_resolved'):raise RuntimeError('acceptance gate is not signed')
-    if (runtime/'pause_request.json').is_file():raise PauseRequested('operator/scientific hold requires explicit removal after review')
-    if (runtime/'scientific_failure.json').is_file():raise RuntimeError('unresolved scientific failure marker; refusing automatic restart')
+    raise_if_paused(runtime)
     prepare(runtime)
     workers=[]
     for idx,kinds in enumerate(('selection','selection','formal,reference,render')):
         workers.append((kinds,launch_child(['worker','--kinds',kinds],runtime/'logs'/f'worker_{idx}.log',runtime)))
     try:
         for stage in old.STAGE_ORDER:
+            raise_if_paused(runtime)
             stage_dir=runtime/'stages'/stage
             prior=read(stage_dir/'training_started.json',{})
             while alive(prior.get('pid'),prior.get('process_start')) and not (stage_dir/'training_complete.json').is_file():
+                raise_if_paused(runtime,adopted=prior)
                 write(runtime/'status.json',dict(status='running',phase='adopting_existing_training',stage=stage,training_pid=prior['pid'],updated_at=now()))
                 export(runtime);reports(runtime);time.sleep(20)
+            raise_if_paused(runtime,adopted=prior)
             if not (stage_dir/'training_complete.json').is_file():
                 for attempt in range(1,MAX_ATTEMPTS+1):
+                    raise_if_paused(runtime)
                     # GPU is shared; only inspect and wait for sufficient free memory.
                     free=int(subprocess.check_output(['nvidia-smi','--id='+gpu,'--query-gpu=memory.free','--format=csv,noheader,nounits'],text=True).strip())
                     if free<6000 or shutil.disk_usage(runtime).free<30*1024**3:raise OSError('resource safety: insufficient GPU or disk headroom')
                     write(runtime/'status.json',dict(status='running',phase='training',stage=stage,supervisor_pid=os.getpid(),attempt=attempt,updated_at=now()))
+                    raise_if_paused(runtime)
                     child=launch_child(['train','--stage',stage,'--device','cuda:0'],runtime/'logs'/f'{stage}_train_attempt{attempt}.log',runtime,gpu)
                     while child.poll() is None:
                         if (runtime/'scientific_failure.json').is_file():
@@ -592,18 +631,24 @@ def supervise(runtime,gpu):
                             sync_milestone(runtime,f'{stage}-snapshot-{count}')
                             write(runtime/'last_synced_milestone.json',dict(count=count,updated_at=now()))
                         for i,(k,p) in enumerate(workers):
-                            if p.poll() is not None:workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
+                            if p.poll() is not None:
+                                raise_if_paused(runtime)
+                                workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
                         time.sleep(20)
                     if (runtime/'pause_request.json').is_file():raise PauseRequested('saved at decision boundary; automatic retry blocked')
                     if child.returncode==0:break
                     with db(runtime) as c:c.execute('INSERT INTO failures(job_id,attempt,error,created_at) VALUES(?,?,?,?)',(f'train/{stage}',attempt,f'exit {child.returncode}',now()))
                     log=(runtime/'logs'/f'{stage}_train_attempt{attempt}.log').read_text()
-                    if any(s in log for s in ('FloatingPointError','resource safety:','contract mismatch','AssertionError','immutable snapshot')):raise RuntimeError('scientific, numerical or resource failure; inspect training log')
+                    if is_scientific_failure(log):
+                        evidence=dict(job=f'train/{stage}',attempt=attempt,error=log[-5000:],updated_at=now())
+                        write(runtime/'scientific_failure.json',evidence);write(runtime/'pause_request.json',evidence)
+                        raise RuntimeError('scientific, numerical or resource failure; inspect training log')
                     if attempt==MAX_ATTEMPTS:raise RuntimeError('training exhausted finite retries')
                 completion=read(stage_dir/'training_complete.json')
                 assert completion['environment_decision_steps']==BUDGETS[stage]
             # All required selection batches are needed only at the stage boundary.
             while not (stage_dir/'selection_report.json').is_file():
+                raise_if_paused(runtime)
                 if (runtime/'scientific_failure.json').is_file():raise RuntimeError('scientific failure; stage handoff refused')
                 with db(runtime) as c:
                     rows=c.execute("SELECT * FROM jobs WHERE kind='selection' AND stage=?",(stage,)).fetchall()
@@ -611,31 +656,44 @@ def supervise(runtime,gpu):
                 if len(rows)==len(old.MILESTONES[stage]) and all(r['status']=='complete' for r in rows):
                     selection=old.select_balanced(stage_dir,old.MILESTONES[stage])
                     assert sha256_file(Path(selection['selected']['checkpoint']))==selection['selected']['checkpoint_sha256']
+                    raise_if_paused(runtime)
                     write(stage_dir/'handoff_gate.json',dict(status='PASS',selection_reason=selection['selection_reason'],selected=selection['selected'],completed_at=now()))
                     break
                 write(runtime/'status.json',dict(status='running',phase='stage_boundary_selection_pending',stage=stage,completed_batches=sum(r['status']=='complete' for r in rows),required=len(old.MILESTONES[stage]),updated_at=now()))
                 export(runtime);reports(runtime)
                 for i,(k,p) in enumerate(workers):
-                    if p.poll() is not None:workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
+                    if p.poll() is not None:
+                        raise_if_paused(runtime)
+                        workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
                 time.sleep(20)
+            raise_if_paused(runtime)
             selection=read(stage_dir/'selection_report.json')['selected']
-            for mode in ('argmax','sample'):enqueue('formal',stage,dict(mode=mode),f'formal/{stage}/{mode}',runtime)
+            for mode in ('argmax','sample'):
+                raise_if_paused(runtime)
+                enqueue('formal',stage,dict(mode=mode),f'formal/{stage}/{mode}',runtime)
+            raise_if_paused(runtime)
             enqueue('reference',stage,dict(mode='argmax'),f'reference/{stage}/argmax',runtime)
             if stage!='stage3':
                 next_stage=old.STAGE_ORDER[old.STAGE_ORDER.index(stage)+1]
+                raise_if_paused(runtime)
                 write(runtime/'stages'/next_stage/'handoff.json',dict(checkpoint=selection['checkpoint'],sha256=selection['checkpoint_sha256'],previous_stage=stage,gate=str(stage_dir/'handoff_gate.json'),selection_report=str(stage_dir/'selection_report.json'),created_at=now()))
             reports(runtime);sync_milestone(runtime,stage)
+        raise_if_paused(runtime)
         write(runtime/'training_curriculum_complete.json',dict(status='three_training_budgets_complete',completed_at=now()))
         while True:
+            raise_if_paused(runtime)
             with db(runtime) as c:rows=c.execute('SELECT status,kind,id FROM jobs').fetchall()
             pending=[r['id'] for r in rows if r['status'] in ('pending','running')]
             if not pending:break
             write(runtime/'status.json',dict(status='running',phase='remaining_formal_and_gifs',pending=len(pending),updated_at=now()))
             export(runtime);reports(runtime)
             for i,(k,p) in enumerate(workers):
-                if p.poll() is not None:workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
+                if p.poll() is not None:
+                    raise_if_paused(runtime)
+                    workers[i]=(k,launch_child(['worker','--kinds',k],runtime/'logs'/f'worker_{i}.log',runtime))
             time.sleep(20)
         if (runtime/'scientific_failure.json').is_file():raise RuntimeError('scientific failure; final acceptance refused')
+        raise_if_paused(runtime)
         missing=[r['id'] for r in rows if r['status']=='failed']
         write(runtime/'orchestration_complete.json',dict(status='COMPLETE' if not missing else 'COMPLETE_WITH_MISSING_ARTIFACTS',missing=missing,completed_at=now()))
         write(runtime/'status.json',read(runtime/'orchestration_complete.json'));export(runtime);reports(runtime);sync_milestone(runtime,'final')
@@ -645,7 +703,8 @@ def supervise(runtime,gpu):
         raise
     finally:
         for _,p in workers:
-            if p.poll() is None:p.terminate()
+            if p.poll() is None:
+                p.terminate();p.wait(timeout=30)
 
 # Reports are refreshed by the supervisor without claiming unfinished stages are complete.
 def reports(runtime):

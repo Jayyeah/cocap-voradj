@@ -37,7 +37,7 @@ def generate(runtime):
         independent=[windows[-1]]
         prior=[x for x in windows if x['end_step']<=independent[0]['start_step']]
         if prior:independent.insert(0,prior[-1])
-    provisional=False
+    provisional=len(independent)<2
     if not independent and len(seq)>1 and seq[-1]['step']-seq[0]['step']>=10000:
         a,b=seq[0],seq[-1];dt=(datetime.strptime(b['time'],'%Y-%m-%dT%H:%M:%S%z')-datetime.strptime(a['time'],'%Y-%m-%dT%H:%M:%S%z')).total_seconds()
         if dt>0:independent=[dict(start_step=a['step'],end_step=b['step'],wall_seconds=dt,steps_per_second=(b['step']-a['step'])/dt)];provisional=True

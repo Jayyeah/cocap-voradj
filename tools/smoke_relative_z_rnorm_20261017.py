@@ -65,22 +65,139 @@ def fill_real_replays(t):
 def payload(runtime):return torch.load(runtime/'stages/stage1/training/checkpoints/resume_latest.pt',map_location='cpu',weights_only=False)
 
 
-def run_child(runtime,device,resume=False,steps=64):
+def configure_probe_evidence(runtime):
+    # Subprocess-local diagnostic output remap; production globals/configs stay frozen.
+    from tools import zsupport_relative_rnorm_reports_20261017 as reports
+    run.ART=runtime/'probe_artifacts';run.DOC=runtime/'probe_reports'
+    reports.ART=run.ART;reports.DOC=run.DOC
+
+
+def run_child(runtime,device,resume=False,steps=64,probe=False):
     cfg=config(runtime,steps,device)
     if resume:cfg['checkpointing']['resume_path']=str(runtime/'stages/stage1/training/checkpoints/resume_latest.pt')
-    t=run.QueueTrainer(cfg)
+    if probe:
+        # Prevent scheduled selection jobs in the tiny real coordinator probe.
+        cfg['iqn']['checkpoint_freq']=100000
+        configure_probe_evidence(runtime)
+        class ProbeTrainer(run.QueueTrainer):
+            def _select_actions(self,task,obs_list):
+                run.write(runtime/'probe_progress.json',dict(pid=os.getpid(),step=self.global_step,updates=self.update_steps))
+                return super()._select_actions(task,obs_list)
+        t=ProbeTrainer(cfg)
+        run.write(runtime/'stages/stage1/training_started.json',dict(pid=os.getpid(),process_start=run.process_start(os.getpid()),start_step=t.global_step,diagnostic_only=True))
+    else:t=run.QueueTrainer(cfg)
     if not resume:fill_real_replays(t)
     t.train()
 
 
+def supervisor_probe(runtime,device):
+    gate=run.require_independent_review();configure_probe_evidence(runtime)
+    run.write(run.ART/'independent_review_gate.json',gate)  # exact existing reviewer signature
+    run.write(run.ART/'acceptance_gate.json',dict(status='PASS',engineering_blockers_resolved=True,diagnostic_only=True))
+    original_launch=run.launch_child
+    def launch(args,log,runtime,gpu=''):
+        if args[0]=='train':
+            command=[sys.executable,__file__,'--child','--probe-trainer','--runtime',str(runtime),'--device',device,'--steps','1000']
+            if (runtime/'stages/stage1/training/checkpoints/resume_latest.pt').is_file():command.append('--resume')
+            log.parent.mkdir(parents=True,exist_ok=True)
+            with log.open('a') as f:
+                child=subprocess.Popen(command,cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env={**os.environ,'CUDA_VISIBLE_DEVICES':gpu,'OMP_NUM_THREADS':'1','MKL_NUM_THREADS':'1'})
+        else:
+            command=[sys.executable,__file__,'--probe-worker',args[args.index('--kinds')+1],'--runtime',str(runtime)]
+            log.parent.mkdir(parents=True,exist_ok=True)
+            with log.open('a') as f:
+                child=subprocess.Popen(command,cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env={**os.environ,'CUDA_VISIBLE_DEVICES':'','OMP_NUM_THREADS':'1','MKL_NUM_THREADS':'1'})
+        with (runtime/'probe_launches.jsonl').open('a') as f:f.write(json.dumps(dict(args=args,pid=child.pid,at=run.now()))+'\n')
+        return child
+    run.launch_child=launch
+    run.sync_milestone=lambda rt,label:run.write(rt/'probe_git_sync.json',dict(diagnostic_only=True,label=label,reason='isolated probe does not publish its assets'))
+    run.supervise(runtime,'0')  # actual persistent production coordinator body
+
+
+def low_z_dynamic_evidence():
+    rows=[]
+    for alpha in (.5,.25,.125):
+        cfg=run.formal.scene_config(run.formal.resolved(run.CONFIGS['stage1']),'mixed')
+        set_global_config(cfg);env=run.VorAdjEnv(copy.deepcopy(cfg),seed=2026101804);env.reset()
+        env.evaders[0].deactivated=True
+        for o in env.obstacles:o.x=o.y=105.
+        for i,p in enumerate(env.pursuers):
+            p.x=30.+15*i;p.y=50.;p.theta=0.;p.speed=.5;p.deactivated=False;p.is_pursuing=False
+        env._pursuing_release_counters=[0]*4;env._pursuing_flags_initialized=False
+        env._invalidate_voronoi_cache();env.z_state[:]=[0,alpha,alpha/2,0];env.get_observations()
+        result=env.step([4]*4,[None]);meta=result.infos[0]['replay_metadata']
+        assert meta['reward_role']=='support' and meta['support_reward_blend_active']
+        assert meta['support_reward_capture_weight']==alpha and meta['coverage_ce_applied_weight']==1-alpha
+        assert all(i['replay_metadata']['effective_task_label']!='capture' for i in result.infos)
+        assert np.isfinite(result.rewards).all()
+        decay=[float(env.z_state.max())]
+        for _ in range(3):
+            if all(result.dones):break
+            result=env.step([4]*4,[None]);decay.append(float(env.z_state.max()))
+        assert decay[-1]==0
+        rows.append(dict(alpha=alpha,role=meta['reward_role'],selected=meta['z_support_selection'],ce_weight=meta['coverage_ce_applied_weight'],decay=decay,no_capture_neighbors=True))
+    return rows
+
+
+def real_supervisor_pause_resume_probe(runtime,device):
+    runtime.mkdir(parents=True)
+    log=runtime/'supervisor_probe.log'
+    def supervisor():
+        with log.open('a') as f:return subprocess.Popen([sys.executable,__file__,'--probe-supervisor','--runtime',str(runtime),'--device',device],cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env=os.environ.copy())
+    def wait_until(predicate,process,limit=180):
+        deadline=time.time()+limit
+        while not predicate():
+            assert process.poll() is None,log.read_text()[-4000:]
+            if time.time()>deadline:raise TimeoutError('real supervisor probe deadline')
+            time.sleep(.1)
+    def progress():return run.read(runtime/'probe_progress.json',{})
+    proc=supervisor()
+    try:
+        wait_until(lambda:progress().get('step',0)>=8,proc)
+        run.write(runtime/'pause_request.json',dict(reason='actual supervisor owned-child pause smoke'))
+        assert proc.wait(timeout=180)!=0
+        first=payload(runtime);n1=first['runtime']['global_step'];u1=first['runtime']['update_steps']
+        assert n1>=8 and u1>0
+        launches=(runtime/'probe_launches.jsonl').read_text();time.sleep(.5)
+        assert launches==(runtime/'probe_launches.jsonl').read_text()
+        assert (runtime/'pause_request.json').is_file()
+        # Resume exact state as a real externally started trainer, then exercise
+        # the coordinator's adopting-existing process path (no duplicate launch).
+        (runtime/'pause_request.json').unlink()
+        with log.open('a') as f:
+            trainer=subprocess.Popen([sys.executable,__file__,'--child','--probe-trainer','--resume','--runtime',str(runtime),'--device',device,'--steps','1000'],cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env=os.environ.copy())
+        wait_until(lambda:run.read(runtime/'stages/stage1/training_started.json',{}).get('pid')==trainer.pid,trainer)
+        proc=supervisor()
+        wait_until(lambda:run.read(runtime/'status.json',{}).get('phase')=='adopting_existing_training',proc)
+        run.write(runtime/'pause_request.json',dict(reason='actual supervisor adopted trainer pause smoke'))
+        assert proc.wait(timeout=180)!=0;assert trainer.wait(timeout=180)!=0
+        second=payload(runtime);n2=second['runtime']['global_step'];u2=second['runtime']['update_steps']
+        assert n2>n1 and u2>u1
+        trace=[json.loads(line) for line in (runtime/'probe_launches.jsonl').read_text().splitlines()]
+        assert sum(x['args'][0]=='train' for x in trace)==1,'adoption launched duplicate trainer'
+        assert not (runtime/'stages/stage2/handoff.json').exists()
+        for x in trace:assert not run.alive(x['pid']),x
+        run.enqueue('selection','stage1',{},'durable-smoke',runtime)
+        assert run.claim(('selection',),runtime) is None
+        with run.db(runtime) as c:assert c.execute("SELECT status FROM jobs WHERE id='durable-smoke'").fetchone()[0]=='pending'
+        return dict(actual_supervise_process=True,first_paused_step=n1,resumed_adopted_paused_step=n2,updates_before=u1,updates_after=u2,no_duplicate_train_or_worker_restart=True,no_handoff=True,pause_marker_retained=True,sqlite_pending_durable=True)
+    finally:
+        run.write(runtime/'pause_request.json',dict(reason='diagnostic end; keep isolated probe held'))
+        if proc.poll() is None:run.wait_for_safe_pause(proc)
+
+
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--runtime',type=Path,required=True);ap.add_argument('--device',default='cuda:0');ap.add_argument('--child',action='store_true');ap.add_argument('--resume',action='store_true');ap.add_argument('--steps',type=int,default=64);args=ap.parse_args();torch.set_num_threads(1)
+    ap=argparse.ArgumentParser();ap.add_argument('--runtime',type=Path,required=True);ap.add_argument('--device',default='cuda:0');ap.add_argument('--child',action='store_true');ap.add_argument('--resume',action='store_true');ap.add_argument('--steps',type=int,default=64);ap.add_argument('--probe-trainer',action='store_true');ap.add_argument('--probe-supervisor',action='store_true');ap.add_argument('--probe-worker');args=ap.parse_args();torch.set_num_threads(1)
     run.require_independent_review()
     runtime=args.runtime
-    if args.child:return run_child(runtime,args.device,args.resume,args.steps)
+    if args.probe_supervisor:return supervisor_probe(runtime,args.device)
+    if args.probe_worker:
+        configure_probe_evidence(runtime);return run.worker(tuple(args.probe_worker.split(',')),runtime)
+    if args.child:return run_child(runtime,args.device,args.resume,args.steps,args.probe_trainer)
     assert not runtime.exists(),'smoke diagnostics must use a fresh directory'
     runtime.mkdir(parents=True)
     results={}
+    results['low_z_dynamic_evidence']=low_z_dynamic_evidence()
     # Actual CPU transitions and every production stage/scene live R contract.
     facts=[]
     for stage in run.old.STAGE_ORDER:
@@ -113,31 +230,15 @@ def main():
     from PIL import Image
     with Image.open(gifs[0]) as im:assert im.n_frames>0
     results['evaluation_renderer']=dict(episodes=6,horizon=4,gifs=len(gifs),render_service_seconds=time.time()-started,checkpoint_sha256=run.sha256_file(checkpoint))
-    # Actual process boundary pause: original supervisor helper waits for the
-    # child to publish exact state, blocks claims, then resumes the saved child.
-    pause=runtime/'pause_controller';log=pause/'controller.log';pause.mkdir()
-    def child(resume=False):
-        command=[sys.executable,__file__,'--child','--runtime',str(pause),'--device',args.device,'--steps','128']
-        if resume:command.append('--resume')
-        with log.open('a') as f:return subprocess.Popen(command,cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env=os.environ.copy())
-    proc=child();deadline=time.time()+180
-    resume_path=pause/'stages/stage1/training/checkpoints/resume_latest.pt'
-    while not resume_path.exists():
-        assert proc.poll() is None,log.read_text()[-3000:]
-        if time.time()>deadline:raise TimeoutError('smoke child did not publish checkpoint')
-        time.sleep(.2)
-    run.write(pause/'pause_request.json',dict(reason='authorized supervisor smoke'))
-    run.wait_for_safe_pause(proc)
-    assert proc.returncode!=0
-    p=payload(pause);assert 0<p['runtime']['global_step']<128
-    paused_step=p['runtime']['global_step']
-    run.enqueue('selection','stage1',{},'durable-smoke',pause)
-    assert run.claim(('selection',),pause) is None
-    (pause/'pause_request.json').unlink();proc=child(True);code=proc.wait(timeout=180);assert code==0,log.read_text()[-3000:]
-    assert payload(pause)['runtime']['global_step']==128
-    claimed=run.claim(('selection',),pause);assert claimed['id']=='durable-smoke'
-    with run.db(pause) as c:c.execute("UPDATE jobs SET status='complete' WHERE id='durable-smoke'")
-    results['supervisor_pause_resume_queue']=dict(paused_step=paused_step,resumed_step=128,durable_claim_hold=True,exact_resume=True)
+    # Actual Supervisor process/real workers/owned trainer + exact resume/adoption.
+    # The permanent regressions execute the actual supervise body at selection,
+    # handoff, scientific adoption and tail states with explicit process doubles.
+    control_log=runtime/'supervisor_control_path_tests.txt'
+    with control_log.open('w') as f:
+        result=subprocess.run([sys.executable,'-m','pytest','tests/test_relative_z_supervisor_20261017.py','-q','--tb=short'],cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env={**os.environ,'PYTHONPATH':str(ROOT/'src'),'CUDA_VISIBLE_DEVICES':''})
+    assert result.returncode==0,control_log.read_text()[-5000:]
+    results['supervisor_control_paths']=dict(status='PASS',log=str(control_log),actual_supervise_body=True,selection_handoff_tail_use_explicit_process_doubles=True)
+    results['supervisor_pause_resume_queue']=real_supervisor_pause_resume_probe(runtime/'real_supervisor',args.device)
     run.write(runtime/'report.json',dict(status='PASS',diagnostic_only=True,results=results,created_at=run.now()))
     run.write(run.ART/'smoke_test_results.json',dict(status='PASS',runtime=str(runtime),results=results,created_at=run.now()))
     print(json.dumps(dict(status='PASS',runtime=str(runtime),results=results),ensure_ascii=False,indent=2),flush=True)
