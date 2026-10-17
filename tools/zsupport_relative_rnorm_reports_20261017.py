@@ -73,7 +73,7 @@ def generate(runtime):
             for x in c.execute('SELECT * FROM checkpoints'):rows.append(dict(stage=x['stage'],kind='model_checkpoint',path=x['path'],sha256=x['sha256'],bytes=x['bytes'],step=x['step']))
             for x in c.execute('SELECT * FROM artifacts'):rows.append(dict(stage=x['stage'],kind=x['kind'],path=x['path'],sha256=x['sha256'],bytes=x['bytes'],step=''))
     with (DOC/'CHECKPOINT_AND_ROLLOUT_REGISTRY.csv').open('w') as f:
-        w=csv.DictWriter(f,fieldnames=['stage','kind','path','sha256','bytes','step']);w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=['stage','kind','path','sha256','bytes','step'],lineterminator='\n');w.writeheader();w.writerows(rows)
     p=stages['stage1']['progress'];acceptance=read(runtime/'stage1_300k_active_acceptance.json')
     lines=['# Stage1 300k主动监督记录','',f'更新时间：{now.isoformat()}（Asia/Shanghai）。',f'状态：{("PASS，主Agent完成签收" if acceptance else "未签收；不能视为300k验收成功")}。',f'实际环境决策：{n1:,}；optimizer updates：{stages["stage1"]["optimizer_updates"]:,}。','',f'持久化runtime：`{runtime}`。','', '## 实际健康数据','', '```json',json.dumps(p,ensure_ascii=False,indent=2),'```','', '## 吞吐与ETA','', '```json',json.dumps(status,ensure_ascii=False,indent=2),'```','', '训练频率、epsilon/LR、四类Replay配额与课程保持原合同。Support增长不单独证明方法改善；捕获/碰撞/CE必须同时报告。有限样本和单seed不构成非劣性或优越性结论。']
     if acceptance:lines+=['','## 主Agent验收证据','','```json',json.dumps(acceptance,ensure_ascii=False,indent=2),'```']
