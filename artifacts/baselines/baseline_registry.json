@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "generated_at": "2026-10-16",
+  "schema_version": "1.1.0",
+  "generated_at": "2026-10-17",
   "repository": {
     "name": "Jayyeah/cocap-voradj",
     "fact_branch": "main",
@@ -11,20 +11,51 @@
     {
       "rank": 1,
       "candidate_id": "rl_terl_2025",
-      "role": "RL multi-target encirclement candidate",
-      "condition": "Original all-target-visible setting is privileged; evaluate a clearly labeled limited-observation adaptation for the matched main table."
+      "role": "Mandatory RL",
+      "decision": "GO",
+      "condition": "Original all-distance targets privileged; Local-Adapted separately CONDITIONAL_GO"
     },
     {
       "rank": 2,
-      "candidate_id": "traditional_mk_wta_oapm_2025",
-      "role": "Strong traditional assignment plus geometry candidate",
-      "condition": "Confirm distance-matrix/global-information and communication assumptions from the full paper before preflight."
+      "candidate_id": "traditional_dynamic_robust_pursuit_2026",
+      "role": "Global Strong #1; if only one traditional",
+      "decision": "CONDITIONAL_GO",
+      "condition": "Check native reconstruction and AW9/slower pursuer feasibility; no full official code; lifecycle/coverage extensions explicit"
     },
     {
       "rank": 3,
+      "candidate_id": "traditional_ceo_dmpc_2024",
+      "role": "Global Strong #2",
+      "decision": "CONDITIONAL_GO",
+      "condition": "Full real-time communication privileged; reconstruct native MILP/QP, check AW9 and lifecycle extensions; no full official code"
+    },
+    {
+      "rank": 4,
+      "candidate_id": "traditional_mk_wta_oapm_2025",
+      "role": "Global full-text reserve",
+      "decision": "CONDITIONAL_GO",
+      "condition": "Obtain full text/control law; matrix and centralization still unverified"
+    },
+    {
+      "rank": 5,
+      "candidate_id": "traditional_ks_coal_2024",
+      "role": "Local task backbone #1; adaptation only",
+      "decision": "CONDITIONAL_GO",
+      "condition": "Non-learned backbone; restrict scout communications explicitly; add validated 3-pursuer controller; obtain final supplement"
+    },
+    {
+      "rank": 6,
+      "candidate_id": "traditional_gbvce_2026",
+      "role": "Local role/geometric component #2; not full multi-target baseline",
+      "decision": "CONDITIONAL_GO",
+      "condition": "Resolve global reductions/message protocol; add multi-target allocation/lifecycle; full original multi-target reproduction NO_GO"
+    },
+    {
+      "rank": 7,
       "candidate_id": "heuristic_spread_greedy_ring_v0",
-      "role": "CoCap-matched simple lower-bound heuristic",
-      "condition": "Project-defined baseline; label as such, not as a reproduction of one cited paper."
+      "role": "Simple Heuristic auxiliary",
+      "decision": "GO",
+      "condition": "Project-defined, not yet implemented; pre-register modules/validation tuning"
     }
   ],
   "candidates": [
@@ -33,10 +64,16 @@
       "name": "TERL: Transformer-Enhanced Reinforcement Learning",
       "paper": {
         "title": "TERL: Large-Scale Multi-Target Encirclement Using Transformer-Enhanced Reinforcement Learning",
-        "authors": ["Heng Zhang", "Guoxiang Zhao", "Xiaoqiang Ren"],
+        "authors": [
+          "Heng Zhang",
+          "Guoxiang Zhao",
+          "Xiaoqiang Ren"
+        ],
         "year": 2025,
-        "venue": "IROS 2025; arXiv:2503.12395",
-        "url": "https://arxiv.org/abs/2503.12395"
+        "venue": "IROS 2025, pp.13438–13445",
+        "url": "https://arxiv.org/abs/2503.12395",
+        "doi": "10.1109/IROS60139.2025.11246832",
+        "publication_status": "published"
       },
       "category": "RL",
       "mechanisms": {
@@ -49,34 +86,153 @@
         "ctde": "decentralized execution with shared policy; no inter-agent communication"
       },
       "task_assumptions": {
-        "global_target_knowledge": "All non-encircled evader states are observable at any distance; target state is privileged relative to CoCap local discovery.",
+        "global_target_knowledge": "Active evader inputs lack range filter; entity count capped by max_evader_num. Verified robots/pursuer.py L307-330 at 143359b.",
         "local_perception": "Teammates and obstacles are range-limited; target observations are not range-limited.",
         "multi_target": true,
         "multiple_pursuers_per_target": true,
         "continuous_multi_round_task": "Targets are encircled one by one and pursuers continue to remaining targets; no unknown-target search/recovery cycle."
       },
       "open_source": {
-        "status": "official_public",
+        "status": "OFFICIAL_REPRODUCIBLE",
         "official_repository": "https://github.com/ApricityZ/TERL",
         "license_or_dependency_notes": "Repository reports MIT license, training scripts/configs, models and Docker entry.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "official_public",
+        "commit": "143359b2722d49c29b4fecc0ad1fd8d46326e45a",
+        "license": "MIT",
+        "core_files": [
+          "policy/TERL_model.py",
+          "policy/agent.py",
+          "policy/trainer.py",
+          "robots/pursuer.py",
+          "train_rl_with_configs.py"
+        ]
       },
       "reproduction": {
-        "cost": "medium",
-        "dependencies": ["Python", "PyTorch", "custom 2D simulator", "optional Docker"],
-        "proprietary_simulator": false
+        "cost": "medium_high",
+        "dependencies": [
+          "Python",
+          "PyTorch",
+          "custom 2D simulator",
+          "optional Docker"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "中；局部适配中至高"
       },
       "comparison_value": "strong RL candidate for multi-target encirclement; shared-policy relational reasoning and learned target selection differ from CoCap.",
-      "risks": ["all remaining target states are visible regardless of distance", "2D discrete actions and APF evader differ", "capture and episode contracts differ"],
+      "risks": [
+        "all remaining target states are visible regardless of distance",
+        "2D discrete actions and APF evader differ",
+        "capture and episode contracts differ"
+      ],
       "recommendation": "KEEP",
-      "priority": "P0"
+      "priority": "P0",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_terl_2025",
+            "name": "TERL: Transformer-Enhanced Reinforcement Learning",
+            "paper": {
+              "title": "TERL: Large-Scale Multi-Target Encirclement Using Transformer-Enhanced Reinforcement Learning",
+              "authors": [
+                "Heng Zhang",
+                "Guoxiang Zhao",
+                "Xiaoqiang Ren"
+              ],
+              "year": 2025,
+              "venue": "IROS 2025; arXiv:2503.12395",
+              "url": "https://arxiv.org/abs/2503.12395"
+            },
+            "category": "RL",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": true,
+              "coalition_formation": "implicit cooperative encirclement; no explicit coalition module",
+              "explicit_search_or_exploration": false,
+              "assignment_centralization": "No explicit external assignment optimizer; each pursuer selects from its visible target set.",
+              "shared_policy": true,
+              "ctde": "decentralized execution with shared policy; no inter-agent communication"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "All non-encircled evader states are observable at any distance; target state is privileged relative to CoCap local discovery.",
+              "local_perception": "Teammates and obstacles are range-limited; target observations are not range-limited.",
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Targets are encircled one by one and pursuers continue to remaining targets; no unknown-target search/recovery cycle."
+            },
+            "open_source": {
+              "status": "official_public",
+              "official_repository": "https://github.com/ApricityZ/TERL",
+              "license_or_dependency_notes": "Repository reports MIT license, training scripts/configs, models and Docker entry.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "medium",
+              "dependencies": [
+                "Python",
+                "PyTorch",
+                "custom 2D simulator",
+                "optional Docker"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "strong RL candidate for multi-target encirclement; shared-policy relational reasoning and learned target selection differ from CoCap.",
+            "risks": [
+              "all remaining target states are visible regardless of distance",
+              "2D discrete actions and APF evader differ",
+              "capture and episode contracts differ"
+            ],
+            "recommendation": "KEEP",
+            "priority": "P0"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "RL-01",
+        "evidence_ids": [
+          "C01"
+        ],
+        "comparison_role": "Mandatory RL; privileged-global and separately named local adaptation",
+        "decision": "GO",
+        "difficulty": "中；局部适配中至高",
+        "search_mechanism": "原生无未知目标空间coverage",
+        "target_information": "全距离active target输入，受max_evader_num截断；友机/障碍距离过滤",
+        "assignment_mechanism": "learned target selection，共享IQN/Transformer；无外部分配器",
+        "encirclement_control": "多目标协同几何encirclement；需共同normal checker",
+        "continuous_task": "可继续处理其他目标；未知目标搜索/CoCap恢复与新波需适配",
+        "complexity_and_communication": "需实测预处理/推理/通信；不因无显式通信忽略输入构造",
+        "dependencies_verified_or_unknown": "Python≥3.10/PyTorch≥2.4、NumPy/SciPy/PyYAML/gym等；Docker；requirements非可靠pip锁定",
+        "validation_assets": "官方权重/配置/入口齐备，静态审计未运行",
+        "necessary_missing_features": [
+          "CoCap动力学/事件映射",
+          "局部mask/selection/coverage训练合同"
+        ],
+        "cocap_interfaces_to_port": [
+          "observation",
+          "action/dynamics",
+          "normal/swept",
+          "release/search/arrival"
+        ],
+        "rationale": "用户指定必选；原始global和Local-Adapted必须分开；后者CONDITIONAL_GO",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "rl_role_maddpg_2023",
       "name": "Role-based MADDPG for Multi-Target Pursuit-Evasion-Exploration",
       "paper": {
         "title": "Multi-Target Pursuit by a Decentralized Heterogeneous UAV Swarm using Deep Multi-Agent Reinforcement Learning",
-        "authors": ["Maryam Kouzeghar", "Youngbin Song", "Malika Meghjani", "Roland Bouffanais"],
+        "authors": [
+          "Maryam Kouzeghar",
+          "Youngbin Song",
+          "Malika Meghjani",
+          "Roland Bouffanais"
+        ],
         "year": 2023,
         "venue": "ICRA 2023",
         "url": "https://arxiv.org/abs/2303.01799"
@@ -99,27 +255,141 @@
         "continuous_multi_round_task": "No; reports tracking and collision-as-attack, not capture, release and search-again rounds."
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "third_party_or_generic_code": "OpenAI MADDPG is generic and does not implement this paper's role rewards/scenario.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["rebuild MPE scene", "MADDPG training", "role-specific rewards", "neighbor communication"],
-        "proprietary_simulator": false
+        "dependencies": [
+          "rebuild MPE scene",
+          "MADDPG training",
+          "role-specific rewards",
+          "neighbor communication"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "高"
       },
       "comparison_value": "closest paper for fixed scout-versus-tracker RL role structure and exploration/exploitation balance.",
-      "risks": ["tracking and collision-as-attack rather than geometric encirclement", "fixed scout count", "no official source implementation"],
-      "recommendation": "MAYBE",
-      "priority": "P1"
+      "risks": [
+        "tracking and collision-as-attack rather than geometric encirclement",
+        "fixed scout count",
+        "no official source implementation"
+      ],
+      "recommendation": "RELATED_WORK",
+      "priority": "related_work_only",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_role_maddpg_2023",
+            "name": "Role-based MADDPG for Multi-Target Pursuit-Evasion-Exploration",
+            "paper": {
+              "title": "Multi-Target Pursuit by a Decentralized Heterogeneous UAV Swarm using Deep Multi-Agent Reinforcement Learning",
+              "authors": [
+                "Maryam Kouzeghar",
+                "Youngbin Song",
+                "Malika Meghjani",
+                "Roland Bouffanais"
+              ],
+              "year": 2023,
+              "venue": "ICRA 2023",
+              "url": "https://arxiv.org/abs/2303.01799"
+            },
+            "category": "RL",
+            "mechanisms": {
+              "fixed_roles": "yes; scout and known-target tracker roles use distinct rewards",
+              "target_assignment": "pursuers are grouped to track targets in experiments; no general learned assignment solver",
+              "coalition_formation": false,
+              "explicit_search_or_exploration": "yes; scouts use Voronoi-cell reward",
+              "assignment_centralization": "No general assignment solver; target groups are set in experiment; discovered state propagates to neighbors.",
+              "shared_policy": "role-dependent policies/rewards",
+              "ctde": "MADDPG centralized critic during training, decentralized execution"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "No before discovery; detected target state propagates over neighbor communication.",
+              "local_perception": true,
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "No; reports tracking and collision-as-attack, not capture, release and search-again rounds."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "third_party_or_generic_code": "OpenAI MADDPG is generic and does not implement this paper's role rewards/scenario.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "rebuild MPE scene",
+                "MADDPG training",
+                "role-specific rewards",
+                "neighbor communication"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "closest paper for fixed scout-versus-tracker RL role structure and exploration/exploitation balance.",
+            "risks": [
+              "tracking and collision-as-attack rather than geometric encirclement",
+              "fixed scout count",
+              "no official source implementation"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P1"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "RL-02",
+        "evidence_ids": [],
+        "comparison_role": "Related Work",
+        "decision": "NO_GO",
+        "difficulty": "高",
+        "search_mechanism": "固定scout的Voronoi奖励探索，沿用Round1证据",
+        "target_information": "局部发现/邻居传播，具体合同沿用Round1",
+        "assignment_mechanism": "固定角色/实验分组，不新增复现训练",
+        "encirclement_control": "tracking/碰撞攻击，非CoCap三机几何normal capture",
+        "continuous_task": "无已核完整捕获释放再搜索",
+        "complexity_and_communication": "本轮不扩展检索/计算比较",
+        "dependencies_verified_or_unknown": "需要重建MADDPG/角色场景",
+        "validation_assets": "第一轮作者论文可读，无可靠官方/第三方训练资产",
+        "necessary_missing_features": [
+          "作者实现/可靠第三方合同",
+          "几何捕获/生命周期"
+        ],
+        "cocap_interfaces_to_port": [
+          "需单独论证后再决定"
+        ],
+        "rationale": "固定角色重要Related Work，当前不值得投入大规模训练",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "rl_open_2025",
       "name": "OPEN: Online Planning for Multi-UAV Pursuit-Evasion",
       "paper": {
         "title": "Online Planning for Multi-UAV Pursuit-Evasion in Unknown Environments Using Deep Reinforcement Learning",
-        "authors": ["Jiayu Chen", "Chao Yu", "Guosheng Li", "Wenhao Tang", "Shilong Ji", "Xinyi Yang", "Botian Xu", "Huazhong Yang", "Yu Wang"],
+        "authors": [
+          "Jiayu Chen",
+          "Chao Yu",
+          "Guosheng Li",
+          "Wenhao Tang",
+          "Shilong Ji",
+          "Xinyi Yang",
+          "Botian Xu",
+          "Huazhong Yang",
+          "Yu Wang"
+        ],
         "year": 2025,
         "venue": "IEEE Robotics and Automation Letters 10(8):8196-8203",
         "url": "https://doi.org/10.1109/LRA.2025.3583620"
@@ -142,27 +412,123 @@
         "continuous_multi_round_task": false
       },
       "open_source": {
-        "status": "official_public",
+        "status": "OFFICIAL_PARTIAL",
         "official_repository": "https://github.com/thu-uav/Multi-UAV-pursuit-evasion",
         "license_or_dependency_notes": "Official MIT repository; Isaac Sim 2022.2.0, OmniDrones and fixed TorchRL/TensorDict/DGL dependencies; missing assets/checkpoints have been reported.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "official_public",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["Isaac Sim 2022.2.0", "OmniDrones", "PyTorch/TorchRL", "TensorDict", "DGL", "GPU"],
+        "dependencies": [
+          "Isaac Sim 2022.2.0",
+          "OmniDrones",
+          "PyTorch/TorchRL",
+          "TensorDict",
+          "DGL",
+          "GPU"
+        ],
         "proprietary_simulator": true
       },
       "comparison_value": "good local partial-observation multi-UAV single-target capture reference.",
-      "risks": ["single target", "touch capture rather than ring encirclement", "3D CTBR dynamics differ", "simulator setup burden"],
+      "risks": [
+        "single target",
+        "touch capture rather than ring encirclement",
+        "3D CTBR dynamics differ",
+        "simulator setup burden"
+      ],
       "recommendation": "MAYBE",
-      "priority": "P2"
+      "priority": "P2",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_open_2025",
+            "name": "OPEN: Online Planning for Multi-UAV Pursuit-Evasion",
+            "paper": {
+              "title": "Online Planning for Multi-UAV Pursuit-Evasion in Unknown Environments Using Deep Reinforcement Learning",
+              "authors": [
+                "Jiayu Chen",
+                "Chao Yu",
+                "Guosheng Li",
+                "Wenhao Tang",
+                "Shilong Ji",
+                "Xinyi Yang",
+                "Botian Xu",
+                "Huazhong Yang",
+                "Yu Wang"
+              ],
+              "year": 2025,
+              "venue": "IEEE Robotics and Automation Letters 10(8):8196-8203",
+              "url": "https://doi.org/10.1109/LRA.2025.3583620"
+            },
+            "category": "RL",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": false,
+              "coalition_formation": false,
+              "explicit_search_or_exploration": "No task-level search; adaptive environment generator explores training scenarios.",
+              "assignment_centralization": "No multi-target assignment in the one-evader task.",
+              "shared_policy": true,
+              "ctde": "MAPPO actor executes decentralized; exact critic-state centralization not confirmed in this screening pass"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "One target is masked until detected by the team.",
+              "local_perception": "Partial target observation and nearest-obstacle features; relative other-UAV state is included.",
+              "multi_target": false,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": false
+            },
+            "open_source": {
+              "status": "official_public",
+              "official_repository": "https://github.com/thu-uav/Multi-UAV-pursuit-evasion",
+              "license_or_dependency_notes": "Official MIT repository; Isaac Sim 2022.2.0, OmniDrones and fixed TorchRL/TensorDict/DGL dependencies; missing assets/checkpoints have been reported.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "Isaac Sim 2022.2.0",
+                "OmniDrones",
+                "PyTorch/TorchRL",
+                "TensorDict",
+                "DGL",
+                "GPU"
+              ],
+              "proprietary_simulator": true
+            },
+            "comparison_value": "good local partial-observation multi-UAV single-target capture reference.",
+            "risks": [
+              "single target",
+              "touch capture rather than ring encirclement",
+              "3D CTBR dynamics differ",
+              "simulator setup burden"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P2"
+          }
+        }
+      ]
     },
     {
       "id": "rl_dualcl_2024",
       "name": "DualCL",
       "paper": {
         "title": "A Dual Curriculum Learning Framework for Multi-UAV Pursuit-Evasion in Diverse Environments",
-        "authors": ["Jiayu Chen", "Guosheng Li", "Chao Yu", "Xinyi Yang", "Botian Xu", "Huazhong Yang", "Yu Wang"],
+        "authors": [
+          "Jiayu Chen",
+          "Guosheng Li",
+          "Chao Yu",
+          "Xinyi Yang",
+          "Botian Xu",
+          "Huazhong Yang",
+          "Yu Wang"
+        ],
         "year": 2024,
         "venue": "arXiv preprint arXiv:2312.12255 (no formal venue identified)",
         "url": "https://arxiv.org/abs/2312.12255"
@@ -185,27 +551,114 @@
         "continuous_multi_round_task": false
       },
       "open_source": {
-        "status": "official_public",
+        "status": "OFFICIAL_REPRODUCIBLE",
         "official_repository": "https://github.com/jiayu-ch15/DualCL",
         "license_or_dependency_notes": "Author public MIT repository based on OmniDrones; Isaac Sim 2022.2.0, Python 3.7 and submodules.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "official_public",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["Isaac Sim 2022.2.0", "OmniDrones", "Python 3.7", "TorchRL/TensorDict", "GPU"],
+        "dependencies": [
+          "Isaac Sim 2022.2.0",
+          "OmniDrones",
+          "Python 3.7",
+          "TorchRL/TensorDict",
+          "GPU"
+        ],
         "proprietary_simulator": true
       },
       "comparison_value": "single-target capture and automatic curriculum reference.",
-      "risks": ["one evader", "capture-radius criterion", "curriculum exploration is not task-space search", "high simulator migration cost"],
+      "risks": [
+        "one evader",
+        "capture-radius criterion",
+        "curriculum exploration is not task-space search",
+        "high simulator migration cost"
+      ],
       "recommendation": "MAYBE",
-      "priority": "P2"
+      "priority": "P2",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_dualcl_2024",
+            "name": "DualCL",
+            "paper": {
+              "title": "A Dual Curriculum Learning Framework for Multi-UAV Pursuit-Evasion in Diverse Environments",
+              "authors": [
+                "Jiayu Chen",
+                "Guosheng Li",
+                "Chao Yu",
+                "Xinyi Yang",
+                "Botian Xu",
+                "Huazhong Yang",
+                "Yu Wang"
+              ],
+              "year": 2024,
+              "venue": "arXiv preprint arXiv:2312.12255 (no formal venue identified)",
+              "url": "https://arxiv.org/abs/2312.12255"
+            },
+            "category": "RL",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": false,
+              "coalition_formation": false,
+              "explicit_search_or_exploration": "Curriculum explores training task parameters, not run-time search.",
+              "assignment_centralization": "No multi-target assignment in the one-evader task.",
+              "shared_policy": "shared policy for homogeneous UAVs",
+              "ctde": "decentralized actors; exact critic input centralization not established in this screening pass"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "single evader pursuit scenario; observation follows simulator task contract",
+              "local_perception": "obstacle-rich task; detailed sensor parity requires preflight",
+              "multi_target": false,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": false
+            },
+            "open_source": {
+              "status": "official_public",
+              "official_repository": "https://github.com/jiayu-ch15/DualCL",
+              "license_or_dependency_notes": "Author public MIT repository based on OmniDrones; Isaac Sim 2022.2.0, Python 3.7 and submodules.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "Isaac Sim 2022.2.0",
+                "OmniDrones",
+                "Python 3.7",
+                "TorchRL/TensorDict",
+                "GPU"
+              ],
+              "proprietary_simulator": true
+            },
+            "comparison_value": "single-target capture and automatic curriculum reference.",
+            "risks": [
+              "one evader",
+              "capture-radius criterion",
+              "curriculum exploration is not task-space search",
+              "high simulator migration cost"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P2"
+          }
+        }
+      ]
     },
     {
       "id": "rl_lippo_2026",
       "name": "LIPPO: LSTM-Enhanced Independent PPO",
       "paper": {
         "title": "Active Interception for Multi-Target Encirclement by Heterogeneous UAVs: An LSTM-Enhanced Independent PPO Algorithm",
-        "authors": ["Yuxin Song", "Hanning Chen"],
+        "authors": [
+          "Yuxin Song",
+          "Hanning Chen"
+        ],
         "year": 2026,
         "venue": "Designs 10(2):26",
         "url": "https://doi.org/10.3390/designs10020026"
@@ -228,27 +681,106 @@
         "continuous_multi_round_task": "Targets are assigned once per episode; capture-triggered reassignment/search is not established."
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Open-access article; exact-title/author repository search did not identify official code.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["custom 2D simulator", "independent PPO", "LSTM replay/prediction", "heterogeneous speed/energy model"],
+        "dependencies": [
+          "custom 2D simulator",
+          "independent PPO",
+          "LSTM replay/prediction",
+          "heterogeneous speed/energy model"
+        ],
         "proprietary_simulator": false
       },
       "comparison_value": "recent heterogeneous multi-target geometric encirclement with 3 UAVs per target.",
-      "risks": ["one-time global assignment", "no explicit search role", "no official code"],
+      "risks": [
+        "one-time global assignment",
+        "no explicit search role",
+        "no official code"
+      ],
       "recommendation": "MAYBE",
-      "priority": "P1"
+      "priority": "P1",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_lippo_2026",
+            "name": "LIPPO: LSTM-Enhanced Independent PPO",
+            "paper": {
+              "title": "Active Interception for Multi-Target Encirclement by Heterogeneous UAVs: An LSTM-Enhanced Independent PPO Algorithm",
+              "authors": [
+                "Yuxin Song",
+                "Hanning Chen"
+              ],
+              "year": 2026,
+              "venue": "Designs 10(2):26",
+              "url": "https://doi.org/10.3390/designs10020026"
+            },
+            "category": "RL",
+            "mechanisms": {
+              "fixed_roles": "No scout/tracker functional roles; heterogeneity is speed/energy.",
+              "target_assignment": "global greedy assignment at episode start; each target gets 3 hunters",
+              "coalition_formation": "fixed per-target three-hunter group after initial assignment",
+              "explicit_search_or_exploration": false,
+              "assignment_centralization": "Central/global episode-start distance matrix assignment.",
+              "shared_policy": "independent PPO-style learners with shared experience pool",
+              "ctde": "independent learners; not CTDE"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "Global hunter-to-uncaught-target distances required for episode-start assignment.",
+              "local_perception": "Policy sees own, nearby agents, assigned target and local obstacles.",
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Targets are assigned once per episode; capture-triggered reassignment/search is not established."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Open-access article; exact-title/author repository search did not identify official code.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "custom 2D simulator",
+                "independent PPO",
+                "LSTM replay/prediction",
+                "heterogeneous speed/energy model"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "recent heterogeneous multi-target geometric encirclement with 3 UAVs per target.",
+            "risks": [
+              "one-time global assignment",
+              "no explicit search role",
+              "no official code"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P1"
+          }
+        }
+      ]
     },
     {
       "id": "rl_prtda_2026",
       "name": "PRTDA: role-structured airship-UAV pursuit",
       "paper": {
         "title": "Role-Structured Multi-Agent Pursuit-Evasion with Potential Game Constraints for Heterogeneous Airship-UAV Systems",
-        "authors": ["Kejie Yang", "Ming Zhu", "Yifei Zhang"],
+        "authors": [
+          "Kejie Yang",
+          "Ming Zhu",
+          "Yifei Zhang"
+        ],
         "year": 2026,
         "venue": "Drones 10(4):248",
         "url": "https://doi.org/10.3390/drones10040248"
@@ -271,27 +803,108 @@
         "continuous_multi_round_task": "Dynamic reassignment in training; post-capture autonomous search recovery is not established."
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Open-access article; no author code found in this search.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["custom 3D simulator", "airship coordinator", "heterogeneous UAV dynamics", "Gazebo validation"],
+        "dependencies": [
+          "custom 3D simulator",
+          "airship coordinator",
+          "heterogeneous UAV dynamics",
+          "Gazebo validation"
+        ],
         "proprietary_simulator": false
       },
       "comparison_value": "recent role-structured multi-target assignment lead.",
-      "risks": ["additional airship sensor/coordinator changes information budget", "3D airship-UAV mission differs substantially"],
+      "risks": [
+        "additional airship sensor/coordinator changes information budget",
+        "3D airship-UAV mission differs substantially"
+      ],
       "recommendation": "DROP",
-      "priority": "monitor_only"
+      "priority": "monitor_only",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_prtda_2026",
+            "name": "PRTDA: role-structured airship-UAV pursuit",
+            "paper": {
+              "title": "Role-Structured Multi-Agent Pursuit-Evasion with Potential Game Constraints for Heterogeneous Airship-UAV Systems",
+              "authors": [
+                "Kejie Yang",
+                "Ming Zhu",
+                "Yifei Zhang"
+              ],
+              "year": 2026,
+              "venue": "Drones 10(4):248",
+              "url": "https://doi.org/10.3390/drones10040248"
+            },
+            "category": "hybrid",
+            "mechanisms": {
+              "fixed_roles": "airship guidance role and UAV pursuer role",
+              "target_assignment": "two-stage assignment with curriculum-managed reassignment",
+              "coalition_formation": "potential-game coordination among pursuers",
+              "explicit_search_or_exploration": "airship regional coverage/guidance, not local scout roles within homogeneous swarm",
+              "assignment_centralization": "Airship provides centralized/global assignment support.",
+              "shared_policy": false,
+              "ctde": true
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "airship provides guidance and assignment support; privileged coordination beyond CoCap",
+              "local_perception": "UAV local execution under airship guidance",
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Dynamic reassignment in training; post-capture autonomous search recovery is not established."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Open-access article; no author code found in this search.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "custom 3D simulator",
+                "airship coordinator",
+                "heterogeneous UAV dynamics",
+                "Gazebo validation"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "recent role-structured multi-target assignment lead.",
+            "risks": [
+              "additional airship sensor/coordinator changes information budget",
+              "3D airship-UAV mission differs substantially"
+            ],
+            "recommendation": "DROP",
+            "priority": "monitor_only"
+          }
+        }
+      ]
     },
     {
       "id": "rl_ex_maddpg_2023",
       "name": "Ex-MADDPG task assignment",
       "paper": {
         "title": "Task Assignment of UAV Swarms Based on Deep Reinforcement Learning",
-        "authors": ["Bo Liu", "Shulei Wang", "Qinghua Li", "Xinyang Zhao", "Yunqing Pan", "Changhong Wang"],
+        "authors": [
+          "Bo Liu",
+          "Shulei Wang",
+          "Qinghua Li",
+          "Xinyang Zhao",
+          "Yunqing Pan",
+          "Changhong Wang"
+        ],
         "year": 2023,
         "venue": "Drones 7(5):297",
         "url": "https://doi.org/10.3390/drones7050297"
@@ -314,30 +927,118 @@
         "continuous_multi_round_task": "Dynamic assignment is supported, but complete encircle-capture-release-search cycles are not."
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Paper reports MPE and 9-drone/3-target experiments; exact-title/author GitHub check found no official repo.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-16",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["MPE-style simulator", "Ex-MADDPG extensions", "local communication", "Boids formation"],
+        "dependencies": [
+          "MPE-style simulator",
+          "Ex-MADDPG extensions",
+          "local communication",
+          "Boids formation"
+        ],
         "proprietary_simulator": false
       },
       "comparison_value": "RL task-assignment component under local discovery and communication.",
-      "risks": ["formation is Boids and not fully specified", "assignment-only focus", "no exact official source implementation"],
+      "risks": [
+        "formation is Boids and not fully specified",
+        "assignment-only focus",
+        "no exact official source implementation"
+      ],
       "recommendation": "MAYBE",
-      "priority": "P2"
+      "priority": "P2",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "rl_ex_maddpg_2023",
+            "name": "Ex-MADDPG task assignment",
+            "paper": {
+              "title": "Task Assignment of UAV Swarms Based on Deep Reinforcement Learning",
+              "authors": [
+                "Bo Liu",
+                "Shulei Wang",
+                "Qinghua Li",
+                "Xinyang Zhao",
+                "Yunqing Pan",
+                "Changhong Wang"
+              ],
+              "year": 2023,
+              "venue": "Drones 7(5):297",
+              "url": "https://doi.org/10.3390/drones7050297"
+            },
+            "category": "RL component",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": true,
+              "coalition_formation": "target requires at least two UAVs",
+              "explicit_search_or_exploration": "local target detection; not a dedicated spread-search controller",
+              "assignment_centralization": "Distributed/local communication according to paper; no central assignment service reported.",
+              "shared_policy": "extensible/synchronized MADDPG training",
+              "ctde": "MADDPG-based; local communication at execution"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "Unknown target count; targets only within detection range.",
+              "local_perception": true,
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Dynamic assignment is supported, but complete encircle-capture-release-search cycles are not."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Paper reports MPE and 9-drone/3-target experiments; exact-title/author GitHub check found no official repo.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "MPE-style simulator",
+                "Ex-MADDPG extensions",
+                "local communication",
+                "Boids formation"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "RL task-assignment component under local discovery and communication.",
+            "risks": [
+              "formation is Boids and not fully specified",
+              "assignment-only focus",
+              "no exact official source implementation"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P2"
+          }
+        }
+      ]
     },
     {
       "id": "traditional_mk_wta_oapm_2025",
       "name": "MK-WTA + OAPM",
       "paper": {
         "title": "A competition-based scheme using k-WTA networks for multi-target pursuit and encirclement in dynamic environments",
-        "authors": ["Ning Tan", "Zhenghui Cui", "Yang Liu", "Ruikun Hu", "Bo Zhu", "Tianjiang Hu"],
+        "authors": [
+          "Ning Tan",
+          "Zhenghui Cui",
+          "Yang Liu",
+          "Ruikun Hu",
+          "Bo Zhu",
+          "Tianjiang Hu"
+        ],
         "year": 2025,
         "venue": "Robotics and Autonomous Systems 191:104990",
-        "url": "https://doi.org/10.1016/j.robot.2025.104990"
+        "url": "https://doi.org/10.1016/j.robot.2025.104990",
+        "doi": "10.1016/j.robot.2025.104990",
+        "publication_status": "published"
       },
       "category": "traditional_hierarchical",
       "mechanisms": {
@@ -345,41 +1046,164 @@
         "target_assignment": true,
         "coalition_formation": "k-winner allocation selects multiple pursuers for each target",
         "explicit_search_or_exploration": false,
-        "assignment_centralization": "Unclear from accessible text; all-pair distance matrix suggests global/shared information. Verify full paper.",
-        "control": "obstacle-aware particle model approaches and geometrically encircles target"
+        "assignment_centralization": "UNVERIFIED: complete text unavailable; global matrix/centralized server are not established.",
+        "control": "obstacle-aware particle model approaches and geometrically encircles target",
+        "search_review": "无显式搜索/再搜索证据；全文未得，不作肯定推断",
+        "assignment_review": "MK-WTA为每目标选k追捕者；排他约束、重算频率、人数不足和消息复杂度未核",
+        "control_review": "OAPM围捕/避障由公开出版社材料确认；完整控制律、参数和三机角度可达性未核"
       },
       "task_assumptions": {
-        "global_target_knowledge": "Distance matrix over pursuer-target pairs appears needed; centralized/global target state not confirmed and must be checked from full text.",
+        "global_target_knowledge": "UNVERIFIED_ROUND1_LEAD: all-pair distance matrix not verified from a full-text equation in Round 2.",
         "local_perception": "Unknown obstacles; local target search protocol not established.",
         "multi_target": true,
         "multiple_pursuers_per_target": true,
-        "continuous_multi_round_task": "Multiple targets pursued until encircled; search-after-capture recovery not described."
+        "continuous_multi_round_task": "Multiple targets pursued until encircled; search-after-capture recovery not described.",
+        "information_review": "中央/分布式与全局距离矩阵均未由正文核实；Round1矩阵线索标UNVERIFIED_ROUND1_LEAD；预定全局比较用途不是信息事实证明",
+        "lifecycle_review": "capture移除/新到达/自动释放再分配/恢复搜索均未证实"
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Paper reports simulation and differential-drive physical validation; exact-title GitHub search did not identify official repo.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
-        "cost": "high",
-        "dependencies": ["MK-WTA task allocation", "OAPM pursuit controller", "obstacle and collision handling"],
-        "proprietary_simulator": false
+        "cost": "high_very_high",
+        "dependencies": [
+          "MK-WTA task allocation",
+          "OAPM pursuit controller",
+          "obstacle and collision handling"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "高至很高"
       },
       "comparison_value": "strongest direct traditional multi-target assignment-plus-encirclement candidate in the screened set.",
-      "risks": ["global distance information may violate CoCap information budget", "no search/recovery module", "no official code"],
-      "recommendation": "KEEP",
-      "priority": "P0"
+      "risks": [
+        "global distance information may violate CoCap information budget",
+        "no search/recovery module",
+        "no official code"
+      ],
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P1_fulltext_gate",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "traditional_mk_wta_oapm_2025",
+            "name": "MK-WTA + OAPM",
+            "paper": {
+              "title": "A competition-based scheme using k-WTA networks for multi-target pursuit and encirclement in dynamic environments",
+              "authors": [
+                "Ning Tan",
+                "Zhenghui Cui",
+                "Yang Liu",
+                "Ruikun Hu",
+                "Bo Zhu",
+                "Tianjiang Hu"
+              ],
+              "year": 2025,
+              "venue": "Robotics and Autonomous Systems 191:104990",
+              "url": "https://doi.org/10.1016/j.robot.2025.104990"
+            },
+            "category": "traditional_hierarchical",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": true,
+              "coalition_formation": "k-winner allocation selects multiple pursuers for each target",
+              "explicit_search_or_exploration": false,
+              "assignment_centralization": "Unclear from accessible text; all-pair distance matrix suggests global/shared information. Verify full paper.",
+              "control": "obstacle-aware particle model approaches and geometrically encircles target"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "Distance matrix over pursuer-target pairs appears needed; centralized/global target state not confirmed and must be checked from full text.",
+              "local_perception": "Unknown obstacles; local target search protocol not established.",
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Multiple targets pursued until encircled; search-after-capture recovery not described."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Paper reports simulation and differential-drive physical validation; exact-title GitHub search did not identify official repo.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "MK-WTA task allocation",
+                "OAPM pursuit controller",
+                "obstacle and collision handling"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "strongest direct traditional multi-target assignment-plus-encirclement candidate in the screened set.",
+            "risks": [
+              "global distance information may violate CoCap information budget",
+              "no search/recovery module",
+              "no official code"
+            ],
+            "recommendation": "KEEP",
+            "priority": "P0"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-01",
+        "evidence_ids": [
+          "S01"
+        ],
+        "comparison_role": "Global full-text reserve (after #1/#2)",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "高至很高",
+        "search_mechanism": "无显式搜索/再搜索证据；全文未得，不作肯定推断",
+        "target_information": "中央/分布式与全局距离矩阵均未由正文核实；Round1矩阵线索标UNVERIFIED_ROUND1_LEAD；预定全局比较用途不是信息事实证明",
+        "assignment_mechanism": "MK-WTA为每目标选k追捕者；排他约束、重算频率、人数不足和消息复杂度未核",
+        "encirclement_control": "OAPM围捕/避障由公开出版社材料确认；完整控制律、参数和三机角度可达性未核",
+        "continuous_task": "capture移除/新到达/自动释放再分配/恢复搜索均未证实",
+        "complexity_and_communication": "整框架时间/通信复杂度未核；不能由k-WTA名称推出集中式",
+        "dependencies_verified_or_unknown": "具体语言、MATLAB/Gurobi/ROS等未核",
+        "validation_assets": "公开论文报道仿真和差速轮机器人实验；无源代码/测试资产",
+        "necessary_missing_features": [
+          "完整§2–5与OAPM公式",
+          "分配信息合同",
+          "完成/释放/搜索事件"
+        ],
+        "cocap_interfaces_to_port": [
+          "状态/代价输入",
+          "竞争网络输出",
+          "OAPM→AW9",
+          "normal capture",
+          "coverage/reallocation"
+        ],
+        "rationale": "直接多目标k人分配＋围捕的已发表强储备；因全文缺口排在JAS2026和CEO-DMPC之后",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "traditional_potential_game_2023",
       "name": "DBSCAN + potential-game assignment + encirclement guidance",
       "paper": {
         "title": "Cooperative Control of Multi-UAV for Multi-Targets Encirclement and Tracking Based on Potential Game",
-        "authors": ["Jiangbo Jia", "Xin Chen", "Weizhen Wang", "Hongjin Liao", "Guangyuan Zhu"],
+        "authors": [
+          "Jiangbo Jia",
+          "Xin Chen",
+          "Weizhen Wang",
+          "Hongjin Liao",
+          "Guangyuan Zhu"
+        ],
         "year": 2023,
         "venue": "42nd Chinese Control Conference, pp. 3778-3785",
-        "url": "https://doi.org/10.23919/CCC58697.2023.10240696"
+        "url": "https://doi.org/10.23919/CCC58697.2023.10240696",
+        "doi": "10.23919/CCC58697.2023.10240696",
+        "publication_status": "published"
       },
       "category": "traditional_hierarchical",
       "mechanisms": {
@@ -388,40 +1212,161 @@
         "coalition_formation": "target cluster to UAV group assignment; explicit coalition terminology unclear",
         "explicit_search_or_exploration": false,
         "assignment_centralization": "Unclear from abstract; DBSCAN appears to need a shared target map. Verify full paper.",
-        "control": "coupled encirclement and tracking guidance"
+        "control": "coupled encirclement and tracking guidance",
+        "search_review": "搜索未证实",
+        "assignment_review": "DBSCAN＋potential game为摘要线索；utility/potential/人数/迭代/通信未得；Nash非自动全局最优",
+        "control_review": "耦合围捕/跟踪制导摘要；群目标与逐目标≥3机未区分"
       },
       "task_assumptions": {
         "global_target_knowledge": "DBSCAN clustering likely needs a shared target map; exact sensing contract unknown.",
         "local_perception": "unconfirmed",
         "multi_target": true,
-        "multiple_pursuers_per_target": true,
-        "continuous_multi_round_task": "Tracking is continuous; capture/recovery/reassignment contract unclear."
+        "multiple_pursuers_per_target": "Group encirclement in abstract; per-individual-target >=3 unverified.",
+        "continuous_multi_round_task": "Tracking is continuous; capture/recovery/reassignment contract unclear.",
+        "information_review": "DBSCAN共享数据范围/传感/中央节点未知",
+        "lifecycle_review": "捕获移除/多波/再搜索未知"
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Public abstract/proceedings metadata; no official repository found.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
-        "cost": "high",
-        "dependencies": ["DBSCAN", "potential-game allocation", "coupled geometric controller"],
-        "proprietary_simulator": false
+        "cost": "very_high",
+        "dependencies": [
+          "DBSCAN",
+          "potential-game allocation",
+          "coupled geometric controller"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "很高"
       },
       "comparison_value": "direct multi-target assignment and encirclement alternative to MK-WTA.",
-      "risks": ["full method and observation assumptions unavailable in screening pass", "no official code", "no search module"],
-      "recommendation": "MAYBE",
-      "priority": "P1"
+      "risks": [
+        "full method and observation assumptions unavailable in screening pass",
+        "no official code",
+        "no search module"
+      ],
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "traditional_potential_game_2023",
+            "name": "DBSCAN + potential-game assignment + encirclement guidance",
+            "paper": {
+              "title": "Cooperative Control of Multi-UAV for Multi-Targets Encirclement and Tracking Based on Potential Game",
+              "authors": [
+                "Jiangbo Jia",
+                "Xin Chen",
+                "Weizhen Wang",
+                "Hongjin Liao",
+                "Guangyuan Zhu"
+              ],
+              "year": 2023,
+              "venue": "42nd Chinese Control Conference, pp. 3778-3785",
+              "url": "https://doi.org/10.23919/CCC58697.2023.10240696"
+            },
+            "category": "traditional_hierarchical",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": true,
+              "coalition_formation": "target cluster to UAV group assignment; explicit coalition terminology unclear",
+              "explicit_search_or_exploration": false,
+              "assignment_centralization": "Unclear from abstract; DBSCAN appears to need a shared target map. Verify full paper.",
+              "control": "coupled encirclement and tracking guidance"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "DBSCAN clustering likely needs a shared target map; exact sensing contract unknown.",
+              "local_perception": "unconfirmed",
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Tracking is continuous; capture/recovery/reassignment contract unclear."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Public abstract/proceedings metadata; no official repository found.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "DBSCAN",
+                "potential-game allocation",
+                "coupled geometric controller"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "direct multi-target assignment and encirclement alternative to MK-WTA.",
+            "risks": [
+              "full method and observation assumptions unavailable in screening pass",
+              "no official code",
+              "no search module"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P1"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-02",
+        "evidence_ids": [
+          "S02"
+        ],
+        "comparison_role": "Related Work / reserve",
+        "decision": "NO_GO",
+        "difficulty": "很高",
+        "search_mechanism": "搜索未证实",
+        "target_information": "DBSCAN共享数据范围/传感/中央节点未知",
+        "assignment_mechanism": "DBSCAN＋potential game为摘要线索；utility/potential/人数/迭代/通信未得；Nash非自动全局最优",
+        "encirclement_control": "耦合围捕/跟踪制导摘要；群目标与逐目标≥3机未区分",
+        "continuous_task": "捕获移除/多波/再搜索未知",
+        "complexity_and_communication": "计算和通信未核",
+        "dependencies_verified_or_unknown": "具体实现依赖未核",
+        "validation_assets": "摘要报道仿真，未得到可复核源程序",
+        "necessary_missing_features": [
+          "全文公式和参数",
+          "逐目标人数/信息预算",
+          "生命周期"
+        ],
+        "cocap_interfaces_to_port": [
+          "分配",
+          "控制",
+          "AW9",
+          "capture/coverage"
+        ],
+        "rationale": "准确题名与CCC2023已核，但不足以实施或排名完整方法",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "traditional_coalition_acc_2018",
       "name": "Leader-follower coalition formation",
       "paper": {
         "title": "A Coalition Formation Approach to Coordinated Task Allocation in Heterogeneous UAV Networks",
-        "authors": ["Fatemeh Afghah", "Mohammad Zaeri-Amirani", "Abolfazl Razi", "Jacob Chakareski", "Elizabeth S. Bentley"],
+        "authors": [
+          "Fatemeh Afghah",
+          "Mohammad Zaeri-Amirani",
+          "Abolfazl Razi",
+          "Jacob Chakareski",
+          "Elizabeth S. Bentley"
+        ],
         "year": 2018,
         "venue": "American Control Conference (ACC), pp. 5968-5975",
-        "url": "https://doi.org/10.23919/ACC.2018.8431278"
+        "url": "https://doi.org/10.23919/ACC.2018.8431278",
+        "doi": "10.23919/ACC.2018.8431278",
+        "publication_status": "published"
       },
       "category": "traditional_coalition_component",
       "mechanisms": {
@@ -430,40 +1375,158 @@
         "coalition_formation": true,
         "explicit_search_or_exploration": "target detection precedes coalition formation; no coverage controller",
         "assignment_centralization": "Distributed; the detecting UAV becomes leader and selects coalition followers.",
-        "control": "task/resource allocation only; no encirclement controller"
+        "control": "task/resource allocation only; no encirclement controller",
+        "search_review": "先发现任务；未给CoCap意义coverage闭环",
+        "assignment_review": "merge-split与资源/协作信用联盟；按任务需求人数，非固定k=3",
+        "control_review": "未提供目标几何围捕控制"
       },
       "task_assumptions": {
         "global_target_knowledge": "Target locations/resources unknown a priori; detector becomes leader.",
         "local_perception": "distributed detection and neighbor relay",
         "multi_target": true,
         "multiple_pursuers_per_target": "coalition followers are selected, but geometric capture need not be required",
-        "continuous_multi_round_task": "Coalition formation can recur for detected tasks; search/capture repeat is not specified."
+        "continuous_multi_round_task": "Coalition formation can recur for detected tasks; search/capture repeat is not specified.",
+        "information_review": "探测者leader/邻居协作，含地面站上报；不是已证实三机围捕信息合同",
+        "lifecycle_review": "不能证实normal捕获移除→释放→再搜索"
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "Author-hosted paper PDF available; no method repository identified.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
         "cost": "high",
-        "dependencies": ["merge-split coalition rules", "communication/reputation model", "external geometric controller"],
-        "proprietary_simulator": false
+        "dependencies": [
+          "merge-split coalition rules",
+          "communication/reputation model",
+          "external geometric controller"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "高"
       },
       "comparison_value": "useful coalition layer for unknown targets, not a complete pursuit baseline.",
-      "risks": ["generic resource tasks rather than multi-agent geometric encirclement", "requires a separate controller"],
-      "recommendation": "MAYBE",
-      "priority": "P2"
+      "risks": [
+        "generic resource tasks rather than multi-agent geometric encirclement",
+        "requires a separate controller"
+      ],
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "traditional_coalition_acc_2018",
+            "name": "Leader-follower coalition formation",
+            "paper": {
+              "title": "A Coalition Formation Approach to Coordinated Task Allocation in Heterogeneous UAV Networks",
+              "authors": [
+                "Fatemeh Afghah",
+                "Mohammad Zaeri-Amirani",
+                "Abolfazl Razi",
+                "Jacob Chakareski",
+                "Elizabeth S. Bentley"
+              ],
+              "year": 2018,
+              "venue": "American Control Conference (ACC), pp. 5968-5975",
+              "url": "https://doi.org/10.23919/ACC.2018.8431278"
+            },
+            "category": "traditional_coalition_component",
+            "mechanisms": {
+              "fixed_roles": "temporary detector-leader and followers",
+              "target_assignment": true,
+              "coalition_formation": true,
+              "explicit_search_or_exploration": "target detection precedes coalition formation; no coverage controller",
+              "assignment_centralization": "Distributed; the detecting UAV becomes leader and selects coalition followers.",
+              "control": "task/resource allocation only; no encirclement controller"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "Target locations/resources unknown a priori; detector becomes leader.",
+              "local_perception": "distributed detection and neighbor relay",
+              "multi_target": true,
+              "multiple_pursuers_per_target": "coalition followers are selected, but geometric capture need not be required",
+              "continuous_multi_round_task": "Coalition formation can recur for detected tasks; search/capture repeat is not specified."
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "Author-hosted paper PDF available; no method repository identified.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "merge-split coalition rules",
+                "communication/reputation model",
+                "external geometric controller"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "useful coalition layer for unknown targets, not a complete pursuit baseline.",
+            "risks": [
+              "generic resource tasks rather than multi-agent geometric encirclement",
+              "requires a separate controller"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P2"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-03",
+        "evidence_ids": [
+          "S03"
+        ],
+        "comparison_role": "Coalition component",
+        "decision": "NO_GO",
+        "difficulty": "高",
+        "search_mechanism": "先发现任务；未给CoCap意义coverage闭环",
+        "target_information": "探测者leader/邻居协作，含地面站上报；不是已证实三机围捕信息合同",
+        "assignment_mechanism": "merge-split与资源/协作信用联盟；按任务需求人数，非固定k=3",
+        "encirclement_control": "未提供目标几何围捕控制",
+        "continuous_task": "不能证实normal捕获移除→释放→再搜索",
+        "complexity_and_communication": "通信/联盟成本需具体实现，未核完整量级",
+        "dependencies_verified_or_unknown": "具体语言/工具箱未核",
+        "validation_assets": "作者PDF有仿真，无开源可执行测试",
+        "necessary_missing_features": [
+          "coverage",
+          "多人几何控制",
+          "共同事件接口"
+        ],
+        "cocap_interfaces_to_port": [
+          "局部发现",
+          "联盟",
+          "AW9 controller",
+          "release/search"
+        ],
+        "rationale": "发现者发起联盟有参考价值，不能代替整套围捕",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "traditional_rmpc_2025",
       "name": "Distributed RMPC encirclement-guaranteed pursuit",
       "paper": {
         "title": "Distributed cooperative pursuit with encirclement guarantee via robust model predictive control",
-        "authors": ["Chen Wang", "Hua Chen", "Jia Pan", "Wei Zhang"],
+        "authors": [
+          "Chen Wang",
+          "Hua Chen",
+          "Jia Pan",
+          "Wei Zhang"
+        ],
         "year": 2025,
         "venue": "Robotics and Autonomous Systems 192:105019",
-        "url": "https://doi.org/10.1016/j.robot.2025.105019"
+        "url": "https://doi.org/10.1016/j.robot.2025.105019",
+        "doi": "10.1016/j.robot.2025.105019",
+        "publication_status": "published"
       },
       "category": "traditional_geometric_controller_component",
       "mechanisms": {
@@ -472,30 +1535,143 @@
         "coalition_formation": false,
         "explicit_search_or_exploration": false,
         "assignment_centralization": "Not applicable; no multi-target assignment layer.",
-        "control": "distributed robust MPC with explicit encirclement and capture requirements"
+        "control": "distributed robust MPC with explicit encirclement and capture requirements",
+        "search_review": "无任务搜索",
+        "assignment_review": "无多目标任务分配",
+        "control_review": "2025 EGSS＋Tube MPC；2021前身凸包/扇区，二者版本区分"
       },
       "task_assumptions": {
         "global_target_knowledge": "single evader state/estimate available to pursuit team; exact communication contract requires full-text review",
         "local_perception": "communication-constrained distributed control",
         "multi_target": false,
         "multiple_pursuers_per_target": true,
-        "continuous_multi_round_task": false
+        "continuous_multi_round_task": false,
+        "information_review": "单目标，初始包围；2021前身全体状态用于初始化，2025完整细则未核",
+        "lifecycle_review": "单目标，无捕获后任务循环"
       },
       "open_source": {
-        "status": "no_official_code_found",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "No official implementation found in this search; commercial solver dependency not verified.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "no_official_code_found",
+        "commit": null,
+        "license": null,
+        "core_files": []
       },
       "reproduction": {
-        "cost": "high",
-        "dependencies": ["robust MPC formulation", "online constrained optimization", "communication decomposition"],
-        "proprietary_simulator": false
+        "cost": "very_high",
+        "dependencies": [
+          "robust MPC formulation",
+          "online constrained optimization",
+          "communication decomposition"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "很高"
       },
       "comparison_value": "geometric low-level encirclement controller reference.",
-      "risks": ["single target", "no task allocation or search", "solver/parameter reproduction burden"],
-      "recommendation": "MAYBE",
-      "priority": "P2"
+      "risks": [
+        "single target",
+        "no task allocation or search",
+        "solver/parameter reproduction burden"
+      ],
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "traditional_rmpc_2025",
+            "name": "Distributed RMPC encirclement-guaranteed pursuit",
+            "paper": {
+              "title": "Distributed cooperative pursuit with encirclement guarantee via robust model predictive control",
+              "authors": [
+                "Chen Wang",
+                "Hua Chen",
+                "Jia Pan",
+                "Wei Zhang"
+              ],
+              "year": 2025,
+              "venue": "Robotics and Autonomous Systems 192:105019",
+              "url": "https://doi.org/10.1016/j.robot.2025.105019"
+            },
+            "category": "traditional_geometric_controller_component",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": false,
+              "coalition_formation": false,
+              "explicit_search_or_exploration": false,
+              "assignment_centralization": "Not applicable; no multi-target assignment layer.",
+              "control": "distributed robust MPC with explicit encirclement and capture requirements"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": "single evader state/estimate available to pursuit team; exact communication contract requires full-text review",
+              "local_perception": "communication-constrained distributed control",
+              "multi_target": false,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": false
+            },
+            "open_source": {
+              "status": "no_official_code_found",
+              "official_repository": null,
+              "license_or_dependency_notes": "No official implementation found in this search; commercial solver dependency not verified.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "high",
+              "dependencies": [
+                "robust MPC formulation",
+                "online constrained optimization",
+                "communication decomposition"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "geometric low-level encirclement controller reference.",
+            "risks": [
+              "single target",
+              "no task allocation or search",
+              "solver/parameter reproduction burden"
+            ],
+            "recommendation": "MAYBE",
+            "priority": "P2"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-04",
+        "evidence_ids": [
+          "S04",
+          "S04a"
+        ],
+        "comparison_role": "Single-target controller component",
+        "decision": "NO_GO",
+        "difficulty": "很高",
+        "search_mechanism": "无任务搜索",
+        "target_information": "单目标，初始包围；2021前身全体状态用于初始化，2025完整细则未核",
+        "assignment_mechanism": "无多目标任务分配",
+        "encirclement_control": "2025 EGSS＋Tube MPC；2021前身凸包/扇区，二者版本区分",
+        "continuous_task": "单目标，无捕获后任务循环",
+        "complexity_and_communication": "QP/MPC成本依赖horizon/约束；求解器与通信量未核",
+        "dependencies_verified_or_unknown": "2021前身MATLAB；2025 Gazebo仿真；商业solver/工具箱未知",
+        "validation_assets": "仿真；2025整套代码未找到",
+        "necessary_missing_features": [
+          "2025正文/参数",
+          "多目标分配",
+          "搜索和事件循环"
+        ],
+        "cocap_interfaces_to_port": [
+          "EGSS/安全域",
+          "AW9",
+          "分配/搜索",
+          "normal capture"
+        ],
+        "rationale": "适合作已有包围单目标模块，三机/端到端合同均未闭合",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     },
     {
       "id": "heuristic_spread_greedy_ring_v0",
@@ -508,7 +1684,9 @@
         "references": [
           "https://doi.org/10.1016/j.robot.2025.104990",
           "https://doi.org/10.23919/CCC58697.2023.10240696"
-        ]
+        ],
+        "doi": null,
+        "publication_status": "project_defined"
       },
       "category": "traditional_heuristic",
       "mechanisms": {
@@ -517,30 +1695,818 @@
         "coalition_formation": "temporary target group",
         "explicit_search_or_exploration": "deterministic spread/coverage when no local target is known",
         "assignment_centralization": "Distributed neighbor negotiation for the matched contract; optional central variant must be labeled privileged.",
-        "control": "geometric encirclement slots plus APF obstacle/collision avoidance"
+        "control": "geometric encirclement slots plus APF obstacle/collision avoidance",
+        "search_review": "设计coverage/spread，尚未实现/验证",
+        "assignment_review": "拟容量约束greedy/auction，最低3机，明确tie-break和迟滞",
+        "control_review": "拟角度slot＋AW9控制/避障；不是任何文献官方控制器"
       },
       "task_assumptions": {
         "global_target_knowledge": false,
         "local_perception": true,
         "multi_target": true,
         "multiple_pursuers_per_target": true,
-        "continuous_multi_round_task": "Yes by design: capture, coalition release, return to spread/search, repeat."
+        "continuous_multi_round_task": "Design goal only; no implementation or experiment exists in this review.",
+        "information_review": "拟仅表面距离发现＋允许邻接消息，需TTL/版本/延迟合同",
+        "lifecycle_review": "设计capture→release→search→new wave；尚未实现"
       },
       "open_source": {
-        "status": "project_defined_no_external_official_code",
+        "status": "NOT_FOUND",
         "official_repository": null,
         "license_or_dependency_notes": "To be maintained within CoCap only after contract freeze.",
-        "checked": "2026-10-16"
+        "checked": "2026-10-17",
+        "legacy_status_round1": "project_defined_no_external_official_code",
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "nature": "project_defined_to_be_implemented; external code status not applicable except NOT_FOUND"
       },
       "reproduction": {
-        "cost": "low",
-        "dependencies": ["CoCap simulator", "deterministic assignment", "geometric control rules"],
-        "proprietary_simulator": false
+        "cost": "low_medium",
+        "dependencies": [
+          "CoCap simulator",
+          "deterministic assignment",
+          "geometric control rules"
+        ],
+        "proprietary_simulator": false,
+        "focused_review_cost": "低至中"
       },
       "comparison_value": "interpretable information-matched lower bound for the continuous search-capture-search objective.",
-      "risks": ["rule tuning may weaken or over-engineer the baseline", "must tune on held-out validation seeds"],
-      "recommendation": "KEEP",
-      "priority": "P0"
+      "risks": [
+        "rule tuning may weaken or over-engineer the baseline",
+        "must tune on held-out validation seeds"
+      ],
+      "recommendation": "GO",
+      "priority": "P0",
+      "review_history": [
+        {
+          "round": 1,
+          "date": "2026-10-16",
+          "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+          "snapshot": {
+            "id": "heuristic_spread_greedy_ring_v0",
+            "name": "local spread + greedy coalition assignment + geometric encirclement",
+            "paper": {
+              "title": null,
+              "authors": [],
+              "year": null,
+              "venue": "Project-defined heuristic contract; not a single-paper reproduction",
+              "references": [
+                "https://doi.org/10.1016/j.robot.2025.104990",
+                "https://doi.org/10.23919/CCC58697.2023.10240696"
+              ]
+            },
+            "category": "traditional_heuristic",
+            "mechanisms": {
+              "fixed_roles": false,
+              "target_assignment": "local nearest-target/auction greedy rule with per-target minimum team size",
+              "coalition_formation": "temporary target group",
+              "explicit_search_or_exploration": "deterministic spread/coverage when no local target is known",
+              "assignment_centralization": "Distributed neighbor negotiation for the matched contract; optional central variant must be labeled privileged.",
+              "control": "geometric encirclement slots plus APF obstacle/collision avoidance"
+            },
+            "task_assumptions": {
+              "global_target_knowledge": false,
+              "local_perception": true,
+              "multi_target": true,
+              "multiple_pursuers_per_target": true,
+              "continuous_multi_round_task": "Yes by design: capture, coalition release, return to spread/search, repeat."
+            },
+            "open_source": {
+              "status": "project_defined_no_external_official_code",
+              "official_repository": null,
+              "license_or_dependency_notes": "To be maintained within CoCap only after contract freeze.",
+              "checked": "2026-10-16"
+            },
+            "reproduction": {
+              "cost": "low",
+              "dependencies": [
+                "CoCap simulator",
+                "deterministic assignment",
+                "geometric control rules"
+              ],
+              "proprietary_simulator": false
+            },
+            "comparison_value": "interpretable information-matched lower bound for the continuous search-capture-search objective.",
+            "risks": [
+              "rule tuning may weaken or over-engineer the baseline",
+              "must tune on held-out validation seeds"
+            ],
+            "recommendation": "KEEP",
+            "priority": "P0"
+          }
+        }
+      ],
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-05",
+        "evidence_ids": [],
+        "comparison_role": "Simple Heuristic",
+        "decision": "GO",
+        "difficulty": "低至中",
+        "search_mechanism": "设计coverage/spread，尚未实现/验证",
+        "target_information": "拟仅表面距离发现＋允许邻接消息，需TTL/版本/延迟合同",
+        "assignment_mechanism": "拟容量约束greedy/auction，最低3机，明确tie-break和迟滞",
+        "encirclement_control": "拟角度slot＋AW9控制/避障；不是任何文献官方控制器",
+        "continuous_task": "设计capture→release→search→new wave；尚未实现",
+        "complexity_and_communication": "需实测计算/消息；不能因简单而假定低总成本",
+        "dependencies_verified_or_unknown": "计划CoCap Python环境与几何/规则，无训练；实际依赖未建立",
+        "validation_assets": "无实现/无实验",
+        "necessary_missing_features": [
+          "所有设计模块实现和行为验证"
+        ],
+        "cocap_interfaces_to_port": [
+          "coverage",
+          "discovery/message",
+          "coalition",
+          "geometry/AW9",
+          "capture/release/arrival"
+        ],
+        "rationale": "辅助透明对照；不是完整已实现生命周期或外部论文复现",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      },
+      "implementation_status": "not_implemented; task_assumptions are intended design only"
+    },
+    {
+      "id": "traditional_dmk_wta_ppm_2024",
+      "name": "DMK-WTA + PPM",
+      "paper": {
+        "title": "Multitarget Pursuit-Evasion Based on Distributed and Competitive Mechanisms",
+        "authors": [
+          "Ning Tan",
+          "Yang Liu",
+          "Ruikun Hu",
+          "Hui Cheng"
+        ],
+        "year": 2024,
+        "venue": "IEEE Transactions on Systems, Man, and Cybernetics: Systems 54(10):5989–6000",
+        "doi": "10.1109/TSMC.2024.3410693",
+        "url": "https://ieeexplore.ieee.org/document/10586228/",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "未知目标搜索/再搜索未核",
+        "assignment_review": "DMK-WTA竞争任务代价；k/排他/重算频率需全文",
+        "control_review": "predator-pack encirclement与避障由出版社确认，完整控制律未得"
+      },
+      "task_assumptions": {
+        "information_review": "distributed由出版社确认；目标先验/全局代价/通信图正文未核",
+        "lifecycle_review": "动态场景不等于完成后循环，未证实"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "high_very_high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "高至很高"
+      },
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P1",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-06",
+        "evidence_ids": [
+          "S06"
+        ],
+        "comparison_role": "Distributed assignment/control reserve",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "高至很高",
+        "search_mechanism": "未知目标搜索/再搜索未核",
+        "target_information": "distributed由出版社确认；目标先验/全局代价/通信图正文未核",
+        "assignment_mechanism": "DMK-WTA竞争任务代价；k/排他/重算频率需全文",
+        "encirclement_control": "predator-pack encirclement与避障由出版社确认，完整控制律未得",
+        "continuous_task": "动态场景不等于完成后循环，未证实",
+        "complexity_and_communication": "整框架复杂度与通信未核",
+        "dependencies_verified_or_unknown": "语言/平台/商业依赖未核",
+        "validation_assets": "出版社报道仿真/多机器人实物，未得执行资产",
+        "necessary_missing_features": [
+          "正文公式/参数",
+          "局部信息与任务循环"
+        ],
+        "cocap_interfaces_to_port": [
+          "DMK-WTA",
+          "PPM→AW9",
+          "capture/release/search"
+        ],
+        "rationale": "强分布式储备；不从abstract推定局部自主搜索",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_ks_coal_2024",
+      "name": "KS-COAL (non-learned backbone)",
+      "paper": {
+        "title": "Accelerated K-Serial Stable Coalition for Dynamic Capture and Resource Defense",
+        "authors": [
+          "Junfeng Chen",
+          "Zili Tang",
+          "Meng Guo"
+        ],
+        "year": 2024,
+        "venue": "IEEE Robotics and Automation Letters 9(1):443–450",
+        "doi": "10.1109/LRA.2023.3334560",
+        "url": "https://arxiv.org/abs/2305.15729",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "v3区域coverage；v1区域划分/subregion sweep与收益χ/τ；最终补充未得",
+        "assignment_review": "邻接chain switch＋消息buffer＋最佳assignment共识，KSS；纯传统仅非学习骨架，Accelerated含HGAN监督学习",
+        "control_review": "v1动态capture pure pursuit；Apollonius交集用于evader逃逸；资源圈防御不是移动target三机ring；v3细则指补充"
+      },
+      "task_assumptions": {
+        "information_review": "无中央任务分配；SWAT有限距离、无限次连通；SCOUT队内不限距离；v1发现全SWAT广播",
+        "lifecycle_review": "资源持续生成，目标捕获immobilized，v1防御定时释放；未证实新evader多波与CoCap恢复"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "high_very_high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "高至很高"
+      },
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P1",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-07",
+        "evidence_ids": [
+          "S07",
+          "S07a"
+        ],
+        "comparison_role": "Local Distributed #1 (task backbone; adaptation)",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "高至很高",
+        "search_mechanism": "v3区域coverage；v1区域划分/subregion sweep与收益χ/τ；最终补充未得",
+        "target_information": "无中央任务分配；SWAT有限距离、无限次连通；SCOUT队内不限距离；v1发现全SWAT广播",
+        "assignment_mechanism": "邻接chain switch＋消息buffer＋最佳assignment共识，KSS；纯传统仅非学习骨架，Accelerated含HGAN监督学习",
+        "encirclement_control": "v1动态capture pure pursuit；Apollonius交集用于evader逃逸；资源圈防御不是移动target三机ring；v3细则指补充",
+        "continuous_task": "资源持续生成，目标捕获immobilized，v1防御定时释放；未证实新evader多波与CoCap恢复",
+        "complexity_and_communication": "v3每机每轮O(NΠ(2Nr+Nω))；NΠ≤(NωNr)^kmax；消息含assignment/链；非固定小payload",
+        "dependencies_verified_or_unknown": "KS-COAL消息/utility；完整Accelerated另需HGAN监督训练，语言/工具箱未核",
+        "validation_assets": "v3仿真与13机器人；无可核官方源码/权重",
+        "necessary_missing_features": [
+          "最终运动/utility补充",
+          "有限侦察通信适配",
+          "三机几何",
+          "capture/release/search"
+        ],
+        "cocap_interfaces_to_port": [
+          "同质能力映射",
+          "消息状态/TTL",
+          "局部发现",
+          "AW9 ring controller",
+          "任务事件"
+        ],
+        "rationale": "持续任务组织最贴近CoCap，但必须明确命名组合适配；非已合格matched-local完整方法",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_distance_encirclement_2024",
+      "name": "Distance-based CBAA + antisynchronization",
+      "paper": {
+        "title": "Distance-Based Multiple Noncooperative Ground Target Encirclement for Complex Environments",
+        "authors": [
+          "Fen Liu",
+          "Shenghai Yuan",
+          "Kun Cao",
+          "Wei Meng",
+          "Lihua Xie"
+        ],
+        "year": 2025,
+        "venue": "IEEE Transactions on Control Systems Technology 33(1):261–273",
+        "doi": "10.1109/TCST.2024.3469032",
+        "url": "https://arxiv.org/abs/2409.15840",
+        "publication_status": "published; arXiv preprint 2024 read separately"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "无持续任务搜索",
+        "assignment_review": "初始CBAA变体，每目标恰2机；N=2M；本地assignment状态M×N",
+        "control_review": "DTSE/Kalman＋antisynchronization＋截断伪力，u=Γ−2v/t；两机对向"
+      },
+      "task_assumptions": {
+        "information_review": "range-only目标估计，r_comm≥2r_measure，局部可观测集；目标加速度方差先验",
+        "lifecycle_review": "未给完成移除/释放/新目标再搜索"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "very_high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "很高"
+      },
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-08",
+        "evidence_ids": [
+          "S08"
+        ],
+        "comparison_role": "Estimator/auction component",
+        "decision": "NO_GO",
+        "difficulty": "很高",
+        "search_mechanism": "无持续任务搜索",
+        "target_information": "range-only目标估计，r_comm≥2r_measure，局部可观测集；目标加速度方差先验",
+        "assignment_mechanism": "初始CBAA变体，每目标恰2机；N=2M；本地assignment状态M×N",
+        "encirclement_control": "DTSE/Kalman＋antisynchronization＋截断伪力，u=Γ−2v/t；两机对向",
+        "continuous_task": "未给完成移除/释放/新目标再搜索",
+        "complexity_and_communication": "矩阵消息随M×N增加；迭代与估计控制成本需测",
+        "dependencies_verified_or_unknown": "离散双积分器、Kalman、CBAA，具体工具栈未核",
+        "validation_assets": "arXiv报告UAV/UGV物理实验，无源代码",
+        "necessary_missing_features": [
+          "三机方法本身",
+          "搜索/再分配/生命周期"
+        ],
+        "cocap_interfaces_to_port": [
+          "range estimator",
+          "CBAA",
+          "动力学",
+          "重新设计三机控制"
+        ],
+        "rationale": "两机几何不能当三机围捕；末轮Crossref确认TCST2025正式出版，阅读页码来自2024 arXiv稿",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true,
+        "evidence_version_note": "Formal metadata verified by exact-title Crossref; arXiv PDF read; final typeset differences not verified"
+      }
+    },
+    {
+      "id": "traditional_triggered_feedback_2026",
+      "name": "Triggered Aggregative Tracking Feedback",
+      "paper": {
+        "title": "Multirobot Target Monitoring and Encirclement via Triggered Distributed Feedback Optimization",
+        "authors": [
+          "Lorenzo Pichierri",
+          "Guido Carnevale",
+          "Lorenzo Sforni",
+          "Giuseppe Notarstefano"
+        ],
+        "year": 2026,
+        "venue": "IEEE Transactions on Robotics 42:2596–2610",
+        "doi": "10.1109/TRO.2026.3686280",
+        "url": "https://arxiv.org/abs/2409.20399",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "多兴趣点monitoring，不等于未知目标搜索",
+        "assignment_review": "无多目标coalition allocation",
+        "control_review": "聚合目标Σℓ_i(x_i,σ)，gradient tracking，事件触发；stationary point保证"
+      },
+      "task_assumptions": {
+        "information_review": "固定强连通/weight-balanced图，本地梯度＋聚合估计；已知单目标",
+        "lifecycle_review": "无目标捕获移除/任务循环"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "very_high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "很高"
+      },
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-09",
+        "evidence_ids": [
+          "S09"
+        ],
+        "comparison_role": "Known-target feedback control component",
+        "decision": "NO_GO",
+        "difficulty": "很高",
+        "search_mechanism": "多兴趣点monitoring，不等于未知目标搜索",
+        "target_information": "固定强连通/weight-balanced图，本地梯度＋聚合估计；已知单目标",
+        "assignment_mechanism": "无多目标coalition allocation",
+        "encirclement_control": "聚合目标Σℓ_i(x_i,σ)，gradient tracking，事件触发；stationary point保证",
+        "continuous_task": "无目标捕获移除/任务循环",
+        "complexity_and_communication": "每次邻居交换2d floats；事件频率/全局成本需测",
+        "dependencies_verified_or_unknown": "ROS2/Webots/ChoiRbot/CrazyChoir，稳定低层动力学",
+        "validation_assets": "arXiv地空实物与仿真；正式TRO元数据另核，完整代码未找到",
+        "necessary_missing_features": [
+          "多目标任务层",
+          "normal-capture控制",
+          "AW9/动态图适配",
+          "事件与恢复"
+        ],
+        "cocap_interfaces_to_port": [
+          "低层稳定模型",
+          "图/消息",
+          "分配",
+          "capture/search"
+        ],
+        "rationale": "高质量分布式控制参考，但不是追逃任务完整baseline",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_gbvce_2026",
+      "name": "GB-VCE",
+      "paper": {
+        "title": "Wolf-Pack-Inspired Distributed Encirclement for UAV–USV Systems via Visual Connectivity Preservation",
+        "authors": [
+          "Jinheng Xiao",
+          "Shihan Kong",
+          "Jinan Sun",
+          "Yingnan Li",
+          "Fang Wu",
+          "Junzhi Yu"
+        ],
+        "year": 2026,
+        "venue": "Biomimetics 11(7):513",
+        "doi": "10.3390/biomimetics11070513",
+        "url": "https://www.mdpi.com/2313-7673/11/7/513",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "无观测/失联常速预测；过期reset search center；周期参考点搜索；无全域持续覆盖保证",
+        "assignment_review": "leader/relay/searcher/encircler增长角色；仅单目标，不含多目标容量分配",
+        "control_review": "ring slot tracking＋切向/target速度前馈＋连接/对齐/安全项"
+      },
+      "task_assumptions": {
+        "information_review": "视觉局部观测/relay；伪代码输入全体Oi/视觉图并算Γ/argmax/TopK；消息协议与精确target速度接口未闭合",
+        "lifecycle_review": "单目标持续环绕，无normal移除/释放/新目标循环；多目标留未来"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "very_high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "很高"
+      },
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P1",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-10",
+        "evidence_ids": [
+          "S10"
+        ],
+        "comparison_role": "Local Distributed #2 (role/geometric component)",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "很高",
+        "search_mechanism": "无观测/失联常速预测；过期reset search center；周期参考点搜索；无全域持续覆盖保证",
+        "target_information": "视觉局部观测/relay；伪代码输入全体Oi/视觉图并算Γ/argmax/TopK；消息协议与精确target速度接口未闭合",
+        "assignment_mechanism": "leader/relay/searcher/encircler增长角色；仅单目标，不含多目标容量分配",
+        "encirclement_control": "ring slot tracking＋切向/target速度前馈＋连接/对齐/安全项",
+        "continuous_task": "单目标持续环绕，无normal移除/释放/新目标循环；多目标留未来",
+        "complexity_and_communication": "全局reachability/排序及分布式消息成本未给可执行合同；不能只按局部度数计成本",
+        "dependencies_verified_or_unknown": "MATLAB2023a；附加工具箱未说明；没有硬件/ROS资产",
+        "validation_assets": "100 paired seeds结果CSV/统计，非源码/预训练权重",
+        "necessary_missing_features": [
+          "消息协议",
+          "多目标分配",
+          "capture/release/search",
+          "目标状态估计"
+        ],
+        "cocap_interfaces_to_port": [
+          "角色状态",
+          "slot编号",
+          "视觉图→Voronoi消息",
+          "AW9",
+          "事件"
+        ],
+        "rationale": "局部观测到几何行为相关，但仅组件适配有条件GO；完整多目标原法NO_GO",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_dynamic_robust_pursuit_2026",
+      "name": "Dynamic Robust Pursuit (A* + auction + C3AVC + CLF-CBF)",
+      "paper": {
+        "title": "Dynamic Robust Pursuit of Multiple Evaders Under State Measurement Uncertainty in Obstacle Environments",
+        "authors": [
+          "Kai Rao",
+          "Huaicheng Yan",
+          "Zhihao Huang",
+          "Tiantian Xu",
+          "Penghui Yang",
+          "Yunkai Lv"
+        ],
+        "year": 2026,
+        "venue": "IEEE/CAA Journal of Automatica Sinica 13(4):989–991",
+        "doi": "10.1109/JAS.2025.125684",
+        "url": "https://www.ieee-jas.net/article/doi/10.1109/JAS.2025.125684?pageType=en&viewType=HTML",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "没有无目标coverage/自主发现",
+        "assignment_review": "改进K-means式分组均衡f与最低r；禁返迭代窗；组内A*收益拍卖分配内接f边形slots；更新率/捕获后重算未核",
+        "control_review": "C3AVC概率内缩Voronoi安全域＋CLF-CBF控制LP；论文人数/距离判据不等价CoCap角度判据"
+      },
+      "task_assumptions": {
+        "information_review": "全evader聚类中心、分组人数/均值与A*地图；拍卖分布式；实物动捕＋host计算",
+        "lifecycle_review": "无目标移除/新到达/解散再搜索协议；需项目事件/coverage扩展"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "high",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "高；重新证明理论很高"
+      },
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P0",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-11",
+        "evidence_ids": [
+          "S11"
+        ],
+        "comparison_role": "Global Strong #1 / Privileged Comparator",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "高；重新证明理论很高",
+        "search_mechanism": "没有无目标coverage/自主发现",
+        "target_information": "全evader聚类中心、分组人数/均值与A*地图；拍卖分布式；实物动捕＋host计算",
+        "assignment_mechanism": "改进K-means式分组均衡f与最低r；禁返迭代窗；组内A*收益拍卖分配内接f边形slots；更新率/捕获后重算未核",
+        "encirclement_control": "C3AVC概率内缩Voronoi安全域＋CLF-CBF控制LP；论文人数/距离判据不等价CoCap角度判据",
+        "continuous_task": "无目标移除/新到达/解散再搜索协议；需项目事件/coverage扩展",
+        "complexity_and_communication": "补充S4仅C3AVC为O(S+K)，不含A*/分组/拍卖/LP；通信量未给完整上界",
+        "dependencies_verified_or_unknown": "A*、分组/auction、几何、LP；论文Mosek；独立SDQP C++11/Eigen3",
+        "validation_assets": "正式3页＋2页补充；7P2E/9P3E仿真(每目标≥3)；4P2E Crazyflie2.1 host实验；没有源码/可执行测试",
+        "necessary_missing_features": [
+          "原生参数/数值退化合同",
+          "AW9/速度比可行性",
+          "normal事件",
+          "coverage/release/arrival"
+        ],
+        "cocap_interfaces_to_port": [
+          "world state/map",
+          "A*",
+          "coalition/slot",
+          "continuous control→AW9",
+          "swept/normal events",
+          "search/reallocation"
+        ],
+        "rationale": "任务匹配且全文/补充可重建，优先于全文缺失MK-WTA；允许全局已知目标结果优于CoCap",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_hierarchical_pgm_2025",
+      "name": "Hierarchical PGM pursuit",
+      "paper": {
+        "title": "Self-Organized Multitarget Pursuit in Multi-Unmanned Aerial Vehicle Systems via Hierarchical Probabilistic Graphical Models",
+        "authors": [
+          "Yixin Huang",
+          "Xiaojia Xiang",
+          "Chao Yan",
+          "Heda Xu",
+          "Tianjiang Hu",
+          "Han Zhou"
+        ],
+        "year": 2025,
+        "venue": "Advanced Intelligent Systems 7(11):2401110",
+        "doi": "10.1002/aisy.202401110",
+        "url": "https://doi.org/10.1002/aisy.202401110",
+        "publication_status": "published"
+      },
+      "category": "traditional_candidate",
+      "mechanisms": {
+        "search_review": "正文未得，不推断自主搜索",
+        "assignment_review": "hierarchical PGM/SPH线索；是否显式联盟与人数未核",
+        "control_review": "控制与终端几何未核"
+      },
+      "task_assumptions": {
+        "information_review": "摘要称local density，真实传感/通信未核",
+        "lifecycle_review": "所有连续任务环节未核"
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "unverified_high_risk",
+        "dependencies": [],
+        "proprietary_simulator": "unverified",
+        "focused_review_cost": "未知，高风险"
+      },
+      "recommendation": "NO_GO",
+      "priority": "component_or_related_work",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-12",
+        "evidence_ids": [
+          "S12"
+        ],
+        "comparison_role": "Metadata lead only",
+        "decision": "NO_GO",
+        "difficulty": "未知，高风险",
+        "search_mechanism": "正文未得，不推断自主搜索",
+        "target_information": "摘要称local density，真实传感/通信未核",
+        "assignment_mechanism": "hierarchical PGM/SPH线索；是否显式联盟与人数未核",
+        "encirclement_control": "控制与终端几何未核",
+        "continuous_task": "所有连续任务环节未核",
+        "complexity_and_communication": "未核",
+        "dependencies_verified_or_unknown": "未核实际依赖",
+        "validation_assets": "摘要报道仿真/实物，正文未核；无代码",
+        "necessary_missing_features": [
+          "全文与配置",
+          "信息/人数/终端/生命周期"
+        ],
+        "cocap_interfaces_to_port": [
+          "需全文后决定"
+        ],
+        "rationale": "保留正式近期研究线索，不凭self-organized摘要提升完整baseline排名",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
+    },
+    {
+      "id": "traditional_ceo_dmpc_2024",
+      "name": "CEO-DMPC + cooperative grouping",
+      "paper": {
+        "title": "A Distributed Pipeline for Collaborative Pursuit in the Target Guarding Problem",
+        "authors": [
+          "Yansong Chen",
+          "Yuchen Wu",
+          "Helei Yang",
+          "Junjie Cao",
+          "Qinqin Wang",
+          "Yong Liu"
+        ],
+        "year": 2024,
+        "venue": "IEEE Robotics and Automation Letters 9(3):2064–2071",
+        "doi": "10.1109/LRA.2024.3349977",
+        "url": "https://april.zju.edu.cn/wp-content/papercite-data/pdf/chen2024adp.pdf",
+        "publication_status": "published"
+      },
+      "category": "traditional_hierarchical",
+      "mechanisms": {
+        "search_review": "PID固定半径圆周巡逻，发现后进入追捕；不是自由地图扩散coverage",
+        "assignment_review": "实时二元MILP分组(每目标恰n_req、每人至多1目标)＋MILP正多边形slot匹配；leader-follower参考",
+        "control_review": "CEO-DMPC：预测位置/速度＋能量/输入变化/碰撞soft penalty QP；winding-number包围＋距离＋无碰撞终端；不是CoCap角间隙判据"
+      },
+      "task_assumptions": {
+        "information_review": "全文p.6 full real-time communication；Alg.3 All information；融合全队探测集；已知evader向保护区运动意图但不知精确APF参数",
+        "lifecycle_review": "varying initial numbers不等于在线新evader；目标移除/释放/恢复巡逻/新波未证实",
+        "multi_target": true,
+        "multiple_pursuers_per_target": true
+      },
+      "open_source": {
+        "status": "NOT_FOUND",
+        "official_repository": null,
+        "commit": null,
+        "license": null,
+        "core_files": [],
+        "checked": "2026-10-17"
+      },
+      "reproduction": {
+        "cost": "high_very_high",
+        "dependencies": [
+          "Python3",
+          "Quadprog",
+          "OR-Tools pywraplp",
+          "Gazebo for physical simulation"
+        ],
+        "proprietary_simulator": "not required by the native Python formulas; solver backend unverified"
+      },
+      "recommendation": "CONDITIONAL_GO",
+      "priority": "P0",
+      "focused_review_v2": {
+        "review_date": "2026-10-17",
+        "display_id": "TR-13",
+        "evidence_ids": [
+          "S13"
+        ],
+        "comparison_role": "Global Strong #2 / privileged communication",
+        "decision": "CONDITIONAL_GO",
+        "difficulty": "高至很高",
+        "search_mechanism": "PID固定半径圆周巡逻，发现后进入追捕；不是自由地图扩散coverage",
+        "target_information": "全文p.6 full real-time communication；Alg.3 All information；融合全队探测集；已知evader向保护区运动意图但不知精确APF参数",
+        "assignment_mechanism": "实时二元MILP分组(每目标恰n_req、每人至多1目标)＋MILP正多边形slot匹配；leader-follower参考",
+        "encirclement_control": "CEO-DMPC：预测位置/速度＋能量/输入变化/碰撞soft penalty QP；winding-number包围＋距离＋无碰撞终端；不是CoCap角间隙判据",
+        "continuous_task": "varying initial numbers不等于在线新evader；目标移除/释放/恢复巡逻/新波未证实",
+        "complexity_and_communication": "两个分组/slot MILP、每机2K变量QP及预测融合；匹配/运输子结构不可直接泛称NP-hard；全实时通信非CoCap局部预算",
+        "dependencies_verified_or_unknown": "Python3、Quadprog、OR-Tools pywraplp；Ubuntu20.04/Gazebo；MILP backend未核，不虚填Gurobi",
+        "validation_assets": "作者机构8页PDF；数值仿真与Gazebo UAV物理仿真，不是实物；无源码/权重/可执行测试",
+        "necessary_missing_features": [
+          "作者源码与配置",
+          "solver/预测/更新预算",
+          "AW9适配",
+          "normal移除/释放",
+          "coverage与新波"
+        ],
+        "cocap_interfaces_to_port": [
+          "world/detection fusion",
+          "MILP grouping/slots",
+          "leader-follower/prediction",
+          "QP→AW9",
+          "normal/swept",
+          "release/search/arrival"
+        ],
+        "rationale": "全文公式和部署依赖可核，多目标每目标3机几何意图明确；full通信归privileged组；较缺全文MK-WTA更可制定重建合同",
+        "reference": "docs/baselines/TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md",
+        "no_implementation_started": true
+      }
     }
+  ],
+  "round1_recommended_shortlist": [
+    {
+      "rank": 1,
+      "candidate_id": "rl_terl_2025",
+      "role": "RL multi-target encirclement candidate",
+      "condition": "Original all-target-visible setting is privileged; evaluate a clearly labeled limited-observation adaptation for the matched main table."
+    },
+    {
+      "rank": 2,
+      "candidate_id": "traditional_mk_wta_oapm_2025",
+      "role": "Strong traditional assignment plus geometry candidate",
+      "condition": "Confirm distance-matrix/global-information and communication assumptions from the full paper before preflight."
+    },
+    {
+      "rank": 3,
+      "candidate_id": "heuristic_spread_greedy_ring_v0",
+      "role": "CoCap-matched simple lower-bound heuristic",
+      "condition": "Project-defined baseline; label as such, not as a reproduction of one cited paper."
+    }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "date": "2026-10-16",
+      "source_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+      "candidate_count": 12
+    },
+    {
+      "round": 2,
+      "date": "2026-10-17",
+      "parent_commit": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+      "branch": "docs/baseline-focused-review-20261017",
+      "candidate_count": 20,
+      "source_manifest": "artifacts/baselines/focused_review_source_manifest_20261017.json"
+    }
+  ],
+  "review_repository": {
+    "name": "Jayyeah/cocap-voradj",
+    "branch": "docs/baseline-focused-review-20261017",
+    "parent_sha": "94753f9fd82d137af7ff9930634788ffeba6f3e2",
+    "benchmark_audit_sha": "3038ef5cd728acdd302772ca08bf10060685af16",
+    "note": "repository.fact_head retained as Round-1 historical fact source, not latest Z05 runtime"
+  },
+  "review_scope": "Focused traditional review; no implementation, formal reproduction, preflight run, training, deployment or evaluation performed.",
+  "unresolved_evidence_gates": [
+    "MK-WTA/CCC potential-game/DMK-WTA/RMPC2025 full text",
+    "KS-COAL final motion/utility supplement",
+    "Two Elsevier survey PDFs and page-verified relevant chapters",
+    "No verified full local finite-communication multi-target >=3-pursuer capture-release-search official implementation",
+    "Benchmark still draft; shared repeated-arrival protocol cannot depend on CoCap-only Z",
+    "No reproduction/preflight was started"
   ]
 }

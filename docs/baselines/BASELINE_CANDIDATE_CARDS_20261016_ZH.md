@@ -1,5 +1,7 @@
 # CoCap Baseline Candidate Cards
 
+> 历史Round 1候选卡。当前传统方法证据与排序见[2026-10-17定向复核](TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md)和[Shortlist V2](BASELINE_FINAL_SHORTLIST_V2_ZH.md)；原ID保留，未核线索不得作为已证实事实转引。
+
 筛选日期：2026-10-16。论文元数据、任务假设和代码状态按公开来源记录；无法确认处明确标为“未知/推断”。`KEEP` 表示值得进入后续 preflight，不代表已经选定复现。
 
 ## RL 候选
