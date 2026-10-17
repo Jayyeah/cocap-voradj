@@ -60,7 +60,7 @@ def c0_gate(summary):
 
 
 @torch.no_grad()
-def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None,env_factory=None,physical_policy=None):
+def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_progress=None,actor=None,policy_mode="iqn_greedy",on_snapshot=None,env_factory=None,physical_policy=None,diagnostic_central_schema=True):
     if policy_mode not in ('iqn_greedy','bc_argmax','bc_sample'):raise ValueError(policy_mode)
     if (actor is None)!=(policy_mode=='iqn_greedy'):raise ValueError('Policy mode/actor mismatch')
     if actor is not None and on_transition is not None:raise ValueError('Teacher dataset collection must remain greedy IQN')
@@ -86,7 +86,7 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         state=snapshot(env,observations)
         phase='pure_coverage' if scene=='coverage' else ('post_capture' if capture_step is not None else 'pre_capture')
         global_state=None
-        if on_transition:
+        if on_transition and diagnostic_central_schema:
             from cocap_voradj.training.continuous.central_schema import build_central_global_obs
             # The diagnostic path must cover every registered curriculum
             # stage (4/8/12 pursuers); the evaluator does not feed this
@@ -143,9 +143,14 @@ def run_episode(model,scene,seed,device,*,max_steps=None,on_transition=None,on_p
         'stationary_capture':captured and 'stationary' in capture_types,'capture_types':capture_types,
         'collision':collision,'boundary':boundary,'capture_prefix_collision':prefix_collision,
         'ce_success':ce,'safe_complete':safe,'length':step,'episode_seconds':step*dt,
+        'capture_steps':capture_step,
+        'recovery_steps':(ce_step-capture_step) if ce_step is not None and capture_step is not None else None,
+        'mission_steps':ce_step if safe and ce_step is not None else None,
+        'time_to_strict_CE_steps':ce_step if ce else None,
         'capture_seconds':capture_step*dt if capture_step is not None else None,
         'recovery_seconds':(ce_step-capture_step)*dt if ce_step is not None and capture_step is not None else None,
         'mission_seconds':ce_step*dt if safe and ce_step is not None else None,
+        'time_to_strict_CE_seconds':ce_step*dt if ce else None,
         'detection_to_capture_seconds':(capture_step-first_detection)*dt if capture_step is not None and first_detection is not None else None,
         'mission_events':tracker.finish(step),'smoke_horizon_override':max_steps,'policy_mode':policy_mode,'policy_diagnostics':policy_stats,
         'ce_rms':float(record['coverage_ce_center_rms']) if np.isfinite(record['coverage_ce_center_rms']) else None}

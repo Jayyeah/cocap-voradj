@@ -356,6 +356,40 @@ def numeric_summary(values: list[float]) -> dict[str, Any]:
     }
 
 
+def efficiency_timing_summary(
+    rows: list[Mapping[str, Any]],
+    *,
+    success_key: str,
+    value_key: str,
+) -> dict[str, Any]:
+    """Summarize completion time without imputing failed/censored episodes.
+
+    ``success_n`` is the denominator for the timing distribution.  Episodes
+    that collide or hit a boundary before the requested event are reported as
+    failures; non-success episodes without those terminal events are reported
+    as right-censored.  Neither group contributes a value to mean/median/p90.
+    """
+    successful = [row for row in rows if bool(row.get(success_key, False))]
+    values = [row.get(value_key) for row in successful]
+    summary = numeric_summary(values)
+    summary["median"] = summary["p50"]
+    summary["episodes"] = len(rows)
+    summary["success_n"] = len(successful)
+    summary["missing_time_n"] = len(successful) - summary["n"]
+    summary["collision_n"] = sum(bool(row.get("collision", False)) for row in rows)
+    summary["boundary_n"] = sum(bool(row.get("boundary", False)) for row in rows)
+    failed = [
+        row
+        for row in rows
+        if not bool(row.get(success_key, False))
+        and (bool(row.get("collision", False)) or bool(row.get("boundary", False)))
+    ]
+    summary["failure_n"] = len(failed)
+    summary["censored_n"] = len(rows) - len(successful) - len(failed)
+    summary["unsuccessful_n"] = len(rows) - len(successful)
+    return summary
+
+
 def json_finite(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {key: json_finite(item) for key, item in value.items()}
