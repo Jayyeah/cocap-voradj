@@ -1,5 +1,7 @@
 # Paired pilot 登记与运行回执
 
+> 2026-10-17：100k bounded pilot 已完成，scratch未启动。最新数据见 [warm-start结果](WARM_START_RESULTS_20261017_ZH.md)；以下保留预登记与启动时记录。
+
 本文件在训练前登记；最终运行快照与训练/评价结果由 artifacts/2026-10-16_z_guided_support/pilot_status.json、training_curves.csv、checkpoint_registry.csv、rollout_index.csv 提供。running 状态不是完成结果。
 
 ## 已完成的启动 Gate

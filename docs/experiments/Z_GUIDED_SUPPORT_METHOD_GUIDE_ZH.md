@@ -1,5 +1,7 @@
 # Z-Guided Local Support v0 方法与证据指南
 
+> 2026-10-17 更新：两臂100k warm-start及三个配对评价窗口已完成；scratch未启动。结果见[完成报告](z_guided_support_20261016/WARM_START_RESULTS_20261017_ZH.md)。下文原运行快照保留为历史记录。
+
 日期：2026-10-16。实验分支 `experiment/iqn-z-guided-support-20261016`，基于 Z05 `f0c0dfca8a508233f30ddbb5158699400d92a00f`。**已验证 Z05 正式方法**仍由 20261015 paper 方法资料和历史独立评估定义；**Z-Guided Support 是新候选方法**，这里的工程测试和离线分析不能替代训练/held-out 结果。当前论文 Method 文件未修改。
 
 ## 为什么更换 Support 内部目标
