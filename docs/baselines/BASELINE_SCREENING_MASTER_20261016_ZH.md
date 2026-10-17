@@ -1,6 +1,6 @@
 # CoCap baseline candidate screening — 总览与推荐
 
-> 历史Round 1记录。2026-10-17定向复核后的当前排序、证据边界和GO判断见[Shortlist V2](BASELINE_FINAL_SHORTLIST_V2_ZH.md)；统一registry已增量更新并保留Round 1快照。本文原推荐不代表当前结论。
+> 历史 Round 1 记录。第二轮保留在 [Shortlist V2](BASELINE_FINAL_SHORTLIST_V2_ZH.md)；当前第三轮的架构、证据和决策入口为 [V3 分层研究结果](BASELINE_HIERARCHICAL_REVIEW_V3_20261017_ZH.md)。统一 registry 已增量更新并保留历史快照。本文原推荐不代表当前结论。
 
 筛选日期：2026-10-16  
 仓库事实源：`Jayyeah/cocap-voradj`，中央 `main`，筛选时 HEAD=`a5814f49fa29d869cdc3fb8d8e0df4722aa11f00`。  

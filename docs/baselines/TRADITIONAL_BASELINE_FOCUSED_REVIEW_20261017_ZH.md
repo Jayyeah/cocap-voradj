@@ -1,5 +1,7 @@
 # CoCap 传统分层围捕定向复核（Round 2）
 
+> 本文保留第二轮事实和排序。第三轮从 CoCap 场景出发新增分层架构、综述和组件证据，见 [V3 结果入口](BASELINE_HIERARCHICAL_REVIEW_V3_20261017_ZH.md)；仍沿用同一个 registry 和搜索日志。
+
 日期：2026-10-17。范围：文献、机制、代码与移植可行性；未实现算法、未训练、未运行评估。本文继承第一轮的12个候选和稳定ID，不另建冲突台账。程序事实源仍是 [`baseline_registry.json`](../../artifacts/baselines/baseline_registry.json)，本轮字段为 `focused_review_v2`；完整出处及访问边界见[证据表](BASELINE_RELATED_WORK_EVIDENCE_ZH.md)，代码见[开源审计](TRADITIONAL_BASELINE_OPENSOURCE_AUDIT_ZH.md)，工程判断见[可行性](TRADITIONAL_BASELINE_REPRODUCTION_FEASIBILITY_ZH.md)。
 
 ## 1. 决策

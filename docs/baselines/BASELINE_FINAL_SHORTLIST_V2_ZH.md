@@ -1,5 +1,7 @@
 # CoCap Baseline最终候选排序V2
 
+> 历史 Round 2 排序。第三轮新增传统分层替代方案、GRAPE 最低人数原文核查及逐层代码审计；当前决策入口为 [V3 分层研究结果](BASELINE_HIERARCHICAL_REVIEW_V3_20261017_ZH.md)。完整论文强基线首选仍是 TR-11；局部组合方案与单篇论文复现分别列出。
+
 2026-10-17。替代第一轮推荐排序，保留其候选历史。详细证据见[传统复核](TRADITIONAL_BASELINE_FOCUSED_REVIEW_20261017_ZH.md)、[可行性](TRADITIONAL_BASELINE_REPRODUCTION_FEASIBILITY_ZH.md)、[代码审计](TRADITIONAL_BASELINE_OPENSOURCE_AUDIT_ZH.md)与[出处](BASELINE_RELATED_WORK_EVIDENCE_ZH.md)。本轮未开始正式复现。
 
 ## 1. RL：固定决策

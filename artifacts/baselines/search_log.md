@@ -116,3 +116,48 @@ Representative exact queries and follow-ups:
 
 Six requested deliverables are under `docs/baselines/`; current facts remain in the original registry, with Round1 archival snapshots and new `focused_review_v2` fields. Old master/cards carry links to the new decision. Verification covers JSON/CSV consistency, citation/link targets, old-ID preservation and documentation-only changes. Publication commit and remote HEAD are verified separately and reported in the delivery response; no main merge is requested or performed.
 
+## Round 3 — Architecture-first traditional replacement (2026-10-17)
+
+### Authorization, recovery and branch lineage
+
+- User requested another survey/recent-method round, a non-RL hierarchical replacement for the actual CoCap scene, alternatives at every layer, follow-up literature/code research, documents and remote synchronization. This authorizes documentation commit/push; no baseline implementation, preflight execution or training was started.
+- Refreshed remote refs/history at startup. Round-2 branch `docs/baseline-focused-review-20261017` remained at `ec15f16eca08f9071f35ba4cbcccfcf1542a5d2a`; audit branch remained at `3038ef5cd728acdd302772ca08bf10060685af16`. Round-1 parent `94753f9fd82d137af7ff9930634788ffeba6f3e2` and earlier history retained.
+- Created isolated branch/worktree `docs/baseline-hierarchical-design-20261017`, `/home/yjq/rl/CoCap1/baseline-hierarchical-design-20261017`, from the current Round-2 remote HEAD. Reused V2 shortlist/feasibility/evidence, original registry and logs, and re-read the audit Benchmark Contract. Local workflow `docs/GIT_WORKFLOW.zh-CN.md` supports normal feature-branch documentation synchronization; applicable ancestor/baseline AGENTS files were not found during recovery.
+
+### Architecture-driven search questions and sources
+
+- Search questions: persistent search rather than static deployment; local discovery/tracking vs global task lists; minimum-three coalition rather than independent single-robot tasks; geometric normal capture rather than tracking; AW9 execution/swept safety; capture-release-search and method-independent repeated arrival.
+- New relevant-section full texts: **2026 TAMP survey** (Artificial Intelligence Review 59:198), **2026 CPP survey preprint** (arXiv2607.10649v1), **2025 distributed optimization tutorial** (Proceedings IEEE113(1):40–65, read arXiv2309.04257v2). Reused the already-read **2025 Robotics coalition survey**. Page/section evidence is in `TRADITIONAL_SURVEYS_AND_RECENT_METHODS_V3_ZH.md`.
+- Followed the CPP survey references to **C* TRO2026** (10.1109/TRO.2026.3661719, read arXiv2505.13782v3), **Multi-CAP** (arXiv2509.14941v2; formal venue for exact title not verified), and **LS-MCPP TRO2025** (10.1109/TRO.2025.3567476, author PDF). C* multi-robot uses central server/shared RCG; Multi-CAP explicitly assumes base station and spatial connectivity. Neither was relabeled local-distributed from its title.
+- Read **HEDAC-maze formal 2026-10-05 Mathematics14(19):3613** (10.3390/math14193613), using publisher-res PDF after ordinary publisher PDF download returned403. Its centralized sequential grid exploration and stop-at-exit lifecycle remain separate from the paper's proposed decentralized extension in §4.3.
+- Read **GRAPE TRO2018** arXiv1711.06871v2. Crucial finding: §V p.9 already treats minimum participation Rj via auxiliary/dummy utilities, Condition1 and Proposition1. Basic SPAO claim alone is insufficient. This corrected the preliminary interpretation of the basic implementation during research; final documents give the paper's actual MTR mechanism and its conditions. Inspected official Python/MATLAB utility branches do not implement that extension.
+- Read **SPACE arXiv2409.04230v1** beyond abstract, §§III–V. It has real local sensing, exploration, completion, dynamic tasks and plugins, but workloads are single-robot-feasible, collision avoidance is omitted, and source uses global task-ID initialization/live task handles. These are explicit adaptation gaps, not hidden capabilities.
+- Read **ICRA2024 sensor-based spatial-separation coverage** arXiv2403.01710v3. Formal DOI10.1109/ICRA57147.2024.10611020, exact formal title uses Multi-Robot and includes Yulong Ding. Its single-integrator/local obstacle safe cells with information-density/static convergence are not persistent unknown moving-target search.
+- Revisited classic **Cortés et al. TRA2004** using older arXiv math/0212212 for locational-cost/CVT convergence, explicitly labeling the read version.
+
+### Latest-method and survey evidence gates
+
+- Verified Crossref/publisher metadata for CFG-BAP dynamic MTR **IoTJ13(6):12501–12518, 2026** (10.1109/JIOT.2026.3651713) and TNSE minimum-requirement game **11(1):1202–1213, 2024** (10.1109/TNSE.2023.3321605). Full formulas/communication/code not obtained; keep as allocator reserves, not implemented capture methods.
+- Added latest survey metadata: hunting survey **RAS197:105296, March2026** (10.1016/j.robot.2025.105296), MRTA survey **IoTJ13(19):44021–44058, October2026** (10.1109/JIOT.2026.3699696). No full PDFs; no chapter/page claims inferred. Previous Neurocomputing target-survey and CJA RL-review PDF gaps remain.
+- Screened publisher previews of whole-group Voronoi encirclement **Matcom2026 online/pre-proof** (10.1016/j.matcom.2026.08.028), elliptical AUV encircling **Ocean Engineering366:127487, October2026** (10.1016/j.oceaneng.2026.127487), and Chinese AUV sliding-MPC lead. Full text unavailable; no claim of per-target three-pursuer capture or continuous release/search was promoted.
+- Web query groups covered exact titles/DOIs and combinations of 2025/2026 + encirclement + unknown/search + decentralized + code/GitHub, then layer-specific C*/Multi-CAP/GRAPE/MTR sources. Recorded GitHub repository queries for CFG-BAP,3651713,dynamic-task+encirclement,sensor+spatial-separation,3321605 all returned200 with0 matching repository metadata results. This is bounded negative evidence, not proof no code exists.
+
+### Seven static official-repository audits
+
+- pyGRAPE `7f4b619b188ffb8b4257b51168c460a4957826d7`: author Python equivalent, **GPLv3**; basic utility/mutex/demo, not §V MTR or pursuit lifecycle.
+- GRAPE MATLAB `0d3aa265cbf6d97f1b933b9781985563d3643fb5`: author explicitly partial Fig7 codes, **MIT**; do not transfer this license to Python equivalent.
+- SPACE `b5286bbb1f99f81caf3f0ee50212bc58d4348bea`: **GPLv3**, configs/MC/behavior tree/plugins; identified full-task-ID and live-object concerns and NumPy not explicit in requirements.
+- LS-MCPP `9dcba0b16a3a7669e7632f1b81a04a029d9ba304`: **GPLv3**, master TRO algorithms/deconfliction; setup declares gurobipy but static tracked `.py` search found no API calls outside setup. Do not assert either mandatory Gurobi optimization or proven removable dependency without running.
+- Robotarium Python `2b1b6136a242c164e53081b794ebf10d904cbaae`: **MIT**, CVXOPT, SI/velocity-unicycle safety examples; not AW9 or distributed coalition code. Platform-wide libraries.txt is not the minimal simulator requirements.
+- HEDAC maze `c7905951141b1683e06731175dfa242731d859f7`: algorithm/configs/batch scripts and pyproject/uv.lock exist; no LICENSE/COPYING; README references absent requirements.txt. Declared package versions/lock reproduction untested.
+- multirobot-tutorial `ccde5f0d55d69ad97ec40d49ebf83f8af102c37a`: official paper-linked repo has **README only**, no algorithm/config/license. Separate toolboxes are not treated as audited complete tutorial software.
+- Repo URL, scoped category, core files, dependencies, entry points, gaps, difficulty and static hashes are recorded in the same registry's components and V3 source manifest. No external source code or paper PDFs added to Git.
+
+### Decisions, deliverables and checks
+
+- Best complete-paper comparator remains **TR-11 / H-G1 CONDITIONAL_GO**, with **TR-13 / H-G2** backup. They remain privileged, including their strengths; code absence did not remove them.
+- New closest-scene proposal **H-L CONDITIONAL_GO**: persistent age search + GRAPE §V minimum requirement + project geometric/AW9/lifecycle modules. This is a literature-informed project composite, not original GRAPE encirclement. **H-S** is the simpler auxiliary sharing lower layers; TR-05 project identity is preserved.
+- Deliverables: V3 entry decision, hierarchical blueprint, 28-option CSV, surveys/recent-method evidence, seven-repo component audit, and staged preflight recommendation. These do not claim implementation/performance.
+- Updated the **same** registry to schema1.2.0: original20 candidate IDs, Round1 snapshots and V2 focused fields preserved; V2 recommendation/repository snapshots retained;18 literature sources,7 components and4 configurations added. Historical entry documents now link to V3.
+- Validation checks JSON/CSV parsing and references, old-field preservation, PDF page counts/hash provenance, commit pins, relative document links, LF formatting and documentation-only changes. Synchronization uses a normal commit/push on the new branch; resulting remote HEAD is verified and reported with delivery, without merging main.
+
