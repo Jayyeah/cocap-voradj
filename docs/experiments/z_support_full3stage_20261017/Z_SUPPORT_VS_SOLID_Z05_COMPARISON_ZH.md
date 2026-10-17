@@ -1,6 +1,6 @@
 # Z-Guided Support 与 Solid IQN-Z05 对照
 
-当前执行状态：`PREPARED`；阶段：`待启动`；过程：`准备`。
+当前执行状态：`running`；阶段：`stage1`；过程：`training`。
 
 主结果冻结为 argmax / fixed-midpoint32；sample 是32个随机 IQN 分位均值 Q 的 argmax，只作独立次要结果。各行使用原生4P1E1O、8P2E2O、12P3E3O合同。旧正式结果引用既有native批次；新最终评价seed族2026102700与selection的2026091900分离。新旧训练seed不同，不能描述为严格matched训练因果实验。队列另用新最终seed对历史正式selected做统一argmax复评；复评完成时表中使用该结果，补全逐局存活人数并验证新旧评价初态配对；此前引用既有报告并明示。
 
